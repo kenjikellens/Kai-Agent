@@ -1,0 +1,1575 @@
+/* 
+  Reset and base sidebar setup.
+  Uses VS Code's native typography and sizing variables, ensuring seamless IDE integration.
+*/
+body {
+    padding: 10px;
+    margin: 0;
+    font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
+    color: var(--vscode-editor-foreground, #cccccc);
+    background-color: var(--vscode-sideBar-background, #1e1e1e);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/*
+  Main sidebar layout.
+  Enforces a flexbox container that spans the entire view and holds the status bar, chat logs, code previews, and input controls.
+*/
+.sidebar-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+/*
+  Status panel styling.
+  Renders a sleek top bar displaying connection info.
+  Features a micro-animation for dot pulsing to signal system activity.
+*/
+.sidebar-header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 6px 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 8px;
+    font-size: 0.75rem;
+    color: var(--vscode-descriptionForeground, #888888);
+}
+
+.header-status {
+    display: flex;
+    align-items: center;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.icon-btn-header {
+    background: transparent;
+    border: none;
+    padding: 4px;
+    border-radius: 4px;
+    color: var(--vscode-descriptionForeground, #888888);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.icon-btn-header:hover {
+    color: var(--vscode-editor-foreground, #cccccc);
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 6px;
+    display: inline-block;
+    background-color: #e74c3c;
+    transition: background-color 0.25s ease;
+}
+
+.status-dot.status-connected {
+    background-color: #2ecc71;
+}
+
+.status-dot.status-disconnected {
+    background-color: #e74c3c;
+}
+
+/*
+  Status dot indicator.
+  A circular badge prefixing the status label.
+*/
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 8px;
+    display: inline-block;
+    background-color: currentColor;
+    animation: pulse 2s infinite ease-in-out;
+}
+
+/*
+  Pulse animation for the status dot.
+  Uses scaling and opacity transitions to make the connection indicator feel alive.
+*/
+@keyframes pulse {
+    0% {
+        transform: scale(0.9);
+        opacity: 0.6;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(0.9);
+        opacity: 0.6;
+    }
+}
+
+/*
+  Status text labeling.
+  Truncates overflow names when model designations are extremely long.
+*/
+#status-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/*
+  Chat log output screen.
+  Scrollable area containing message bubbles.
+  Styled with hidden scrollbars for clean minimal look, and scrolls smoothly.
+*/
+.chat-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding-right: 2px;
+    margin-bottom: 8px;
+    scrollbar-width: thin;
+}
+
+/*
+  Message bubble wrapper.
+  Contains alignment structure for separating user messages from agent answers.
+*/
+.message {
+    display: flex;
+    flex-direction: column;
+    max-width: 90%;
+    margin-bottom: 10px;
+    animation: fadeInMessage 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/*
+  Message fade-in entry effect.
+  Introduces bubbles by swelling opacity to give a lightweight premium flow.
+*/
+@keyframes fadeInMessage {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/*
+  User bubble layout.
+  Right-aligns user messages with a gray container and rounded dialog profile.
+*/
+.user-message {
+    align-self: flex-end;
+    background: var(--vscode-merge-common-header-background, rgba(120, 120, 120, 0.15));
+    color: var(--vscode-editor-foreground, #ffffff);
+    border: 1px solid rgba(120, 120, 120, 0.25);
+    border-radius: 12px 12px 2px 12px;
+}
+
+/*
+  Agent/Assistant bubble layout.
+  Left-aligns model responses with transparent backing.
+  margin-top gives breathing room after compact tool-status rows.
+*/
+.assistant-message {
+    align-self: flex-start;
+    color: var(--vscode-editor-foreground, #cccccc);
+    background: transparent;
+    border: none;
+    max-width: 100%;
+    margin-top: 4px;
+}
+
+/*
+  System guidance or connection error container.
+  Centered warning blocks for instructional messages.
+*/
+.system-message {
+    align-self: center;
+    max-width: 100%;
+    width: 100%;
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.02);
+    border-radius: 6px;
+    border: 1px dashed rgba(255, 255, 255, 0.05);
+    font-size: 0.8rem;
+    color: var(--vscode-descriptionForeground, #888888);
+}
+
+/*
+  Message text contents.
+  Applies interior padding, permits text wrap, and ensures monospace/pre styling for nested codes.
+*/
+.message-content {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+/*
+  Inline or block code structures inside LLM markdown answers.
+  Renders clean monospace text boxes representing output snippets.
+*/
+.message-content code {
+    font-family: var(--vscode-editor-font-family, Consolas, Monaco, monospace);
+    background-color: rgba(0, 0, 0, 0.25);
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+/*
+  Code block formatting for code blocks.
+  Makes full-line code segments scrollable horizontally.
+*/
+.message-content pre {
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 8px;
+    overflow-x: auto;
+    margin: 6px 0;
+}
+
+/*
+  Full-width code container pre tag.
+*/
+.message-content pre code {
+    background-color: transparent;
+    padding: 0;
+    border-radius: 0;
+    display: block;
+}
+
+/*
+  Code Selection Panel.
+  Appears above the input bar when a user grabs some active editor context to include with their prompt.
+*/
+.code-context-panel {
+    background-color: rgba(0, 122, 204, 0.08);
+    border: 1px solid rgba(0, 122, 204, 0.25);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/*
+  Header bar inside code context preview panel.
+  Hosts metadata label and the removal button.
+*/
+.code-context-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    background-color: rgba(0, 122, 204, 0.15);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #29b6f6;
+}
+
+/*
+  Preformatted view window inside code selection context.
+  Gives code snippet previews fixed line heights and limits max height.
+*/
+#code-context-preview {
+    margin: 0;
+    padding: 6px 8px;
+    font-family: var(--vscode-editor-font-family, Consolas, Monaco, monospace);
+    font-size: 0.75rem;
+    max-height: 80px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    background-color: rgba(0, 0, 0, 0.15);
+    color: #81d4fa;
+}
+
+/*
+  Helper class to hide element tags smoothly.
+*/
+.hidden {
+    display: none !important;
+}
+
+/*
+  Typing indicator dot array.
+  Indicates when the local LM Studio model is generating completion data.
+*/
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+}
+
+/*
+  Individual bouncing typing dot.
+  Cycles opacity levels recursively.
+*/
+.typing-dot {
+    width: 6px;
+    height: 6px;
+    background-color: var(--vscode-descriptionForeground, #888888);
+    border-radius: 50%;
+    animation: bounceOpacity 1.2s infinite ease-in-out;
+}
+
+/*
+  Delayed timing for second typing dot.
+*/
+.typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+/*
+  Delayed timing for third typing dot.
+*/
+.typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+/*
+  Opacity cycles animation for typing indicators.
+*/
+@keyframes bounceOpacity {
+    0%, 100% {
+        opacity: 0.3;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+/*
+  Controls panel wrapped at the base of the sidebar.
+  Groups the textarea inputs and operations buttons.
+*/
+.input-panel {
+    display: flex;
+    flex-direction: column;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/*
+  Unified input card container.
+  Encloses the textarea and toolbar in a single sleek box.
+*/
+.input-card {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--vscode-input-background, #252526);
+    border: 1px solid var(--vscode-input-border, rgba(255, 255, 255, 0.08));
+    border-radius: 8px;
+    padding: 6px 8px;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-card:focus-within {
+    border-color: var(--vscode-focusBorder, #007acc);
+    box-shadow: 0 0 0 1px var(--vscode-focusBorder, #007acc);
+}
+
+/*
+  Message entry textarea inside the input card wrapper.
+*/
+#message-input {
+    width: 100%;
+    min-height: 32px;
+    background: transparent;
+    border: none;
+    outline: none;
+    box-shadow: none;
+    padding: 2px;
+    color: var(--vscode-input-foreground, #cccccc);
+    font-family: inherit;
+    font-size: 0.85rem;
+    resize: none;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+/* Hide focus border on internal textarea */
+#message-input:focus {
+    outline: none;
+    border: none;
+    box-shadow: none;
+}
+
+/*
+  Input toolbar at the bottom of the card.
+  Hosts selectors and send actions.
+*/
+.input-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    gap: 12px;
+}
+
+/*
+  Left toolbar controls grouping.
+*/
+.toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-grow: 1;
+    min-width: 0;
+}
+
+/*
+  Generic button rules.
+  Establishes pointer responses, font formatting, padding, and smooth color changes.
+*/
+button {
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+/*
+  Disabled button state.
+*/
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/*
+  Send message button.
+  Placed directly next to the textarea.
+*/
+#send-btn {
+    height: 32px;
+    width: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    border-radius: 6px;
+    background-color: var(--vscode-button-background, #007acc);
+    color: var(--vscode-button-foreground, #ffffff);
+    flex-shrink: 0;
+}
+
+#send-btn:hover:not(:disabled) {
+    background-color: var(--vscode-button-hoverBackground, #0062a3);
+}
+
+/*
+  Toggle container checkbox wrapper.
+*/
+.toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: var(--vscode-descriptionForeground, #888888);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.toggle-container input {
+    margin: 0;
+    cursor: pointer;
+}
+
+/*
+  Secondary button hover action.
+  Softens neutral border/fills backings on pointer hover.
+*/
+.secondary-btn:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+/*
+  Icon control buttons.
+  Small circular action triggers like context clearing.
+*/
+.icon-btn {
+    background: transparent;
+    border: none;
+    color: currentColor;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    border-radius: 3px;
+}
+
+/*
+  Icon button hover.
+  Adds micro color changes on pointer hover.
+*/
+.icon-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/*
+  Agent step thinking log cards.
+  Displays low-profile progress steps like 'Consulting local model...'.
+*/
+.agent-step-card {
+    border-color: rgba(255, 255, 255, 0.03);
+    color: var(--vscode-descriptionForeground, #888888);
+}
+
+/*
+  Tool execution initiation cards.
+  Highlights when a tool is triggered (e.g. read_file) with a blue border/shading.
+*/
+.tool-call-card {
+    background-color: rgba(0, 122, 204, 0.05);
+    border: 1px solid rgba(0, 122, 204, 0.2);
+    color: #00bcd4;
+    text-align: left;
+}
+
+/*
+  Inner header title for active tool execution card.
+*/
+.tool-title {
+    font-size: 0.8rem;
+    margin-bottom: 2px;
+}
+
+/*
+  Displays query parameters of tool executions (e.g. file paths).
+*/
+.tool-query {
+    font-size: 0.75rem;
+    font-family: var(--vscode-editor-font-family, Consolas, Monaco, monospace);
+    color: #80deea;
+    background-color: rgba(0, 0, 0, 0.15);
+    padding: 3px 6px;
+    border-radius: 4px;
+    margin-top: 4px;
+}
+
+/*
+  Tool output result card.
+  Displays stdout or shell execution output.
+*/
+.tool-result-card {
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: var(--vscode-editor-foreground, #cccccc);
+    text-align: left;
+}
+
+/*
+  Result label header for tool outputs.
+*/
+.tool-result-header {
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: var(--vscode-descriptionForeground, #888888);
+}
+
+/*
+  Terminal-like code display block for tool result outputs.
+  Scrollable horizontally and vertically with limited height.
+*/
+.tool-output-pre {
+    margin: 4px 0 0 0;
+    background-color: #121212;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 4px;
+    padding: 6px;
+    max-height: 120px;
+    overflow: auto;
+}
+
+/*
+  Code tags inside terminal output containers.
+*/
+.tool-output-pre code {
+    font-family: var(--vscode-editor-font-family, Consolas, Monaco, monospace);
+    font-size: 0.75rem;
+    color: #a5d6a7;
+    white-space: pre;
+    background-color: transparent;
+    padding: 0;
+}
+
+/* 
+  Custom Scrollbar styling for Webkit browsers (VS Code Webview).
+  Provides a thin, translucent scrollbar that blends with the dark theme.
+*/
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+/*
+  Custom dropdown select container.
+  Sets grow behaviors to occupy maximum possible toolbar space.
+*/
+.custom-dropdown {
+    position: relative;
+    min-width: 0;
+    flex-grow: 1;
+}
+
+/*
+  Dropdown trigger button.
+  Styled borderless and transparent by default, lighting up only on hover.
+*/
+.dropdown-trigger {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    background-color: transparent;
+    color: var(--vscode-descriptionForeground, #888888);
+    border: 1px solid transparent;
+    border-radius: 9999px;
+    padding: 3px 8px;
+    font-size: 0.72rem;
+    font-family: inherit;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+    gap: 4px;
+    text-align: left;
+}
+
+.dropdown-trigger:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: transparent;
+    color: var(--vscode-foreground, #ffffff);
+}
+
+.dropdown-trigger:focus {
+    outline: none;
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: transparent;
+    color: var(--vscode-foreground, #ffffff);
+}
+
+/* Selected model text inside the trigger */
+#selected-model-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-grow: 1;
+}
+
+/* Open SVG chevron inside trigger button */
+.dropdown-trigger-chevron {
+    color: var(--vscode-descriptionForeground, #888888);
+    flex-shrink: 0;
+}
+
+/*
+  The dropdown options menu popover.
+  Positions upwards above the input toolbar card to prevent cutoffs.
+  Hides scrollbar visual presentation while keeping scroll functionality active.
+*/
+/*
+  .dropdown-menu is the outer container overlay containing the categorized model lists.
+  We set max-height to none and overflow-y to visible to allow the menu to dynamically grow and fit all options.
+*/
+.dropdown-menu {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 0;
+    width: 100%;
+    max-height: none;
+    overflow-y: visible;
+    background-color: var(--vscode-dropdown-background, #252526);
+    border: 1px solid var(--vscode-dropdown-border, rgba(255, 255, 255, 0.12));
+    border-radius: 6px;
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.3);
+    z-index: 1000;
+    box-sizing: border-box;
+    padding: 4px 0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+/* Hide scrollbar tracks for Webkit engines */
+.dropdown-menu::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+/*
+  Dropdown options list items.
+  No background highlights; hover states shift text colors.
+*/
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    font-size: 0.72rem;
+    cursor: pointer;
+    color: var(--vscode-descriptionForeground, #888888);
+    transition: color 0.1s ease;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background-color: transparent;
+}
+
+.dropdown-item .status-dot {
+    margin-right: 0;
+    flex-shrink: 0;
+}
+
+.dropdown-item:hover {
+    background-color: transparent;
+    color: var(--vscode-foreground, #ffffff);
+}
+
+.dropdown-item.selected {
+    background-color: transparent;
+    color: var(--vscode-button-background, #007acc);
+    font-weight: 600;
+}
+
+/*
+  Send button layout.
+  Styled as a clean, rounded action square with an SVG arrow icon.
+*/
+#send-btn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    background-color: var(--vscode-button-background, #007acc);
+    color: var(--vscode-button-foreground, #ffffff);
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+#send-btn:hover {
+    background-color: var(--vscode-button-hoverBackground, #0062a3);
+}
+
+#send-btn:disabled {
+    background-color: var(--vscode-button-background, #007acc);
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/*
+  Switch container checkbox wrapper.
+  Hides the native checkbox and positions the label text and track.
+*/
+.switch-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: var(--vscode-descriptionForeground, #888888);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/*
+  Hides the default checkbox element.
+*/
+.switch-container input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+/*
+  The slider track container.
+*/
+.slider-track {
+    position: relative;
+    display: inline-block;
+    width: 28px;
+    height: 16px;
+    background-color: rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+/*
+  The sliding thumb circle inside the track.
+*/
+.slider-track::before {
+    content: "";
+    position: absolute;
+    height: 12px;
+    width: 12px;
+    left: 2px;
+    bottom: 2px;
+    background-color: var(--vscode-foreground, #ffffff);
+    border-radius: 50%;
+    transition: left 0.2s ease;
+}
+
+/*
+  Track background color highlight when checked.
+*/
+.switch-container input:checked + .slider-track {
+    background-color: var(--vscode-button-background, #007acc);
+}
+
+/*
+  Thumb shift when checked (uses left property to comply with translate prohibition rules).
+*/
+.switch-container input:checked + .slider-track::before {
+    left: 14px;
+}
+
+/*
+  Checkbox label text.
+*/
+.switch-label {
+    line-height: 1;
+}
+
+/*
+  Hide toggle text label when sidebar is narrow.
+*/
+@media (max-width: 280px) {
+    .switch-container .switch-label {
+        display: none;
+    }
+}
+
+/*
+  The reasoning/thinking text block container (DeepSeek <think> blocks).
+  Styled with a subtle solid gray left border, no background, and no outer padding.
+*/
+.thinking-block {
+    border-left: 2px solid rgba(255, 255, 255, 0.15);
+    padding-left: 10px;
+    margin: 8px 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/*
+  Header for the thinking block.
+  Aligns label text and active rotating spinners horizontally.
+*/
+.thinking-header {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.72rem;
+    user-select: none;
+    margin-bottom: 4px;
+    color: var(--vscode-descriptionForeground, #888888);
+    gap: 4px;
+}
+
+/* Sleek open SVG Chevron indicator */
+.thinking-chevron {
+    color: var(--vscode-descriptionForeground, #888888);
+    margin-left: 4px;
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+/*
+  Mini circular loading spinner shown next to the active thinking header.
+*/
+.thinking-spinner {
+    width: 8px;
+    height: 8px;
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    border-top-color: var(--vscode-descriptionForeground, #888888);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
+    margin-right: 6px;
+}
+
+/*
+  Rotating animation keyframes for loading spinners.
+*/
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/*
+  Inner styling for the thinking content block.
+  Capped at roughly 5 lines height, with auto scrollbars.
+*/
+.thinking-content {
+    font-size: 0.75rem;
+    line-height: 1.3;
+    max-height: 78px; /* Caps height at ~5 lines of text */
+    overflow-y: auto;
+    white-space: pre-wrap;
+    color: var(--vscode-descriptionForeground, #888888);
+    font-style: italic;
+}
+
+/*
+  Collapsed state for the thinking process text.
+*/
+.thinking-content.collapsed {
+    display: none;
+}
+
+/*
+  Compact tool status rows.
+  Each row uses margin: 0 so consecutive rows group tightly,
+  since the container's gap does not apply to non-.message children.
+*/
+.tool-status-row {
+    display: flex;
+    align-items: center;
+    align-self: flex-start;
+    padding: 1px 4px;
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--vscode-descriptionForeground, #888888);
+    box-sizing: border-box;
+}
+
+.tool-status-row code {
+    font-family: var(--vscode-editor-font-family, Consolas, Monaco, monospace);
+    background-color: rgba(255, 255, 255, 0.03);
+    padding: 1px 3px;
+    border-radius: 3px;
+    margin-left: 4px;
+    font-size: 0.72rem;
+    color: var(--vscode-editor-foreground, #cccccc);
+}
+
+.tool-status-row.in-progress {
+    color: #29b6f6;
+    animation: rowPulse 1.5s infinite ease-in-out;
+}
+
+.tool-status-row.completed {
+    color: var(--vscode-descriptionForeground, #888888);
+}
+
+.tool-status-row.errored {
+    color: #e74c3c;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.tool-error-detail {
+    margin-top: 4px;
+    padding: 4px 8px;
+    background-color: rgba(0, 0, 0, 0.25);
+    border-radius: 4px;
+    font-family: var(--vscode-editor-font-family, Consolas, Monaco, monospace);
+    font-size: 0.7rem;
+    color: #ff8a80;
+    width: 100%;
+    box-sizing: border-box;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+@keyframes rowPulse {
+    0% {
+        opacity: 0.8;
+    }
+    50% {
+        opacity: 0.4;
+    }
+    100% {
+        opacity: 0.8;
+    }
+}
+
+/*
+  History panel overlay layout.
+  Positions the history panel as an absolute overlay within the sidebar container,
+  ensuring it covers the active chat window.
+*/
+.history-container {
+    position: absolute;
+    top: 36px; /* below header */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--vscode-sideBar-background, #1e1e1e);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    box-sizing: border-box;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/*
+  Settings panel overlay layout.
+  Positions the settings panel as an absolute overlay within the sidebar container,
+  matching the layout of the history container.
+*/
+.settings-container {
+    position: absolute;
+    top: 36px; /* below header */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--vscode-sideBar-background, #1e1e1e);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    box-sizing: border-box;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/*
+  Keys Management overlay layout.
+*/
+.keys-container {
+    position: absolute;
+    top: 36px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--vscode-sideBar-background, #1e1e1e);
+    z-index: 110; /* above settings */
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    box-sizing: border-box;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.keys-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--vscode-editor-foreground, #cccccc);
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.keys-content-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: var(--vscode-button-background, #007acc);
+    color: var(--vscode-button-foreground, #ffffff);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.btn-primary:hover {
+    background-color: var(--vscode-button-hoverBackground, #0062a3);
+}
+
+.btn-primary svg {
+    flex-shrink: 0;
+}
+
+/*
+  Settings panel header.
+  Aligns settings title and close button horizontally.
+*/
+.settings-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--vscode-editor-foreground, #cccccc);
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/*
+  Settings panel content container.
+  Hosts settings toggle switches and configuration rows.
+*/
+.settings-content-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 4px;
+}
+
+/*
+  Individual setting interactive row.
+  Hosts a checkbox input and label text.
+*/
+.setting-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: var(--vscode-descriptionForeground, #888888);
+    cursor: pointer;
+    user-select: none;
+}
+
+.setting-row input[type="checkbox"] {
+    cursor: pointer;
+}
+
+/*
+  Markdown headers formatting in chat bubbles.
+  Specifies font sizes, weights, and margins for structured headings.
+*/
+.message-content h1,
+.message-content h2,
+.message-content h3 {
+    margin: 8px 0 4px 0;
+    color: var(--vscode-editor-foreground, #cccccc);
+    font-weight: 600;
+}
+.message-content h1 { font-size: 1.1rem; }
+.message-content h2 { font-size: 1.0rem; }
+.message-content h3 { font-size: 0.9rem; }
+
+/*
+  History panel header.
+  Aligns the section title and close button horizontally.
+*/
+.history-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--vscode-editor-foreground, #cccccc);
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/*
+  List of past chat sessions.
+  Fills remaining height, permits vertical scrolling for overflow items.
+*/
+.history-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/*
+  Individual chat item in the history list.
+  Containers have soft borders, custom layouts for title/meta, and support actions.
+*/
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/*
+  Hover state for history items.
+  Softens the background color to provide modern interactive feedback.
+*/
+.history-item:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/*
+  Text details of each history item.
+  Wraps the chat title and date info.
+*/
+.history-item-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-grow: 1;
+    min-width: 0;
+}
+
+/*
+  Title text of a past chat session.
+  Truncates text with ellipsis to prevent page overflow.
+*/
+.history-item-title {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--vscode-editor-foreground, #cccccc);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/*
+  Timestamp/Metadata label for history items.
+*/
+.history-item-time {
+    font-size: 0.7rem;
+    color: var(--vscode-descriptionForeground, #888888);
+}
+
+/*
+  Delete action button inside a history item block.
+  Allows deleting a specific chat from the list.
+*/
+.history-item-delete-btn {
+    background: transparent;
+    border: none;
+    color: var(--vscode-descriptionForeground, #888888);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease, background-color 0.2s ease;
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+/*
+  Hover state for the delete button.
+  Highlights with a red foreground for warning visual cues.
+*/
+.history-item-delete-btn:hover {
+    color: #e74c3c;
+    background-color: rgba(231, 76, 60, 0.1);
+}
+
+/*
+  File summary widget styling.
+  Displays a commit-style summary of changed files at the end of execution.
+*/
+.file-summary-message {
+    align-self: stretch;
+    width: 100%;
+    margin: 8px 0;
+    box-sizing: border-box;
+}
+
+.file-summary-widget {
+    background-color: var(--vscode-editor-background, #1e1e1e);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 8px 12px;
+    box-sizing: border-box;
+}
+
+.file-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--vscode-descriptionForeground, #888888);
+}
+
+.file-summary-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.file-summary-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+}
+
+.file-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: bold;
+    border-radius: 3px;
+    padding: 1px 3px;
+    min-width: 24px;
+    text-align: center;
+}
+
+.js-icon {
+    background-color: #f1c40f;
+    color: #000;
+}
+
+.html-icon {
+    background-color: #e67e22;
+    color: #fff;
+}
+
+.css-icon {
+    background-color: #2980b9;
+    color: #fff;
+}
+
+.doc-icon {
+    background-color: #7f8c8d;
+    color: #fff;
+}
+
+.file-name {
+    font-weight: 500;
+    color: var(--vscode-foreground, #cccccc);
+}
+
+.file-path {
+    color: var(--vscode-descriptionForeground, #888888);
+    font-size: 0.7rem;
+}
+
+/*
+  Details summary styling.
+  Removes default disclosures and styles with SVG custom chevrons.
+*/
+details summary {
+    list-style: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--vscode-foreground, #cccccc);
+    padding: 4px 0;
+    outline: none;
+}
+details summary::-webkit-details-marker,
+details summary::marker {
+    display: none;
+    content: "";
+}
+
+/* Custom chevron rotation states */
+details summary .custom-chevron {
+    transform: rotate(-90deg); /* Points right when closed */
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+    color: var(--vscode-descriptionForeground, #888888);
+}
+
+details[open] > summary > .custom-chevron {
+    transform: rotate(0deg); /* Points down when open */
+}
+
+/*
+  Align and pad inline SVG icons inside tool status rows.
+*/
+.tool-status-row svg {
+    margin-right: 5px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* Custom categories/accordion groups in the dropdown menu */
+.dropdown-category {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dropdown-category:last-child {
+    border-bottom: none;
+}
+
+.dropdown-category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--vscode-descriptionForeground, #888888);
+    background-color: rgba(255, 255, 255, 0.02);
+    cursor: pointer;
+    user-select: none;
+}
+
+.dropdown-category-header:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--vscode-editor-foreground, #cccccc);
+}
+
+.dropdown-category-header .chevron-icon {
+    transition: transform 0.2s ease;
+}
+
+/*
+  .dropdown-category-content holds the list of models inside a category group.
+  We set max-height to 1000px to allow it to expand fully to fit all models without scrollbar constraints.
+*/
+.dropdown-category-content {
+    display: flex;
+    flex-direction: column;
+    max-height: 1000px;
+    overflow-y: visible;
+    transition: max-height 0.2s ease;
+}
+
+.dropdown-category-content.collapsed {
+    max-height: 0;
+    overflow: hidden;
+}
+
+.dropdown-item-placeholder {
+    padding: 10px 12px;
+    font-size: 0.75rem;
+    font-style: italic;
+    color: var(--vscode-disabledForeground, #555555);
+}
+
+/* Settings panel improvements */
+.setting-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.setting-item label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--vscode-editor-foreground, #cccccc);
+}
+
+.setting-item select,
+.setting-item input[type="password"],
+.setting-item input[type="text"] {
+    background-color: var(--vscode-input-background, #2d2d2d);
+    color: var(--vscode-input-foreground, #ffffff);
+    border: 1px solid var(--vscode-input-border, #3c3c3c);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.setting-item select:focus,
+.setting-item input[type="password"]:focus,
+.setting-item input[type="text"]:focus {
+    border-color: var(--vscode-focusBorder, #007acc);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* Sub-panel layout for indented setting groups */
+.setting-sub-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-left: 16px;
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    padding-left: 12px;
+    margin-top: 4px;
+}
+
+/* Minimalist thinking indicator when full thoughts are hidden */
+.thinking-loader {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--vscode-descriptionForeground, #888888);
+    font-style: italic;
+    padding: 6px 0;
+}
+
+/* Spinner element for loaders */
+.thinking-spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-top: 2px solid var(--vscode-descriptionForeground, #888888);
+    border-radius: 50%;
+    animation: spin-loader 1s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+@keyframes spin-loader {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+
+

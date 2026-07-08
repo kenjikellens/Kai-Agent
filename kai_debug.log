@@ -1,0 +1,14 @@
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-26b-a4b", prompt="welke tools heb je allemaal die je kan gebruiken kan  je ze eens opnoemen?", totalMessages=6
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-26b-a4b", prompt="welke andere tools zouden ook handig zijn voor jou die nu niet bestaan? zou je eens een future_plans.md in deze root steken met andere tool calls en wat deze zouden kunnen doen", totalMessages=6
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="ik wil eens testen welke chat historie jij ziet voorlopig is er geen chat historie, klopt toch (er zijn geen woorden voor het eerste woord "ik")", totalMessages=1
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="en nu? wat zie je nu? (herhaal woord voor woord)", totalMessages=3
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="het hoe gaat het ik wil even iets testen, ten eerste is deze chat gewoon om te zien of ik jou zie reageren op deze prompt!", totalMessages=1
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="oke wil je eens herhalen wat je ziet in onze chat gesxhiedenis?", totalMessages=3
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="ja en wat zie je in deze chat?", totalMessages=4
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="aha dus je ziet jouw eigen antwoorden niet! want dit is de chat: het hoe gaat het ik wil even iets testen, ten eerste is deze chat gewoon om te zien of ik jou zie reageren op deze prompt!
+Het gaat goed, ik zie je en reageer op je prompt. Hoe kan ik je verder helpen?
+oke wil je eens herhalen wat je ziet in onze chat gesxhiedenis?
+Het spijt me, maar als AI-agent heb ik geen directe toegang tot een persistent geheugen van onze volledige chatgeschiedenis buiten de huidige interactiecontext die mij wordt gegeven. Ik kan alleen de informatie verwerken die in deze specifieke sessie beschikbaar is.
+
+Ik ben klaar om je te helpen met je projectbestanden zodra je een taak voor mij hebt.
+ja en wat zie je in deze chat?", totalMessages=5

@@ -1,0 +1,51 @@
+[ERROR] _handleSendMessage error: The operation was aborted
+AbortError: The operation was aborted
+	at stream.<computed>.AbortError.cause (node:internal/streams/add-abort-signal:47:22)
+	at [nodejs.internal.kHybridDispatch] (node:internal/event_target:843:20)
+	at AbortSignal.dispatchEvent (node:internal/event_target:776:26)
+	at runAbort (node:internal/abort_controller:488:10)
+	at abortSignal (node:internal/abort_controller:459:3)
+	at AbortController.abort (node:internal/abort_controller:507:5)
+	at gp.value (c:\Users\kenji\.vscode\extensions\local-llm.kai-0.0.1\out\SidebarProvider.js:78:53)
+	at E._deliver (file:///c:/Users/kenji/AppData/Local/Programs/Microsoft%20VS%20Code/4fe60c8b1c/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:431:3244)
+	at E.fire (file:///c:/Users/kenji/AppData/Local/Programs/Microsoft%20VS%20Code/4fe60c8b1c/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:431:3562)
+	at Sw.$onMessage (file:///c:/Users/kenji/AppData/Local/Programs/Microsoft%20VS%20Code/4fe60c8b1c/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:562:91816)
+	at i._doInvokeHandler (file:///c:/Users/kenji/AppData/Local/Programs/Microsoft%20VS%20Code/4fe60c8b1c/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:435:157815)
+	at i._invokeHandler (file:///c:/Users/kenji/AppData/Local/Programs/Microsoft%20VS%20Code/4fe60c8b1c/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:435:157563)
+	at i._receiveRequest (file:///c:/Users/kenji/AppData/Local/Programs/Microsoft%20VS%20Code/4fe60c8b1c/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:435:156345)
+	at i._receiveOneMessage (file:///c:/Users/kenji/AppData/Local/Programs/Microsoft%20VS%20Code/4fe60c8b1c/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:435:155358)
+	at gp.value (file:///c:/Users/kenji/AppData/Local/Programs/Microsoft%20VS%20Code/4fe60c8b1c/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:435:153258)
+	at E._deliver (file:///c:/Users/kenji/AppData/Local/Programs/Microsoft%20VS%20Code/4fe60c8b1c/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:431:3244)
+	at E.fire (file:///c:/Users/kenji/AppData/Local/Programs/Microsoft%20VS%20Code/4fe60c8b1c/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:431:3562)
+	at ps.fire (file:///c:/Users/kenji/AppData/Local/Programs/Microsoft%20VS%20Code/4fe60c8b1c/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:433:8505)
+	at gp.value (file:///c:/Users/kenji/AppData/Local/Programs/Microsoft%20VS%20Code/4fe60c8b1c/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:852:9989)
+	at E._deliver (file:///c:/Users/kenji/AppData/Local/Programs/Microsoft%20VS%20Code/4fe60c8b1c/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:431:3244)
+	at E.fire (file:///c:/Users/kenji/AppData/Local/Programs/Microsoft%20VS%20Code/4fe60c8b1c/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:431:3562)
+	at ps.fire (file:///c:/Users/kenji/AppData/Local/Programs/Microsoft%20VS%20Code/4fe60c8b1c/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:433:8505)
+	at MessagePortMain.<anonymous> (file:///c:/Users/kenji/AppData/Local/Programs/Microsoft%20VS%20Code/4fe60c8b1c/resources/app/out/vs/workbench/api/node/extensionHostProcess.js:852:8160)
+	at MessagePortMain.emit (node:events:509:28)
+	at MessagePortMain._internalPort.emit (node:electron/js2c/utility_init:2:2934)
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="please continue", totalMessages=8
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="please why do you keep creating the files? they already exist! you need to edit them, please EDIT index.html so they have references to the style.css and app.js", totalMessages=13
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="hallo!", totalMessages=2
+[DEBUG] _handleSendMessage payload: model="gemini-3.1-flash-lite", prompt="schrijf deze html code, de css en de app.js zodat deze eerder op een soort netflix style login pagina lijkt", totalMessages=1
+[DEBUG] _handleSendMessage payload: model="gemini-3.1-flash-lite", prompt="please use the system instructions! like how you need to edit the file!", totalMessages=3
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="bewerk eens de css zodat deze beter is", totalMessages=1
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="welke system instrcutions heb je gekregen?", totalMessages=1
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="welke system instructions heb je gekregen?", totalMessages=1
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="bewerk de css om eerder eengroenere stijl te hebben ipv blauw", totalMessages=1
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="staat er in jouw system instructies dat je DONE moet schrijven voor als je alle taken hebt gedaan?", totalMessages=1
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="dus nee? staat er dan dit: If no more actions are needed, do not output a JSON block. Instead write:
+an overview summarizing what was accomplished OR an overview and what problems are still not fixed OR any other questions that needed to be answered. keep it short and simple.", totalMessages=3
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="ANSWER MY QUASTION: DOES THE SYSTEM INSTRUCTION EN DWITH THIS: ## WHEN FINISHED
+If no more actions are needed, do not output a JSON block. Instead write an overview summarizing what was accomplished OR an overview and what problems are still not fixed OR any other questions that needed to be answered. keep it short and simple.", totalMessages=4
+[DEBUG] _handleSendMessage payload: model="gemini-3.1-flash-lite", prompt="zegt de system instruction dit op het einde: "## WHEN FINISHED
+If no more actions are needed, do not output a JSON block. Instead write an overview summarizing what was accomplished OR an overview and what problems are still not fixed OR any other questions that needed to be answered. keep it short and simple."", totalMessages=1
+[DEBUG] _handleSendMessage payload: model="gemini-3.1-flash-lite", prompt="i dont think you understand my question: is there an instuction that tells you that you need to write DONE when you are done with the implementation or not?", totalMessages=3
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="hay kun je even wat bewerken in style.css naar keuze?", totalMessages=1
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="herschrijf de index.html en de app.js en style.css opnieuw voor iets COMPLEET anders naar keuze", totalMessages=1
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="check de files en bewerk ze naar iets compleet nieuw", totalMessages=1
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="edit the css file please", totalMessages=1
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="bewerk eens style.css zodat deze nu alle tekst in bold toont", totalMessages=1
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="schrijf eens een nieuwe file maak een nieuwe file aan een md file bv", totalMessages=1
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="oke schrijf eens een md file naar keuze als test", totalMessages=1

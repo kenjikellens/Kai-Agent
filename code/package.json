@@ -1,0 +1,102 @@
+{
+  "name": "kai",
+  "displayName": "Kai",
+  "description": "Local agent that integrates with LM Studio local LLM API for chat and code tasks.",
+  "version": "0.0.1",
+  "publisher": "local-llm",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "AI",
+    "Programming Languages",
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "*"
+  ],
+  "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "type": "webview",
+          "id": "kai-chat-sidebar",
+          "name": "Kai"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "kai.sendSelection",
+        "title": "Kai: Send Code Selection to Chat"
+      },
+      {
+        "command": "kai.focusChat",
+        "title": "Kai: Focus Chat View"
+      },
+      {
+        "command": "kai.inlineEdit",
+        "title": "Kai: Inline Edit Selection"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "kai.inlineEdit",
+        "key": "ctrl+alt+k",
+        "when": "editorHasSelection"
+      }
+    ],
+    "configuration": {
+      "title": "Kai Configuration",
+      "properties": {
+        "kai.serverUrl": {
+          "type": "string",
+          "default": "http://localhost:1234/v1",
+          "description": "The base URL for your LM Studio local server API."
+        },
+        "kai.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "The API key for Google Gemini models."
+        },
+        "kai.mistralApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API key for Mistral AI free tier (console.mistral.ai)."
+        },
+        "kai.cohereApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API key for Cohere free tier (dashboard.cohere.com)."
+        },
+        "kai.cerebrasApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API key for Cerebras free tier (cloud.cerebras.ai)."
+        },
+        "kai.zhipuApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API key for Zhipu AI (GLM) free tier (open.bigmodel.cn)."
+        },
+        "kai.temperature": {
+          "type": "number",
+          "default": 0.7,
+          "description": "Temperature parameter for chat completions (0.0 to 2.0)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^16.18.0",
+    "@types/vscode": "^1.75.0",
+    "typescript": "^4.9.5"
+  }
+}
+
