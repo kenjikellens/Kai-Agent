@@ -49,3 +49,11 @@ If no more actions are needed, do not output a JSON block. Instead write an over
 [DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="bewerk eens style.css zodat deze nu alle tekst in bold toont", totalMessages=1
 [DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="schrijf eens een nieuwe file maak een nieuwe file aan een md file bv", totalMessages=1
 [DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="oke schrijf eens een md file naar keuze als test", totalMessages=1
+[DEBUG] _handleSendMessage payload: model="gemini-3.1-flash-lite", prompt="please analyse the files and tell me what these contain", totalMessages=1
+[ERROR] _handleSendMessage error: Gemini returned HTTP status 401
+Error: Gemini returned HTTP status 401
+	at IncomingMessage.<anonymous> (c:\Users\kenji\.vscode\extensions\local-llm.kai-0.0.1\out\LMStudioClient.js:844:40)
+	at IncomingMessage.emit (node:events:521:24)
+	at endReadableNT (node:internal/streams/readable:1735:12)
+	at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="please analyse the files and tell me what these contain", totalMessages=2
