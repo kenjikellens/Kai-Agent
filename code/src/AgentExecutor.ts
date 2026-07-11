@@ -161,6 +161,9 @@ export class AgentExecutor {
             lastAssistantResponse += '\n\n*(Agent execution halted: Maximum tool execution steps reached)*';
         }
 
+        // Append the final assistant response to the message history
+        messages.push({ role: 'assistant', content: lastAssistantResponse });
+
         return {
             reply: lastAssistantResponse,
             messages: messages,
@@ -273,17 +276,21 @@ export class AgentExecutor {
                     args.path = parsed.path;
                     args.content = parsed.content;
                     query = `Write file: ${parsed.path}`;
-                } else if (type === 'edit_file') {
-                    // Fallback: If model called edit_file but passed content parameter (wants to overwrite)
-                    if (parsed.content !== undefined && parsed.search === undefined) {
-                        args.path = parsed.path;
-                        args.content = parsed.content;
-                        return { name: 'write_file', args, query: `Write file: ${parsed.path}` };
-                    }
+                } else if (type === 'replace_file_content') {
                     args.path = parsed.path;
-                    args.search = parsed.search;
-                    args.replace = parsed.replace;
-                    query = `Edit file: ${parsed.path}`;
+                    args.startLine = parsed.startLine;
+                    args.endLine = parsed.endLine;
+                    args.targetContent = parsed.targetContent;
+                    args.replacementContent = parsed.replacementContent;
+                    query = `Replace content in file: ${parsed.path}`;
+                } else if (type === 'multi_replace_file_content') {
+                    args.path = parsed.path;
+                    args.chunks = parsed.chunks;
+                    query = `Multi-replace content in file: ${parsed.path}`;
+                } else if (type === 'grep_search') {
+                    args.query = parsed.query;
+                    args.path = parsed.path || '.';
+                    query = `Grep search: ${parsed.query}`;
                 } else if (type === 'list_dir') {
                     args.path = parsed.path || '.';
                     query = `List directory: ${parsed.path || '.'}`;

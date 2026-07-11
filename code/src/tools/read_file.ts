@@ -18,6 +18,11 @@ export class ReadFileTool implements Tool {
         if (!fs.existsSync(targetPath)) {
             return `File does not exist: ${args.path}`;
         }
-        return await fs.promises.readFile(targetPath, 'utf8');
+        const content = await fs.promises.readFile(targetPath, 'utf8');
+        if (content.length === 0) {
+            return '';
+        }
+        const lines = content.split(/\r?\n/);
+        return lines.map((line, idx) => `${idx + 1}: ${line}`).join('\n');
     }
 }
