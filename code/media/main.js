@@ -832,7 +832,27 @@
                     apiKeyInput.value = message.apiKey;
                 }
 
-                const isSelectedModelLoaded = message.connected && message.loadedModels && message.loadedModels.includes(selectedModelValue);
+                /**
+                 * Checks if a specific model is connected or loaded.
+                 * @param {string} m - The model ID to check.
+                 * @returns {boolean} True if the model is connected/loaded, false otherwise.
+                 */
+                const isModelConnected = (m) => {
+                    if (!m) return false;
+                    const lowerM = m.toLowerCase();
+                    if (lowerM.startsWith('gemini')) {
+                        return !!message.apiKey;
+                    }
+                    const freeProviders = message.freeProviders || [];
+                    for (const provider of freeProviders) {
+                        if (provider.models.includes(m)) {
+                            return !!provider.apiKey;
+                        }
+                    }
+                    return message.connected && message.loadedModels && message.loadedModels.includes(m);
+                };
+
+                const isSelectedModelLoaded = isModelConnected(selectedModelValue);
                 
                 // Update trigger button connection indicator (green if loaded, red if not)
                 if (isSelectedModelLoaded) {
@@ -844,113 +864,134 @@
                 // Clear and rebuild custom options
                 dropdownOptionsMenu.innerHTML = '';
                 
-                if (message.connected) {
-                    const lmStudioModels = message.lmStudioModels || [];
-                    const geminiModels = message.geminiModels || [];
-                    const combinedModels = [...lmStudioModels, ...geminiModels];
+                const lmStudioModels = message.lmStudioModels || [];
+                const geminiModels = message.geminiModels || [];
+                const combinedModels = [...lmStudioModels, ...geminiModels];
 
-                    // Set active model label if none was selected
-                    if (!selectedModelValue || selectedModelValue === 'local-model' || selectedModelValue === 'No Models Loaded' || selectedModelValue === 'Disconnected') {
-                        if (combinedModels.length > 0) {
-                            selectedModelValue = combinedModels[0];
-                            selectedModelText.textContent = formatModelName(selectedModelValue);
-                            statusDot.className = (message.loadedModels && message.loadedModels.includes(selectedModelValue)) ? 'status-dot status-connected' : 'status-dot status-disconnected';
-                        } else {
-                            selectedModelValue = 'local-model';
-                            selectedModelText.textContent = 'No Models Loaded';
-                            statusDot.className = 'status-dot status-disconnected';
-                        }
+                // Set active model label if none was selected
+                if (!selectedModelValue || selectedModelValue === 'local-model' || selectedModelValue === 'No Models Loaded' || selectedModelValue === 'Disconnected') {
+                    if (combinedModels.length > 0) {
+                        selectedModelValue = combinedModels[0];
+                        selectedModelText.textContent = formatModelName(selectedModelValue);
+                        statusDot.className = isModelConnected(selectedModelValue) ? 'status-dot status-connected' : 'status-dot status-disconnected';
+                    } else {
+                        selectedModelValue = 'local-model';
+                        selectedModelText.textContent = 'No Models Loaded';
+                        statusDot.className = 'status-dot status-disconnected';
+                    }
+                }
+
+                /**
+                 * Creates and appends an accordion category group to the dropdown menu.
+                 * @param {string} title - The category header text.
+                 * @param {string[]} modelsList - List of model IDs under this category.
+                 * @param {boolean} isInitiallyExpanded - Whether the category should be expanded initially.
+                 */
+                const createAccordionGroup = (title, modelsList, isInitiallyExpanded) => {
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = 'dropdown-category';
+
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'dropdown-category-header';
+                    
+                    const titleSpan = document.createElement('span');
+                    titleSpan.textContent = title;
+                    headerDiv.appendChild(titleSpan);
+
+                    const svgNS = 'http://www.w3.org/2000/svg';
+                    const chevronSvg = document.createElementNS(svgNS, 'svg');
+                    chevronSvg.setAttribute('class', 'chevron-icon');
+                    chevronSvg.setAttribute('width', '8');
+                    chevronSvg.setAttribute('height', '8');
+                    chevronSvg.setAttribute('viewBox', '0 0 24 24');
+                    chevronSvg.setAttribute('fill', 'none');
+                    chevronSvg.setAttribute('stroke', 'currentColor');
+                    chevronSvg.setAttribute('stroke-width', '3');
+                    chevronSvg.setAttribute('stroke-linecap', 'round');
+                    chevronSvg.setAttribute('stroke-linejoin', 'round');
+
+                    const polyline = document.createElementNS(svgNS, 'polyline');
+                    polyline.setAttribute('points', '6 9 12 15 18 9');
+                    chevronSvg.appendChild(polyline);
+                    headerDiv.appendChild(chevronSvg);
+
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'dropdown-category-content';
+                    
+                    let isExpanded = accordionStates[title];
+                    if (isExpanded === null) {
+                        isExpanded = isInitiallyExpanded;
+                        accordionStates[title] = isExpanded;
                     }
 
-                    // Create accordion helper function
-                    const createAccordionGroup = (title, modelsList, isInitiallyExpanded) => {
-                        const groupDiv = document.createElement('div');
-                        groupDiv.className = 'dropdown-category';
+                    if (!isExpanded) {
+                        contentDiv.classList.add('collapsed');
+                        chevronSvg.style.transform = 'rotate(-90deg)';
+                    }
 
-                        const headerDiv = document.createElement('div');
-                        headerDiv.className = 'dropdown-category-header';
-                        headerDiv.innerHTML = `
-                            <span>${title}</span>
-                            <svg class="chevron-icon" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                        `;
+                    headerDiv.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const isCollapsed = contentDiv.classList.toggle('collapsed');
+                        chevronSvg.style.transform = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
+                        accordionStates[title] = !isCollapsed;
+                    });
 
-                        const contentDiv = document.createElement('div');
-                        contentDiv.className = 'dropdown-category-content';
-                        
-                        let isExpanded = accordionStates[title];
-                        if (isExpanded === null) {
-                            isExpanded = isInitiallyExpanded;
-                            accordionStates[title] = isExpanded;
-                        }
+                    if (modelsList.length === 0) {
+                        const placeholder = document.createElement('div');
+                        placeholder.className = 'dropdown-item-placeholder';
+                        placeholder.textContent = title.includes('Gemini') ? 'Add API key in settings' : (title.includes('LM Studio') ? 'LM Studio server offline' : 'No Models Available');
+                        contentDiv.appendChild(placeholder);
+                    } else {
+                        modelsList.forEach(m => {
+                            const item = document.createElement('div');
+                            item.className = 'dropdown-item';
+                            if (m === selectedModelValue) {
+                                item.classList.add('selected');
+                            }
+                            item.dataset.value = m;
+                            const isLoaded = isModelConnected(m);
+                            const dotClass = isLoaded ? 'status-connected' : 'status-disconnected';
+                            
+                            const statusDotSpan = document.createElement('span');
+                            statusDotSpan.className = `status-dot ${dotClass}`;
+                            item.appendChild(statusDotSpan);
 
-                        if (!isExpanded) {
-                            contentDiv.classList.add('collapsed');
-                            headerDiv.querySelector('.chevron-icon').style.transform = 'rotate(-90deg)';
-                        }
-
-                        headerDiv.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            const isCollapsed = contentDiv.classList.toggle('collapsed');
-                            headerDiv.querySelector('.chevron-icon').style.transform = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
-                            accordionStates[title] = !isCollapsed;
-                        });
-
-                        if (modelsList.length === 0) {
-                            const placeholder = document.createElement('div');
-                            placeholder.className = 'dropdown-item-placeholder';
-                            placeholder.textContent = title.includes('Gemini') ? 'Add API key in settings' : 'No Local Models';
-                            contentDiv.appendChild(placeholder);
-                        } else {
-                            modelsList.forEach(m => {
-                                const item = document.createElement('div');
-                                item.className = 'dropdown-item';
-                                if (m === selectedModelValue) {
-                                    item.classList.add('selected');
-                                }
-                                item.dataset.value = m;
-                                const isLoaded = message.loadedModels && message.loadedModels.includes(m);
-                                const dotClass = isLoaded ? 'status-connected' : 'status-disconnected';
-                                item.innerHTML = `<span class="status-dot ${dotClass}"></span><span class="dropdown-item-text">${formatModelName(m)}</span>`;
+                            const textSpan = document.createElement('span');
+                            textSpan.className = 'dropdown-item-text';
+                            textSpan.textContent = formatModelName(m);
+                            item.appendChild(textSpan);
+                            
+                            item.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                selectedModelValue = m;
+                                selectedModelText.textContent = formatModelName(m);
                                 
-                                item.addEventListener('click', (e) => {
-                                    e.stopPropagation();
-                                    selectedModelValue = m;
-                                    selectedModelText.textContent = formatModelName(m);
-                                    
-                                    // Selected model set
-                                    const isCurrentlyLoaded = message.loadedModels && message.loadedModels.includes(m);
-                                    statusDot.className = isCurrentlyLoaded ? 'status-dot status-connected' : 'status-dot status-disconnected';
-                                    dropdownOptionsMenu.classList.add('hidden');
-                                    
-                                    saveCurrentChat();
-                                });
-                                contentDiv.appendChild(item);
+                                // Selected model set
+                                statusDot.className = isModelConnected(m) ? 'status-dot status-connected' : 'status-dot status-disconnected';
+                                dropdownOptionsMenu.classList.add('hidden');
+                                
+                                saveCurrentChat();
                             });
-                        }
-
-                        groupDiv.appendChild(headerDiv);
-                        groupDiv.appendChild(contentDiv);
-                        dropdownOptionsMenu.appendChild(groupDiv);
-                    };
-
-                    // Rebuild with both fixed groups + free provider groups
-                    const showGeminiExpanded = selectedModelValue && selectedModelValue.toLowerCase().startsWith('gemini');
-                    createAccordionGroup('LM Studio (Local)', lmStudioModels, !showGeminiExpanded);
-                    createAccordionGroup('Gemini (Cloud)', geminiModels, showGeminiExpanded);
-
-                    // Add one accordion group per free-tier provider
-                    const freeProviders = message.freeProviders || [];
-                    freeProvidersConfig = freeProviders;
-                    for (const provider of freeProviders) {
-                        const isExpanded = selectedModelValue && provider.models.includes(selectedModelValue);
-                        createAccordionGroup(provider.name + ' (Free)', provider.models, isExpanded);
+                            contentDiv.appendChild(item);
+                        });
                     }
 
-                } else {
-                    selectedModelValue = 'local-model';
-                    selectedModelText.textContent = 'Disconnected';
-                    statusDot.className = 'status-dot status-disconnected';
-                    dropdownOptionsMenu.innerHTML = '<div class="dropdown-item selected" data-value="local-model"><span class="status-dot status-disconnected"></span><span class="dropdown-item-text">Disconnected</span></div>';
+                    groupDiv.appendChild(headerDiv);
+                    groupDiv.appendChild(contentDiv);
+                    dropdownOptionsMenu.appendChild(groupDiv);
+                };
+
+                // Rebuild with both fixed groups + free provider groups
+                const showGeminiExpanded = selectedModelValue && selectedModelValue.toLowerCase().startsWith('gemini');
+                createAccordionGroup('LM Studio (Local)', lmStudioModels, !showGeminiExpanded);
+                createAccordionGroup('Gemini (Cloud)', geminiModels, showGeminiExpanded);
+
+                // Add one accordion group per free-tier provider
+                const freeProviders = message.freeProviders || [];
+                freeProvidersConfig = freeProviders;
+                for (const provider of freeProviders) {
+                    const isExpanded = selectedModelValue && provider.models.includes(selectedModelValue);
+                    createAccordionGroup(provider.name + ' (Free)', provider.models, isExpanded);
                 }
                 break;
             }

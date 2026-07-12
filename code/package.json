@@ -17,12 +17,21 @@
     "*"
   ],
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "kai-agent-activitybar",
+          "title": "Kai Agent",
+          "icon": "media/svg/kai_icon.svg"
+        }
+      ]
+    },
     "views": {
-      "explorer": [
+      "kai-agent-activitybar": [
         {
           "type": "webview",
           "id": "kai-chat-sidebar",
-          "name": "Kai"
+          "name": "Kai Agent"
         }
       ]
     },

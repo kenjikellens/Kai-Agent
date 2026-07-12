@@ -242,51 +242,38 @@ class SidebarProvider {
         const serverUrl = config.get('serverUrl') || 'http://localhost:1234/v1';
         const apiKey = config.get('apiKey') || '';
         const client = new LMStudioClient_1.LMStudioClient(serverUrl);
+        let lmModels = [];
+        let lmStudioConnected = false;
         try {
-            const lmModels = await client.getLMStudioModels().catch(() => []);
-            const geminiModels = await client.getGeminiModels(apiKey).catch(() => []);
-            const loadedModels = await client.getLoadedModels();
-            const activeModel = lmModels.length > 0 ? lmModels[0] : (geminiModels.length > 0 ? geminiModels[0] : 'Active GUI Model');
-            // Build per-provider model lists for the dropdown
-            const freeProviders = LMStudioClient_1.FREE_PROVIDERS.map(p => ({
-                name: p.name,
-                configKey: p.configKey,
-                keyHint: p.keyHint,
-                models: p.models,
-                apiKey: config.get(p.configKey) || ''
-            }));
-            this._view.webview.postMessage({
-                type: 'connectionStatus',
-                connected: true,
-                model: activeModel,
-                lmStudioModels: lmModels,
-                geminiModels: geminiModels,
-                loadedModels: loadedModels,
-                freeProviders: freeProviders,
-                serverUrl: serverUrl,
-                apiKey: apiKey
-            });
+            lmModels = await client.getLMStudioModels();
+            lmStudioConnected = true;
         }
         catch {
-            const freeProviders = LMStudioClient_1.FREE_PROVIDERS.map(p => ({
-                name: p.name,
-                configKey: p.configKey,
-                keyHint: p.keyHint,
-                models: p.models,
-                apiKey: config.get(p.configKey) || ''
-            }));
-            this._view.webview.postMessage({
-                type: 'connectionStatus',
-                connected: false,
-                model: '',
-                lmStudioModels: [],
-                geminiModels: [],
-                loadedModels: [],
-                freeProviders: freeProviders,
-                serverUrl: serverUrl,
-                apiKey: apiKey
-            });
+            lmModels = [];
+            lmStudioConnected = false;
         }
+        const geminiModels = await client.getGeminiModels(apiKey).catch(() => []);
+        const loadedModels = await client.getLoadedModels().catch(() => []);
+        const activeModel = lmModels.length > 0 ? lmModels[0] : (geminiModels.length > 0 ? geminiModels[0] : 'local-model');
+        // Build per-provider model lists for the dropdown
+        const freeProviders = LMStudioClient_1.FREE_PROVIDERS.map(p => ({
+            name: p.name,
+            configKey: p.configKey,
+            keyHint: p.keyHint,
+            models: p.models,
+            apiKey: config.get(p.configKey) || ''
+        }));
+        this._view.webview.postMessage({
+            type: 'connectionStatus',
+            connected: lmStudioConnected,
+            model: activeModel,
+            lmStudioModels: lmModels,
+            geminiModels: geminiModels,
+            loadedModels: loadedModels,
+            freeProviders: freeProviders,
+            serverUrl: serverUrl,
+            apiKey: apiKey
+        });
     }
     /**
      * Helper command execution method that pushes the current text editor selection into the webview.
