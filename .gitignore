@@ -1,0 +1,6 @@
+.env
+keys.md
+kai_debug.log
+code/node_modules/
+code/out/
+.gemini/

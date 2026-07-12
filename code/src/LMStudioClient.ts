@@ -1,6 +1,8 @@
 import * as http from 'http';
 import * as https from 'https';
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
  * Describes a free-tier cloud LLM provider that is OpenAI SDK-compatible.
@@ -89,7 +91,7 @@ export class LMStudioClient {
     constructor(serverUrl: string, apiKey?: string) {
         this.serverUrl = serverUrl;
         const config = vscode.workspace.getConfiguration('kai');
-        this.apiKey = apiKey || config.get<string>('apiKey') || '';
+        this.apiKey = apiKey || config.get<string>('apiKey') || this._getEnvKey('GEMINI_API_KEY') || '';
     }
 
     /**
@@ -523,7 +525,53 @@ export class LMStudioClient {
      */
     private _getProviderApiKey(provider: FreeProvider): string {
         const config = vscode.workspace.getConfiguration('kai');
-        return config.get<string>(provider.configKey) || '';
+        let key = config.get<string>(provider.configKey) || '';
+        if (!key) {
+            const envVarName = provider.configKey.replace('ApiKey', '_API_KEY').toUpperCase();
+            key = this._getEnvKey(envVarName);
+        }
+        return key;
+    }
+
+    /**
+     * Reads an environment variable value from process.env or a workspace .env file.
+     */
+    private _getEnvKey(keyName: string): string {
+        if (process.env[keyName]) {
+            return process.env[keyName]!;
+        }
+        try {
+            const folders = vscode.workspace.workspaceFolders;
+            if (folders && folders.length > 0) {
+                for (const folder of folders) {
+                    const envPath = path.join(folder.uri.fsPath, '.env');
+                    if (fs.existsSync(envPath)) {
+                        const content = fs.readFileSync(envPath, 'utf8');
+                        const lines = content.split('\n');
+                        for (const line of lines) {
+                            const trimmed = line.trim();
+                            if (!trimmed || trimmed.startsWith('#')) {
+                                continue;
+                            }
+                            const eqIdx = trimmed.indexOf('=');
+                            if (eqIdx !== -1) {
+                                const k = trimmed.slice(0, eqIdx).trim();
+                                const v = trimmed.slice(eqIdx + 1).trim();
+                                if (k === keyName) {
+                                    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+                                        return v.slice(1, -1);
+                                    }
+                                    return v;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            // Ignore errors
+        }
+        return '';
     }
 
     /**
