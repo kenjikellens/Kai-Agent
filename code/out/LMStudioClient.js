@@ -606,6 +606,7 @@ class LMStudioClient {
                 }
                 let buffer = '';
                 let fullText = '';
+                let inThinking = false;
                 res.on('data', (chunk) => {
                     buffer += chunk.toString();
                     const lines = buffer.split('\n');
@@ -618,10 +619,28 @@ class LMStudioClient {
                         if (trimmed.startsWith('data: ')) {
                             try {
                                 const parsed = JSON.parse(trimmed.slice(6));
-                                const text = parsed.choices?.[0]?.delta?.content;
-                                if (text) {
-                                    fullText += text;
-                                    onToken(text);
+                                const delta = parsed.choices?.[0]?.delta;
+                                if (delta) {
+                                    if (delta.reasoning_content !== undefined && delta.reasoning_content !== null) {
+                                        let text = '';
+                                        if (!inThinking) {
+                                            text += '<think>';
+                                            inThinking = true;
+                                        }
+                                        text += delta.reasoning_content;
+                                        fullText += text;
+                                        onToken(text);
+                                    }
+                                    else if (delta.content !== undefined && delta.content !== null) {
+                                        let text = '';
+                                        if (inThinking) {
+                                            text += '</think>';
+                                            inThinking = false;
+                                        }
+                                        text += delta.content;
+                                        fullText += text;
+                                        onToken(text);
+                                    }
                                 }
                             }
                             catch {
@@ -631,6 +650,11 @@ class LMStudioClient {
                     }
                 });
                 res.on('end', () => {
+                    if (inThinking) {
+                        onToken('</think>');
+                        fullText += '</think>';
+                        inThinking = false;
+                    }
                     resolve(fullText);
                 });
             });
@@ -902,6 +926,7 @@ class LMStudioClient {
                                             if (part.text) {
                                                 if (inThinking) {
                                                     onToken('</think>');
+                                                    fullText += '</think>';
                                                     inThinking = false;
                                                 }
                                                 onToken(part.text);
@@ -910,6 +935,7 @@ class LMStudioClient {
                                             else if (part.thought) {
                                                 if (!inThinking) {
                                                     onToken('<think>');
+                                                    fullText += '<think>';
                                                     inThinking = true;
                                                 }
                                                 onToken(part.thought);
@@ -935,6 +961,7 @@ class LMStudioClient {
                     res.on('end', () => {
                         if (inThinking) {
                             onToken('</think>');
+                            fullText += '</think>';
                             inThinking = false;
                         }
                         resolve(fullText);
