@@ -174,8 +174,13 @@ class AgentExecutor {
      * @param text The model's response.
      * @returns An object representing the tool call name, args, and a readable query, or null if none found.
      */
+    /**
+     * Parses the assistant's reply text to extract the first JSON tool call.
+     * @param text The model's response.
+     * @returns An object representing the tool call name, args, and a readable query, or null if none found.
+     */
     parseToolCall(text) {
-        // Regex to extract JSON block inside ```json ... ``` code fences
+        // 1. Regex to extract JSON block inside ```json ... ``` code fences
         const jsonBlockRegex = /```json\s*([\s\S]*?)\s*(?:```|$)/i;
         const match = jsonBlockRegex.exec(text);
         if (match) {
@@ -183,15 +188,15 @@ class AgentExecutor {
             if (parsed)
                 return parsed;
         }
-        // Regex to extract tool call JSON payload following <|tool_call>, <tool_call>, or call:name
-        const tagRegex = /(?:<\|tool_call>|<tool_call>)?\s*(?:call:\w+)?\s*(\{[\s\S]*?\})/i;
+        // 2. Regex to extract tool call JSON payload surrounded by <tool_call|>, <|tool_call>, <tool_call>, or call:name
+        const tagRegex = /(?:<\|?tool_call\|?>)?\s*(?:call:\w+)?\s*(\{[\s\S]*?\})\s*(?:<\|?tool_call\|?>)?/i;
         const tagMatch = tagRegex.exec(text);
         if (tagMatch) {
             const parsed = this.parseJsonString(tagMatch[1]);
             if (parsed)
                 return parsed;
         }
-        // Fallback: Try extracting using brace counting
+        // 3. Fallback: Try extracting using brace counting starting at any JSON object containing known keys
         const braceJson = this.extractJsonBlock(text);
         if (braceJson) {
             const parsed = this.parseJsonString(braceJson);
@@ -201,11 +206,11 @@ class AgentExecutor {
         return null;
     }
     /**
-     * Extracts the first JSON object string starting with { "type": ... } using brace counting.
+     * Extracts the first JSON object string starting with known tool keys using brace counting.
      */
     extractJsonBlock(text) {
         let startIndex = -1;
-        const typeRegex = /\{\s*["']type["']/g;
+        const typeRegex = /\{\s*["'](?:type|path|command|chunks|query|action|tool|name)["']/g;
         let match;
         while ((match = typeRegex.exec(text)) !== null) {
             startIndex = match.index;
@@ -247,31 +252,56 @@ class AgentExecutor {
     }
     /**
      * Polymorphically matches JSON payload with registered Tool instances.
+     * Auto-infers tool type from payload schema if "type" field is omitted by the model.
      */
     parseJsonString(jsonStr) {
         try {
             const parsed = JSON.parse(jsonStr.trim());
-            if (parsed && typeof parsed.type === 'string') {
-                const type = parsed.type;
-                const matchedTool = this.tools.find(t => t.name === type);
-                if (matchedTool) {
-                    const args = { ...parsed };
-                    delete args.type;
-                    let query = `Executing ${type}`;
-                    if (args.path)
-                        query = `${type}: ${args.path}`;
-                    else if (args.command)
-                        query = `${type}: ${args.command}`;
-                    else if (args.query)
-                        query = `${type}: ${args.query}`;
-                    else if (args.url)
-                        query = `${type}: ${args.url}`;
-                    return { name: type, args, query };
+            if (parsed && typeof parsed === 'object') {
+                let type = parsed.type || parsed.action || parsed.tool || parsed.name || parsed.function;
+                // Infer tool type from object signature if type is omitted by model
+                if (!type) {
+                    if (Array.isArray(parsed.chunks) || (parsed.targetContent && parsed.replacementContent)) {
+                        type = parsed.chunks && parsed.chunks.length > 1 ? 'multi_replace_file_content' : 'replace_file_content';
+                    }
+                    else if (parsed.path && parsed.content !== undefined) {
+                        type = 'write_file';
+                    }
+                    else if (parsed.path && parsed.content === undefined) {
+                        type = 'read_file';
+                    }
+                    else if (parsed.command) {
+                        type = 'run_command';
+                    }
+                    else if (parsed.query && !parsed.command) {
+                        type = 'grep_search';
+                    }
+                }
+                if (type && typeof type === 'string') {
+                    const matchedTool = this.tools.find(t => t.name.toLowerCase() === type.toLowerCase());
+                    if (matchedTool) {
+                        const args = { ...parsed };
+                        delete args.type;
+                        delete args.action;
+                        delete args.tool;
+                        delete args.name;
+                        delete args.function;
+                        let query = `Executing ${matchedTool.name}`;
+                        if (args.path)
+                            query = `${matchedTool.name}: ${args.path}`;
+                        else if (args.command)
+                            query = `${matchedTool.name}: ${args.command}`;
+                        else if (args.query)
+                            query = `${matchedTool.name}: ${args.query}`;
+                        else if (args.url)
+                            query = `${matchedTool.name}: ${args.url}`;
+                        return { name: matchedTool.name, args, query };
+                    }
                 }
             }
         }
         catch {
-            // Ignore syntax errors to allow text fallback
+            // Ignore syntax errors
         }
         return null;
     }

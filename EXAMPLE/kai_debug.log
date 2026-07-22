@@ -1,1 +1,3 @@
-[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="analyseer deze code en erna zorg voor een lege simpele html pagina met 1 titel en een gedecoreerde button die dan in style.css zal worden gedefined worden, laat de app.js een simpele alert tonen adhv een functie", totalMessages=1
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="bewerk de tekst in de titel van de html file naar "OWOWOWO" en de button naar "touch me"", totalMessages=1
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="change the text in the html to be something else", totalMessages=1
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="you can choose", totalMessages=6
