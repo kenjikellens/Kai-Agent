@@ -443,18 +443,18 @@
 
         let cleanText = text;
 
-        // Strip special model tokens (<|tool_call>, <|im_start|>, <|im_end|>, etc.)
-        cleanText = cleanText.replace(/<\|[a-zA-Z0-9_\-\s:]+\|>/gi, '');
-        cleanText = cleanText.replace(/<\|tool_call(?:>[^\n]*|\b)/gi, '');
-        cleanText = cleanText.replace(/<\/?tool_call>/gi, '');
+        // 1. Strip all variations of special model tokens and tool call tags (<tool_call|>, <|tool_call|>, <|im_start|>, etc.)
+        cleanText = cleanText.replace(/<\|?\/?tool_calls?\|?>/gi, '');
+        cleanText = cleanText.replace(/<\|[a-zA-Z0-9_\-\s:\/|]+\|?>/gi, '');
+        cleanText = cleanText.replace(/<[a-zA-Z0-9_\-\s:\/]*tool_call[a-zA-Z0-9_\-\s:\/|]*>/gi, '');
         cleanText = cleanText.replace(/\bcall:[a-zA-Z0-9_\-]+\b/gi, '');
 
-        // Safely strip incomplete / streaming tool calls from the end of text (prevents flickering)
+        // 2. Safely strip incomplete / streaming tool calls from the end of text (prevents flickering)
         cleanText = cleanText.replace(/```json(?:(?!```)[\s\S])*$/i, '');
-        cleanText = cleanText.replace(/```\s*\{\s*["']type["'](?:(?!```)[\s\S])*$/i, '');
-        cleanText = cleanText.replace(/\{\s*["']type["']\s*:\s*["'][a-zA-Z0-9_\-]+["'](?:(?!\})[\s\S])*$/i, '');
+        cleanText = cleanText.replace(/```\s*\{\s*(?:(?!```)[\s\S])*$/i, '');
+        cleanText = cleanText.replace(/\{\s*["'](?:type|path|command|chunks|query|action)["'](?:(?!\})[\s\S])*$/i, '');
 
-        // Handle tool result formatting
+        // 3. Handle tool result formatting
         if (cleanText.startsWith('[Tool Result for')) {
             const match = cleanText.match(/^\[Tool Result for (.*?)\]:\n([\s\S]*)/);
             if (match) {
@@ -464,14 +464,25 @@
             }
         }
 
-        // Strip completed fenced JSON tool calls (```json ... ```)
+        // 4. Strip completed fenced JSON tool calls (```json ... ``` or ``` { ... } ```)
         cleanText = cleanText.replace(/```json\s*([\s\S]*?)```/gi, '');
-        cleanText = cleanText.replace(/```\s*(\{\s*["']type["'][\s\S]*?\})\s*```/gi, '');
+        cleanText = cleanText.replace(/```\s*(\{[\s\S]*?\})\s*```/gi, '');
 
-        // Strip raw unfenced JSON objects containing {"type": "..."}
-        cleanText = cleanText.replace(/\{\s*["']type["']\s*:\s*["'][a-zA-Z0-9_\-]+["'][\s\S]*?\}/gi, '');
+        // 5. Strip raw unfenced JSON objects containing known tool keys (type, path, command, chunks, query, action)
+        cleanText = cleanText.replace(/\{\s*["'](?:type|path|command|chunks|query|action|url|content)["'][\s\S]*?\}/gi, '');
 
-        // Clean up excessive blank lines left behind by stripped tool calls
+        // 6. Double-check and strip any remaining JSON objects representing tool arguments
+        cleanText = cleanText.replace(/\{[\s\S]*?\}/g, (match) => {
+            try {
+                const p = JSON.parse(match);
+                if (p && typeof p === 'object' && (p.command || p.path || p.type || p.chunks || p.query || p.action || p.url)) {
+                    return '';
+                }
+            } catch {}
+            return match;
+        });
+
+        // 7. Clean up excessive blank lines left behind by stripped tool calls
         cleanText = cleanText.replace(/(\r?\n\s*){3,}/g, '\n\n');
 
         let escaped = escapeHtml(cleanText);
