@@ -114,7 +114,10 @@
     let isWaitingForResponse = false;
     let currentAssistantMsgElement = null;
     let currentAssistantText = '';
-    let selectedModelValue = 'local-model';
+    let selectedModelValue = localStorage.getItem('kai.selectedModel') || 'local-model';
+    if (selectedModelText && selectedModelValue && selectedModelValue !== 'local-model') {
+        selectedModelText.textContent = formatModelName(selectedModelValue);
+    }
     const accordionStates = {};
 
     /** Tracks free provider metadata received from backend for settings panel rendering. */
@@ -968,6 +971,7 @@
                             item.addEventListener('click', (e) => {
                                 e.stopPropagation();
                                 selectedModelValue = m;
+                                localStorage.setItem('kai.selectedModel', m);
                                 selectedModelText.textContent = formatModelName(m);
                                 
                                 // Selected model set

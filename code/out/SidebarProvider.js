@@ -529,7 +529,7 @@ class SidebarProvider {
                                     <div class="custom-dropdown" id="model-dropdown-container">
                                         <button type="button" class="dropdown-trigger" id="dropdown-trigger-btn" title="Active Model">
                                             <span id="status-dot" class="status-dot status-disconnected"></span>
-                                            <span id="selected-model-text">Checking server...</span>
+                                            <span id="selected-model-text">${translations.selectModel || 'Select Model'}</span>
                                             <svg class="dropdown-trigger-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                         </button>
                                         <div class="dropdown-menu hidden" id="dropdown-options-menu">
