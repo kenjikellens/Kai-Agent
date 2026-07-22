@@ -328,6 +328,11 @@
      * @param {string} text The raw text content of the message.
      */
     function appendMessage(role, text) {
+        // Skip rendering internal tool result messages as primary user bubbles
+        if (role === 'user' && text.startsWith('[Tool Result for')) {
+            return;
+        }
+
         const messageDiv = document.createElement('div');
         
         if (role === 'file-summary') {
@@ -348,16 +353,67 @@
             const getFileDetails = (filePath) => {
                 const basename = filePath.split(/[/\\]/).pop();
                 const ext = basename.includes('.') ? basename.split('.').pop().toLowerCase() : '';
-                let icon = '{}';
-                if (['js', 'ts', 'jsx', 'tsx'].includes(ext)) {
-                    icon = '<span class="file-icon js-icon">JS</span>';
-                } else if (['html', 'htm'].includes(ext)) {
-                    icon = '<span class="file-icon html-icon">&lt;/&gt;</span>';
-                } else if (['css', 'scss', 'sass'].includes(ext)) {
-                    icon = '<span class="file-icon css-icon">{}</span>';
-                } else {
-                    icon = '<span class="file-icon doc-icon">📄</span>';
+                
+                let codiconClass = 'codicon-file';
+                let colorClass = 'default-file-icon';
+
+                if (['html', 'htm', 'xhtml'].includes(ext)) {
+                    codiconClass = 'codicon-file-code';
+                    colorClass = 'html-icon';
+                } else if (['css', 'scss', 'sass', 'less'].includes(ext)) {
+                    codiconClass = 'codicon-symbol-color';
+                    colorClass = 'css-icon';
+                } else if (['js', 'mjs', 'cjs', 'jsx'].includes(ext)) {
+                    codiconClass = 'codicon-symbol-method';
+                    colorClass = 'js-icon';
+                } else if (['ts', 'mts', 'cts', 'tsx'].includes(ext)) {
+                    codiconClass = 'codicon-file-code';
+                    colorClass = 'ts-icon';
+                } else if (['json', 'jsonc', 'json5'].includes(ext)) {
+                    codiconClass = 'codicon-json';
+                    colorClass = 'json-icon';
+                } else if (['md', 'markdown', 'mdx'].includes(ext)) {
+                    codiconClass = 'codicon-markdown';
+                    colorClass = 'md-icon';
+                } else if (['py', 'ipynb'].includes(ext)) {
+                    codiconClass = 'codicon-symbol-variable';
+                    colorClass = 'py-icon';
+                } else if (['java', 'c', 'cpp', 'cc', 'cxx', 'h', 'hpp', 'cs', 'go', 'rs', 'php', 'rb'].includes(ext)) {
+                    codiconClass = 'codicon-file-code';
+                    colorClass = 'lang-icon';
+                } else if (['sh', 'bash', 'zsh', 'ps1', 'bat', 'cmd'].includes(ext)) {
+                    codiconClass = 'codicon-terminal';
+                    colorClass = 'term-icon';
+                } else if (['sql', 'db', 'sqlite'].includes(ext)) {
+                    codiconClass = 'codicon-database';
+                    colorClass = 'db-icon';
+                } else if (['yaml', 'yml', 'toml', 'xml', 'ini', 'env', 'config'].includes(ext)) {
+                    codiconClass = 'codicon-settings';
+                    colorClass = 'config-icon';
+                } else if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico'].includes(ext)) {
+                    codiconClass = 'codicon-file-media';
+                    colorClass = 'media-icon';
+                } else if (['mp3', 'wav', 'ogg', 'mp4', 'mov', 'avi', 'mkv'].includes(ext)) {
+                    codiconClass = 'codicon-file-media';
+                    colorClass = 'media-icon';
+                } else if (ext === 'pdf') {
+                    codiconClass = 'codicon-file-pdf';
+                    colorClass = 'pdf-icon';
+                } else if (['zip', 'tar', 'gz', '7z', 'rar'].includes(ext)) {
+                    codiconClass = 'codicon-file-zip';
+                    colorClass = 'zip-icon';
+                } else if (ext.includes('lock') || basename.endsWith('.lock') || basename === 'package-lock.json') {
+                    codiconClass = 'codicon-lock';
+                    colorClass = 'lock-icon';
+                } else if (basename.startsWith('.git')) {
+                    codiconClass = 'codicon-source-control';
+                    colorClass = 'git-icon';
+                } else if (basename.toLowerCase().includes('docker')) {
+                    codiconClass = 'codicon-symbol-misc';
+                    colorClass = 'docker-icon';
                 }
+
+                const icon = `<i class="codicon ${codiconClass} ${colorClass}"></i>`;
                 
                 const dirParts = filePath.split(/[/\\]/);
                 dirParts.pop();
@@ -387,12 +443,16 @@
             `;
             messageDiv.appendChild(widgetDiv);
         } else {
+            const formatted = formatMarkdown(text);
+            if (!formatted.trim()) {
+                return;
+            }
             messageDiv.className = `message ${role}-message`;
 
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';
 
-            contentDiv.innerHTML = formatMarkdown(text);
+            contentDiv.innerHTML = formatted;
             messageDiv.appendChild(contentDiv);
         }
 
@@ -805,6 +865,12 @@
         } else if (progress.progressType === 'thinking') {
             // Render thinking steps (disabled)
         } else if (progress.progressType === 'tool_start') {
+            if (currentAssistantMsgElement) {
+                const contentEl = currentAssistantMsgElement.querySelector('.message-content');
+                if (contentEl && !contentEl.innerText.trim()) {
+                    currentAssistantMsgElement.remove();
+                }
+            }
             currentAssistantMsgElement = null;
             currentAssistantText = '';
             

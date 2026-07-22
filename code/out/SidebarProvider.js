@@ -409,6 +409,7 @@ class SidebarProvider {
         // Resolve resources from media directory
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js'));
         const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.css'));
+        const codiconUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'node_modules', '@vscode/codicons', 'dist', 'codicon.css'));
         // Use a nonce to restrict script source access
         const nonce = getNonce();
         const svgs = this._loadSvgs();
@@ -420,10 +421,11 @@ class SidebarProvider {
                 <meta charset="UTF-8">
                 <!--
                     Content Security Policy (CSP):
-                    Allows loading scripts with the specific nonce and styles/images from the extension's resources and local server APIs.
+                    Allows loading scripts with the specific nonce and styles/images/fonts from the extension's resources and local server APIs.
                 -->
-                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; connect-src *;">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; script-src 'nonce-${nonce}'; connect-src *;">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link href="${codiconUri}" rel="stylesheet" />
                 <link href="${styleUri}" rel="stylesheet" />
                 <title>Kai</title>
                 <script nonce="${nonce}">

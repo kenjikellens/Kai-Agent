@@ -1117,22 +1117,33 @@ button:disabled {
   font-size: 0.8rem;
 }
 
-.file-icon {
+.file-summary-item .codicon {
+  font-size: 14px;
+  width: 16px;
+  height: 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 24px;
-  padding: 1px 3px;
-  border-radius: 3px;
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-align: center;
 }
 
-.js-icon { background: #f1c40f; color: #000; }
-.html-icon { background: #e67e22; color: #fff; }
-.css-icon { background: #2980b9; color: #fff; }
-.doc-icon { background: #7f8c8d; color: #fff; }
+.html-icon { color: #e44d26; }
+.css-icon { color: #42a5f5; }
+.js-icon { color: #f7df1e; }
+.ts-icon { color: #3178c6; }
+.json-icon { color: #cbcb41; }
+.md-icon { color: #42a5f5; }
+.py-icon { color: #3776ab; }
+.lang-icon { color: #a29bfe; }
+.term-icon { color: #2ecc71; }
+.db-icon { color: #e67e22; }
+.config-icon { color: #b2bec3; }
+.media-icon { color: #fd79a8; }
+.pdf-icon { color: #e74c3c; }
+.zip-icon { color: #fdcb6e; }
+.lock-icon { color: #e74c3c; }
+.git-icon { color: #f14e32; }
+.docker-icon { color: #2496ed; }
+.default-file-icon { color: var(--app-muted); }
 
 .file-name {
   color: var(--vscode-foreground, #cccccc);
