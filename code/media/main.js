@@ -241,7 +241,9 @@
         
         const i18n = window.KAI_I18N || {};
         const defaultGemini = [
+            'gemini-3.6-flash',
             'gemini-3.5-flash',
+            'gemini-3.5-flash-lite',
             'gemini-3-flash-preview',
             'gemini-3.1-pro-preview',
             'gemini-3.1-flash-lite',
@@ -1277,7 +1279,7 @@
 
                 const showGeminiExpanded = selectedModelValue && selectedModelValue.toLowerCase().startsWith('gemini');
                 createAccordionGroup(lmTitle, lmStudioModels, !showGeminiExpanded);
-                createAccordionGroup(geminiTitle, geminiModels.length > 0 ? geminiModels : ['gemini-3.5-flash', 'gemini-3-flash-preview', 'gemini-3.1-pro-preview', 'gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash-lite'], showGeminiExpanded);
+                createAccordionGroup(geminiTitle, geminiModels.length > 0 ? geminiModels : ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3-flash-preview', 'gemini-3.1-pro-preview', 'gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash-lite'], showGeminiExpanded);
 
                 // Add one accordion group per free-tier provider
                 const freeProviders = message.freeProviders || [];
