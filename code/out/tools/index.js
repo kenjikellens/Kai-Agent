@@ -26,6 +26,7 @@ const grep_search_1 = require("./grep_search");
 const get_diagnostics_1 = require("./get_diagnostics");
 const symbol_search_1 = require("./symbol_search");
 const fetch_url_1 = require("./fetch_url");
+const delete_item_1 = require("./delete_item");
 __exportStar(require("./Tool"), exports);
 __exportStar(require("./read_file"), exports);
 __exportStar(require("./write_file"), exports);
@@ -38,6 +39,7 @@ __exportStar(require("./grep_search"), exports);
 __exportStar(require("./get_diagnostics"), exports);
 __exportStar(require("./symbol_search"), exports);
 __exportStar(require("./fetch_url"), exports);
+__exportStar(require("./delete_item"), exports);
 /**
  * Returns a list of all instanced tools available for execution.
  * @returns An array of Tool instances.
@@ -54,7 +56,8 @@ function getRegisteredTools() {
         new grep_search_1.GrepSearchTool(),
         new get_diagnostics_1.GetDiagnosticsTool(),
         new symbol_search_1.SymbolSearchTool(),
-        new fetch_url_1.FetchUrlTool()
+        new fetch_url_1.FetchUrlTool(),
+        new delete_item_1.DeleteItemTool()
     ];
 }
 exports.getRegisteredTools = getRegisteredTools;

@@ -10,6 +10,7 @@ import { GrepSearchTool } from './grep_search';
 import { GetDiagnosticsTool } from './get_diagnostics';
 import { SymbolSearchTool } from './symbol_search';
 import { FetchUrlTool } from './fetch_url';
+import { DeleteItemTool } from './delete_item';
 
 export * from './Tool';
 export * from './read_file';
@@ -23,6 +24,7 @@ export * from './grep_search';
 export * from './get_diagnostics';
 export * from './symbol_search';
 export * from './fetch_url';
+export * from './delete_item';
 
 /**
  * Returns a list of all instanced tools available for execution.
@@ -40,6 +42,7 @@ export function getRegisteredTools(): Tool[] {
         new GrepSearchTool(),
         new GetDiagnosticsTool(),
         new SymbolSearchTool(),
-        new FetchUrlTool()
+        new FetchUrlTool(),
+        new DeleteItemTool()
     ];
 }

@@ -72,6 +72,16 @@ Output exactly one JSON block inside a markdown code block. Do not omit or add f
 {"type": "run_command", "command": "npm install lodash"}
 ```
 
+**Delete single file or folder:**
+```json
+{"type": "delete_item", "path": "src/old_file.js"}
+```
+
+**Delete multiple files or folders:**
+```json
+{"type": "delete_item", "paths": ["src/old_file1.js", "src/old_file2.js"]}
+```
+
 ## JSON ESCAPING
 - Escape nested double quotes as `\"`.
 - Escape literal newlines as `\n`.

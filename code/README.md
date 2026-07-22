@@ -14,6 +14,7 @@ K.ai (Kenji AI) is a powerful, lightweight, and fully offline AI developer agent
 - 🔧 **In-Workspace Tooling**:
   - **Read File**: Reads files in the workspace.
   - **Write File**: Creates/edits files (automatically building subfolders if needed).
+  - **Delete Item**: Safely deletes files or folders within the workspace.
   - **List Directory**: Views folders in the workspace.
   - **Run Terminal Command**: Executes commands (like `npm install`, `mkdir`, `git init`) in the root of the workspace.
 - 💻 **Code Selection Context**: Select code in any editor tab, run the command `Kai: Send Code Selection to Chat` from the command palette (`Ctrl+Shift+P`), and the agent will ingest it as context.

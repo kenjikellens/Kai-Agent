@@ -123,7 +123,7 @@ class AgentExecutor {
             catch (err) {
                 toolResult = `[Error executing tool ${toolCall.name}]: ${err.message || err}`;
             }
-            if (['write_file', 'edit_file', 'replace_file_content', 'multi_replace_file_content'].includes(toolCall.name) && !toolResult.startsWith('[Error')) {
+            if (['write_file', 'edit_file', 'replace_file_content', 'multi_replace_file_content', 'delete_item'].includes(toolCall.name) && !toolResult.startsWith('[Error')) {
                 if (targetName) {
                     modifiedFiles.add(targetName);
                 }
@@ -264,6 +264,9 @@ class AgentExecutor {
                     if (Array.isArray(parsed.chunks) || (parsed.targetContent && parsed.replacementContent)) {
                         type = parsed.chunks && parsed.chunks.length > 1 ? 'multi_replace_file_content' : 'replace_file_content';
                     }
+                    else if ((parsed.path || parsed.paths) && (parsed.action === 'delete' || parsed.paths !== undefined)) {
+                        type = 'delete_item';
+                    }
                     else if (parsed.path && parsed.content !== undefined) {
                         type = 'write_file';
                     }
@@ -288,7 +291,9 @@ class AgentExecutor {
                         delete args.function;
                         let query = `Executing ${matchedTool.name}`;
                         if (args.path)
-                            query = `${matchedTool.name}: ${args.path}`;
+                            query = `${matchedTool.name}: ${Array.isArray(args.path) ? args.path.join(', ') : args.path}`;
+                        else if (args.paths)
+                            query = `${matchedTool.name}: ${Array.isArray(args.paths) ? args.paths.join(', ') : args.paths}`;
                         else if (args.command)
                             query = `${matchedTool.name}: ${args.command}`;
                         else if (args.query)
@@ -325,8 +330,11 @@ class AgentExecutor {
         if (tool === 'run_command') {
             return args.command || '';
         }
+        if (args.paths && Array.isArray(args.paths)) {
+            return args.paths.map((p) => path.basename(p)).join(', ');
+        }
         if (args.path) {
-            return path.basename(args.path);
+            return Array.isArray(args.path) ? args.path.map((p) => path.basename(p)).join(', ') : path.basename(args.path);
         }
         if (args.url) {
             return args.url;
