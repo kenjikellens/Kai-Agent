@@ -869,6 +869,7 @@
      * @param {'chat'|'history'|'settings'} viewName 
      */
     function showView(viewName) {
+        if (keysContainer) keysContainer.classList.add('hidden');
         if (viewName === 'chat') {
             if (chatView) chatView.classList.remove('hidden');
             if (historyContainer) historyContainer.classList.add('hidden');
