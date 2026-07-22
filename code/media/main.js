@@ -848,7 +848,7 @@
         chatContainer.innerHTML = '';
         clearCodeContext();
         setUiLoading(false);
-        historyContainer.classList.add('hidden');
+        showView('chat');
     });
 
     // Textarea Enter key submit (excluding Shift+Enter newline breaks)
@@ -859,15 +859,37 @@
         }
     });
 
-    // Wire up historyBtn to load and show previous chats overlay
+    const chatView = document.getElementById('chat-view');
+
+    /**
+     * Swaps the active view in the main content container.
+     * @param {'chat'|'history'|'settings'} viewName 
+     */
+    function showView(viewName) {
+        if (viewName === 'chat') {
+            if (chatView) chatView.classList.remove('hidden');
+            if (historyContainer) historyContainer.classList.add('hidden');
+            if (settingsContainer) settingsContainer.classList.add('hidden');
+        } else if (viewName === 'history') {
+            if (chatView) chatView.classList.add('hidden');
+            if (historyContainer) historyContainer.classList.remove('hidden');
+            if (settingsContainer) settingsContainer.classList.add('hidden');
+        } else if (viewName === 'settings') {
+            if (chatView) chatView.classList.add('hidden');
+            if (historyContainer) historyContainer.classList.add('hidden');
+            if (settingsContainer) settingsContainer.classList.remove('hidden');
+        }
+    }
+
+    // Wire up historyBtn to load and show previous chats
     historyBtn.addEventListener('click', () => {
         vscode.postMessage({ type: 'loadChatHistory' });
-        historyContainer.classList.remove('hidden');
+        showView('history');
     });
 
     // Wire up close button for the history panel
     closeHistoryBtn.addEventListener('click', () => {
-        historyContainer.classList.add('hidden');
+        showView('chat');
     });
 
     // Keys container DOM elements
@@ -876,30 +898,35 @@
     const closeKeysBtn = document.getElementById('close-keys-btn');
     const dynamicKeysList = document.getElementById('dynamic-keys-list');
 
-    // Wire up settingsBtn to open settings overlay
+    // Wire up settingsBtn to open settings panel
     settingsBtn.addEventListener('click', () => {
-        settingsContainer.classList.remove('hidden');
+        showView('settings');
     });
 
-    // Wire up manageKeysBtn to open keys manager popup overlay
+    // Wire up manageKeysBtn to toggle keys manager sub-panel inside settings
     if (manageKeysBtn) {
         manageKeysBtn.addEventListener('click', () => {
-            keysContainer.classList.remove('hidden');
-            renderProviderKeyInputs();
+            if (keysContainer) {
+                const isHidden = keysContainer.classList.contains('hidden');
+                if (isHidden) {
+                    keysContainer.classList.remove('hidden');
+                    renderProviderKeyInputs();
+                } else {
+                    keysContainer.classList.add('hidden');
+                }
+            }
         });
     }
 
     // Wire up close button for keys panel
     if (closeKeysBtn) {
         closeKeysBtn.addEventListener('click', () => {
-            keysContainer.classList.add('hidden');
+            if (keysContainer) keysContainer.classList.add('hidden');
         });
     }
 
     /**
-     * Renders password input fields for each free-tier provider inside the keys popup overlay,
-     * pre-filling existing API key values received from VS Code configuration.
-     * Each input sends an updateSettings message on change to immediately persist the new key.
+     * Renders password input fields for each free-tier provider inside the keys sub-panel.
      */
     function renderProviderKeyInputs() {
         if (!dynamicKeysList) return;
@@ -945,10 +972,10 @@
 
     // Wire up close button for settings panel
     closeSettingsBtn.addEventListener('click', () => {
-        settingsContainer.classList.add('hidden');
         if (keysContainer) {
             keysContainer.classList.add('hidden');
         }
+        showView('chat');
     });
 
     // Toggle model dropdown menu visibility on trigger click

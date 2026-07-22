@@ -434,7 +434,7 @@ class SidebarProvider {
             </head>
             <body>
                 <div class="sidebar-container">
-                    <!-- Minimalist Header -->
+                    <!-- Container 1: Minimalist Top Bar -->
                     <div class="sidebar-header">
                         <div class="header-actions">
                             <button id="new-chat-btn" class="icon-btn-header" title="${translations.newChat}">
@@ -449,100 +449,107 @@ class SidebarProvider {
                         </div>
                     </div>
 
-                    <!-- History Panel -->
-                    <div id="history-container" class="history-container hidden">
-                        <div class="history-panel-header">
-                            <span>${translations.previousChats}</span>
-                            <button id="close-history-btn" class="icon-btn-header" title="Close History">✕</button>
-                        </div>
-                        <div id="history-list" class="history-list"></div>
-                    </div>
+                    <!-- Container 2: Main Content Area (Swappable Views) -->
+                    <div id="main-content-container" class="main-content-container">
+                        <!-- View A: Active Chat View (Default) -->
+                        <div id="chat-view" class="content-view">
+                            <!-- Chat Output Area -->
+                            <div id="chat-container" class="chat-container"></div>
 
-                    <!-- Settings Panel -->
-                    <div id="settings-container" class="settings-container hidden">
-                        <div class="settings-panel-header">
-                            <span>${translations.settings}</span>
-                            <button id="close-settings-btn" class="icon-btn-header" title="Close Settings">✕</button>
-                        </div>
-                        <div class="settings-content-panel">
-                            <div class="setting-item" id="manage-keys-container">
-                                <button type="button" class="btn-primary" id="manage-keys-btn">
-                                    ${svgs.manage_keys || ''}
-                                    <span>${translations.manageApiKeys}</span>
-                                </button>
-                            </div>
-                            <div class="setting-item" style="margin-top: 10px; margin-bottom: 10px;">
-                                <label for="language-select-input" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">${translations.language}</label>
-                                <select id="language-select-input" style="width: 100%; background: var(--app-input-bg); color: var(--app-fg); border: 1px solid var(--app-input-border); border-radius: var(--app-radius-sm); padding: 4px;">
-                                    <option value="auto">Auto (VS Code)</option>
-                                    <option value="en">English</option>
-                                    <option value="nl">Nederlands</option>
-                                    <option value="de">Deutsch</option>
-                                    <option value="fr">Français</option>
-                                    <option value="es">Español</option>
-                                </select>
-                            </div>
-                            <label class="setting-row" title="${translations.showThinking}">
-                                <input type="checkbox" id="show-thinking-toggle" checked>
-                                <span>${translations.showThinking}</span>
-                            </label>
-                            <div id="thinking-subsettings" class="setting-sub-panel">
-                                <label class="setting-row" title="${translations.keepThinkingGenerating}">
-                                    <input type="checkbox" id="keep-thinking-expanded-toggle" checked>
-                                    <span>${translations.keepThinkingGenerating}</span>
-                                </label>
-                                <label class="setting-row" title="${translations.keepThinkingFinished}">
-                                    <input type="checkbox" id="keep-thinking-finished-expanded-toggle">
-                                    <span>${translations.keepThinkingFinished}</span>
-                                </label>
-                            </div>
-                        </div>
- 
-                     <!-- Keys Management Popup -->
-                     <div id="keys-container" class="keys-container hidden">
-                         <div class="keys-panel-header">
-                             <span>Manage API Keys</span>
-                             <button id="close-keys-btn" class="icon-btn-header" title="Close Keys Manager">✕</button>
-                         </div>
-                         <div class="keys-content-panel">
-                             <div class="setting-item" id="gemini-key-item">
-                                 <label for="api-key-input">Google Gemini API Key</label>
-                                 <input type="password" id="api-key-input" placeholder="AIzaSy...">
-                             </div>
-                             <!-- Dynamic provider key inputs rendered here -->
-                             <div id="dynamic-keys-list"></div>
-                         </div>
-                     </div>
-                    </div>
-
-                    <!-- Chat Output Area -->
-                    <div id="chat-container" class="chat-container"></div>
-
-                    <!-- Chat Input Area -->
-                    <div class="input-panel">
-                        <div class="input-card">
-                            <textarea id="message-input" placeholder="${translations.messagePlaceholder}" rows="1"></textarea>
-                            <div class="input-toolbar">
-                                <div class="toolbar-left">
-                                    <div class="custom-dropdown" id="model-dropdown-container">
-                                        <button type="button" class="dropdown-trigger" id="dropdown-trigger-btn" title="Active Model">
-                                            <span id="status-dot" class="status-dot status-disconnected"></span>
-                                            <span id="selected-model-text">${translations.selectModel || 'Select Model'}</span>
-                                            <svg class="dropdown-trigger-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                                        </button>
-                                        <div class="dropdown-menu hidden" id="dropdown-options-menu">
-                                            <!-- Dynamically populated -->
+                            <!-- Chat Input Area -->
+                            <div class="input-panel">
+                                <div class="input-card">
+                                    <textarea id="message-input" placeholder="${translations.messagePlaceholder}" rows="1"></textarea>
+                                    <div class="input-toolbar">
+                                        <div class="toolbar-left">
+                                            <div class="custom-dropdown" id="model-dropdown-container">
+                                                <button type="button" class="dropdown-trigger" id="dropdown-trigger-btn" title="Active Model">
+                                                    <span id="status-dot" class="status-dot status-disconnected"></span>
+                                                    <span id="selected-model-text">${translations.selectModel || 'Select Model'}</span>
+                                                    <svg class="dropdown-trigger-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                                </button>
+                                                <div class="dropdown-menu hidden" id="dropdown-options-menu">
+                                                    <!-- Dynamically populated -->
+                                                </div>
+                                            </div>
+                                            <label class="switch-container" title="Enable tool execution agent loop">
+                                                <input type="checkbox" id="thinking-toggle" checked>
+                                                <span class="slider-track"></span>
+                                                <span class="switch-label" id="thinking-toggle-label">${translations.thinkingToggle}</span>
+                                            </label>
                                         </div>
+                                        <button id="send-btn" title="Send message">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                                        </button>
                                     </div>
-                                    <label class="switch-container" title="Enable tool execution agent loop">
-                                        <input type="checkbox" id="thinking-toggle" checked>
-                                        <span class="slider-track"></span>
-                                        <span class="switch-label" id="thinking-toggle-label">${translations.thinkingToggle}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- View B: History View -->
+                        <div id="history-container" class="content-view history-container hidden">
+                            <div class="history-panel-header">
+                                <span>${translations.previousChats}</span>
+                                <button id="close-history-btn" class="icon-btn-header" title="Close History">✕</button>
+                            </div>
+                            <div id="history-list" class="history-list"></div>
+                        </div>
+
+                        <!-- View C: Settings View -->
+                        <div id="settings-container" class="content-view settings-container hidden">
+                            <div class="settings-panel-header">
+                                <span>${translations.settings}</span>
+                                <button id="close-settings-btn" class="icon-btn-header" title="Close Settings">✕</button>
+                            </div>
+                            <div class="settings-content-panel">
+                                <div class="setting-item" id="manage-keys-container">
+                                    <button type="button" class="btn-primary" id="manage-keys-btn">
+                                        ${svgs.manage_keys || ''}
+                                        <span>${translations.manageApiKeys}</span>
+                                    </button>
+                                </div>
+
+                                <!-- API Keys Sub-Panel (Nested inside Settings directly under header) -->
+                                <div id="keys-container" class="keys-sub-panel hidden">
+                                    <div class="keys-panel-header">
+                                        <span>${translations.manageApiKeys}</span>
+                                        <button id="close-keys-btn" class="icon-btn-header" title="Close Keys Manager">✕</button>
+                                    </div>
+                                    <div class="keys-content-panel">
+                                        <div class="setting-item" id="gemini-key-item">
+                                            <label for="api-key-input">Google Gemini API Key</label>
+                                            <input type="password" id="api-key-input" placeholder="AIzaSy...">
+                                        </div>
+                                        <!-- Dynamic provider key inputs rendered here -->
+                                        <div id="dynamic-keys-list"></div>
+                                    </div>
+                                </div>
+
+                                <div class="setting-item" style="margin-top: 10px; margin-bottom: 10px;">
+                                    <label for="language-select-input" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">${translations.language}</label>
+                                    <select id="language-select-input" style="width: 100%; background: var(--app-input-bg); color: var(--app-fg); border: 1px solid var(--app-input-border); border-radius: var(--app-radius-sm); padding: 4px;">
+                                        <option value="auto">Auto (VS Code)</option>
+                                        <option value="en">English</option>
+                                        <option value="nl">Nederlands</option>
+                                        <option value="de">Deutsch</option>
+                                        <option value="fr">Français</option>
+                                        <option value="es">Español</option>
+                                    </select>
+                                </div>
+                                <label class="setting-row" title="${translations.showThinking}">
+                                    <input type="checkbox" id="show-thinking-toggle" checked>
+                                    <span>${translations.showThinking}</span>
+                                </label>
+                                <div id="thinking-subsettings" class="setting-sub-panel">
+                                    <label class="setting-row" title="${translations.keepThinkingGenerating}">
+                                        <input type="checkbox" id="keep-thinking-expanded-toggle" checked>
+                                        <span>${translations.keepThinkingGenerating}</span>
+                                    </label>
+                                    <label class="setting-row" title="${translations.keepThinkingFinished}">
+                                        <input type="checkbox" id="keep-thinking-finished-expanded-toggle">
+                                        <span>${translations.keepThinkingFinished}</span>
                                     </label>
                                 </div>
-                                <button id="send-btn" title="Send message">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                                </button>
                             </div>
                         </div>
                     </div>
