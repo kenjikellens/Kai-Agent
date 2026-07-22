@@ -355,6 +355,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             id: chat.id,
             title: chat.title || 'New Chat',
             messages: chat.messages || [],
+            uiEvents: chat.uiEvents || [],
             model: chat.model || '',
             thinking: chat.thinking !== false,
             timestamp: chat.timestamp || Date.now()

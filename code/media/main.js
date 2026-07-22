@@ -110,6 +110,7 @@
     // Conversation & Context State
     let currentChatId = generateChatId();
     let messages = [];
+    let uiEvents = [];
     let selectedCodeContext = '';
     let isWaitingForResponse = false;
     let currentAssistantMsgElement = null;
@@ -302,6 +303,7 @@
                 id: currentChatId,
                 title: title,
                 messages: messages,
+                uiEvents: uiEvents,
                 model: selectedModelValue,
                 thinking: thinkingToggle.checked,
                 timestamp: Date.now()
@@ -331,8 +333,16 @@
      */
     function appendMessage(role, text) {
         // Skip rendering internal tool result messages as primary user bubbles
-        if (role === 'user' && text.startsWith('[Tool Result for')) {
-            return;
+        if (role === 'user') {
+            if (!text || 
+                text.startsWith('[Tool Result') || 
+                text.startsWith('[Tool Execution') || 
+                text.startsWith('[Tool Error') || 
+                text.startsWith('[Execution Output') ||
+                text.startsWith('[Tool Call') ||
+                text.includes('[Tool Result for')) {
+                return;
+            }
         }
 
         const messageDiv = document.createElement('div');
@@ -705,7 +715,9 @@
 
         // Add user message to state and view
         messages.push({ role: 'user', content: userPrompt });
-        appendMessage('user', text || 'Sent selected code context');
+        const userDisplayText = text || 'Sent selected code context';
+        uiEvents.push({ type: 'user', text: userDisplayText });
+        appendMessage('user', userDisplayText);
 
         // Reset inputs and context panel
         messageInput.value = '';
@@ -881,6 +893,15 @@
             currentAssistantMsgElement = null;
             currentAssistantText = '';
             
+            // Record in uiEvents
+            uiEvents.push({
+                type: 'tool',
+                toolId: progress.toolId,
+                tool: progress.tool,
+                fileName: progress.fileName,
+                state: 'start'
+            });
+
             // Create a compact status row
             const statusDiv = document.createElement('div');
             statusDiv.id = progress.toolId;
@@ -888,12 +909,20 @@
             statusDiv.innerHTML = getToolDescription(progress.tool, progress.fileName, 'start');
             chatContainer.appendChild(statusDiv);
         } else if (progress.progressType === 'tool_end') {
+            const isError = progress.output && (
+                progress.output.startsWith('[Error') || 
+                progress.output.startsWith('[Execution Cancelled]')
+            );
+
+            // Update uiEvents record
+            const evt = uiEvents.find(e => e.type === 'tool' && e.toolId === progress.toolId);
+            if (evt) {
+                evt.state = isError ? 'error' : 'success';
+                evt.output = progress.output || '';
+            }
+
             const statusDiv = document.getElementById(progress.toolId);
             if (statusDiv) {
-                const isError = progress.output && (
-                    progress.output.startsWith('[Error') || 
-                    progress.output.startsWith('[Execution Cancelled]')
-                );
                 statusDiv.className = `tool-status-row ${isError ? 'errored' : 'completed'}`;
                 statusDiv.innerHTML = getToolDescription(progress.tool, progress.fileName, isError ? 'error' : 'success');
                 
@@ -920,6 +949,7 @@
         }
         currentChatId = generateChatId();
         messages = [];
+        uiEvents = [];
         chatContainer.innerHTML = '';
         clearCodeContext();
         setUiLoading(false);
@@ -1364,8 +1394,12 @@
                 } else {
                     messages.push({ role: 'assistant', content: message.content });
                 }
+                if (message.content) {
+                    uiEvents.push({ type: 'assistant', content: message.content });
+                }
                 if (message.modifiedFiles && message.modifiedFiles.length > 0) {
                     messages.push({ role: 'file-summary', content: JSON.stringify(message.modifiedFiles) });
+                    uiEvents.push({ type: 'file-summary', files: message.modifiedFiles });
                     appendMessage('file-summary', JSON.stringify(message.modifiedFiles));
                 }
                 saveCurrentChat();
@@ -1463,12 +1497,36 @@
         if (!chat) return;
         currentChatId = chat.id;
         messages = chat.messages || [];
+        uiEvents = chat.uiEvents || [];
         
         // Rebuild chat output HTML
         chatContainer.innerHTML = '';
         
-        // Render messages
-        if (messages.length > 0) {
+        if (uiEvents.length > 0) {
+            // Render exact UI event transcript
+            uiEvents.forEach(evt => {
+                if (evt.type === 'user') {
+                    appendMessage('user', evt.text);
+                } else if (evt.type === 'assistant') {
+                    appendMessage('assistant', evt.content);
+                } else if (evt.type === 'file-summary') {
+                    appendMessage('file-summary', JSON.stringify(evt.files));
+                } else if (evt.type === 'tool') {
+                    const statusDiv = document.createElement('div');
+                    statusDiv.id = evt.toolId;
+                    statusDiv.className = `tool-status-row ${evt.state === 'error' ? 'errored' : (evt.state === 'success' ? 'completed' : 'in-progress')}`;
+                    statusDiv.innerHTML = getToolDescription(evt.tool, evt.fileName, evt.state === 'error' ? 'error' : 'success');
+                    if (evt.output) {
+                        const dropdownDiv = document.createElement('div');
+                        dropdownDiv.className = 'tool-result-dropdown hidden';
+                        dropdownDiv.innerHTML = `<pre><code>${escapeHtml(evt.output)}</code></pre>`;
+                        statusDiv.appendChild(dropdownDiv);
+                    }
+                    chatContainer.appendChild(statusDiv);
+                }
+            });
+        } else if (messages.length > 0) {
+            // Fallback for legacy chats without uiEvents
             messages.forEach(msg => {
                 if (msg.role === 'user' || msg.role === 'assistant' || msg.role === 'file-summary') {
                     appendMessage(msg.role, msg.content);
