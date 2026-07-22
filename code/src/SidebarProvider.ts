@@ -567,21 +567,21 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                                     </label>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- API Keys Modal Overlay (Positioned directly over main-content-container) -->
-                        <div id="keys-container" class="keys-container hidden">
-                            <div class="keys-panel-header">
-                                <span>${translations.manageApiKeys}</span>
-                                <button id="close-keys-btn" class="icon-btn-header" title="Close Keys Manager">✕</button>
-                            </div>
-                            <div class="keys-content-panel">
-                                <div class="setting-item" id="gemini-key-item">
-                                    <label for="api-key-input">Google Gemini API Key</label>
-                                    <input type="password" id="api-key-input" placeholder="AIzaSy...">
+                            <!-- API Keys Overlay (Positioned inside Settings view, directly under the Settings header) -->
+                            <div id="keys-container" class="keys-container hidden">
+                                <div class="keys-panel-header">
+                                    <span>${translations.manageApiKeys}</span>
+                                    <button id="close-keys-btn" class="icon-btn-header" title="Close Keys Manager">✕</button>
                                 </div>
-                                <!-- Dynamic provider key inputs rendered here -->
-                                <div id="dynamic-keys-list"></div>
+                                <div class="keys-content-panel">
+                                    <div class="setting-item" id="gemini-key-item">
+                                        <label for="api-key-input">Google Gemini API Key</label>
+                                        <input type="password" id="api-key-input" placeholder="AIzaSy...">
+                                    </div>
+                                    <!-- Dynamic provider key inputs rendered here -->
+                                    <div id="dynamic-keys-list"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
