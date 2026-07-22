@@ -17,6 +17,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getRegisteredTools = void 0;
 const read_file_1 = require("./read_file");
 const write_file_1 = require("./write_file");
+const edit_file_1 = require("./edit_file");
 const list_dir_1 = require("./list_dir");
 const run_command_1 = require("./run_command");
 const replace_file_content_1 = require("./replace_file_content");
@@ -28,6 +29,7 @@ const fetch_url_1 = require("./fetch_url");
 __exportStar(require("./Tool"), exports);
 __exportStar(require("./read_file"), exports);
 __exportStar(require("./write_file"), exports);
+__exportStar(require("./edit_file"), exports);
 __exportStar(require("./list_dir"), exports);
 __exportStar(require("./run_command"), exports);
 __exportStar(require("./replace_file_content"), exports);
@@ -44,6 +46,7 @@ function getRegisteredTools() {
     return [
         new read_file_1.ReadFileTool(),
         new write_file_1.WriteFileTool(),
+        new edit_file_1.EditFileTool(),
         new list_dir_1.ListDirTool(),
         new run_command_1.RunCommandTool(),
         new replace_file_content_1.ReplaceFileContentTool(),

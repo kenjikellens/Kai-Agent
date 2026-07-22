@@ -31,9 +31,29 @@ const Tool_1 = require("./Tool");
 /**
  * Tool for editing existing file content within the workspace using search-and-replace.
  */
-class EditFileTool {
+class EditFileTool extends Tool_1.Tool {
     constructor() {
+        super(...arguments);
         this.name = 'edit_file';
+        this.description = 'Edits an existing file using exact search and replace string blocks.';
+    }
+    getFunctionDeclaration() {
+        return {
+            type: 'function',
+            function: {
+                name: this.name,
+                description: this.description,
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        path: { type: 'string', description: 'Relative path of the target file.' },
+                        search: { type: 'string', description: 'Exact string block to search for in the file.' },
+                        replace: { type: 'string', description: 'New string block to replace the search target.' }
+                    },
+                    required: ['path', 'search', 'replace']
+                }
+            }
+        };
     }
     /**
      * Executes the search-and-replace editing operation.
