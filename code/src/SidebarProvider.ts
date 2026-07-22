@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { AgentExecutor } from './AgentExecutor';
 import { LMStudioClient, FREE_PROVIDERS } from './LMStudioClient';
+import { I18nManager } from './i18n';
 
 /**
  * SidebarProvider implements the vscode.WebviewViewProvider to govern the behavior,
@@ -77,7 +78,12 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                 }
                 case 'updateSettings': {
                     const config = vscode.workspace.getConfiguration('kai');
-                    await config.update('apiKey', data.apiKey, vscode.ConfigurationTarget.Global);
+                    if (data.apiKey !== undefined) {
+                        await config.update('apiKey', data.apiKey, vscode.ConfigurationTarget.Global);
+                    }
+                    if (data.language !== undefined) {
+                        await config.update('language', data.language, vscode.ConfigurationTarget.Global);
+                    }
                     // Persist per-provider API keys sent from the settings panel
                     if (data.providerKeys && typeof data.providerKeys === 'object') {
                         for (const [configKey, keyValue] of Object.entries(data.providerKeys)) {
@@ -289,6 +295,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             };
         });
 
+        const translations = I18nManager.getTranslations();
+        const activeLang = I18nManager.getActiveLanguage();
+
         this._view.webview.postMessage({
             type: 'connectionStatus',
             connected: lmStudioConnected,
@@ -298,7 +307,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             loadedModels: loadedModels,
             freeProviders: freeProviders,
             serverUrl: serverUrl,
-            apiKey: apiKey
+            apiKey: apiKey,
+            translations: translations,
+            language: activeLang
         });
     }
 

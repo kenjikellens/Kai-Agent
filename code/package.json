@@ -103,6 +103,19 @@
           "type": "number",
           "default": 0.7,
           "description": "Temperature parameter for chat completions (0.0 to 2.0)."
+        },
+        "kai.language": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "en",
+            "nl",
+            "de",
+            "fr",
+            "es"
+          ],
+          "default": "auto",
+          "description": "Language for Kai Agent UI and response messages."
         }
       }
     }
