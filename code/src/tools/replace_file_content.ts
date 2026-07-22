@@ -1,13 +1,35 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { Tool, ToolContext, resolveSafePath } from './Tool';
+import { Tool, ToolContext, FunctionDeclaration, resolveSafePath } from './Tool';
 
 /**
  * Tool for replacing a single contiguous block of lines in a file.
  */
-export class ReplaceFileContentTool implements Tool {
+export class ReplaceFileContentTool extends Tool {
     public readonly name = 'replace_file_content';
+    public readonly description = 'Replaces a contiguous block of lines in an existing file after verifying line range and target content match.';
+
+    public getFunctionDeclaration(): FunctionDeclaration {
+        return {
+            type: 'function',
+            function: {
+                name: this.name,
+                description: this.description,
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        path: { type: 'string', description: 'Relative path of the target file.' },
+                        startLine: { type: 'number', description: '1-indexed starting line number.' },
+                        endLine: { type: 'number', description: '1-indexed ending line number.' },
+                        targetContent: { type: 'string', description: 'Exact content expected inside line range.' },
+                        replacementContent: { type: 'string', description: 'New content to replace the target block.' }
+                    },
+                    required: ['path', 'startLine', 'endLine', 'targetContent', 'replacementContent']
+                }
+            }
+        };
+    }
 
     /**
      * Executes the replacement of a contiguous block of text within a file.

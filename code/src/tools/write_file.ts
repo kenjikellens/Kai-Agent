@@ -1,13 +1,38 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { Tool, ToolContext, resolveSafePath } from './Tool';
+import { Tool, ToolContext, FunctionDeclaration, resolveSafePath } from './Tool';
 
 /**
  * Tool for writing or creating new file content within the workspace.
  */
-export class WriteFileTool implements Tool {
+export class WriteFileTool extends Tool {
     public readonly name = 'write_file';
+    public readonly description = 'Creates a new file or completely overwrites an existing file with the specified content.';
+
+    public getFunctionDeclaration(): FunctionDeclaration {
+        return {
+            type: 'function',
+            function: {
+                name: this.name,
+                description: this.description,
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        path: {
+                            type: 'string',
+                            description: 'Relative path of the target file.'
+                        },
+                        content: {
+                            type: 'string',
+                            description: 'Full string content to write.'
+                        }
+                    },
+                    required: ['path', 'content']
+                }
+            }
+        };
+    }
 
     /**
      * Executes the file writing operation.

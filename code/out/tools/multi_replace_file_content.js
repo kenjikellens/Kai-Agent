@@ -31,9 +31,41 @@ const Tool_1 = require("./Tool");
 /**
  * Tool for replacing multiple non-contiguous blocks of lines in a file.
  */
-class MultiReplaceFileContentTool {
+class MultiReplaceFileContentTool extends Tool_1.Tool {
     constructor() {
+        super(...arguments);
         this.name = 'multi_replace_file_content';
+        this.description = 'Replaces multiple non-contiguous blocks of lines in a single file in one pass.';
+    }
+    getFunctionDeclaration() {
+        return {
+            type: 'function',
+            function: {
+                name: this.name,
+                description: this.description,
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        path: { type: 'string', description: 'Relative path of the target file.' },
+                        chunks: {
+                            type: 'array',
+                            description: 'List of replacement chunk objects.',
+                            items: {
+                                type: 'object',
+                                properties: {
+                                    startLine: { type: 'number', description: '1-indexed starting line number.' },
+                                    endLine: { type: 'number', description: '1-indexed ending line number.' },
+                                    targetContent: { type: 'string', description: 'Exact content expected inside line range.' },
+                                    replacementContent: { type: 'string', description: 'New content to replace the target block.' }
+                                },
+                                required: ['startLine', 'endLine', 'targetContent', 'replacementContent']
+                            }
+                        }
+                    },
+                    required: ['path', 'chunks']
+                }
+            }
+        };
     }
     /**
      * Executes multiple non-contiguous replacements within a file.

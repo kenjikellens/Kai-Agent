@@ -30,9 +30,11 @@ const Tool_1 = require("./Tool");
 /**
  * Tool for finding exact string patterns within text files inside a workspace path.
  */
-class GrepSearchTool {
+class GrepSearchTool extends Tool_1.Tool {
     constructor() {
+        super(...arguments);
         this.name = 'grep_search';
+        this.description = 'Searches text files recursively for exact pattern matches, returning matching lines and file paths.';
         /** Directory names to ignore during traversal. */
         this.ignoreDirs = new Set(['.git', 'node_modules', 'out', 'dist', '.vscode']);
         /** File extensions to skip during content reading. */
@@ -40,6 +42,23 @@ class GrepSearchTool {
             '.png', '.jpg', '.jpeg', '.gif', '.ico', '.pdf', '.zip', '.tar', '.gz',
             '.exe', '.dll', '.bin', '.woff', '.woff2', '.ttf', '.eot', '.mp3', '.mp4'
         ]);
+    }
+    getFunctionDeclaration() {
+        return {
+            type: 'function',
+            function: {
+                name: this.name,
+                description: this.description,
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        query: { type: 'string', description: 'Search term or query pattern.' },
+                        path: { type: 'string', description: 'Relative path or subfolder to search in (default ".").' }
+                    },
+                    required: ['query']
+                }
+            }
+        };
     }
     /**
      * Executes the grep search for a query term.
@@ -100,7 +119,7 @@ class GrepSearchTool {
         if (matches.length === 0) {
             return `No matches found for query: "${args.query}"`;
         }
-        return matches.join('\n');
+        return this.truncateOutput(matches.join('\n'));
     }
 }
 exports.GrepSearchTool = GrepSearchTool;

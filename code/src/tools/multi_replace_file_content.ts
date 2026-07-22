@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { Tool, ToolContext, resolveSafePath } from './Tool';
+import { Tool, ToolContext, FunctionDeclaration, resolveSafePath } from './Tool';
 
 /**
  * Interface representing a single replacement chunk.
@@ -16,8 +16,40 @@ interface ReplacementChunk {
 /**
  * Tool for replacing multiple non-contiguous blocks of lines in a file.
  */
-export class MultiReplaceFileContentTool implements Tool {
+export class MultiReplaceFileContentTool extends Tool {
     public readonly name = 'multi_replace_file_content';
+    public readonly description = 'Replaces multiple non-contiguous blocks of lines in a single file in one pass.';
+
+    public getFunctionDeclaration(): FunctionDeclaration {
+        return {
+            type: 'function',
+            function: {
+                name: this.name,
+                description: this.description,
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        path: { type: 'string', description: 'Relative path of the target file.' },
+                        chunks: {
+                            type: 'array',
+                            description: 'List of replacement chunk objects.',
+                            items: {
+                                type: 'object',
+                                properties: {
+                                    startLine: { type: 'number', description: '1-indexed starting line number.' },
+                                    endLine: { type: 'number', description: '1-indexed ending line number.' },
+                                    targetContent: { type: 'string', description: 'Exact content expected inside line range.' },
+                                    replacementContent: { type: 'string', description: 'New content to replace the target block.' }
+                                },
+                                required: ['startLine', 'endLine', 'targetContent', 'replacementContent']
+                            }
+                        }
+                    },
+                    required: ['path', 'chunks']
+                }
+            }
+        };
+    }
 
     /**
      * Executes multiple non-contiguous replacements within a file.

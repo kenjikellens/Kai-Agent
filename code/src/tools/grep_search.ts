@@ -1,12 +1,31 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { Tool, ToolContext, resolveSafePath } from './Tool';
+import { Tool, ToolContext, FunctionDeclaration, resolveSafePath } from './Tool';
 
 /**
  * Tool for finding exact string patterns within text files inside a workspace path.
  */
-export class GrepSearchTool implements Tool {
+export class GrepSearchTool extends Tool {
     public readonly name = 'grep_search';
+    public readonly description = 'Searches text files recursively for exact pattern matches, returning matching lines and file paths.';
+
+    public getFunctionDeclaration(): FunctionDeclaration {
+        return {
+            type: 'function',
+            function: {
+                name: this.name,
+                description: this.description,
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        query: { type: 'string', description: 'Search term or query pattern.' },
+                        path: { type: 'string', description: 'Relative path or subfolder to search in (default ".").' }
+                    },
+                    required: ['query']
+                }
+            }
+        };
+    }
 
     /** Directory names to ignore during traversal. */
     private readonly ignoreDirs = new Set(['.git', 'node_modules', 'out', 'dist', '.vscode']);
@@ -81,6 +100,6 @@ export class GrepSearchTool implements Tool {
             return `No matches found for query: "${args.query}"`;
         }
 
-        return matches.join('\n');
+        return this.truncateOutput(matches.join('\n'));
     }
 }

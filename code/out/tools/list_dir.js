@@ -29,9 +29,29 @@ const Tool_1 = require("./Tool");
 /**
  * Tool for listing directories and files in a path relative to the workspace.
  */
-class ListDirTool {
+class ListDirTool extends Tool_1.Tool {
     constructor() {
+        super(...arguments);
         this.name = 'list_dir';
+        this.description = 'Lists all files and subdirectories within a given relative directory path.';
+    }
+    getFunctionDeclaration() {
+        return {
+            type: 'function',
+            function: {
+                name: this.name,
+                description: this.description,
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        path: {
+                            type: 'string',
+                            description: 'Relative directory path from workspace root (default ".").'
+                        }
+                    }
+                }
+            }
+        };
     }
     /**
      * Executes the directory listing.
@@ -53,9 +73,10 @@ class ListDirTool {
         if (entries.length === 0) {
             return `Directory is empty.`;
         }
-        return entries
+        const result = entries
             .map((e) => `${e.isDirectory() ? '[DIR]' : '[FILE]'} ${e.name}`)
             .join('\n');
+        return this.truncateOutput(result);
     }
 }
 exports.ListDirTool = ListDirTool;

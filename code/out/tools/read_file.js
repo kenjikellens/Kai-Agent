@@ -29,9 +29,30 @@ const Tool_1 = require("./Tool");
 /**
  * Tool for reading the content of a file within the workspace.
  */
-class ReadFileTool {
+class ReadFileTool extends Tool_1.Tool {
     constructor() {
+        super(...arguments);
         this.name = 'read_file';
+        this.description = 'Reads the content of a file in the workspace, returning line-numbered text.';
+    }
+    getFunctionDeclaration() {
+        return {
+            type: 'function',
+            function: {
+                name: this.name,
+                description: this.description,
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        path: {
+                            type: 'string',
+                            description: 'Relative file path from the workspace root.'
+                        }
+                    },
+                    required: ['path']
+                }
+            }
+        };
     }
     /**
      * Executes the file reading operation.
@@ -49,7 +70,8 @@ class ReadFileTool {
             return '';
         }
         const lines = content.split(/\r?\n/);
-        return lines.map((line, idx) => `${idx + 1}: ${line}`).join('\n');
+        const formatted = lines.map((line, idx) => `${idx + 1}: ${line}`).join('\n');
+        return this.truncateOutput(formatted);
     }
 }
 exports.ReadFileTool = ReadFileTool;

@@ -1,12 +1,33 @@
 import * as childProcess from 'child_process';
 import * as vscode from 'vscode';
-import { Tool, ToolContext } from './Tool';
+import { Tool, ToolContext, FunctionDeclaration } from './Tool';
 
 /**
  * Tool for running shell commands in the workspace root with a timeout and user confirmation request.
  */
-export class RunCommandTool implements Tool {
+export class RunCommandTool extends Tool {
     public readonly name = 'run_command';
+    public readonly description = 'Executes a shell command in the workspace directory. Requires explicit user approval.';
+
+    public getFunctionDeclaration(): FunctionDeclaration {
+        return {
+            type: 'function',
+            function: {
+                name: this.name,
+                description: this.description,
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        command: {
+                            type: 'string',
+                            description: 'Shell command string to execute in workspace root.'
+                        }
+                    },
+                    required: ['command']
+                }
+            }
+        };
+    }
 
     /**
      * Executes the requested command in the workspace root.
@@ -51,7 +72,7 @@ export class RunCommandTool implements Tool {
                     if (!error) {
                         vscode.window.showInformationMessage(`Kai: Successfully executed command: ${args.command}`);
                     }
-                    resolve(result);
+                    resolve(this.truncateOutput(result));
                 }
             );
         });

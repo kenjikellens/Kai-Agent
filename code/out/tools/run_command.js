@@ -26,12 +26,34 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RunCommandTool = void 0;
 const childProcess = __importStar(require("child_process"));
 const vscode = __importStar(require("vscode"));
+const Tool_1 = require("./Tool");
 /**
  * Tool for running shell commands in the workspace root with a timeout and user confirmation request.
  */
-class RunCommandTool {
+class RunCommandTool extends Tool_1.Tool {
     constructor() {
+        super(...arguments);
         this.name = 'run_command';
+        this.description = 'Executes a shell command in the workspace directory. Requires explicit user approval.';
+    }
+    getFunctionDeclaration() {
+        return {
+            type: 'function',
+            function: {
+                name: this.name,
+                description: this.description,
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        command: {
+                            type: 'string',
+                            description: 'Shell command string to execute in workspace root.'
+                        }
+                    },
+                    required: ['command']
+                }
+            }
+        };
     }
     /**
      * Executes the requested command in the workspace root.
@@ -68,7 +90,7 @@ class RunCommandTool {
                 if (!error) {
                     vscode.window.showInformationMessage(`Kai: Successfully executed command: ${args.command}`);
                 }
-                resolve(result);
+                resolve(this.truncateOutput(result));
             });
         });
     }

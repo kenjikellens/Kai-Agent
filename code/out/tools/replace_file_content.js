@@ -31,9 +31,31 @@ const Tool_1 = require("./Tool");
 /**
  * Tool for replacing a single contiguous block of lines in a file.
  */
-class ReplaceFileContentTool {
+class ReplaceFileContentTool extends Tool_1.Tool {
     constructor() {
+        super(...arguments);
         this.name = 'replace_file_content';
+        this.description = 'Replaces a contiguous block of lines in an existing file after verifying line range and target content match.';
+    }
+    getFunctionDeclaration() {
+        return {
+            type: 'function',
+            function: {
+                name: this.name,
+                description: this.description,
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        path: { type: 'string', description: 'Relative path of the target file.' },
+                        startLine: { type: 'number', description: '1-indexed starting line number.' },
+                        endLine: { type: 'number', description: '1-indexed ending line number.' },
+                        targetContent: { type: 'string', description: 'Exact content expected inside line range.' },
+                        replacementContent: { type: 'string', description: 'New content to replace the target block.' }
+                    },
+                    required: ['path', 'startLine', 'endLine', 'targetContent', 'replacementContent']
+                }
+            }
+        };
     }
     /**
      * Executes the replacement of a contiguous block of text within a file.

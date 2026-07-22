@@ -22,6 +22,9 @@ const run_command_1 = require("./run_command");
 const replace_file_content_1 = require("./replace_file_content");
 const multi_replace_file_content_1 = require("./multi_replace_file_content");
 const grep_search_1 = require("./grep_search");
+const get_diagnostics_1 = require("./get_diagnostics");
+const symbol_search_1 = require("./symbol_search");
+const fetch_url_1 = require("./fetch_url");
 __exportStar(require("./Tool"), exports);
 __exportStar(require("./read_file"), exports);
 __exportStar(require("./write_file"), exports);
@@ -30,6 +33,9 @@ __exportStar(require("./run_command"), exports);
 __exportStar(require("./replace_file_content"), exports);
 __exportStar(require("./multi_replace_file_content"), exports);
 __exportStar(require("./grep_search"), exports);
+__exportStar(require("./get_diagnostics"), exports);
+__exportStar(require("./symbol_search"), exports);
+__exportStar(require("./fetch_url"), exports);
 /**
  * Returns a list of all instanced tools available for execution.
  * @returns An array of Tool instances.
@@ -42,7 +48,10 @@ function getRegisteredTools() {
         new run_command_1.RunCommandTool(),
         new replace_file_content_1.ReplaceFileContentTool(),
         new multi_replace_file_content_1.MultiReplaceFileContentTool(),
-        new grep_search_1.GrepSearchTool()
+        new grep_search_1.GrepSearchTool(),
+        new get_diagnostics_1.GetDiagnosticsTool(),
+        new symbol_search_1.SymbolSearchTool(),
+        new fetch_url_1.FetchUrlTool()
     ];
 }
 exports.getRegisteredTools = getRegisteredTools;

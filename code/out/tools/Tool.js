@@ -23,8 +23,38 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.resolveSafePath = void 0;
+exports.resolveSafePath = exports.Tool = void 0;
 const path = __importStar(require("path"));
+/**
+ * Abstract base class that all agent tools must extend.
+ * Provides OOP structure, schema generation for function calling, and output truncation utilities.
+ */
+class Tool {
+    /**
+     * Truncates large tool execution output to save context window tokens.
+     * Keeps head and tail lines with a clear truncation marker.
+     */
+    truncateOutput(output, maxLines = 150, maxBytes = 8000) {
+        if (!output) {
+            return output;
+        }
+        let result = output;
+        if (Buffer.byteLength(result, 'utf8') > maxBytes) {
+            result = result.slice(0, maxBytes);
+        }
+        const lines = result.split('\n');
+        if (lines.length > maxLines) {
+            const headCount = Math.floor(maxLines / 2);
+            const tailCount = maxLines - headCount;
+            const head = lines.slice(0, headCount).join('\n');
+            const tail = lines.slice(-tailCount).join('\n');
+            const omitted = lines.length - maxLines;
+            return `${head}\n\n... [Output truncated: ${omitted} lines omitted to optimize context window] ...\n\n${tail}`;
+        }
+        return result;
+    }
+}
+exports.Tool = Tool;
 /**
  * Resolves a relative path to an absolute path inside the active workspace directory.
  * Throws an error if the path tries to traverse outside of the workspace directory.

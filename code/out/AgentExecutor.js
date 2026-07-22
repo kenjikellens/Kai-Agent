@@ -30,7 +30,7 @@ const LMStudioClient_1 = require("./LMStudioClient");
 const tools_1 = require("./tools");
 /**
  * AgentExecutor coordinates the autonomous AI agent loop.
- * It manages tool execution (file reads/writes/edits, folder listings, terminal execution),
+ * It manages polymorphic tool execution (file operations, search, terminal commands, diagnostics, AST symbols),
  * formats system prompts, parses tool calls, and reports updates back to the UI.
  */
 class AgentExecutor {
@@ -38,7 +38,7 @@ class AgentExecutor {
      * Initializes a new instance of the AgentExecutor.
      * @param workspacePath The absolute path to the active workspace directory.
      * @param extensionPath The absolute path to the extension's root directory.
-     * @param serverUrl The base API URL for LM Studio.
+     * @param serverUrl The base API URL for LM Studio / LLM provider.
      * @param temperature The sampling temperature parameter.
      * @param onProgress Callback function to report agent steps and execution logs back to the sidebar.
      */
@@ -52,12 +52,14 @@ class AgentExecutor {
     }
     /**
      * The main execution loop of the agent.
-     * Continuously calls the LLM, parses tool JSON blocks, executes them, feeds results back,
-     * and stops when the model decides it has finished (no more tool calls generated).
+     * Continuously calls the LLM, parses tool calls, executes them polymorphically, feeds results back,
+     * and stops when the model decides it has finished.
      * @param userPrompt The instruction or request from the user.
      * @param chatHistory The active message log array.
      * @param model The target model selected in the dropdown.
      * @param signal AbortSignal to cancel HTTP requests.
+     * @param activeFile Active text editor file details.
+     * @param thinking Toggle parameter for model reasoning phase.
      * @returns A promise that resolves to the final assistant response.
      */
     async run(userPrompt, chatHistory, model = 'local-model', signal, activeFile, thinking = true) {
@@ -89,14 +91,13 @@ class AgentExecutor {
         const modifiedFiles = new Set();
         while (iteration < maxIterations) {
             iteration++;
-            this.onProgress({ type: 'thinking', output: `Step ${iteration}: Consulting local model...` });
-            // Call the local LLM with streaming tokens
+            this.onProgress({ type: 'thinking', output: `Step ${iteration}: Consulting model...` });
+            // Call the LLM with streaming tokens
             const response = await this.client.chatCompletionStream(messages, model, this.temperature, (token) => {
-                // Send each chunk/token back to the UI
                 this.onProgress({ type: 'token', output: token });
             }, signal, thinking);
             lastAssistantResponse = response;
-            // Parse response for any tool json blocks
+            // Parse response for tool calls
             const toolCall = this.parseToolCall(response);
             if (!toolCall) {
                 // No tools requested, agent is done
@@ -114,7 +115,7 @@ class AgentExecutor {
                 toolId: activeToolId,
                 fileName: targetName
             });
-            // Execute the tool
+            // Execute the tool polymorphically
             let toolResult = '';
             try {
                 toolResult = await this.executeTool(toolCall.name, toolCall.args);
@@ -153,7 +154,7 @@ class AgentExecutor {
         };
     }
     /**
-     * Constructs the system prompt by loading it from the system_prompt_agent.txt file.
+     * Constructs the system prompt by loading it from system_prompt.md.
      * @returns The formatting guide system instructions.
      */
     getSystemPrompt() {
@@ -166,7 +167,7 @@ class AgentExecutor {
         catch (e) {
             console.error('Error reading system_prompt.md:', e);
         }
-        return `You are a powerful, autonomous local AI Developer Agent operating directly within the user's workspace directory. You have full access to view, list, and edit the workspace using tools.`;
+        return `You are a powerful, autonomous local AI Developer Agent operating directly within the user's workspace directory. You have full access to view, list, search, and edit the workspace using tools.`;
     }
     /**
      * Parses the assistant's reply text to extract the first JSON tool call.
@@ -182,7 +183,7 @@ class AgentExecutor {
             if (parsed)
                 return parsed;
         }
-        // Fallback: Try extracting using brace counting (handles raw JSON or malformed fences)
+        // Fallback: Try extracting using brace counting
         const braceJson = this.extractJsonBlock(text);
         if (braceJson) {
             const parsed = this.parseJsonString(braceJson);
@@ -193,7 +194,6 @@ class AgentExecutor {
     }
     /**
      * Extracts the first JSON object string starting with { "type": ... } using brace counting.
-     * This avoids stopping at inner braces (e.g. inside string fields containing CSS/JS code).
      */
     extractJsonBlock(text) {
         let startIndex = -1;
@@ -238,63 +238,37 @@ class AgentExecutor {
         return null;
     }
     /**
-     * Safely parses raw JSON string and extracts matching arguments.
+     * Polymorphically matches JSON payload with registered Tool instances.
      */
     parseJsonString(jsonStr) {
         try {
             const parsed = JSON.parse(jsonStr.trim());
             if (parsed && typeof parsed.type === 'string') {
                 const type = parsed.type;
-                let query = `Executing ${type}`;
-                const args = {};
-                if (type === 'read_file') {
-                    args.path = parsed.path;
-                    query = `Read file: ${parsed.path}`;
+                const matchedTool = this.tools.find(t => t.name === type);
+                if (matchedTool) {
+                    const args = { ...parsed };
+                    delete args.type;
+                    let query = `Executing ${type}`;
+                    if (args.path)
+                        query = `${type}: ${args.path}`;
+                    else if (args.command)
+                        query = `${type}: ${args.command}`;
+                    else if (args.query)
+                        query = `${type}: ${args.query}`;
+                    else if (args.url)
+                        query = `${type}: ${args.url}`;
+                    return { name: type, args, query };
                 }
-                else if (type === 'write_file') {
-                    args.path = parsed.path;
-                    args.content = parsed.content;
-                    query = `Write file: ${parsed.path}`;
-                }
-                else if (type === 'replace_file_content') {
-                    args.path = parsed.path;
-                    args.startLine = parsed.startLine;
-                    args.endLine = parsed.endLine;
-                    args.targetContent = parsed.targetContent;
-                    args.replacementContent = parsed.replacementContent;
-                    query = `Replace content in file: ${parsed.path}`;
-                }
-                else if (type === 'multi_replace_file_content') {
-                    args.path = parsed.path;
-                    args.chunks = parsed.chunks;
-                    query = `Multi-replace content in file: ${parsed.path}`;
-                }
-                else if (type === 'grep_search') {
-                    args.query = parsed.query;
-                    args.path = parsed.path || '.';
-                    query = `Grep search: ${parsed.query}`;
-                }
-                else if (type === 'list_dir') {
-                    args.path = parsed.path || '.';
-                    query = `List directory: ${parsed.path || '.'}`;
-                }
-                else if (type === 'run_command') {
-                    args.command = parsed.command;
-                    query = `Run command: ${parsed.command}`;
-                }
-                else {
-                    return null; // Unknown type
-                }
-                return { name: type, args, query };
             }
         }
         catch {
-            // Ignore syntax errors to allow fallback to normal text
+            // Ignore syntax errors to allow text fallback
         }
         return null;
     }
     /**
-     * Executes the requested tool and returns the text result.
+     * Executes the requested tool polymorphically via Tool interface.
      * @param tool The name of the tool.
      * @param args The arguments object parsed from the JSON blocks.
      * @returns A promise resolving to the execution result text.
@@ -315,6 +289,9 @@ class AgentExecutor {
         }
         if (args.path) {
             return path.basename(args.path);
+        }
+        if (args.url) {
+            return args.url;
         }
         return '';
     }

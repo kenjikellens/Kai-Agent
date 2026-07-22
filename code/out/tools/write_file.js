@@ -31,9 +31,34 @@ const Tool_1 = require("./Tool");
 /**
  * Tool for writing or creating new file content within the workspace.
  */
-class WriteFileTool {
+class WriteFileTool extends Tool_1.Tool {
     constructor() {
+        super(...arguments);
         this.name = 'write_file';
+        this.description = 'Creates a new file or completely overwrites an existing file with the specified content.';
+    }
+    getFunctionDeclaration() {
+        return {
+            type: 'function',
+            function: {
+                name: this.name,
+                description: this.description,
+                parameters: {
+                    type: 'object',
+                    properties: {
+                        path: {
+                            type: 'string',
+                            description: 'Relative path of the target file.'
+                        },
+                        content: {
+                            type: 'string',
+                            description: 'Full string content to write.'
+                        }
+                    },
+                    required: ['path', 'content']
+                }
+            }
+        };
     }
     /**
      * Executes the file writing operation.
