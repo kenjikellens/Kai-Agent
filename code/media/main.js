@@ -124,13 +124,125 @@
     let freeProvidersConfig = [];
 
     /**
+     * Creates and appends an accordion category group to the dropdown menu.
+     * @param {string} title - The category header text.
+     * @param {string[]} modelsList - List of model IDs under this category.
+     * @param {boolean} isInitiallyExpanded - Whether the category should be expanded initially.
+     * @param {Function|null} isModelConnectedFn - Optional callback to check if a model is connected.
+     */
+    function createAccordionGroup(title, modelsList, isInitiallyExpanded, isModelConnectedFn = null) {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'dropdown-category';
+
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'dropdown-category-header';
+        
+        const titleSpan = document.createElement('span');
+        titleSpan.textContent = title;
+        headerDiv.appendChild(titleSpan);
+
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const chevronSvg = document.createElementNS(svgNS, 'svg');
+        chevronSvg.setAttribute('class', 'chevron-icon');
+        chevronSvg.setAttribute('width', '8');
+        chevronSvg.setAttribute('height', '8');
+        chevronSvg.setAttribute('viewBox', '0 0 24 24');
+        chevronSvg.setAttribute('fill', 'none');
+        chevronSvg.setAttribute('stroke', 'currentColor');
+        chevronSvg.setAttribute('stroke-width', '3');
+        chevronSvg.setAttribute('stroke-linecap', 'round');
+        chevronSvg.setAttribute('stroke-linejoin', 'round');
+
+        const polyline = document.createElementNS(svgNS, 'polyline');
+        polyline.setAttribute('points', '6 9 12 15 18 9');
+        chevronSvg.appendChild(polyline);
+        headerDiv.appendChild(chevronSvg);
+
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'dropdown-category-content';
+        
+        let isExpanded = accordionStates[title];
+        if (isExpanded === undefined) {
+            isExpanded = isInitiallyExpanded;
+            accordionStates[title] = isExpanded;
+        }
+
+        if (!isExpanded) {
+            contentDiv.classList.add('collapsed');
+            chevronSvg.style.transform = 'rotate(-90deg)';
+        } else {
+            chevronSvg.style.transform = 'rotate(0deg)';
+        }
+
+        headerDiv.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isCollapsed = contentDiv.classList.toggle('collapsed');
+            chevronSvg.style.transform = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
+            accordionStates[title] = !isCollapsed;
+        });
+
+        if (modelsList.length === 0) {
+            const placeholder = document.createElement('div');
+            placeholder.className = 'dropdown-item-placeholder';
+            placeholder.textContent = title.includes('Gemini') ? 'Add API key in settings' : (title.includes('LM Studio') ? 'LM Studio server offline' : 'No Models Available');
+            contentDiv.appendChild(placeholder);
+        } else {
+            modelsList.forEach(m => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item';
+                if (m === selectedModelValue) {
+                    item.classList.add('selected');
+                }
+                item.dataset.value = m;
+                const isLoaded = isModelConnectedFn ? isModelConnectedFn(m) : true;
+                const dotClass = isLoaded ? 'status-connected' : 'status-disconnected';
+                
+                const statusDotSpan = document.createElement('span');
+                statusDotSpan.className = `status-dot ${dotClass}`;
+                item.appendChild(statusDotSpan);
+
+                const textSpan = document.createElement('span');
+                textSpan.className = 'dropdown-item-text';
+                textSpan.textContent = formatModelName(m);
+                item.appendChild(textSpan);
+                
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectedModelValue = m;
+                    localStorage.setItem('kai.selectedModel', m);
+                    selectedModelText.textContent = formatModelName(m);
+                    
+                    statusDot.className = (isModelConnectedFn && isModelConnectedFn(m)) ? 'status-dot status-connected' : 'status-dot status-disconnected';
+                    dropdownOptionsMenu.classList.add('hidden');
+                    
+                    saveCurrentChat();
+                });
+                contentDiv.appendChild(item);
+            });
+        }
+
+        groupDiv.appendChild(headerDiv);
+        groupDiv.appendChild(contentDiv);
+        dropdownOptionsMenu.appendChild(groupDiv);
+    }
+
+    /**
      * Instantly populates the dropdown menu with default cloud and free models so user never waits.
      */
     function initDefaultDropdown() {
-        if (!dropdownOptionsMenu || dropdownOptionsMenu.children.length > 0) return;
+        if (!dropdownOptionsMenu) return;
+        dropdownOptionsMenu.innerHTML = '';
         
         const i18n = window.KAI_I18N || {};
-        const defaultGemini = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash-lite'];
+        const defaultGemini = [
+            'gemini-3.5-flash',
+            'gemini-3-flash-preview',
+            'gemini-3.1-pro-preview',
+            'gemini-3.1-flash-lite',
+            'gemini-2.5-flash',
+            'gemini-2.5-pro',
+            'gemini-2.0-flash-lite'
+        ];
         const defaultProviders = [
             { name: 'OmniRoute Gateway', models: ['omniroute/auto'] },
             { name: 'Mistral AI', models: ['mistral/mistral-small-latest', 'mistral/codestral-latest', 'mistral/open-mixtral-8x22b'] },
@@ -139,41 +251,16 @@
             { name: 'Zhipu AI (GLM)', models: ['zhipu/glm-4-flash', 'zhipu/glm-4-plus'] }
         ];
 
-        // LM Studio group (checking placeholder)
-        const lmDiv = document.createElement('div');
-        lmDiv.className = 'dropdown-category';
-        lmDiv.innerHTML = `<div class="dropdown-category-header"><span>${i18n.lmStudioHeader || 'LM Studio (Local)'} (${i18n.checkingServer || 'Checking...'})</span></div><div class="dropdown-category-content"><div class="dropdown-item-placeholder">Checking local server...</div></div>`;
-        dropdownOptionsMenu.appendChild(lmDiv);
+        const lmTitle = `${i18n.lmStudioHeader || 'LM Studio (Local)'} (${i18n.checkingServer || 'Checking...'})`;
+        const geminiTitle = 'Gemini (Cloud)';
 
-        // Gemini group
-        const gemDiv = document.createElement('div');
-        gemDiv.className = 'dropdown-category';
-        let gemHtml = defaultGemini.map(m => `<div class="dropdown-item${m === selectedModelValue ? ' selected' : ''}" data-value="${m}"><span class="status-dot status-connected"></span><span class="dropdown-item-text">${m}</span></div>`).join('');
-        gemDiv.innerHTML = `<div class="dropdown-category-header"><span>Gemini (Cloud)</span></div><div class="dropdown-category-content">${gemHtml}</div>`;
-        dropdownOptionsMenu.appendChild(gemDiv);
+        const showGeminiExpanded = selectedModelValue && selectedModelValue.toLowerCase().startsWith('gemini');
+        createAccordionGroup(lmTitle, [], !showGeminiExpanded);
+        createAccordionGroup(geminiTitle, defaultGemini, showGeminiExpanded);
 
-        // Free provider groups
         defaultProviders.forEach(p => {
-            const pDiv = document.createElement('div');
-            pDiv.className = 'dropdown-category';
-            let pHtml = p.models.map(m => `<div class="dropdown-item${m === selectedModelValue ? ' selected' : ''}" data-value="${m}"><span class="status-dot status-connected"></span><span class="dropdown-item-text">${formatModelName(m)}</span></div>`).join('');
-            pDiv.innerHTML = `<div class="dropdown-category-header"><span>${p.name} (Free)</span></div><div class="dropdown-category-content">${pHtml}</div>`;
-            dropdownOptionsMenu.appendChild(pDiv);
-        });
-
-        // Attach click handlers to instant options
-        dropdownOptionsMenu.querySelectorAll('.dropdown-item').forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const val = item.dataset.value;
-                if (val) {
-                    selectedModelValue = val;
-                    localStorage.setItem('kai.selectedModel', val);
-                    selectedModelText.textContent = formatModelName(val);
-                    dropdownOptionsMenu.classList.add('hidden');
-                    saveCurrentChat();
-                }
-            });
+            const isExpanded = selectedModelValue && p.models.includes(selectedModelValue);
+            createAccordionGroup(p.name + ' (Free)', p.models, isExpanded);
         });
     }
 
@@ -1046,6 +1133,9 @@
                     dropdownOptionsMenu.appendChild(groupDiv);
                 };
 
+                // CLEAR DROPDOWN MENU FIRST BEFORE REBUILDING ACCORDION GROUPS TO PREVENT DUPLICATION!
+                dropdownOptionsMenu.innerHTML = '';
+
                 // Rebuild with fixed groups + free provider groups using i18n translations
                 const i18n = window.KAI_I18N || {};
                 const lmStudioStatus = message.connected ? (i18n.connected || 'Connected') : (i18n.offline || 'Offline');
@@ -1054,7 +1144,7 @@
 
                 const showGeminiExpanded = selectedModelValue && selectedModelValue.toLowerCase().startsWith('gemini');
                 createAccordionGroup(lmTitle, lmStudioModels, !showGeminiExpanded);
-                createAccordionGroup(geminiTitle, geminiModels, showGeminiExpanded);
+                createAccordionGroup(geminiTitle, geminiModels.length > 0 ? geminiModels : ['gemini-3.5-flash', 'gemini-3-flash-preview', 'gemini-3.1-pro-preview', 'gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash-lite'], showGeminiExpanded);
 
                 // Add one accordion group per free-tier provider
                 const freeProviders = message.freeProviders || [];
