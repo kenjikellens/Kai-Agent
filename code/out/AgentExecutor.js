@@ -183,6 +183,14 @@ class AgentExecutor {
             if (parsed)
                 return parsed;
         }
+        // Regex to extract tool call JSON payload following <|tool_call>, <tool_call>, or call:name
+        const tagRegex = /(?:<\|tool_call>|<tool_call>)?\s*(?:call:\w+)?\s*(\{[\s\S]*?\})/i;
+        const tagMatch = tagRegex.exec(text);
+        if (tagMatch) {
+            const parsed = this.parseJsonString(tagMatch[1]);
+            if (parsed)
+                return parsed;
+        }
         // Fallback: Try extracting using brace counting
         const braceJson = this.extractJsonBlock(text);
         if (braceJson) {

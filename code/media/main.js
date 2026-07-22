@@ -441,10 +441,18 @@
     function formatMarkdown(text, forceThinkingCollapsed = null) {
         const chevronSvg = `<svg class="custom-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px; display: inline-block; vertical-align: middle;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
 
-        // Safely strip incomplete streaming tool calls (prevents flickering)
         let cleanText = text;
+
+        // Strip special model tokens (<|tool_call>, <|im_start|>, <|im_end|>, etc.)
+        cleanText = cleanText.replace(/<\|[a-zA-Z0-9_\-\s:]+\|>/gi, '');
+        cleanText = cleanText.replace(/<\|tool_call(?:>[^\n]*|\b)/gi, '');
+        cleanText = cleanText.replace(/<\/?tool_call>/gi, '');
+        cleanText = cleanText.replace(/\bcall:[a-zA-Z0-9_\-]+\b/gi, '');
+
+        // Safely strip incomplete / streaming tool calls from the end of text (prevents flickering)
         cleanText = cleanText.replace(/```json(?:(?!```)[\s\S])*$/i, '');
         cleanText = cleanText.replace(/```\s*\{\s*["']type["'](?:(?!```)[\s\S])*$/i, '');
+        cleanText = cleanText.replace(/\{\s*["']type["']\s*:\s*["'][a-zA-Z0-9_\-]+["'](?:(?!\})[\s\S])*$/i, '');
 
         // Handle tool result formatting
         if (cleanText.startsWith('[Tool Result for')) {
@@ -456,13 +464,15 @@
             }
         }
 
-        // Wrap JSON blocks in custom placeholder tags so they don't get escaped
-        cleanText = cleanText.replace(/```json\s*([\s\S]*?)```/gi, (match, p1) => {
-            return `[[[TOOL_CALL_START]]]${p1}[[[TOOL_CALL_END]]]`;
-        });
-        cleanText = cleanText.replace(/```\s*(\{\s*["']type["'][\s\S]*?\})\s*```/gi, (match, p1) => {
-            return `[[[TOOL_CALL_START]]]${p1}[[[TOOL_CALL_END]]]`;
-        });
+        // Strip completed fenced JSON tool calls (```json ... ```)
+        cleanText = cleanText.replace(/```json\s*([\s\S]*?)```/gi, '');
+        cleanText = cleanText.replace(/```\s*(\{\s*["']type["'][\s\S]*?\})\s*```/gi, '');
+
+        // Strip raw unfenced JSON objects containing {"type": "..."}
+        cleanText = cleanText.replace(/\{\s*["']type["']\s*:\s*["'][a-zA-Z0-9_\-]+["'][\s\S]*?\}/gi, '');
+
+        // Clean up excessive blank lines left behind by stripped tool calls
+        cleanText = cleanText.replace(/(\r?\n\s*){3,}/g, '\n\n');
 
         let escaped = escapeHtml(cleanText);
 
