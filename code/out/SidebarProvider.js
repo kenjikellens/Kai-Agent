@@ -255,14 +255,22 @@ class SidebarProvider {
         const geminiModels = await client.getGeminiModels(apiKey).catch(() => []);
         const loadedModels = await client.getLoadedModels().catch(() => []);
         const activeModel = lmModels.length > 0 ? lmModels[0] : (geminiModels.length > 0 ? geminiModels[0] : 'local-model');
+        const omniModels = await client.getOmniRouteModels().catch(() => []);
         // Build per-provider model lists for the dropdown
-        const freeProviders = LMStudioClient_1.FREE_PROVIDERS.map(p => ({
-            name: p.name,
-            configKey: p.configKey,
-            keyHint: p.keyHint,
-            models: p.models,
-            apiKey: config.get(p.configKey) || ''
-        }));
+        const freeProviders = LMStudioClient_1.FREE_PROVIDERS.map(p => {
+            let models = p.models;
+            if (p.configKey === 'omnirouteApiKey' && omniModels.length > 0) {
+                const combinedSet = new Set([...models, ...omniModels]);
+                models = Array.from(combinedSet);
+            }
+            return {
+                name: p.name,
+                configKey: p.configKey,
+                keyHint: p.keyHint,
+                models: models,
+                apiKey: config.get(p.configKey) || ''
+            };
+        });
         this._view.webview.postMessage({
             type: 'connectionStatus',
             connected: lmStudioConnected,

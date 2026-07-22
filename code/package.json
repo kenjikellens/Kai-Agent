@@ -89,6 +89,16 @@
           "default": "",
           "description": "API key for Zhipu AI (GLM) free tier (open.bigmodel.cn)."
         },
+        "kai.omnirouteServerUrl": {
+          "type": "string",
+          "default": "http://localhost:8000/v1",
+          "description": "Base URL for your OmniRoute AI gateway instance (run locally via npm: npx omniroute)."
+        },
+        "kai.omnirouteApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API key for OmniRoute AI gateway (if API key authentication is enabled)."
+        },
         "kai.temperature": {
           "type": "number",
           "default": 0.7,

@@ -81,6 +81,20 @@ exports.FREE_PROVIDERS = [
             'zhipu/glm-4-flash',
             'zhipu/glm-4v-flash'
         ]
+    },
+    {
+        name: 'OmniRoute Gateway',
+        baseUrl: 'http://localhost:8000/v1',
+        configKey: 'omnirouteApiKey',
+        keyHint: 'Run OmniRoute via npm: npx omniroute (default: http://localhost:8000/v1)',
+        models: [
+            'omniroute/auto',
+            'omniroute/free-aggregate',
+            'omniroute/gemini-2.0-flash',
+            'omniroute/claude-3-5-sonnet',
+            'omniroute/deepseek-r1',
+            'omniroute/gpt-4o'
+        ]
     }
 ];
 /**
@@ -115,14 +129,69 @@ class LMStudioClient {
         }
     }
     /**
-     * Fetches the list of models currently downloaded and available in LM Studio.
+     * Fetches the list of models currently available across local LM Studio, Gemini, free providers, and OmniRoute.
      * @returns A promise that resolves to an array of model IDs.
      */
     async getModels() {
         const lmModels = await this.getLMStudioModels().catch(() => []);
         const geminiModels = await this.getGeminiModels(this.apiKey).catch(() => []);
         const freeProviderModels = this.getFreeProviderModels();
-        return [...lmModels, ...geminiModels, ...freeProviderModels];
+        const omniModels = await this.getOmniRouteModels().catch(() => []);
+        const combined = new Set([...lmModels, ...geminiModels, ...freeProviderModels, ...omniModels]);
+        return Array.from(combined);
+    }
+    /**
+     * Fetches models dynamically from the active OmniRoute gateway instance if reachable.
+     */
+    async getOmniRouteModels() {
+        return new Promise((resolve) => {
+            const config = vscode.workspace.getConfiguration('kai');
+            const serverUrl = config.get('omnirouteServerUrl') || 'http://localhost:8000/v1';
+            const apiKey = config.get('omnirouteApiKey') || 'omniroute';
+            try {
+                const parsedUrl = new URL(`${serverUrl.replace(/\/$/, '')}/models`);
+                const clientModule = parsedUrl.protocol === 'https:' ? https : http;
+                const options = {
+                    hostname: parsedUrl.hostname,
+                    port: parsedUrl.port ? parseInt(parsedUrl.port, 10) : (parsedUrl.protocol === 'https:' ? 443 : 80),
+                    path: parsedUrl.pathname + parsedUrl.search,
+                    method: 'GET',
+                    timeout: 3000,
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`
+                    }
+                };
+                const req = clientModule.request(options, (res) => {
+                    let data = '';
+                    res.on('data', (chunk) => { data += chunk; });
+                    res.on('end', () => {
+                        if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+                            try {
+                                const parsed = JSON.parse(data);
+                                if (parsed && Array.isArray(parsed.data)) {
+                                    const models = parsed.data.map((m) => {
+                                        const id = m.id || m;
+                                        return id.startsWith('omniroute/') ? id : `omniroute/${id}`;
+                                    });
+                                    resolve(models);
+                                    return;
+                                }
+                            }
+                            catch {
+                                // ignore parse error
+                            }
+                        }
+                        resolve([]);
+                    });
+                });
+                req.on('error', () => resolve([]));
+                req.on('timeout', () => { req.destroy(); resolve([]); });
+                req.end();
+            }
+            catch {
+                resolve([]);
+            }
+        });
     }
     /**
      * Returns the static list of all model IDs from the registered free-tier cloud providers.
@@ -470,7 +539,14 @@ class LMStudioClient {
         if (!model) {
             return undefined;
         }
-        return exports.FREE_PROVIDERS.find(p => p.models.includes(model));
+        const matched = exports.FREE_PROVIDERS.find(p => p.models.includes(model));
+        if (matched) {
+            return matched;
+        }
+        if (model.startsWith('omniroute/')) {
+            return exports.FREE_PROVIDERS.find(p => p.configKey === 'omnirouteApiKey');
+        }
+        return undefined;
     }
     /**
      * Strips the provider namespace prefix from a model ID before sending to the API.
@@ -483,6 +559,19 @@ class LMStudioClient {
         return slashIdx !== -1 ? model.slice(slashIdx + 1) : model;
     }
     /**
+     * Retrieves the base URL for a FreeProvider, supporting custom settings overrides (e.g. for OmniRoute).
+     */
+    _getProviderBaseUrl(provider) {
+        if (provider.configKey === 'omnirouteApiKey') {
+            const config = vscode.workspace.getConfiguration('kai');
+            const customUrl = config.get('omnirouteServerUrl');
+            if (customUrl && customUrl.trim() !== '') {
+                return customUrl.trim().replace(/\/$/, '');
+            }
+        }
+        return provider.baseUrl;
+    }
+    /**
      * Reads the API key for a free-tier provider from VS Code's extension settings.
      * @param provider The FreeProvider whose key should be retrieved.
      * @returns The configured API key string, or an empty string if not set.
@@ -493,6 +582,9 @@ class LMStudioClient {
         if (!key) {
             const envVarName = provider.configKey.replace('ApiKey', '_API_KEY').toUpperCase();
             key = this._getEnvKey(envVarName);
+        }
+        if (!key && provider.configKey === 'omnirouteApiKey') {
+            key = 'omniroute';
         }
         return key;
     }
@@ -560,9 +652,12 @@ class LMStudioClient {
                 temperature,
                 stream: false
             });
-            const parsedUrl = new URL(`${provider.baseUrl}/chat/completions`);
+            const baseUrl = this._getProviderBaseUrl(provider);
+            const parsedUrl = new URL(`${baseUrl}/chat/completions`);
+            const clientModule = parsedUrl.protocol === 'https:' ? https : http;
             const options = {
                 hostname: parsedUrl.hostname,
+                port: parsedUrl.port ? parseInt(parsedUrl.port, 10) : (parsedUrl.protocol === 'https:' ? 443 : 80),
                 path: parsedUrl.pathname + parsedUrl.search,
                 method: 'POST',
                 headers: {
@@ -571,7 +666,7 @@ class LMStudioClient {
                     'Authorization': `Bearer ${apiKey}`
                 }
             };
-            const req = https.request(options, (res) => {
+            const req = clientModule.request(options, (res) => {
                 let data = '';
                 res.on('data', (chunk) => { data += chunk; });
                 res.on('end', () => {
@@ -625,9 +720,12 @@ class LMStudioClient {
                 temperature,
                 stream: true
             });
-            const parsedUrl = new URL(`${provider.baseUrl}/chat/completions`);
+            const baseUrl = this._getProviderBaseUrl(provider);
+            const parsedUrl = new URL(`${baseUrl}/chat/completions`);
+            const clientModule = parsedUrl.protocol === 'https:' ? https : http;
             const options = {
                 hostname: parsedUrl.hostname,
+                port: parsedUrl.port ? parseInt(parsedUrl.port, 10) : (parsedUrl.protocol === 'https:' ? 443 : 80),
                 path: parsedUrl.pathname + parsedUrl.search,
                 method: 'POST',
                 signal,
@@ -637,7 +735,7 @@ class LMStudioClient {
                     'Authorization': `Bearer ${apiKey}`
                 }
             };
-            const req = https.request(options, (res) => {
+            const req = clientModule.request(options, (res) => {
                 if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
                     let errData = '';
                     res.on('data', (d) => errData += d);
