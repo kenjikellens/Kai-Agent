@@ -1,5 +1,0 @@
-[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="bewerk de tekst in de titel van de html file naar "OWOWOWO" en de button naar "touch me"", totalMessages=1
-[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="change the text in the html to be something else", totalMessages=1
-[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="you can choose", totalMessages=6
-[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="verwijder kai_debug.log en items to know files aub", totalMessages=1
-[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="verwijdr items to know en kai debug log files aub", totalMessages=1

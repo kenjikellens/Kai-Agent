@@ -704,13 +704,19 @@
                 verb = state === 'start' ? 'creating' : (state === 'success' ? 'created' : 'failed creating');
                 break;
             case 'edit_file':
+            case 'replace_file_content':
+            case 'multi_replace_file_content':
                 verb = state === 'start' ? 'editing' : (state === 'success' ? 'edited' : 'failed editing');
                 break;
             case 'list_dir':
                 verb = state === 'start' ? 'scanning' : (state === 'success' ? 'scanned' : 'failed scanning');
                 break;
+            case 'grep_search':
+            case 'search_web':
+                verb = state === 'start' ? 'searching' : (state === 'success' ? 'searched' : 'failed searching');
+                break;
             case 'run_command':
-                verb = state === 'start' ? 'running' : (state === 'success' ? 'executed' : 'failed executing');
+                verb = state === 'start' ? 'running' : (state === 'success' ? 'ran' : 'failed running');
                 break;
             default:
                 verb = state === 'start' ? 'running' : (state === 'success' ? 'completed' : 'failed');
