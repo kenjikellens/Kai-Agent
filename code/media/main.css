@@ -259,6 +259,21 @@ button:disabled {
   background: transparent;
   border: 0;
   color: var(--app-fg);
+  padding: 0 !important;
+}
+
+.response-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0;
+  margin: 2px 0;
+}
+
+.text-block {
+  background: transparent;
+  border: none;
+  padding: 4px 6px;
 }
 
 .system-message {
@@ -274,11 +289,23 @@ button:disabled {
 }
 
 .message-content {
-  padding: 8px 12px;
+  padding: 6px 8px;
   font-size: 0.85rem;
   line-height: 1.45;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.message-content p {
+  margin: 4px 0;
+}
+
+.message-content p:first-child {
+  margin-top: 0;
+}
+
+.message-content p:last-child {
+  margin-bottom: 0;
 }
 
 .message-content :where(h1, h2, h3) {
@@ -704,8 +731,8 @@ button:disabled {
 .thinking-block {
   display: flex;
   flex-direction: column;
-  margin: 8px 0;
-  padding-left: 0;
+  margin: 2px 0;
+  padding: 2px 0;
   border-left: 0;
 }
 
@@ -713,7 +740,7 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   color: var(--app-muted);
   font-size: 0.72rem;
   font-weight: 500;
@@ -744,6 +771,11 @@ button:disabled {
   font-size: 0.75rem;
   line-height: 1.3;
   font-style: italic;
+  margin: 0;
+}
+
+.thinking-content p {
+  margin: 2px 0;
 }
 
 .thinking-content.collapsed {
@@ -755,13 +787,66 @@ button:disabled {
 ------------------------------ */
 .tool-status-row {
   display: flex;
-  align-items: center;
-  align-self: flex-start;
-  margin: 0;
-  padding: 1px 4px;
+  flex-direction: column;
+  align-self: stretch;
+  margin: 2px 0;
+  padding: 4px 8px;
+  border-radius: var(--app-radius-sm);
   color: var(--app-muted);
   font-size: 0.75rem;
   font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.tool-status-row:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--app-fg);
+}
+
+.tool-call-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.tool-call-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tool-chevron {
+  font-size: 10px;
+  color: var(--app-muted);
+  transition: transform 0.2s ease;
+}
+
+.tool-status-row.expanded .tool-chevron {
+  transform: rotate(90deg);
+}
+
+.tool-result-dropdown {
+  margin-top: 4px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--app-radius-sm);
+  overflow: hidden;
+}
+
+.tool-result-dropdown.hidden {
+  display: none;
+}
+
+.tool-result-dropdown pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: var(--app-mono);
+  font-size: 0.72rem;
+  color: #a5d6a7;
 }
 
 .tool-status-row svg {
@@ -789,9 +874,6 @@ button:disabled {
 }
 
 .tool-status-row.errored {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
   color: #e74c3c;
 }
 
@@ -1104,20 +1186,56 @@ button:disabled {
   font-weight: 700;
 }
 
-.file-summary-body {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.files-edited-container {
+  width: 100%;
+  overflow: hidden;
+  margin: 4px 0;
 }
 
-.file-summary-item {
+.files-edited-scroll-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px;
+  scrollbar-width: thin;
+}
+
+.files-edited-scroll-row::-webkit-scrollbar {
+  height: 4px;
+}
+
+.files-edited-scroll-row::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+.file-card {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.8rem;
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-.file-summary-item .codicon {
+.file-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.file-card-name {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--vscode-foreground, #cccccc);
+  white-space: nowrap;
+}
+
+.file-card .codicon {
   font-size: 14px;
   width: 16px;
   height: 16px;

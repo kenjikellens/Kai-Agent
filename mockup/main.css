@@ -1,0 +1,452 @@
+/* ==========================================================================
+   Kai Agent UI Mockup Stylesheet
+   Demonstrates unified response container hierarchy and side-by-side file cards
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Global Layout & Reset
+   -------------------------------------------------------------------------- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: #1e1e1e;
+    color: #cccccc;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* --------------------------------------------------------------------------
+   Mockup Header & Color Legend
+   -------------------------------------------------------------------------- */
+.mockup-header {
+    background: #252526;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mockup-header h2 {
+    font-size: 1rem;
+    color: #ffffff;
+    margin-bottom: 4px;
+}
+
+.mockup-header p {
+    font-size: 0.8rem;
+    color: #888888;
+    margin-bottom: 8px;
+}
+
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.legend-item {
+    font-size: 0.72rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.legend-response { border: 1px solid #ff4d4d; color: #ff8080; background: rgba(255, 77, 77, 0.1); }
+.legend-thinking { border: 1px solid #00e5ff; color: #80f3ff; background: rgba(0, 229, 255, 0.1); }
+.legend-text { border: 1px dashed #3399ff; color: #80c0ff; background: rgba(51, 153, 255, 0.1); }
+.legend-tool { border: 1px solid #2ecc71; color: #73e6a3; background: rgba(46, 204, 113, 0.1); }
+.legend-files { border: 1px solid #a855f7; color: #c084fc; background: rgba(168, 85, 247, 0.1); }
+
+/* --------------------------------------------------------------------------
+   VS Code IDE Layout & Resizable Sidebar Wrapper
+   -------------------------------------------------------------------------- */
+.ide-layout {
+    display: flex;
+    width: 100%;
+    height: calc(100vh - 120px);
+    min-height: 480px;
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.sidebar-resizable-wrapper {
+    position: relative;
+    width: 340px;
+    min-width: 200px;
+    max-width: 700px;
+    height: 100%;
+    background: #252526;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+/* Drag handle on right edge of sidebar */
+.resize-handle {
+    position: absolute;
+    right: -4px;
+    top: 0;
+    width: 8px;
+    height: 100%;
+    cursor: col-resize;
+    z-index: 100;
+}
+
+.resize-handle:hover,
+.resize-handle:active {
+    background: rgba(0, 122, 204, 0.5);
+}
+
+.sidebar-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    padding: 8px;
+    overflow-y: auto;
+}
+
+.sidebar-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 8px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #888888;
+    letter-spacing: 0.5px;
+}
+
+.width-indicator {
+    font-size: 0.68rem;
+    color: #00e5ff;
+    font-family: Consolas, Monaco, monospace;
+}
+
+/* Simulated Main Editor Panel */
+.editor-main-panel {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    background: #1e1e1e;
+    overflow: hidden;
+}
+
+.editor-tabs-bar {
+    display: flex;
+    background: #2d2d2d;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.editor-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: #2d2d2d;
+    color: #888888;
+    font-size: 0.8rem;
+    border-right: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.editor-tab.active {
+    background: #1e1e1e;
+    color: #ffffff;
+    border-top: 2px solid #007acc;
+}
+
+.editor-content-area {
+    padding: 24px;
+    color: #888888;
+}
+
+.editor-welcome-text h3 {
+    color: #ffffff;
+    font-size: 1rem;
+    margin-bottom: 8px;
+}
+
+.editor-welcome-text p {
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+/* Chat Container Inside Sidebar */
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+/* User Message Bubble */
+.user-message {
+    align-self: flex-end;
+    background: rgba(120, 120, 120, 0.15);
+    border: 1px solid rgba(120, 120, 120, 0.25);
+    border-radius: 12px 12px 2px 12px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    max-width: 85%;
+}
+
+/* --------------------------------------------------------------------------
+   UNIFIED RESPONSE CONTAINER (Container Level 1)
+   Wraps all output blocks for an assistant turn into 1 container with 0 padding
+   -------------------------------------------------------------------------- */
+.response-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 0; /* Strict requirement: no padding on main container */
+    margin: 4px 0;
+    border-radius: 8px;
+}
+
+/* Temporary Color-Coded Border for Main Response Container */
+.demo-highlight-response {
+    border: 2px stroke #ff4d4d;
+    outline: 2px solid #ff4d4d;
+    outline-offset: -2px;
+}
+
+/* --------------------------------------------------------------------------
+   THINKING PROCESS BLOCK
+   -------------------------------------------------------------------------- */
+.thinking-block {
+    display: flex;
+    flex-direction: column;
+    margin: 2px 0;
+    padding: 3px 6px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.thinking-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #888888;
+    margin-bottom: 2px;
+}
+
+.thinking-content {
+    font-size: 0.75rem;
+    color: #aaaaaa;
+    line-height: 1.35;
+    font-style: italic;
+    margin: 0;
+    padding: 0;
+}
+
+.thinking-content p {
+    margin: 2px 0;
+}
+
+.demo-highlight-thinking {
+    border: 1px solid #00e5ff;
+}
+
+/* --------------------------------------------------------------------------
+   CHILD CONTAINER TYPE A: Text Block Container (Invisible, No Background)
+   -------------------------------------------------------------------------- */
+.text-block {
+    background: transparent;
+    padding: 2px 4px;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    color: #cccccc;
+}
+
+.text-block p {
+    margin: 2px 0;
+}
+
+/* Temporary Color-Coded Border for Text Block Containers */
+.demo-highlight-text {
+    border: 1px dashed #3399ff;
+    margin: 2px 0;
+}
+
+/* --------------------------------------------------------------------------
+   CHILD CONTAINER TYPE B: Tool Call Popup Container (Light Hover Background)
+   -------------------------------------------------------------------------- */
+.tool-call-container {
+    display: flex;
+    flex-direction: column;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    color: #888888;
+    background: transparent;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.tool-call-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.tool-call-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tool-chevron {
+    font-size: 10px;
+    color: #888888;
+    transition: transform 0.2s ease;
+}
+
+.tool-call-container.expanded .tool-chevron {
+    transform: rotate(90deg);
+}
+
+/* Light Background Hover Effect */
+.tool-call-container:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: #ffffff;
+}
+
+.tool-call-container code {
+    font-family: Consolas, Monaco, monospace;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #cccccc;
+}
+
+/* Tool Result Dropdown Accordion */
+.tool-result-dropdown {
+    margin-top: 4px;
+    padding: 6px 8px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.tool-result-dropdown.hidden {
+    display: none;
+}
+
+.tool-result-dropdown pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 0.72rem;
+    color: #a5d6a7;
+}
+
+/* Temporary Color-Coded Border for Tool Call Popup Containers */
+.demo-highlight-tool {
+    border: 1px solid #2ecc71;
+    margin: 2px 0;
+}
+
+/* --------------------------------------------------------------------------
+   CHILD CONTAINER TYPE C: Files Edited Container (Horizontal Scrollbar)
+   Side-by-side file cards with horizontal overflow scrolling
+   -------------------------------------------------------------------------- */
+.files-edited-container {
+    width: 100%;
+    overflow: hidden;
+    margin: 4px 0;
+}
+
+/* Temporary Color-Coded Border for Outer Files Edited Row Container */
+.demo-highlight-files-row {
+    border: 1px solid #a855f7;
+}
+
+/* Horizontal Scroll Row for File Cards */
+.files-edited-scroll-row {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 6px 2px;
+    scrollbar-width: thin;
+}
+
+.files-edited-scroll-row::-webkit-scrollbar {
+    height: 4px;
+}
+
+.files-edited-scroll-row::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+}
+
+/* Individual Side-by-Side File Card Container */
+.file-card {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.file-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Temporary Color-Coded Border for Individual File Cards */
+.demo-highlight-file-card {
+    border: 1px solid #f59e0b;
+}
+
+.file-card-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.file-card-name {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #ffffff;
+    white-space: nowrap;
+}
+
+.file-card-path {
+    font-size: 0.68rem;
+    color: #888888;
+    white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   VS Code Codicons Theme Category Colors
+   -------------------------------------------------------------------------- */
+.html-icon { color: #e44d26; }
+.css-icon { color: #42a5f5; }
+.js-icon { color: #f7df1e; }
+.ts-icon { color: #3178c6; }
+.json-icon { color: #cbcb41; }
+.md-icon { color: #42a5f5; }

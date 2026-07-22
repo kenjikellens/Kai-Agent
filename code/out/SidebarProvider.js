@@ -124,6 +124,10 @@ class SidebarProvider {
                     await this._handleLoadChat(data.chatId);
                     break;
                 }
+                case 'openFile': {
+                    await this._handleOpenFile(data.filePath);
+                    break;
+                }
             }
         });
         // Notify the webview if the agent is currently running
@@ -378,6 +382,28 @@ class SidebarProvider {
                 type: 'loadChat',
                 chat: chat
             });
+        }
+    }
+    /**
+     * Handles opening a file in the active VS Code editor tab when clicked from the webview.
+     * @param relOrAbsPath Relative or absolute file path to open.
+     */
+    async _handleOpenFile(relOrAbsPath) {
+        if (!relOrAbsPath) {
+            return;
+        }
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders || workspaceFolders.length === 0) {
+            return;
+        }
+        const workspacePath = workspaceFolders[0].uri.fsPath;
+        const targetPath = path.isAbsolute(relOrAbsPath)
+            ? relOrAbsPath
+            : path.join(workspacePath, relOrAbsPath);
+        if (fs.existsSync(targetPath)) {
+            const docUri = vscode.Uri.file(targetPath);
+            const doc = await vscode.workspace.openTextDocument(docUri);
+            await vscode.window.showTextDocument(doc);
         }
     }
     _loadSvgs() {

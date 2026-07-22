@@ -427,20 +427,18 @@
             const itemsHtml = files.map(file => {
                 const details = getFileDetails(file);
                 return `
-                    <div class="file-summary-item">
+                    <div class="file-card" data-filepath="${escapeHtml(file)}" title="Click to open ${escapeHtml(details.basename)} in VS Code">
                         ${details.icon}
-                        <span class="file-name">${escapeHtml(details.basename)}</span>
-                        <span class="file-path">${escapeHtml(details.dirPath)}</span>
+                        <span class="file-card-name">${escapeHtml(details.basename)}</span>
                     </div>
                 `;
             }).join('');
             
-            widgetDiv.innerHTML = `
-                <div class="file-summary-header">
-                    <span class="file-summary-count">${files.length} file${files.length > 1 ? 's' : ''} changed</span>
-                </div>
-                <div class="file-summary-body">
-                    ${itemsHtml}
+            messageDiv.innerHTML = `
+                <div class="files-edited-container">
+                    <div class="files-edited-scroll-row">
+                        ${itemsHtml}
+                    </div>
                 </div>
             `;
             messageDiv.appendChild(widgetDiv);
@@ -800,7 +798,14 @@
             target = target.substring(0, 37) + '...';
         }
 
-        return `${prefixSvg}${iconSvg} ${verb} <code>${escapeHtml(target)}</code>`;
+        return `
+            <div class="tool-call-header">
+                <div class="tool-call-title">
+                    ${prefixSvg}${iconSvg} ${verb} <code>${escapeHtml(target)}</code>
+                </div>
+                <i class="codicon codicon-chevron-right tool-chevron"></i>
+            </div>
+        `;
     }
 
     /**
@@ -892,12 +897,11 @@
                 statusDiv.className = `tool-status-row ${isError ? 'errored' : 'completed'}`;
                 statusDiv.innerHTML = getToolDescription(progress.tool, progress.fileName, isError ? 'error' : 'success');
                 
-                // Show raw error feedback if execution failed
-                if (isError) {
-                    const errorDetail = document.createElement('div');
-                    errorDetail.className = 'tool-error-detail';
-                    errorDetail.textContent = progress.output;
-                    statusDiv.appendChild(errorDetail);
+                if (progress.output) {
+                    const dropdownDiv = document.createElement('div');
+                    dropdownDiv.className = 'tool-result-dropdown hidden';
+                    dropdownDiv.innerHTML = `<pre><code>${escapeHtml(progress.output)}</code></pre>`;
+                    statusDiv.appendChild(dropdownDiv);
                 }
             }
         }
@@ -1058,8 +1062,30 @@
         }
     });
 
-    // Collapsible thinking block trigger via event delegation on chatContainer
+    // Unified event delegation on chatContainer
     chatContainer.addEventListener('click', (e) => {
+        // 1. Open file in VS Code editor when clicking file cards
+        const fileCard = e.target.closest('.file-card');
+        if (fileCard) {
+            const filePath = fileCard.dataset.filepath;
+            if (filePath) {
+                vscode.postMessage({ type: 'openFile', filePath: filePath });
+            }
+            return;
+        }
+
+        // 2. Toggle tool execution result output dropdown
+        const toolRow = e.target.closest('.tool-status-row');
+        if (toolRow) {
+            const dropdown = toolRow.querySelector('.tool-result-dropdown');
+            if (dropdown) {
+                dropdown.classList.toggle('hidden');
+                toolRow.classList.toggle('expanded');
+            }
+            return;
+        }
+
+        // 3. Collapsible thinking block trigger
         const header = e.target.closest('.thinking-header');
         if (header) {
             const content = header.nextElementSibling;
@@ -1068,7 +1094,6 @@
                 const chevron = header.querySelector('.thinking-chevron');
                 if (chevron) {
                     const isCollapsed = content.classList.contains('collapsed');
-                    // Down chevron: 6 9 12 15 18 9 | Up chevron: 18 15 12 9 6 15
                     chevron.innerHTML = isCollapsed 
                         ? '<polyline points="6 9 12 15 18 9"></polyline>'
                         : '<polyline points="18 15 12 9 6 15"></polyline>';
@@ -1421,7 +1446,7 @@
                     vscode.postMessage({ type: 'abort' });
                 }
                 vscode.postMessage({ type: 'loadChat', chatId: chat.id });
-                historyContainer.classList.add('hidden');
+                showView('chat');
             });
             
             item.appendChild(details);
@@ -1472,6 +1497,8 @@
         
         clearCodeContext();
         setUiLoading(false);
+        showView('chat');
+        scrollToBottom();
         checkServerConnection();
     }
 })();

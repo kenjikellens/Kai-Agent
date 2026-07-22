@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kai Agent UI Mockup - Resizable VS Code Sidebar Test Environment</title>
+    <!-- Codicons CSS for official VS Code icons -->
+    <link rel="stylesheet" href="../code/node_modules/@vscode/codicons/dist/codicon.css">
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <div class="mockup-header">
+        <h2>Kai Agent UI Mockup - Resizable Sidebar Flexibility Test</h2>
+        <p><strong>Drag the border between the sidebar and editor to resize the sidebar width!</strong> Container borders are color-coded for visual clarity:</p>
+        <div class="legend">
+            <span class="legend-item legend-response">Main Response Container (Red Border - No Padding)</span>
+            <span class="legend-item legend-thinking">Thinking Process Block (Cyan Border)</span>
+            <span class="legend-item legend-text">Text Block Container (Blue Border - Invisible BG)</span>
+            <span class="legend-item legend-tool">Tool Call Container (Green Border - Click for Output Dropdown)</span>
+            <span class="legend-item legend-files">Files Edited Row & Cards (Purple & Amber Borders - Horizontal Scroll)</span>
+        </div>
+    </div>
+
+    <!-- VS Code Shell Wrapper -->
+    <div class="ide-layout">
+        
+        <!-- Resizable Sidebar Wrapper -->
+        <div class="sidebar-resizable-wrapper" id="sidebar-wrapper">
+            <div class="resize-handle" id="resize-handle" title="Drag to resize sidebar width"></div>
+            
+            <div class="sidebar-container">
+                <div class="sidebar-top-bar">
+                    <span class="sidebar-title">KAI AGENT</span>
+                    <span class="width-indicator" id="width-indicator">Width: 340px</span>
+                </div>
+                
+                <div class="chat-container" id="chat-container">
+
+                    <!-- ===================================================================
+                         CHAT TURN 1
+                         =================================================================== -->
+                    <div class="message user-message">
+                        <div class="message-content">Can you inspect the project tools and refactor the styling system?</div>
+                    </div>
+
+                    <!-- Unified Assistant Response Container 1 (Red Border - 0 Padding) -->
+                    <div class="response-container demo-highlight-response">
+
+                        <!-- Thinking Process Block -->
+                        <div class="thinking-block demo-highlight-thinking">
+                            <div class="thinking-header">
+                                <span>Thinking Process</span>
+                                <i class="codicon codicon-chevron-down thinking-chevron"></i>
+                            </div>
+                            <div class="thinking-content">
+                                <em>Analyzing codebase requirements... Checking tool execution loop in AgentExecutor.ts and CSS rules in main.css. Verifying container structure and horizontal scrolling rules.</em>
+                            </div>
+                        </div>
+
+                        <!-- Text Content Block 1 -->
+                        <div class="response-block text-block demo-highlight-text">
+                            <p>Sure! I am refactoring the codebase, updating the styling system, and optimizing the tool execution pipeline.</p>
+                        </div>
+
+                        <!-- Tool Call Popup 1 -->
+                        <div class="response-block tool-call-container demo-highlight-tool">
+                            <div class="tool-call-header">
+                                <div class="tool-call-title">
+                                    <i class="codicon codicon-symbol-method js-icon"></i>
+                                    <span>editing</span>
+                                    <code>src/AgentExecutor.ts</code>
+                                </div>
+                                <i class="codicon codicon-chevron-right tool-chevron"></i>
+                            </div>
+                            <div class="tool-result-dropdown hidden">
+                                <pre><code>Successfully replaced lines 138-143 in src/AgentExecutor.ts (Added delete_item tool execution handler).</code></pre>
+                            </div>
+                        </div>
+
+                        <!-- Tool Call Popup 2 -->
+                        <div class="response-block tool-call-container demo-highlight-tool">
+                            <div class="tool-call-header">
+                                <div class="tool-call-title">
+                                    <i class="codicon codicon-symbol-color css-icon"></i>
+                                    <span>editing</span>
+                                    <code>media/main.css</code>
+                                </div>
+                                <i class="codicon codicon-chevron-right tool-chevron"></i>
+                            </div>
+                            <div class="tool-result-dropdown hidden">
+                                <pre><code>Updated .tool-status-row padding, added .codicon color classes, and added horizontal flex row styling for file cards.</code></pre>
+                            </div>
+                        </div>
+
+                        <!-- Text Content Block 2 -->
+                        <div class="response-block text-block demo-highlight-text">
+                            <p>The files have been edited successfully. Summary of updated files (click to open):</p>
+                        </div>
+
+                        <!-- Files Edited Row (Horizontal Scrollbar, Side-by-Side Cards) -->
+                        <div class="response-block files-edited-container demo-highlight-files-row">
+                            <div class="files-edited-scroll-row">
+                                
+                                <div class="file-card demo-highlight-file-card" data-filepath="src/AgentExecutor.ts" title="Click to open AgentExecutor.ts in VS Code">
+                                    <i class="codicon codicon-file-code ts-icon"></i>
+                                    <span class="file-card-name">AgentExecutor.ts</span>
+                                </div>
+
+                                <div class="file-card demo-highlight-file-card" data-filepath="media/main.css" title="Click to open main.css in VS Code">
+                                    <i class="codicon codicon-symbol-color css-icon"></i>
+                                    <span class="file-card-name">main.css</span>
+                                </div>
+
+                                <div class="file-card demo-highlight-file-card" data-filepath="media/main.js" title="Click to open main.js in VS Code">
+                                    <i class="codicon codicon-symbol-method js-icon"></i>
+                                    <span class="file-card-name">main.js</span>
+                                </div>
+
+                                <div class="file-card demo-highlight-file-card" data-filepath="package.json" title="Click to open package.json in VS Code">
+                                    <i class="codicon codicon-json json-icon"></i>
+                                    <span class="file-card-name">package.json</span>
+                                </div>
+
+                                <div class="file-card demo-highlight-file-card" data-filepath="README.md" title="Click to open README.md in VS Code">
+                                    <i class="codicon codicon-markdown md-icon"></i>
+                                    <span class="file-card-name">README.md</span>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- Text Content Block 3 -->
+                        <div class="response-block text-block demo-highlight-text">
+                            <p>All changes have been compiled and verified with zero errors.</p>
+                        </div>
+
+                    </div>
+
+
+                    <!-- ===================================================================
+                         CHAT TURN 2 (Follow-up Turn)
+                         =================================================================== -->
+                    <div class="message user-message">
+                        <div class="message-content">Now add gemini-3.6-flash and delete obsolete temporary files.</div>
+                    </div>
+
+                    <!-- Unified Assistant Response Container 2 (Red Border - 0 Padding) -->
+                    <div class="response-container demo-highlight-response">
+
+                        <!-- Thinking Process Block 2 -->
+                        <div class="thinking-block demo-highlight-thinking">
+                            <div class="thinking-header">
+                                <span>Thinking Process</span>
+                                <i class="codicon codicon-chevron-down thinking-chevron"></i>
+                            </div>
+                            <div class="thinking-content">
+                                <em>Verifying Gemini 3.6 Flash model strings in Google API documentation... Checking LMStudioClient.ts allowedModels and preparing delete_item tool invocation for temp cache files.</em>
+                            </div>
+                        </div>
+
+                        <!-- Text Content Block 1 -->
+                        <div class="response-block text-block demo-highlight-text">
+                            <p>I will inspect the model configuration, register the new Gemini 3.6 Flash model, and remove the temporary cache items.</p>
+                        </div>
+
+                        <!-- Tool Call Popup 1 -->
+                        <div class="response-block tool-call-container demo-highlight-tool">
+                            <div class="tool-call-header">
+                                <div class="tool-call-title">
+                                    <i class="codicon codicon-trash term-icon"></i>
+                                    <span>deleted</span>
+                                    <code>temp/old_cache.tmp</code>
+                                </div>
+                                <i class="codicon codicon-chevron-right tool-chevron"></i>
+                            </div>
+                            <div class="tool-result-dropdown hidden">
+                                <pre><code>Successfully deleted item: temp/old_cache.tmp</code></pre>
+                            </div>
+                        </div>
+
+                        <!-- Tool Call Popup 2 -->
+                        <div class="response-block tool-call-container demo-highlight-tool">
+                            <div class="tool-call-header">
+                                <div class="tool-call-title">
+                                    <i class="codicon codicon-file-code ts-icon"></i>
+                                    <span>editing</span>
+                                    <code>src/LMStudioClient.ts</code>
+                                </div>
+                                <i class="codicon codicon-chevron-right tool-chevron"></i>
+                            </div>
+                            <div class="tool-result-dropdown hidden">
+                                <pre><code>Added gemini-3.6-flash and gemini-3.5-flash-lite to allowedModels array in getGeminiModels().</code></pre>
+                            </div>
+                        </div>
+
+                        <!-- Text Content Block 2 -->
+                        <div class="response-block text-block demo-highlight-text">
+                            <p>Summary of updated workspace items:</p>
+                        </div>
+
+                        <!-- Files Edited Row -->
+                        <div class="response-block files-edited-container demo-highlight-files-row">
+                            <div class="files-edited-scroll-row">
+                                
+                                <div class="file-card demo-highlight-file-card" data-filepath="src/LMStudioClient.ts" title="Click to open LMStudioClient.ts in VS Code">
+                                    <i class="codicon codicon-file-code ts-icon"></i>
+                                    <span class="file-card-name">LMStudioClient.ts</span>
+                                </div>
+
+                                <div class="file-card demo-highlight-file-card" data-filepath="media/main.js" title="Click to open main.js in VS Code">
+                                    <i class="codicon codicon-symbol-method js-icon"></i>
+                                    <span class="file-card-name">main.js</span>
+                                </div>
+
+                                <div class="file-card demo-highlight-file-card" data-filepath="gemini_models.md" title="Click to open gemini_models.md in VS Code">
+                                    <i class="codicon codicon-markdown md-icon"></i>
+                                    <span class="file-card-name">gemini_models.md</span>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- Text Content Block 3 -->
+                        <div class="response-block text-block demo-highlight-text">
+                            <p>Gemini 3.6 Flash is now registered and ready to use!</p>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Simulated VS Code Main Editor Area -->
+        <div class="editor-main-panel">
+            <div class="editor-tabs-bar">
+                <div class="editor-tab active">
+                    <i class="codicon codicon-file-code ts-icon"></i>
+                    <span>AgentExecutor.ts</span>
+                </div>
+                <div class="editor-tab">
+                    <i class="codicon codicon-symbol-color css-icon"></i>
+                    <span>main.css</span>
+                </div>
+            </div>
+            <div class="editor-content-area">
+                <div class="editor-welcome-text">
+                    <h3>VS Code Editor Area (Simulated)</h3>
+                    <p>Drag the vertical handle between the sidebar and editor to test how the sidebar layout adapts dynamically from 200px to 800px width!</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
