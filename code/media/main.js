@@ -307,8 +307,8 @@
     // Trigger initial connection verification
     checkServerConnection();
 
-    // Periodically verify server connection and active model every 5 seconds
-    setInterval(checkServerConnection, 5000);
+    // Periodically verify server connection and active model every 15 seconds
+    setInterval(checkServerConnection, 15000);
 
     /**
      * Posts a message to the extension host to check LM Studio connection and loaded models.

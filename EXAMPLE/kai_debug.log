@@ -1,2 +1,16 @@
 [DEBUG] _handleSendMessage payload: model="google/gemma-4-31b-qat", prompt="delete all files in this folder and then create a hey.md with a markdown small text explaining the difference between the french words deponer and deposer", totalMessages=1
 [DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="zorg dat de files verwijdert zijn van deze directory en dat je een nieuwe file maakt info.html waarin je uitlegt wat het verschil is tussen de franse woorden deposer en deponer", totalMessages=1
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="zorg voor een betere styling van deze html pagina", totalMessages=1
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="je bent volledig in de war geraakt het ging over deposer en deponer, en je moest dat maar 2 keer schrijven niet 3 keer hetzelfde woord", totalMessages=11
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="je hebt niet alles mooi bewerkt er staat nog steeds : <ul>
+  <li><strong>Déposer:</strong> Betekent meestal het plaatsen, afleveren of storten van iets op een specifieke plaats (bijvoorbeeld een pakket afleveren, geld storten).
+  </li>
+  <li><strong>Déposer:</strong> Kan verwijzen naar het neerleggen of aanbrengen. 
+  </li>
+  <li><strong>Déposer:</strong> Betekent meestal het afvoeren, wegdoen of dumpen van iets (bijvoorbeeld afval wegdoen). 
+  </li>
+</ul>", totalMessages=15
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="en er staat nog steeds 3 keer deposer, het moet 1 keer deponer zijn met uitleg en dan 1 keer deposer! hoe moeilijk is dit te snappen!", totalMessages=21
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="en er staat ng steeds 2 keer deposer ipv 1 keer deposer en 1 keer deponer!", totalMessages=25
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="bekijk zelf eens de code jesus!", totalMessages=29
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="ER STAAT NOG STEEDS 2 KEER DEPOSER!!!! IK WIL 1 KEER DEPONER EN 1 KEER DEPOSER!!!!!!!!!!!!", totalMessages=33
