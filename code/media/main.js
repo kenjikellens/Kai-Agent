@@ -121,7 +121,13 @@
     const accordionStates = {};
 
     /** Tracks free provider metadata received from backend for settings panel rendering. */
-    let freeProvidersConfig = [];
+    let freeProvidersConfig = [
+        { name: 'Mistral AI', configKey: 'mistralApiKey', keyHint: 'Get free key at console.mistral.ai' },
+        { name: 'Cohere', configKey: 'cohereApiKey', keyHint: 'Get free key at dashboard.cohere.com' },
+        { name: 'Cerebras', configKey: 'cerebrasApiKey', keyHint: 'Get free key at cloud.cerebras.ai' },
+        { name: 'Zhipu AI', configKey: 'zhipuApiKey', keyHint: 'Get free key at open.bigmodel.cn' },
+        { name: 'OmniRoute Gateway', configKey: 'omnirouteApiKey', keyHint: 'Run OmniRoute via npm: npx omniroute' }
+    ];
 
     /**
      * Creates and appends an accordion category group to the dropdown menu.
@@ -239,9 +245,6 @@
             'gemini-3-flash-preview',
             'gemini-3.1-pro-preview',
             'gemini-3.1-flash-lite',
-            'gemini-2.5-flash',
-            'gemini-2.5-pro',
-            'gemini-2.0-flash-lite'
         ];
         const defaultProviders = [
             { name: 'OmniRoute Gateway', models: ['omniroute/auto'] },
@@ -903,17 +906,12 @@
         showView('settings');
     });
 
-    // Wire up manageKeysBtn to toggle keys manager sub-panel inside settings
+    // Wire up manageKeysBtn to open keys manager modal popup overlay inside settings
     if (manageKeysBtn) {
         manageKeysBtn.addEventListener('click', () => {
             if (keysContainer) {
-                const isHidden = keysContainer.classList.contains('hidden');
-                if (isHidden) {
-                    keysContainer.classList.remove('hidden');
-                    renderProviderKeyInputs();
-                } else {
-                    keysContainer.classList.add('hidden');
-                }
+                keysContainer.classList.remove('hidden');
+                renderProviderKeyInputs();
             }
         });
     }

@@ -893,8 +893,7 @@ button:disabled {
   min-height: 0;
 }
 
-.history-container,
-.settings-container {
+.history-container {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -905,12 +904,31 @@ button:disabled {
   overflow-y: auto;
 }
 
-.keys-sub-panel {
-  margin: 8px 0 12px 0;
-  padding: 10px;
-  border-radius: var(--app-radius-md);
-  background: var(--app-input-bg);
-  border: 1px solid var(--app-input-border);
+.settings-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  padding: 4px 0;
+  box-sizing: border-box;
+  background: var(--app-bg);
+  overflow-y: auto;
+}
+
+.keys-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+  box-sizing: border-box;
+  background: var(--app-bg);
+  overflow-y: auto;
 }
 
 .history-panel-header,

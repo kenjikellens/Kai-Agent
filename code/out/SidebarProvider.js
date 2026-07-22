@@ -508,23 +508,6 @@ class SidebarProvider {
                                         <span>${translations.manageApiKeys}</span>
                                     </button>
                                 </div>
-
-                                <!-- API Keys Sub-Panel (Nested inside Settings directly under header) -->
-                                <div id="keys-container" class="keys-sub-panel hidden">
-                                    <div class="keys-panel-header">
-                                        <span>${translations.manageApiKeys}</span>
-                                        <button id="close-keys-btn" class="icon-btn-header" title="Close Keys Manager">✕</button>
-                                    </div>
-                                    <div class="keys-content-panel">
-                                        <div class="setting-item" id="gemini-key-item">
-                                            <label for="api-key-input">Google Gemini API Key</label>
-                                            <input type="password" id="api-key-input" placeholder="AIzaSy...">
-                                        </div>
-                                        <!-- Dynamic provider key inputs rendered here -->
-                                        <div id="dynamic-keys-list"></div>
-                                    </div>
-                                </div>
-
                                 <div class="setting-item" style="margin-top: 10px; margin-bottom: 10px;">
                                     <label for="language-select-input" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">${translations.language}</label>
                                     <select id="language-select-input" style="width: 100%; background: var(--app-input-bg); color: var(--app-fg); border: 1px solid var(--app-input-border); border-radius: var(--app-radius-sm); padding: 4px;">
@@ -549,6 +532,22 @@ class SidebarProvider {
                                         <input type="checkbox" id="keep-thinking-finished-expanded-toggle">
                                         <span>${translations.keepThinkingFinished}</span>
                                     </label>
+                                </div>
+                            </div>
+
+                            <!-- API Keys Modal Popup Overlay (Positioned inside Settings view) -->
+                            <div id="keys-container" class="keys-container hidden">
+                                <div class="keys-panel-header">
+                                    <span>${translations.manageApiKeys}</span>
+                                    <button id="close-keys-btn" class="icon-btn-header" title="Close Keys Manager">✕</button>
+                                </div>
+                                <div class="keys-content-panel">
+                                    <div class="setting-item" id="gemini-key-item">
+                                        <label for="api-key-input">Google Gemini API Key</label>
+                                        <input type="password" id="api-key-input" placeholder="AIzaSy...">
+                                    </div>
+                                    <!-- Dynamic provider key inputs rendered here -->
+                                    <div id="dynamic-keys-list"></div>
                                 </div>
                             </div>
                         </div>
