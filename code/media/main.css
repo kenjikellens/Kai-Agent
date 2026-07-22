@@ -100,11 +100,10 @@ body {
   color: var(--app-muted);
 }
 
-.header-status,
 .header-actions {
   display: flex;
   align-items: center;
-  gap: var(--app-gap);
+  gap: 3px;
 }
 
 #status-text {
@@ -139,14 +138,23 @@ button:disabled {
 }
 
 .icon-btn-header {
-  padding: 4px;
-  border-radius: var(--app-radius-sm);
+  padding: 5px;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--app-radius-md);
   color: var(--app-muted);
+  box-sizing: border-box;
+}
+
+.icon-btn-header svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
 }
 
 .icon-btn-header:hover {
   color: var(--app-fg);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .icon-btn {
@@ -865,34 +873,44 @@ button:disabled {
 }
 
 /* -----------------------------
-   History / settings / keys
+   Main Content Container & Swappable Views
 ------------------------------ */
-.history-container,
-.settings-container,
-.keys-container {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 36px;
-  bottom: 0;
+.main-content-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 10px;
+}
+
+.content-view {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.history-container,
+.settings-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  padding: 4px 0;
   box-sizing: border-box;
   background: var(--app-bg);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  overflow-y: auto;
 }
 
-.history-container {
-  z-index: 100;
-}
-
-.settings-container {
-  z-index: 100;
-}
-
-.keys-container {
-  z-index: 110;
+.keys-sub-panel {
+  margin: 8px 0 12px 0;
+  padding: 10px;
+  border-radius: var(--app-radius-md);
+  background: var(--app-input-bg);
+  border: 1px solid var(--app-input-border);
 }
 
 .history-panel-header,
@@ -1168,5 +1186,20 @@ details[open] > summary > .custom-chevron {
 @media (max-width: 280px) {
   .switch-container .switch-label {
     display: none;
+  }
+}
+
+@media (max-width: 240px) {
+  .header-actions {
+    gap: 2px;
+  }
+  .icon-btn-header {
+    width: 22px;
+    height: 22px;
+    padding: 3px;
+  }
+  .icon-btn-header svg {
+    width: 13px;
+    height: 13px;
   }
 }

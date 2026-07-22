@@ -14,3 +14,4 @@
 [DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="en er staat ng steeds 2 keer deposer ipv 1 keer deposer en 1 keer deponer!", totalMessages=25
 [DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="bekijk zelf eens de code jesus!", totalMessages=29
 [DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="ER STAAT NOG STEEDS 2 KEER DEPOSER!!!! IK WIL 1 KEER DEPONER EN 1 KEER DEPOSER!!!!!!!!!!!!", totalMessages=33
+[DEBUG] _handleSendMessage payload: model="zai-org/glm-4.7-flash", prompt="kun je deze pagina verbeteren aub? qua styling en betere uitleg toevoegen?", totalMessages=1
