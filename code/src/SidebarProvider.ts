@@ -264,21 +264,20 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         const apiKey = config.get<string>('apiKey') || '';
         const client = new LMStudioClient(serverUrl);
 
-        let lmModels: string[] = [];
-        let lmStudioConnected = false;
-        try {
-            lmModels = await client.getLMStudioModels();
-            lmStudioConnected = true;
-        } catch {
-            lmModels = [];
-            lmStudioConnected = false;
-        }
+        const [lmResult, geminiResult, loadedResult, omniResult] = await Promise.allSettled([
+            client.getLMStudioModels(),
+            client.getGeminiModels(apiKey),
+            client.getLoadedModels(),
+            client.getOmniRouteModels()
+        ]);
 
-        const geminiModels = await client.getGeminiModels(apiKey).catch(() => []);
-        const loadedModels = await client.getLoadedModels().catch(() => []);
+        const lmModels = lmResult.status === 'fulfilled' ? lmResult.value : [];
+        const lmStudioConnected = lmResult.status === 'fulfilled';
+        const geminiModels = geminiResult.status === 'fulfilled' ? geminiResult.value : [];
+        const loadedModels = loadedResult.status === 'fulfilled' ? loadedResult.value : [];
+        const omniModels = omniResult.status === 'fulfilled' ? omniResult.value : [];
+
         const activeModel = lmModels.length > 0 ? lmModels[0] : (geminiModels.length > 0 ? geminiModels[0] : 'local-model');
-
-        const omniModels = await client.getOmniRouteModels().catch(() => []);
         // Build per-provider model lists for the dropdown
         const freeProviders = FREE_PROVIDERS.map(p => {
             let models = p.models;

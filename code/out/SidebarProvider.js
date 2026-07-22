@@ -248,20 +248,18 @@ class SidebarProvider {
         const serverUrl = config.get('serverUrl') || 'http://localhost:1234/v1';
         const apiKey = config.get('apiKey') || '';
         const client = new LMStudioClient_1.LMStudioClient(serverUrl);
-        let lmModels = [];
-        let lmStudioConnected = false;
-        try {
-            lmModels = await client.getLMStudioModels();
-            lmStudioConnected = true;
-        }
-        catch {
-            lmModels = [];
-            lmStudioConnected = false;
-        }
-        const geminiModels = await client.getGeminiModels(apiKey).catch(() => []);
-        const loadedModels = await client.getLoadedModels().catch(() => []);
+        const [lmResult, geminiResult, loadedResult, omniResult] = await Promise.allSettled([
+            client.getLMStudioModels(),
+            client.getGeminiModels(apiKey),
+            client.getLoadedModels(),
+            client.getOmniRouteModels()
+        ]);
+        const lmModels = lmResult.status === 'fulfilled' ? lmResult.value : [];
+        const lmStudioConnected = lmResult.status === 'fulfilled';
+        const geminiModels = geminiResult.status === 'fulfilled' ? geminiResult.value : [];
+        const loadedModels = loadedResult.status === 'fulfilled' ? loadedResult.value : [];
+        const omniModels = omniResult.status === 'fulfilled' ? omniResult.value : [];
         const activeModel = lmModels.length > 0 ? lmModels[0] : (geminiModels.length > 0 ? geminiModels[0] : 'local-model');
-        const omniModels = await client.getOmniRouteModels().catch(() => []);
         // Build per-provider model lists for the dropdown
         const freeProviders = LMStudioClient_1.FREE_PROVIDERS.map(p => {
             let models = p.models;

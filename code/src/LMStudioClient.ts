@@ -213,7 +213,7 @@ export class LMStudioClient {
                 port,
                 path: `${pathPrefix}/models`,
                 method: 'GET',
-                timeout: 3000
+                timeout: 1500
             };
 
             const req = http.request(options, (res) => {
@@ -282,7 +282,7 @@ export class LMStudioClient {
                 // ignore
             }
 
-            exec(command, (error: any, stdout: string) => {
+            exec(command, { timeout: 1500 }, (error: any, stdout: string) => {
                 if (error) {
                     resolve([]);
                     return;

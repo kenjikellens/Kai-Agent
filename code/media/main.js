@@ -124,6 +124,63 @@
     let freeProvidersConfig = [];
 
     /**
+     * Instantly populates the dropdown menu with default cloud and free models so user never waits.
+     */
+    function initDefaultDropdown() {
+        if (!dropdownOptionsMenu || dropdownOptionsMenu.children.length > 0) return;
+        
+        const i18n = window.KAI_I18N || {};
+        const defaultGemini = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash-lite'];
+        const defaultProviders = [
+            { name: 'OmniRoute Gateway', models: ['omniroute/auto'] },
+            { name: 'Mistral AI', models: ['mistral/mistral-small-latest', 'mistral/codestral-latest', 'mistral/open-mixtral-8x22b'] },
+            { name: 'Cohere', models: ['cohere/command-r-plus', 'cohere/command-r'] },
+            { name: 'Cerebras', models: ['cerebras/llama-3.3-70b', 'cerebras/llama-3.1-8b'] },
+            { name: 'Zhipu AI (GLM)', models: ['zhipu/glm-4-flash', 'zhipu/glm-4-plus'] }
+        ];
+
+        // LM Studio group (checking placeholder)
+        const lmDiv = document.createElement('div');
+        lmDiv.className = 'dropdown-category';
+        lmDiv.innerHTML = `<div class="dropdown-category-header"><span>${i18n.lmStudioHeader || 'LM Studio (Local)'} (${i18n.checkingServer || 'Checking...'})</span></div><div class="dropdown-category-content"><div class="dropdown-item-placeholder">Checking local server...</div></div>`;
+        dropdownOptionsMenu.appendChild(lmDiv);
+
+        // Gemini group
+        const gemDiv = document.createElement('div');
+        gemDiv.className = 'dropdown-category';
+        let gemHtml = defaultGemini.map(m => `<div class="dropdown-item${m === selectedModelValue ? ' selected' : ''}" data-value="${m}"><span class="status-dot status-connected"></span><span class="dropdown-item-text">${m}</span></div>`).join('');
+        gemDiv.innerHTML = `<div class="dropdown-category-header"><span>Gemini (Cloud)</span></div><div class="dropdown-category-content">${gemHtml}</div>`;
+        dropdownOptionsMenu.appendChild(gemDiv);
+
+        // Free provider groups
+        defaultProviders.forEach(p => {
+            const pDiv = document.createElement('div');
+            pDiv.className = 'dropdown-category';
+            let pHtml = p.models.map(m => `<div class="dropdown-item${m === selectedModelValue ? ' selected' : ''}" data-value="${m}"><span class="status-dot status-connected"></span><span class="dropdown-item-text">${formatModelName(m)}</span></div>`).join('');
+            pDiv.innerHTML = `<div class="dropdown-category-header"><span>${p.name} (Free)</span></div><div class="dropdown-category-content">${pHtml}</div>`;
+            dropdownOptionsMenu.appendChild(pDiv);
+        });
+
+        // Attach click handlers to instant options
+        dropdownOptionsMenu.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const val = item.dataset.value;
+                if (val) {
+                    selectedModelValue = val;
+                    localStorage.setItem('kai.selectedModel', val);
+                    selectedModelText.textContent = formatModelName(val);
+                    dropdownOptionsMenu.classList.add('hidden');
+                    saveCurrentChat();
+                }
+            });
+        });
+    }
+
+    // Populate dropdown immediately on startup
+    initDefaultDropdown();
+
+    /**
      * Generates a unique string identifier for a new chat session.
      * @returns {string} The unique chat ID.
      */
