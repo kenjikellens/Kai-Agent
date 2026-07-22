@@ -94,6 +94,19 @@
         });
     }
 
+    const languageSelectInput = document.getElementById('language-select-input');
+    if (languageSelectInput) {
+        if (window.KAI_LANG) {
+            languageSelectInput.value = window.KAI_LANG;
+        }
+        languageSelectInput.addEventListener('change', () => {
+            vscode.postMessage({
+                type: 'updateSettings',
+                language: languageSelectInput.value
+            });
+        });
+    }
+
     // Conversation & Context State
     let currentChatId = generateChatId();
     let messages = [];
@@ -854,31 +867,22 @@
 
                 const isSelectedModelLoaded = isModelConnected(selectedModelValue);
                 
-                // Update trigger button connection indicator (green if loaded, red if not)
-                if (isSelectedModelLoaded) {
-                    statusDot.className = 'status-dot status-connected';
-                } else {
-                    statusDot.className = 'status-dot status-disconnected';
-                }
-                
-                // Clear and rebuild custom options
-                dropdownOptionsMenu.innerHTML = '';
-                
                 const lmStudioModels = message.lmStudioModels || [];
                 const geminiModels = message.geminiModels || [];
                 const combinedModels = [...lmStudioModels, ...geminiModels];
 
-                // Set active model label if none was selected
-                if (!selectedModelValue || selectedModelValue === 'local-model' || selectedModelValue === 'No Models Loaded' || selectedModelValue === 'Disconnected') {
-                    if (combinedModels.length > 0) {
-                        selectedModelValue = combinedModels[0];
-                        selectedModelText.textContent = formatModelName(selectedModelValue);
-                        statusDot.className = isModelConnected(selectedModelValue) ? 'status-dot status-connected' : 'status-dot status-disconnected';
-                    } else {
-                        selectedModelValue = 'local-model';
-                        selectedModelText.textContent = 'No Models Loaded';
-                        statusDot.className = 'status-dot status-disconnected';
-                    }
+                // Ensure selectedModelText trigger button text ALWAYS shows active model name
+                if (selectedModelValue && selectedModelValue !== 'local-model' && selectedModelValue !== 'No Models Loaded') {
+                    selectedModelText.textContent = formatModelName(selectedModelValue);
+                    statusDot.className = isModelConnected(selectedModelValue) ? 'status-dot status-connected' : 'status-dot status-disconnected';
+                } else if (combinedModels.length > 0) {
+                    selectedModelValue = combinedModels[0];
+                    selectedModelText.textContent = formatModelName(selectedModelValue);
+                    statusDot.className = isModelConnected(selectedModelValue) ? 'status-dot status-connected' : 'status-dot status-disconnected';
+                } else {
+                    selectedModelValue = 'local-model';
+                    selectedModelText.textContent = 'local-model';
+                    statusDot.className = isModelConnected('local-model') ? 'status-dot status-connected' : 'status-dot status-disconnected';
                 }
 
                 /**
@@ -981,10 +985,15 @@
                     dropdownOptionsMenu.appendChild(groupDiv);
                 };
 
-                // Rebuild with both fixed groups + free provider groups
+                // Rebuild with fixed groups + free provider groups using i18n translations
+                const i18n = window.KAI_I18N || {};
+                const lmStudioStatus = message.connected ? (i18n.connected || 'Connected') : (i18n.offline || 'Offline');
+                const lmTitle = `${i18n.lmStudioHeader || 'LM Studio (Local)'} (${lmStudioStatus})`;
+                const geminiTitle = 'Gemini (Cloud)';
+
                 const showGeminiExpanded = selectedModelValue && selectedModelValue.toLowerCase().startsWith('gemini');
-                createAccordionGroup('LM Studio (Local)', lmStudioModels, !showGeminiExpanded);
-                createAccordionGroup('Gemini (Cloud)', geminiModels, showGeminiExpanded);
+                createAccordionGroup(lmTitle, lmStudioModels, !showGeminiExpanded);
+                createAccordionGroup(geminiTitle, geminiModels, showGeminiExpanded);
 
                 // Add one accordion group per free-tier provider
                 const freeProviders = message.freeProviders || [];

@@ -29,6 +29,7 @@ const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
 const AgentExecutor_1 = require("./AgentExecutor");
 const LMStudioClient_1 = require("./LMStudioClient");
+const i18n_1 = require("./i18n");
 /**
  * SidebarProvider implements the vscode.WebviewViewProvider to govern the behavior,
  * HTML rendering, and message passing of the LM Studio Agent sidebar panel.
@@ -88,7 +89,12 @@ class SidebarProvider {
                 }
                 case 'updateSettings': {
                     const config = vscode.workspace.getConfiguration('kai');
-                    await config.update('apiKey', data.apiKey, vscode.ConfigurationTarget.Global);
+                    if (data.apiKey !== undefined) {
+                        await config.update('apiKey', data.apiKey, vscode.ConfigurationTarget.Global);
+                    }
+                    if (data.language !== undefined) {
+                        await config.update('language', data.language, vscode.ConfigurationTarget.Global);
+                    }
                     // Persist per-provider API keys sent from the settings panel
                     if (data.providerKeys && typeof data.providerKeys === 'object') {
                         for (const [configKey, keyValue] of Object.entries(data.providerKeys)) {
@@ -271,6 +277,8 @@ class SidebarProvider {
                 apiKey: config.get(p.configKey) || ''
             };
         });
+        const translations = i18n_1.I18nManager.getTranslations();
+        const activeLang = i18n_1.I18nManager.getActiveLanguage();
         this._view.webview.postMessage({
             type: 'connectionStatus',
             connected: lmStudioConnected,
@@ -280,7 +288,9 @@ class SidebarProvider {
             loadedModels: loadedModels,
             freeProviders: freeProviders,
             serverUrl: serverUrl,
-            apiKey: apiKey
+            apiKey: apiKey,
+            translations: translations,
+            language: activeLang
         });
     }
     /**
@@ -404,6 +414,8 @@ class SidebarProvider {
         // Use a nonce to restrict script source access
         const nonce = getNonce();
         const svgs = this._loadSvgs();
+        const translations = i18n_1.I18nManager.getTranslations();
+        const activeLang = i18n_1.I18nManager.getActiveLanguage();
         return `<!DOCTYPE html>
             <html lang="en">
             <head>
@@ -418,6 +430,8 @@ class SidebarProvider {
                 <title>Kai</title>
                 <script nonce="${nonce}">
                     window.KAI_SVGS = ${JSON.stringify(svgs)};
+                    window.KAI_I18N = ${JSON.stringify(translations)};
+                    window.KAI_LANG = "${activeLang}";
                 </script>
             </head>
             <body>
@@ -425,54 +439,63 @@ class SidebarProvider {
                     <!-- Minimalist Header -->
                     <div class="sidebar-header">
                         <div class="header-actions">
-                            <button id="new-chat-btn" class="icon-btn-header" title="New Chat">
+                            <button id="new-chat-btn" class="icon-btn-header" title="${translations.newChat}">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             </button>
-                            <button id="history-btn" class="icon-btn-header" title="History">
+                            <button id="history-btn" class="icon-btn-header" title="${translations.history}">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                             </button>
-                            <button id="settings-btn" class="icon-btn-header" title="Settings">
+                            <button id="settings-btn" class="icon-btn-header" title="${translations.settings}">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                             </button>
                         </div>
                     </div>
 
-                    <!-- History Panel (Overlaid or toggled) -->
+                    <!-- History Panel -->
                     <div id="history-container" class="history-container hidden">
                         <div class="history-panel-header">
-                            <span>Previous Chats</span>
+                            <span>${translations.previousChats}</span>
                             <button id="close-history-btn" class="icon-btn-header" title="Close History">✕</button>
                         </div>
-                        <div id="history-list" class="history-list">
-                            <!-- Populated dynamically -->
-                        </div>
+                        <div id="history-list" class="history-list"></div>
                     </div>
 
-                    <!-- Settings Panel (Overlaid or toggled) -->
+                    <!-- Settings Panel -->
                     <div id="settings-container" class="settings-container hidden">
                         <div class="settings-panel-header">
-                            <span>Settings</span>
+                            <span>${translations.settings}</span>
                             <button id="close-settings-btn" class="icon-btn-header" title="Close Settings">✕</button>
                         </div>
                         <div class="settings-content-panel">
                             <div class="setting-item" id="manage-keys-container">
                                 <button type="button" class="btn-primary" id="manage-keys-btn">
                                     ${svgs.manage_keys || ''}
-                                    <span>Manage API Keys</span>
+                                    <span>${translations.manageApiKeys}</span>
                                 </button>
                             </div>
-                            <label class="setting-row" title="Show the thinking process in chat messages">
+                            <div class="setting-item" style="margin-top: 10px; margin-bottom: 10px;">
+                                <label for="language-select-input" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">${translations.language}</label>
+                                <select id="language-select-input" style="width: 100%; background: var(--app-input-bg); color: var(--app-fg); border: 1px solid var(--app-input-border); border-radius: var(--app-radius-sm); padding: 4px;">
+                                    <option value="auto">Auto (VS Code)</option>
+                                    <option value="en">English</option>
+                                    <option value="nl">Nederlands</option>
+                                    <option value="de">Deutsch</option>
+                                    <option value="fr">Français</option>
+                                    <option value="es">Español</option>
+                                </select>
+                            </div>
+                            <label class="setting-row" title="${translations.showThinking}">
                                 <input type="checkbox" id="show-thinking-toggle" checked>
-                                <span>Show thinking process</span>
+                                <span>${translations.showThinking}</span>
                             </label>
                             <div id="thinking-subsettings" class="setting-sub-panel">
-                                <label class="setting-row" title="Keep the thinking process expanded while the model is generating tokens">
+                                <label class="setting-row" title="${translations.keepThinkingGenerating}">
                                     <input type="checkbox" id="keep-thinking-expanded-toggle" checked>
-                                    <span>Keep thinking expanded while generating</span>
+                                    <span>${translations.keepThinkingGenerating}</span>
                                 </label>
-                                <label class="setting-row" title="Keep the thinking process expanded after reasoning is completed">
+                                <label class="setting-row" title="${translations.keepThinkingFinished}">
                                     <input type="checkbox" id="keep-thinking-finished-expanded-toggle">
-                                    <span>Keep thinking expanded after reasoning is done</span>
+                                    <span>${translations.keepThinkingFinished}</span>
                                 </label>
                             </div>
                         </div>
