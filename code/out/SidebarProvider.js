@@ -521,7 +521,7 @@ class SidebarProvider {
                     <!-- Chat Input Area -->
                     <div class="input-panel">
                         <div class="input-card">
-                            <textarea id="message-input" placeholder="Message local LLM..." rows="1"></textarea>
+                            <textarea id="message-input" placeholder="${translations.messagePlaceholder}" rows="1"></textarea>
                             <div class="input-toolbar">
                                 <div class="toolbar-left">
                                     <div class="custom-dropdown" id="model-dropdown-container">
@@ -537,7 +537,7 @@ class SidebarProvider {
                                     <label class="switch-container" title="Enable tool execution agent loop">
                                         <input type="checkbox" id="thinking-toggle" checked>
                                         <span class="slider-track"></span>
-                                        <span class="switch-label">Thinking</span>
+                                        <span class="switch-label" id="thinking-toggle-label">${translations.thinkingToggle}</span>
                                     </label>
                                 </div>
                                 <button id="send-btn" title="Send message">

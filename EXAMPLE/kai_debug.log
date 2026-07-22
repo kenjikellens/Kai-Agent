@@ -1,0 +1,2 @@
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-31b-qat", prompt="delete all files in this folder and then create a hey.md with a markdown small text explaining the difference between the french words deponer and deposer", totalMessages=1
+[DEBUG] _handleSendMessage payload: model="google/gemma-4-e2b", prompt="zorg dat de files verwijdert zijn van deze directory en dat je een nieuwe file maakt info.html waarin je uitlegt wat het verschil is tussen de franse woorden deposer en deponer", totalMessages=1

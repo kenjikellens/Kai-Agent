@@ -248,11 +248,11 @@
             { name: 'Mistral AI', models: ['mistral/mistral-small-latest', 'mistral/codestral-latest', 'mistral/open-mixtral-8x22b'] },
             { name: 'Cohere', models: ['cohere/command-r-plus', 'cohere/command-r'] },
             { name: 'Cerebras', models: ['cerebras/llama-3.3-70b', 'cerebras/llama-3.1-8b'] },
-            { name: 'Zhipu AI (GLM)', models: ['zhipu/glm-4-flash', 'zhipu/glm-4-plus'] }
+            { name: 'Zhipu AI', models: ['zhipu/glm-4-flash', 'zhipu/glm-4-plus'] }
         ];
 
-        const lmTitle = `${i18n.lmStudioHeader || 'LM Studio (Local)'} (${i18n.checkingServer || 'Checking...'})`;
-        const geminiTitle = 'Gemini (Cloud)';
+        const lmTitle = `${i18n.lmStudioHeader || 'LM Studio'} (${i18n.checkingServer || 'Checking...'})`;
+        const geminiTitle = 'Gemini';
 
         const showGeminiExpanded = selectedModelValue && selectedModelValue.toLowerCase().startsWith('gemini');
         createAccordionGroup(lmTitle, [], !showGeminiExpanded);
@@ -260,7 +260,7 @@
 
         defaultProviders.forEach(p => {
             const isExpanded = selectedModelValue && p.models.includes(selectedModelValue);
-            createAccordionGroup(p.name + ' (Free)', p.models, isExpanded);
+            createAccordionGroup(p.name, p.models, isExpanded);
         });
     }
 
@@ -499,6 +499,10 @@
             // Closed chevron: points down (polyline points: 6 9 12 15 18 9)
             const chevronDown = `<svg class="thinking-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
 
+            const i18n = window.KAI_I18N || {};
+            const thinkingProcessTitle = i18n.thinkingProcess || 'Thinking Process';
+            const thinkingTextTitle = i18n.thinkingText || 'Thinking...';
+
             if (showThinking) {
                 // Case 1: Completed thinking block
                 if (escaped.includes('&lt;/think&gt;')) {
@@ -508,7 +512,7 @@
                         const isCollapsed = shouldRespectExistingState ? forceThinkingCollapsed : !keepThinkingFinishedExpanded;
                         const activeChevron = isCollapsed ? chevronDown : chevronUp;
                         const activeCollapsedClass = isCollapsed ? ' collapsed' : '';
-                        return `<div class="thinking-block"><div class="thinking-header">Thinking Process${activeChevron}</div><div class="thinking-content${activeCollapsedClass}"><em>${cleanedContent}</em></div></div>`;
+                        return `<div class="thinking-block"><div class="thinking-header">${thinkingProcessTitle}${activeChevron}</div><div class="thinking-content${activeCollapsedClass}"><em>${cleanedContent}</em></div></div>`;
                     });
                 }
                 // Case 2: Streaming thinking block (starts with <think> but not closed yet)
@@ -519,7 +523,7 @@
                         const isCollapsed = shouldRespectExistingState ? forceThinkingCollapsed : !keepThinkingExpanded;
                         const activeChevron = isCollapsed ? chevronDown : chevronUp;
                         const activeCollapsedClass = isCollapsed ? ' collapsed' : '';
-                        return `<div class="thinking-block"><div class="thinking-header"><span class="thinking-spinner"></span>Thinking...${activeChevron}</div><div class="thinking-content${activeCollapsedClass}"><em>${cleanedContent}</em></div></div>`;
+                        return `<div class="thinking-block"><div class="thinking-header"><span class="thinking-spinner"></span>${thinkingTextTitle}${activeChevron}</div><div class="thinking-content${activeCollapsedClass}"><em>${cleanedContent}</em></div></div>`;
                     });
                 }
             } else {
@@ -531,7 +535,7 @@
                 // Case 2: Streaming thinking block -> show simple loader only, no content details
                 else if (escaped.includes('&lt;think&gt;')) {
                     escaped = escaped.replace(/&lt;think&gt;([\s\S]*)$/g, () => {
-                        return `<div class="thinking-loader"><span class="thinking-spinner"></span>Thinking...</div>`;
+                        return `<div class="thinking-loader"><span class="thinking-spinner"></span>${thinkingTextTitle}</div>`;
                     });
                 }
             }
@@ -1015,6 +1019,16 @@
                 break;
             }
             case 'connectionStatus': {
+                if (message.translations) {
+                    window.KAI_I18N = message.translations;
+                    if (messageInput && message.translations.messagePlaceholder) {
+                        messageInput.placeholder = message.translations.messagePlaceholder;
+                    }
+                    const thinkingLabel = document.getElementById('thinking-toggle-label');
+                    if (thinkingLabel && message.translations.thinkingToggle) {
+                        thinkingLabel.textContent = message.translations.thinkingToggle;
+                    }
+                }
                 if (apiKeyInput && message.apiKey !== undefined) {
                     apiKeyInput.value = message.apiKey;
                 }
@@ -1166,8 +1180,8 @@
                 // Rebuild with fixed groups + free provider groups using i18n translations
                 const i18n = window.KAI_I18N || {};
                 const lmStudioStatus = message.connected ? (i18n.connected || 'Connected') : (i18n.offline || 'Offline');
-                const lmTitle = `${i18n.lmStudioHeader || 'LM Studio (Local)'} (${lmStudioStatus})`;
-                const geminiTitle = 'Gemini (Cloud)';
+                const lmTitle = `${i18n.lmStudioHeader || 'LM Studio'} (${lmStudioStatus})`;
+                const geminiTitle = 'Gemini';
 
                 const showGeminiExpanded = selectedModelValue && selectedModelValue.toLowerCase().startsWith('gemini');
                 createAccordionGroup(lmTitle, lmStudioModels, !showGeminiExpanded);
@@ -1178,7 +1192,8 @@
                 freeProvidersConfig = freeProviders;
                 for (const provider of freeProviders) {
                     const isExpanded = selectedModelValue && provider.models.includes(selectedModelValue);
-                    createAccordionGroup(provider.name + ' (Free)', provider.models, isExpanded);
+                    const cleanName = provider.name.replace(/\s*\([^)]*\)/g, '').trim();
+                    createAccordionGroup(cleanName, provider.models, isExpanded);
                 }
                 break;
             }
@@ -1266,10 +1281,11 @@
     function renderHistoryList(chats) {
         historyList.innerHTML = '';
         if (!chats || chats.length === 0) {
+            const i18n = window.KAI_I18N || {};
             const emptyDiv = document.createElement('div');
             emptyDiv.className = 'system-message';
             emptyDiv.style.padding = '20px';
-            emptyDiv.textContent = 'No previous chats found.';
+            emptyDiv.textContent = i18n.noPreviousChats || 'No previous chats found.';
             historyList.appendChild(emptyDiv);
             return;
         }

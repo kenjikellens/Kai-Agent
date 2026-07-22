@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 export interface Translations {
     newChat: string;
     previousChats: string;
+    noPreviousChats: string;
     history: string;
     settings: string;
     manageApiKeys: string;
@@ -13,6 +14,8 @@ export interface Translations {
     keepThinkingGenerating: string;
     keepThinkingFinished: string;
     thinkingToggle: string;
+    thinkingProcess: string;
+    thinkingText: string;
     messagePlaceholder: string;
     lmStudioHeader: string;
     checkingServer: string;
@@ -28,6 +31,7 @@ const LOCALES: Record<string, Translations> = {
     en: {
         newChat: 'New Chat',
         previousChats: 'Previous Chats',
+        noPreviousChats: 'No previous chats found.',
         history: 'History',
         settings: 'Settings',
         manageApiKeys: 'Manage API Keys',
@@ -35,8 +39,10 @@ const LOCALES: Record<string, Translations> = {
         keepThinkingGenerating: 'Keep thinking expanded while generating',
         keepThinkingFinished: 'Keep thinking expanded after reasoning is done',
         thinkingToggle: 'Thinking',
+        thinkingProcess: 'Thinking Process',
+        thinkingText: 'Thinking...',
         messagePlaceholder: 'Message AI agent...',
-        lmStudioHeader: 'LM Studio (Local)',
+        lmStudioHeader: 'LM Studio',
         checkingServer: 'Checking server...',
         connected: 'Connected',
         offline: 'Offline',
@@ -48,6 +54,7 @@ const LOCALES: Record<string, Translations> = {
     nl: {
         newChat: 'Nieuwe Chat',
         previousChats: 'Eerdere Chats',
+        noPreviousChats: 'Geen eerdere chats gevonden.',
         history: 'Geschiedenis',
         settings: 'Instellingen',
         manageApiKeys: 'API Sleutels Beheren',
@@ -55,8 +62,10 @@ const LOCALES: Record<string, Translations> = {
         keepThinkingGenerating: 'Denkproces uitgeklapt houden tijdens genereren',
         keepThinkingFinished: 'Denkproces uitgeklapt houden na voltooien',
         thinkingToggle: 'Denken',
+        thinkingProcess: 'Denkproces',
+        thinkingText: 'Aan het denken...',
         messagePlaceholder: 'Bericht aan AI agent...',
-        lmStudioHeader: 'LM Studio (Lokaal)',
+        lmStudioHeader: 'LM Studio',
         checkingServer: 'Server controleren...',
         connected: 'Verbonden',
         offline: 'Offline',
@@ -68,6 +77,7 @@ const LOCALES: Record<string, Translations> = {
     de: {
         newChat: 'Neuer Chat',
         previousChats: 'Bisherige Chats',
+        noPreviousChats: 'Keine bisherigen Chats gefunden.',
         history: 'Verlauf',
         settings: 'Einstellungen',
         manageApiKeys: 'API-Schlüssel verwalten',
@@ -75,8 +85,10 @@ const LOCALES: Record<string, Translations> = {
         keepThinkingGenerating: 'Denkprozess während der Generierung ausgeklappt lassen',
         keepThinkingFinished: 'Denkprozess nach Beendung ausgeklappt lassen',
         thinkingToggle: 'Denken',
+        thinkingProcess: 'Denkprozess',
+        thinkingText: 'Denkt nach...',
         messagePlaceholder: 'Nachricht an AI Agent...',
-        lmStudioHeader: 'LM Studio (Lokal)',
+        lmStudioHeader: 'LM Studio',
         checkingServer: 'Server wird geprüft...',
         connected: 'Verbunden',
         offline: 'Offline',
@@ -88,6 +100,7 @@ const LOCALES: Record<string, Translations> = {
     fr: {
         newChat: 'Nouvelle Discussion',
         previousChats: 'Discussions Précédentes',
+        noPreviousChats: 'Aucune discussion précédente trouvée.',
         history: 'Historique',
         settings: 'Paramètres',
         manageApiKeys: 'Gérer les clés API',
@@ -95,8 +108,10 @@ const LOCALES: Record<string, Translations> = {
         keepThinkingGenerating: 'Garder la réflexion ouverte pendant la génération',
         keepThinkingFinished: 'Garder la réflexion ouverte une fois terminée',
         thinkingToggle: 'Réflexion',
+        thinkingProcess: 'Processus de réflexion',
+        thinkingText: 'Réflexion en cours...',
         messagePlaceholder: 'Envoyer un message à l\'agent IA...',
-        lmStudioHeader: 'LM Studio (Local)',
+        lmStudioHeader: 'LM Studio',
         checkingServer: 'Vérification du serveur...',
         connected: 'Connecté',
         offline: 'Hors ligne',
@@ -108,6 +123,7 @@ const LOCALES: Record<string, Translations> = {
     es: {
         newChat: 'Nuevo Chat',
         previousChats: 'Chats Anteriores',
+        noPreviousChats: 'No se encontraron chats anteriores.',
         history: 'Historial',
         settings: 'Configuración',
         manageApiKeys: 'Gestionar Claves API',
@@ -115,8 +131,10 @@ const LOCALES: Record<string, Translations> = {
         keepThinkingGenerating: 'Mantener pensamiento abierto mientras genera',
         keepThinkingFinished: 'Mantener pensamiento abierto al finalizar',
         thinkingToggle: 'Pensamiento',
+        thinkingProcess: 'Proceso de pensamiento',
+        thinkingText: 'Pensando...',
         messagePlaceholder: 'Enviar mensaje al agente IA...',
-        lmStudioHeader: 'LM Studio (Local)',
+        lmStudioHeader: 'LM Studio',
         checkingServer: 'Comprobando servidor...',
         connected: 'Conectado',
         offline: 'Desconectado',
