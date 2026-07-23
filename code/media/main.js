@@ -157,10 +157,8 @@
                 thinkingLabel.textContent = message.translations.thinkingToggle;
             }
         }
-        if (settingsController.apiKeyInput && message.apiKey !== undefined) {
-            settingsController.apiKeyInput.value = message.apiKey;
-        }
-
+        
+        settingsController.updateConnectionStatus(message);
         modelDropdownController.updateConnectionStatus(message);
     });
 
