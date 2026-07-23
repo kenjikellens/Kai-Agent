@@ -88,11 +88,7 @@ exports.FREE_PROVIDERS = [
         configKey: 'omnirouteApiKey',
         keyHint: 'Run OmniRoute via npm: npx omniroute (default: http://localhost:8000/v1)',
         models: [
-            'omniroute/auto',
-            'omniroute/free-aggregate',
-            'omniroute/claude-3-5-sonnet',
-            'omniroute/deepseek-r1',
-            'omniroute/gpt-4o'
+            'omniroute/auto'
         ]
     }
 ];
@@ -140,57 +136,10 @@ class LMStudioClient {
         return Array.from(combined);
     }
     /**
-     * Fetches models dynamically from the active OmniRoute gateway instance if reachable.
+     * Returns OmniRoute model list (restricted strictly to omniroute/auto).
      */
     async getOmniRouteModels() {
-        return new Promise((resolve) => {
-            const config = vscode.workspace.getConfiguration('kai');
-            const serverUrl = config.get('omnirouteServerUrl') || 'http://localhost:8000/v1';
-            const apiKey = config.get('omnirouteApiKey') || 'omniroute';
-            try {
-                const parsedUrl = new URL(`${serverUrl.replace(/\/$/, '')}/models`);
-                const clientModule = parsedUrl.protocol === 'https:' ? https : http;
-                const options = {
-                    hostname: parsedUrl.hostname,
-                    port: parsedUrl.port ? parseInt(parsedUrl.port, 10) : (parsedUrl.protocol === 'https:' ? 443 : 80),
-                    path: parsedUrl.pathname + parsedUrl.search,
-                    method: 'GET',
-                    timeout: 3000,
-                    headers: {
-                        'Authorization': `Bearer ${apiKey}`
-                    }
-                };
-                const req = clientModule.request(options, (res) => {
-                    let data = '';
-                    res.on('data', (chunk) => { data += chunk; });
-                    res.on('end', () => {
-                        if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
-                            try {
-                                const parsed = JSON.parse(data);
-                                if (parsed && Array.isArray(parsed.data)) {
-                                    const models = parsed.data.map((m) => {
-                                        const id = m.id || m;
-                                        return id.startsWith('omniroute/') ? id : `omniroute/${id}`;
-                                    });
-                                    resolve(models);
-                                    return;
-                                }
-                            }
-                            catch {
-                                // ignore parse error
-                            }
-                        }
-                        resolve([]);
-                    });
-                });
-                req.on('error', () => resolve([]));
-                req.on('timeout', () => { req.destroy(); resolve([]); });
-                req.end();
-            }
-            catch {
-                resolve([]);
-            }
-        });
+        return ['omniroute/auto'];
     }
     /**
      * Returns the static list of all model IDs from the registered free-tier cloud providers.

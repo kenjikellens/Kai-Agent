@@ -253,18 +253,13 @@ class SidebarProvider {
         const apiKey = config.get('apiKey') || '';
         const translations = i18n_1.I18nManager.getTranslations();
         const activeLang = i18n_1.I18nManager.getActiveLanguage();
-        const buildFreeProviders = (omniModels = []) => {
+        const buildFreeProviders = () => {
             return LMStudioClient_1.FREE_PROVIDERS.map(p => {
-                let models = p.models;
-                if (p.configKey === 'omnirouteApiKey' && omniModels.length > 0) {
-                    const combinedSet = new Set([...models, ...omniModels]);
-                    models = Array.from(combinedSet);
-                }
                 return {
                     name: p.name,
                     configKey: p.configKey,
                     keyHint: p.keyHint,
-                    models: models,
+                    models: p.models,
                     apiKey: config.get(p.configKey) || ''
                 };
             });
@@ -285,15 +280,13 @@ class SidebarProvider {
         });
         // 2. Perform fast async model discovery
         const client = new LMStudioClient_1.LMStudioClient(serverUrl);
-        const [lmResult, geminiResult, omniResult] = await Promise.allSettled([
+        const [lmResult, geminiResult] = await Promise.allSettled([
             client.getLMStudioModels(),
-            client.getGeminiModels(apiKey),
-            client.getOmniRouteModels()
+            client.getGeminiModels(apiKey)
         ]);
         const lmModels = lmResult.status === 'fulfilled' ? lmResult.value : [];
         const lmStudioConnected = lmResult.status === 'fulfilled' && lmModels.length > 0;
         const geminiModels = geminiResult.status === 'fulfilled' ? geminiResult.value : [];
-        const omniModels = omniResult.status === 'fulfilled' ? omniResult.value : [];
         let loadedModels = [];
         if (lmStudioConnected) {
             loadedModels = await client.getLoadedModels().catch(() => []);
@@ -302,7 +295,7 @@ class SidebarProvider {
             loadedModels = [...geminiModels];
         }
         const activeModel = lmModels.length > 0 ? lmModels[0] : (geminiModels.length > 0 ? geminiModels[0] : 'local-model');
-        const updatedFreeProviders = buildFreeProviders(omniModels);
+        const updatedFreeProviders = buildFreeProviders();
         // 3. Post updated model availability
         this._view.webview.postMessage({
             type: 'connectionStatus',
