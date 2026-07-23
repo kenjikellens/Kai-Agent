@@ -745,8 +745,8 @@ class LMStudioClient {
      * @param apiKey The Gemini API Key.
      * @returns A promise resolving to a list of model IDs.
      */
-    async getGeminiModels(apiKey) {
-        const allowedModels = [
+    async getGeminiModels(_apiKey) {
+        return [
             'gemini-3.6-flash',
             'gemini-3.5-flash',
             'gemini-3.5-flash-lite',
@@ -754,60 +754,6 @@ class LMStudioClient {
             'gemini-3.1-pro',
             'gemini-3.1-flash-lite',
         ];
-        return new Promise((resolve) => {
-            if (!apiKey) {
-                resolve(allowedModels);
-                return;
-            }
-            const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
-            try {
-                const parsedUrl = new URL(url);
-                const options = {
-                    hostname: parsedUrl.hostname,
-                    path: parsedUrl.pathname + parsedUrl.search,
-                    method: 'GET',
-                    timeout: 2500
-                };
-                const req = https.request(options, (res) => {
-                    let data = '';
-                    res.on('data', (chunk) => {
-                        data += chunk;
-                    });
-                    res.on('end', () => {
-                        if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
-                            try {
-                                const parsed = JSON.parse(data);
-                                if (parsed && Array.isArray(parsed.models)) {
-                                    const models = parsed.models
-                                        .filter((m) => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
-                                        .map((m) => m.name.replace(/^models\//, '').replace(/-preview$/, ''))
-                                        .filter((name) => allowedModels.includes(name.toLowerCase()));
-                                    if (models.length > 0) {
-                                        resolve(models);
-                                        return;
-                                    }
-                                }
-                            }
-                            catch (err) {
-                                // ignore error, fallback below
-                            }
-                        }
-                        resolve(allowedModels);
-                    });
-                });
-                req.on('error', () => {
-                    resolve(allowedModels);
-                });
-                req.on('timeout', () => {
-                    req.destroy();
-                    resolve(allowedModels);
-                });
-                req.end();
-            }
-            catch {
-                resolve(allowedModels);
-            }
-        });
     }
     /**
      * Calls Gemini non-streaming API to get chat response.

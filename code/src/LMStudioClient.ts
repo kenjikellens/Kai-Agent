@@ -802,8 +802,8 @@ export class LMStudioClient {
      * @param apiKey The Gemini API Key.
      * @returns A promise resolving to a list of model IDs.
      */
-    public async getGeminiModels(apiKey: string): Promise<string[]> {
-        const allowedModels = [
+    public async getGeminiModels(_apiKey: string): Promise<string[]> {
+        return [
             'gemini-3.6-flash',
             'gemini-3.5-flash',
             'gemini-3.5-flash-lite',
@@ -811,65 +811,6 @@ export class LMStudioClient {
             'gemini-3.1-pro',
             'gemini-3.1-flash-lite',
         ];
-
-        return new Promise((resolve) => {
-            if (!apiKey) {
-                resolve(allowedModels);
-                return;
-            }
-
-            const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
-            try {
-                const parsedUrl = new URL(url);
-                const options: https.RequestOptions = {
-                    hostname: parsedUrl.hostname,
-                    path: parsedUrl.pathname + parsedUrl.search,
-                    method: 'GET',
-                    timeout: 2500
-                };
-
-                const req = https.request(options, (res) => {
-                    let data = '';
-                    res.on('data', (chunk) => {
-                        data += chunk;
-                    });
-                    res.on('end', () => {
-                        if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
-                            try {
-                                const parsed = JSON.parse(data);
-                                if (parsed && Array.isArray(parsed.models)) {
-                                    const models = parsed.models
-                                        .filter((m: any) => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
-                                        .map((m: any) => m.name.replace(/^models\//, '').replace(/-preview$/, ''))
-                                        .filter((name: string) => allowedModels.includes(name.toLowerCase()));
-                                    
-                                    if (models.length > 0) {
-                                        resolve(models);
-                                        return;
-                                    }
-                                }
-                            } catch (err) {
-                                // ignore error, fallback below
-                            }
-                        }
-                        resolve(allowedModels);
-                    });
-                });
-
-                req.on('error', () => {
-                    resolve(allowedModels);
-                });
-
-                req.on('timeout', () => {
-                    req.destroy();
-                    resolve(allowedModels);
-                });
-
-                req.end();
-            } catch {
-                resolve(allowedModels);
-            }
-        });
     }
 
     /**
