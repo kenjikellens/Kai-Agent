@@ -840,7 +840,7 @@ export class LMStudioClient {
                                 if (parsed && Array.isArray(parsed.models)) {
                                     const models = parsed.models
                                         .filter((m: any) => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
-                                        .map((m: any) => m.name.replace(/^models\//, ''))
+                                        .map((m: any) => m.name.replace(/^models\//, '').replace(/-preview$/, ''))
                                         .filter((name: string) => allowedModels.includes(name.toLowerCase()));
                                     
                                     if (models.length > 0) {

@@ -176,15 +176,15 @@ class ModelDropdownController {
                     flyoutMenu.appendChild(flyoutInner);
                     item.appendChild(flyoutMenu);
 
-                    /* Flip flyout to left side if it overflows viewport on the right */
+                    /* Flip flyout to right side only if there is enough viewport space */
                     item.addEventListener('mouseenter', () => {
                         const itemRect = item.getBoundingClientRect();
                         const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
                         const flyoutWidth = 150;
-                        if (itemRect.right + flyoutWidth > viewportWidth) {
-                            flyoutMenu.classList.add('flyout-flip-left');
+                        if (itemRect.right + flyoutWidth <= viewportWidth) {
+                            flyoutMenu.classList.add('flyout-flip-right');
                         } else {
-                            flyoutMenu.classList.remove('flyout-flip-left');
+                            flyoutMenu.classList.remove('flyout-flip-right');
                         }
                     });
                 }
@@ -244,6 +244,18 @@ class ModelDropdownController {
      */
     updateConnectionStatus(message) {
         if (!this.dropdownOptionsMenu) return;
+
+        /* Skip rebuild if nothing changed to prevent LM Studio Offline/Connected flicker */
+        const fingerprint = JSON.stringify({
+            c: message.connected,
+            lm: message.lmStudioModels,
+            gm: message.geminiModels,
+            ld: message.loadedModels
+        });
+        if (this._lastFingerprint && this._lastFingerprint === fingerprint) {
+            return;
+        }
+        this._lastFingerprint = fingerprint;
 
         const isModelConnected = (m) => {
             if (!m) return false;
