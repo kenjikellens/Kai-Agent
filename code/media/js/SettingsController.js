@@ -84,7 +84,21 @@ class SettingsController {
 
         if (this.geminiThinkingLevelInput) {
             this.geminiThinkingLevelInput.addEventListener('change', () => {
-                localStorage.setItem('kai.geminiThinkingLevel', this.geminiThinkingLevelInput.value);
+                const val = this.geminiThinkingLevelInput.value;
+                localStorage.setItem('kai.geminiThinkingLevel', val);
+                const textEl = document.getElementById('gemini-thinking-text');
+                const menuEl = document.getElementById('gemini-thinking-menu');
+                if (textEl) {
+                    const labels = { 'high': 'Thinking: High', 'medium': 'Thinking: Med', 'low': 'Thinking: Low', 'minimal': 'Thinking: Off' };
+                    textEl.textContent = labels[val] || 'Thinking: High';
+                }
+                if (menuEl) {
+                    const items = menuEl.querySelectorAll('.dropdown-item');
+                    items.forEach(item => {
+                        if (item.dataset.level === val) item.classList.add('selected');
+                        else item.classList.remove('selected');
+                    });
+                }
             });
         }
 

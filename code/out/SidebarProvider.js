@@ -570,6 +570,27 @@ class SidebarProvider {
                                                     <!-- Dynamically populated -->
                                                 </div>
                                             </div>
+                                            <!-- 2nd Dropdown Container: Gemini Thinking Level -->
+                                            <div class="custom-dropdown hidden" id="gemini-thinking-dropdown-container">
+                                                <button type="button" class="dropdown-trigger" id="gemini-thinking-trigger-btn" title="Google Gemini Reasoning Level">
+                                                    <span id="gemini-thinking-text">Thinking: High</span>
+                                                    <svg class="dropdown-trigger-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                                </button>
+                                                <div class="dropdown-menu hidden" id="gemini-thinking-menu">
+                                                    <div class="dropdown-item selected" data-level="high">
+                                                        <span class="dropdown-item-text">High</span>
+                                                    </div>
+                                                    <div class="dropdown-item" data-level="medium">
+                                                        <span class="dropdown-item-text">Medium</span>
+                                                    </div>
+                                                    <div class="dropdown-item" data-level="low">
+                                                        <span class="dropdown-item-text">Low</span>
+                                                    </div>
+                                                    <div class="dropdown-item" data-level="minimal">
+                                                        <span class="dropdown-item-text">Minimal (Off)</span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                         <button id="send-btn" title="Send message">
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
@@ -610,15 +631,6 @@ class SidebarProvider {
                                         <option value="de">Deutsch</option>
                                         <option value="fr">Français</option>
                                         <option value="es">Español</option>
-                                    </select>
-                                </div>
-                                <div class="setting-item" style="margin-top: 10px; margin-bottom: 10px;">
-                                    <label for="gemini-thinking-level-input" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">Google Gemini Reasoning Level</label>
-                                    <select id="gemini-thinking-level-input" style="width: 100%; background: var(--app-input-bg); color: var(--app-fg); border: 1px solid var(--app-input-border); border-radius: var(--app-radius-sm); padding: 4px;">
-                                        <option value="high">High (Default)</option>
-                                        <option value="medium">Medium</option>
-                                        <option value="low">Low</option>
-                                        <option value="minimal">Minimal (Disabled)</option>
                                     </select>
                                 </div>
                                 <label class="setting-row" title="${translations.showThinking}">

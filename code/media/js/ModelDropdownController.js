@@ -21,12 +21,64 @@ class ModelDropdownController {
         this.selectedModelText = document.getElementById('selected-model-text');
         this.statusDot = document.getElementById('status-dot');
 
+        // 2nd Dropdown Container elements for Gemini Thinking Level
+        this.geminiThinkingContainer = document.getElementById('gemini-thinking-dropdown-container');
+        this.geminiThinkingTriggerBtn = document.getElementById('gemini-thinking-trigger-btn');
+        this.geminiThinkingMenu = document.getElementById('gemini-thinking-menu');
+        this.geminiThinkingText = document.getElementById('gemini-thinking-text');
+
         if (this.selectedModelText && this.selectedModelValue && this.selectedModelValue !== 'local-model') {
             this.selectedModelText.textContent = this.formatter.formatModelName(this.selectedModelValue);
         }
 
         this.initEventListeners();
         this.initDefaultDropdown();
+        this.updateGeminiThinkingVisibility();
+    }
+
+    /**
+     * Updates visibility and active text of 2nd Gemini Thinking Dropdown Container.
+     */
+    updateGeminiThinkingVisibility() {
+        const rawModel = (this.selectedModelValue || '').toLowerCase();
+        const isGeminiModel = rawModel.includes('gemini');
+
+        if (this.geminiThinkingContainer) {
+            if (isGeminiModel) {
+                this.geminiThinkingContainer.classList.remove('hidden');
+            } else {
+                this.geminiThinkingContainer.classList.add('hidden');
+            }
+        }
+
+        const storedLevel = localStorage.getItem('kai.geminiThinkingLevel') || 'high';
+        this.setGeminiThinkingLevelDisplay(storedLevel);
+    }
+
+    /**
+     * Sets display label for 2nd Gemini Thinking Dropdown Container.
+     * @param {string} level Thinking level ('high', 'medium', 'low', 'minimal').
+     */
+    setGeminiThinkingLevelDisplay(level) {
+        if (!this.geminiThinkingText) return;
+        const labels = {
+            'high': 'Thinking: High',
+            'medium': 'Thinking: Med',
+            'low': 'Thinking: Low',
+            'minimal': 'Thinking: Off'
+        };
+        this.geminiThinkingText.textContent = labels[level] || 'Thinking: High';
+
+        if (this.geminiThinkingMenu) {
+            const items = this.geminiThinkingMenu.querySelectorAll('.dropdown-item');
+            items.forEach(item => {
+                if (item.dataset.level === level) {
+                    item.classList.add('selected');
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
+        }
     }
 
     /**
@@ -39,12 +91,48 @@ class ModelDropdownController {
                 if (this.dropdownOptionsMenu) {
                     this.dropdownOptionsMenu.classList.toggle('hidden');
                 }
+                if (this.geminiThinkingMenu) {
+                    this.geminiThinkingMenu.classList.add('hidden');
+                }
+            });
+        }
+
+        if (this.geminiThinkingTriggerBtn) {
+            this.geminiThinkingTriggerBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this.geminiThinkingMenu) {
+                    this.geminiThinkingMenu.classList.toggle('hidden');
+                }
+                if (this.dropdownOptionsMenu) {
+                    this.dropdownOptionsMenu.classList.add('hidden');
+                }
+            });
+        }
+
+        if (this.geminiThinkingMenu) {
+            const items = this.geminiThinkingMenu.querySelectorAll('.dropdown-item');
+            items.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const level = item.dataset.level || 'high';
+                    localStorage.setItem('kai.geminiThinkingLevel', level);
+                    this.setGeminiThinkingLevelDisplay(level);
+                    this.geminiThinkingMenu.classList.add('hidden');
+
+                    const settingInput = document.getElementById('gemini-thinking-level-input');
+                    if (settingInput) {
+                        settingInput.value = level;
+                    }
+                });
             });
         }
 
         document.addEventListener('click', (e) => {
             if (!e.target.closest('#model-dropdown-container') && this.dropdownOptionsMenu) {
                 this.dropdownOptionsMenu.classList.add('hidden');
+            }
+            if (!e.target.closest('#gemini-thinking-dropdown-container') && this.geminiThinkingMenu) {
+                this.geminiThinkingMenu.classList.add('hidden');
             }
         });
     }
@@ -116,7 +204,7 @@ class ModelDropdownController {
 
             displayItems.forEach(itemData => {
                 const item = document.createElement('div');
-                item.className = 'dropdown-item';
+                item.className = 'dropdown-item model-hover-item';
                 if (itemData.value === this.selectedModelValue) {
                     item.classList.add('selected');
                 }
@@ -132,6 +220,46 @@ class ModelDropdownController {
                 textSpan.className = 'dropdown-item-text';
                 textSpan.textContent = itemData.label;
                 item.appendChild(textSpan);
+
+                const isGemini = itemData.rawModel.toLowerCase().includes('gemini');
+                if (isGemini) {
+                    const chevronSpan = document.createElement('span');
+                    chevronSpan.className = 'model-flyout-chevron';
+                    chevronSpan.textContent = '›';
+                    item.appendChild(chevronSpan);
+
+                    const flyoutMenu = document.createElement('div');
+                    flyoutMenu.className = 'thinking-flyout-menu';
+                    const currentGeminiLevel = localStorage.getItem('kai.geminiThinkingLevel') || 'high';
+                    
+                    const levels = [
+                        { level: 'high', label: 'High' },
+                        { level: 'medium', label: 'Medium' },
+                        { level: 'low', label: 'Low' },
+                        { level: 'minimal', label: 'Minimal (Off)' }
+                    ];
+                    
+                    levels.forEach(lvl => {
+                        const flyoutOpt = document.createElement('div');
+                        flyoutOpt.className = `flyout-option ${lvl.level === currentGeminiLevel ? 'selected' : ''}`;
+                        flyoutOpt.textContent = lvl.label;
+                        flyoutOpt.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            localStorage.setItem('kai.geminiThinkingLevel', lvl.level);
+                            this.selectedModelValue = itemData.value;
+                            localStorage.setItem('kai.selectedModel', itemData.value);
+                            if (this.selectedModelText) {
+                                this.selectedModelText.textContent = itemData.label;
+                            }
+                            this.dropdownOptionsMenu.classList.add('hidden');
+                            if (this.onSelect) {
+                                this.onSelect(itemData.value);
+                            }
+                        });
+                        flyoutMenu.appendChild(flyoutOpt);
+                    });
+                    item.appendChild(flyoutMenu);
+                }
                 
                 item.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -244,6 +372,8 @@ class ModelDropdownController {
             const cleanName = provider.name.replace(/\s*\([^)]*\)/g, '').trim();
             this.createAccordionGroup(cleanName, provider.models, isExpanded, isModelConnected);
         }
+
+        this.updateGeminiThinkingVisibility();
     }
 
     /**
@@ -303,5 +433,6 @@ class ModelDropdownController {
                 }
             });
         }
+        this.updateGeminiThinkingVisibility();
     }
 }

@@ -609,6 +609,56 @@ button:disabled {
   color: var(--vscode-foreground, #ffffff);
 }
 
+.dropdown-item.model-hover-item {
+  position: relative;
+  justify-content: space-between;
+}
+
+.model-flyout-chevron {
+  font-size: 0.9rem;
+  color: var(--app-muted);
+  margin-left: auto;
+  padding-left: 4px;
+}
+
+.thinking-flyout-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 2px;
+  width: 130px;
+  background: var(--vscode-dropdown-background, #252526);
+  border: 1px solid var(--vscode-dropdown-border, rgba(255, 255, 255, 0.14));
+  border-radius: var(--app-radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  display: none;
+  flex-direction: column;
+  padding: 4px 0;
+  z-index: 1100;
+}
+
+.dropdown-item.model-hover-item:hover .thinking-flyout-menu {
+  display: flex;
+}
+
+.flyout-option {
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  color: var(--app-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.flyout-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--vscode-foreground, #ffffff);
+}
+
+.flyout-option.selected {
+  color: var(--app-accent);
+  font-weight: 600;
+}
+
 .dropdown-item.selected {
   color: var(--app-accent);
   font-weight: 600;
