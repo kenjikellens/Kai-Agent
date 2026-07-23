@@ -115,8 +115,9 @@ class ModelDropdownController {
             }
 
             displayItems.forEach(itemData => {
+                const isGemini = itemData.rawModel.toLowerCase().includes('gemini');
                 const item = document.createElement('div');
-                item.className = 'dropdown-item model-hover-item';
+                item.className = isGemini ? 'dropdown-item model-hover-item' : 'dropdown-item';
                 if (itemData.value === this.selectedModelValue) {
                     item.classList.add('selected');
                 }
@@ -133,7 +134,6 @@ class ModelDropdownController {
                 textSpan.textContent = itemData.label;
                 item.appendChild(textSpan);
 
-                const isGemini = itemData.rawModel.toLowerCase().includes('gemini');
                 if (isGemini) {
                     const chevronSpan = document.createElement('span');
                     chevronSpan.className = 'model-flyout-chevron';
@@ -142,15 +142,15 @@ class ModelDropdownController {
 
                     const flyoutMenu = document.createElement('div');
                     flyoutMenu.className = 'thinking-flyout-menu';
+
                     const currentGeminiLevel = localStorage.getItem('kai.geminiThinkingLevel') || 'high';
-                    
                     const levels = [
                         { level: 'high', label: 'High' },
                         { level: 'medium', label: 'Medium' },
                         { level: 'low', label: 'Low' },
                         { level: 'minimal', label: 'Minimal (Off)' }
                     ];
-                    
+
                     levels.forEach(lvl => {
                         const flyoutOpt = document.createElement('div');
                         flyoutOpt.className = `flyout-option ${lvl.level === currentGeminiLevel ? 'selected' : ''}`;
