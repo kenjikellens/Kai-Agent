@@ -29,6 +29,7 @@ const https = __importStar(require("https"));
 const vscode = __importStar(require("vscode"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
+const HttpClient_1 = require("./HttpClient");
 /**
  * Static registry of free-tier LLM providers that are OpenAI SDK-compatible.
  * Each provider's models are prefixed with a unique namespace (e.g. "mistral/")
@@ -151,52 +152,21 @@ class LMStudioClient {
         return exports.FREE_PROVIDERS.flatMap(p => p.models);
     }
     /**
-     * Fetches local LM Studio models.
+     * Fetches local LM Studio models via HttpClient.
      */
     async getLMStudioModels() {
-        return new Promise((resolve, reject) => {
-            const { hostname, port, pathPrefix } = this.parseServerUrl();
-            const options = {
-                hostname,
-                port,
-                path: `${pathPrefix}/models`,
-                method: 'GET',
-                timeout: 1500
-            };
-            const req = http.request(options, (res) => {
-                let data = '';
-                res.on('data', (chunk) => {
-                    data += chunk;
-                });
-                res.on('end', () => {
-                    if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
-                        try {
-                            const parsed = JSON.parse(data);
-                            if (parsed && Array.isArray(parsed.data)) {
-                                resolve(parsed.data.map((m) => m.id));
-                            }
-                            else {
-                                resolve([]);
-                            }
-                        }
-                        catch (err) {
-                            reject(new Error('Failed to parse models response JSON'));
-                        }
-                    }
-                    else {
-                        reject(new Error(`Server returned HTTP ${res.statusCode}`));
-                    }
-                });
-            });
-            req.on('error', (err) => {
-                reject(err);
-            });
-            req.on('timeout', () => {
-                req.destroy();
-                reject(new Error('Connection timed out while fetching models'));
-            });
-            req.end();
-        });
+        const { hostname, port, pathPrefix } = this.parseServerUrl();
+        const url = `http://${hostname}:${port}${pathPrefix}/models`;
+        try {
+            const res = await HttpClient_1.HttpClient.getJson(url, {}, 1500);
+            if (res && Array.isArray(res.data)) {
+                return res.data.map((m) => m.id);
+            }
+            return [];
+        }
+        catch {
+            return [];
+        }
     }
     /**
      * Fetches the list of models actively loaded in LM Studio VRAM/RAM.

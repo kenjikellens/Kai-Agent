@@ -30,6 +30,7 @@ const fs = __importStar(require("fs"));
 const AgentExecutor_1 = require("./AgentExecutor");
 const LMStudioClient_1 = require("./LMStudioClient");
 const i18n_1 = require("./i18n");
+const SessionStore_1 = require("./SessionStore");
 /**
  * SidebarProvider implements the vscode.WebviewViewProvider to govern the behavior,
  * HTML rendering, and message passing of the LM Studio Agent sidebar panel.
@@ -37,13 +38,13 @@ const i18n_1 = require("./i18n");
 class SidebarProvider {
     /**
      * Initializes a new instance of the SidebarProvider.
-     * @param _context The extension context for persistent state and resource URI.
+     * @param context The extension context for persistent state and resource URI.
      */
-    constructor(_context) {
-        this._context = _context;
+    constructor(context) {
         this._currentStreamingText = '';
         this._currentStreamingMessages = [];
-        this._extensionUri = _context.extensionUri;
+        this._extensionUri = context.extensionUri;
+        this._sessionStore = new SessionStore_1.SessionStore(context.workspaceState);
     }
     /**
      * Called by VS Code when the webview sidebar is resolved/initialized.
@@ -334,66 +335,50 @@ class SidebarProvider {
         }
     }
     /**
-     * Saves a chat session in the workspace state for persistence.
-     * If the session already exists, it updates the messages, model, and timestamp.
+     * Saves a chat session in workspaceState storage via SessionStore.
      * @param chat The ChatSession object to be stored.
      */
     async _handleSaveChat(chat) {
-        if (!chat || !chat.id) {
-            return;
-        }
-        const chats = this._context.workspaceState.get('kai.chats') || {};
-        chats[chat.id] = {
-            id: chat.id,
-            title: chat.title || 'New Chat',
-            messages: chat.messages || [],
-            uiEvents: chat.uiEvents || [],
-            model: chat.model || '',
-            thinking: chat.thinking !== false,
-            timestamp: chat.timestamp || Date.now()
-        };
-        await this._context.workspaceState.update('kai.chats', chats);
+        await this._sessionStore.saveChat(chat);
     }
     /**
-     * Loads the list of saved chats from the workspace state,
-     * sorts them by timestamp in descending order, and sends the history list to the webview.
+     * Loads saved chat history via SessionStore and sends the sorted list to the webview.
      */
     async _handleLoadChatHistory() {
         if (!this._view) {
             return;
         }
-        const chatsMap = this._context.workspaceState.get('kai.chats') || {};
-        const chatsList = Object.values(chatsMap).sort((a, b) => b.timestamp - a.timestamp);
+        const chatsList = this._sessionStore.getHistoryList();
         this._view.webview.postMessage({
             type: 'chatHistory',
             chats: chatsList
         });
     }
     /**
-     * Deletes a chat session by its ID from the workspace state and updates the webview's list.
+     * Deletes a chat session by ID via SessionStore and updates the webview's list.
      * @param chatId The unique ID of the chat to delete.
      */
     async _handleDeleteChat(chatId) {
         if (!chatId) {
             return;
         }
-        const chats = this._context.workspaceState.get('kai.chats') || {};
-        if (chats[chatId]) {
-            delete chats[chatId];
-            await this._context.workspaceState.update('kai.chats', chats);
+        const updatedList = await this._sessionStore.deleteChat(chatId);
+        if (this._view) {
+            this._view.webview.postMessage({
+                type: 'chatHistory',
+                chats: updatedList
+            });
         }
-        await this._handleLoadChatHistory();
     }
     /**
-     * Retrieves a specific chat session by its ID and sends it back to the webview.
+     * Retrieves a specific chat session by ID via SessionStore and sends it back to the webview.
      * @param chatId The unique ID of the chat to load.
      */
     async _handleLoadChat(chatId) {
         if (!this._view || !chatId) {
             return;
         }
-        const chats = this._context.workspaceState.get('kai.chats') || {};
-        const chat = chats[chatId];
+        const chat = this._sessionStore.getChat(chatId);
         if (chat) {
             this._view.webview.postMessage({
                 type: 'loadChat',

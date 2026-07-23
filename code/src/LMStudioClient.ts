@@ -3,6 +3,7 @@ import * as https from 'https';
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { HttpClient } from './HttpClient';
 
 /**
  * Describes a free-tier cloud LLM provider that is OpenAI SDK-compatible.
@@ -151,53 +152,20 @@ export class LMStudioClient {
     }
 
     /**
-     * Fetches local LM Studio models.
+     * Fetches local LM Studio models via HttpClient.
      */
     public async getLMStudioModels(): Promise<string[]> {
-        return new Promise((resolve, reject) => {
-            const { hostname, port, pathPrefix } = this.parseServerUrl();
-            const options: http.RequestOptions = {
-                hostname,
-                port,
-                path: `${pathPrefix}/models`,
-                method: 'GET',
-                timeout: 1500
-            };
-
-            const req = http.request(options, (res) => {
-                let data = '';
-                res.on('data', (chunk) => {
-                    data += chunk;
-                });
-                res.on('end', () => {
-                    if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
-                        try {
-                            const parsed = JSON.parse(data);
-                            if (parsed && Array.isArray(parsed.data)) {
-                                resolve(parsed.data.map((m: any) => m.id));
-                            } else {
-                                resolve([]);
-                            }
-                        } catch (err) {
-                            reject(new Error('Failed to parse models response JSON'));
-                        }
-                    } else {
-                        reject(new Error(`Server returned HTTP ${res.statusCode}`));
-                    }
-                });
-            });
-
-            req.on('error', (err) => {
-                reject(err);
-            });
-
-            req.on('timeout', () => {
-                req.destroy();
-                reject(new Error('Connection timed out while fetching models'));
-            });
-
-            req.end();
-        });
+        const { hostname, port, pathPrefix } = this.parseServerUrl();
+        const url = `http://${hostname}:${port}${pathPrefix}/models`;
+        try {
+            const res = await HttpClient.getJson<{ data: any[] }>(url, {}, 1500);
+            if (res && Array.isArray(res.data)) {
+                return res.data.map((m: any) => m.id);
+            }
+            return [];
+        } catch {
+            return [];
+        }
     }
 
     /**
