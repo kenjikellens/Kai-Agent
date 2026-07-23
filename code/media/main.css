@@ -623,10 +623,10 @@ button:disabled {
 
 .thinking-flyout-menu {
   position: absolute;
-  right: 0;
-  top: 100%;
-  margin-top: 2px;
-  width: 130px;
+  left: 100%;
+  top: 0;
+  margin-left: 4px;
+  width: 140px;
   background: var(--vscode-dropdown-background, #252526);
   border: 1px solid var(--vscode-dropdown-border, rgba(255, 255, 255, 0.14));
   border-radius: var(--app-radius-md);

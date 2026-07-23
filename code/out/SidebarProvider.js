@@ -571,26 +571,6 @@ class SidebarProvider {
                                                 </div>
                                             </div>
                                             <!-- 2nd Dropdown Container: Gemini Thinking Level -->
-                                            <div class="custom-dropdown hidden" id="gemini-thinking-dropdown-container">
-                                                <button type="button" class="dropdown-trigger" id="gemini-thinking-trigger-btn" title="Google Gemini Reasoning Level">
-                                                    <span id="gemini-thinking-text">Thinking: High</span>
-                                                    <svg class="dropdown-trigger-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                                                </button>
-                                                <div class="dropdown-menu hidden" id="gemini-thinking-menu">
-                                                    <div class="dropdown-item selected" data-level="high">
-                                                        <span class="dropdown-item-text">High</span>
-                                                    </div>
-                                                    <div class="dropdown-item" data-level="medium">
-                                                        <span class="dropdown-item-text">Medium</span>
-                                                    </div>
-                                                    <div class="dropdown-item" data-level="low">
-                                                        <span class="dropdown-item-text">Low</span>
-                                                    </div>
-                                                    <div class="dropdown-item" data-level="minimal">
-                                                        <span class="dropdown-item-text">Minimal (Off)</span>
-                                                    </div>
-                                                </div>
-                                            </div>
                                         </div>
                                         <button id="send-btn" title="Send message">
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
