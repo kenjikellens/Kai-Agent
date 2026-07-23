@@ -1,16 +1,16 @@
 /**
  * Kai Agent UI Mockup Client Script
- * Demonstrates interactive per-model thinking selection, hover flyout submenus,
- * model state memory, resizable sidebar width, and tool result dropdowns.
+ * 1:1 replica of official ChatUIController.js event handling with container debug borders.
  */
 (function() {
-    console.log('Kai Agent UI Mockup Loaded - Per-model thinking state & flyout submenus initialized.');
+    console.log('Kai Agent UI Mockup Loaded - 1:1 ChatUIController.js replica.');
 
-    // Per-Model Thinking State Memory Map
+    // State memory for per-model thinking levels
     const modelThinkingMap = {
         'gemini-3.6-flash': 'high',
         'gemini-3.5-flash-lite': 'medium',
-        'qwen2.5-coder-7b': 'low'
+        'qwen2.5-coder-7b': 'low',
+        'gemma-2-9b': 'minimal'
     };
 
     let activeModel = 'gemini-3.6-flash';
@@ -23,6 +23,7 @@
     const dropdownOptionsMenu = document.getElementById('dropdown-options-menu');
     const selectedModelText = document.getElementById('selected-model-text');
     const modelThinkingBadge = document.getElementById('model-thinking-badge');
+    const chatContainer = document.getElementById('chat-container');
 
     let isResizing = false;
 
@@ -60,40 +61,41 @@
         if (selectedModelText) {
             selectedModelText.textContent = activeModel;
         }
+        const currentLevel = modelThinkingMap[activeModel] || 'high';
+        const levelCapitalized = currentLevel === 'minimal' ? 'Off' : (currentLevel.charAt(0).toUpperCase() + currentLevel.slice(1));
+        
         if (modelThinkingBadge) {
-            const currentLevel = modelThinkingMap[activeModel] || 'high';
-            const capitalized = currentLevel.charAt(0).toUpperCase() + currentLevel.slice(1);
-            modelThinkingBadge.textContent = capitalized;
+            modelThinkingBadge.textContent = `Thinking: ${levelCapitalized}`;
         }
+
+        // Highlight selected model item in list
+        const items = document.querySelectorAll('.model-row-item');
+        items.forEach(item => {
+            if (item.dataset.model === activeModel) {
+                item.classList.add('selected');
+            } else {
+                item.classList.remove('selected');
+            }
+        });
     }
 
     /**
-     * Updates checkmarks and item pills inside flyout submenus.
+     * Updates active state on segmented buttons per model.
      */
-    function updateFlyoutPills() {
+    function updateSegmentedButtons() {
         for (const [model, level] of Object.entries(modelThinkingMap)) {
-            const pill = document.getElementById(`pill-${model}`);
-            if (pill) {
-                const capitalized = level.charAt(0).toUpperCase() + level.slice(1);
-                pill.textContent = capitalized;
-            }
-
-            // Update checkmarks in options
-            const options = document.querySelectorAll(`.flyout-option[data-model="${model}"]`);
-            options.forEach(opt => {
-                const check = opt.querySelector('.codicon-check');
-                if (check) {
-                    if (opt.dataset.level === level) {
-                        check.classList.remove('opacity-0');
-                    } else {
-                        check.classList.add('opacity-0');
-                    }
+            const btns = document.querySelectorAll(`.segmented-btn[data-model="${model}"]`);
+            btns.forEach(btn => {
+                if (btn.dataset.level === level) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
                 }
             });
         }
     }
 
-    // Toggle Dropdown Options Menu
+    // Toggle Model Dropdown Menu
     if (dropdownTriggerBtn && dropdownOptionsMenu) {
         dropdownTriggerBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -101,38 +103,88 @@
         });
     }
 
-    // Close Dropdown Menu when clicking outside
+    // Close Model Dropdown Menu when clicking outside
     document.addEventListener('click', (e) => {
         if (!e.target.closest('#model-dropdown-container') && dropdownOptionsMenu) {
             dropdownOptionsMenu.classList.add('hidden');
         }
     });
 
-    // Delegated Event Listeners
+    // Delegated Event Listeners (1:1 with ChatUIController.js)
+    if (chatContainer) {
+        chatContainer.addEventListener('click', (e) => {
+            // 1. Open file in VS Code editor when clicking file cards
+            const fileCard = e.target.closest('.file-card');
+            if (fileCard) {
+                const filePath = fileCard.dataset.filepath || fileCard.querySelector('.file-card-name').textContent;
+                alert(`[VS Code Action] Opening file "${filePath}" in VS Code editor.`);
+                return;
+            }
+
+            // 2. Toggle tool execution result output dropdown (Exact ChatUIController.js code)
+            const toolRow = e.target.closest('.tool-status-row');
+            if (toolRow) {
+                const dropdown = toolRow.querySelector('.tool-result-dropdown');
+                if (dropdown) {
+                    dropdown.classList.toggle('hidden');
+                    toolRow.classList.toggle('expanded');
+                }
+                return;
+            }
+
+            // 3. Collapsible thinking block trigger (Exact ChatUIController.js code)
+            const header = e.target.closest('.thinking-header');
+            if (header) {
+                const content = header.nextElementSibling;
+                if (content && content.classList.contains('thinking-content')) {
+                    content.classList.toggle('collapsed');
+                    const chevron = header.querySelector('.thinking-chevron');
+                    if (chevron) {
+                        const isCollapsed = content.classList.contains('collapsed');
+                        chevron.innerHTML = isCollapsed 
+                            ? '<polyline points="6 9 12 15 18 9"></polyline>'
+                            : '<polyline points="18 15 12 9 6 15"></polyline>';
+                    }
+                }
+            }
+        });
+    }
+
+    // Dropdown Categories & Segmented Controls Interaction
     document.addEventListener('click', (e) => {
-        // Handle Flyout Thinking Level Option Click
-        const flyoutOption = e.target.closest('.flyout-option');
-        if (flyoutOption) {
+        // Handle Category Accordion Header Click
+        const catHeader = e.target.closest('.dropdown-category-header');
+        if (catHeader) {
             e.stopPropagation();
-            const model = flyoutOption.dataset.model;
-            const level = flyoutOption.dataset.level;
+            const cat = catHeader.dataset.category;
+            const content = document.getElementById(`cat-${cat}`);
+            if (content) {
+                content.classList.toggle('collapsed');
+            }
+            return;
+        }
+
+        // Handle Segmented Thinking Button Click
+        const segBtn = e.target.closest('.segmented-btn');
+        if (segBtn) {
+            e.stopPropagation();
+            const model = segBtn.dataset.model;
+            const level = segBtn.dataset.level;
             if (model && level) {
                 modelThinkingMap[model] = level;
-                console.log(`[State Update] Set model "${model}" thinking level to "${level}"`);
-                updateFlyoutPills();
+                updateSegmentedButtons();
                 updateActiveModelDisplay();
             }
             return;
         }
 
-        // Handle Model Item Selection Click
-        const modelItem = e.target.closest('.model-hover-item');
-        if (modelItem && !e.target.closest('.thinking-flyout-menu')) {
+        // Handle Model Selection Row Click
+        const modelRow = e.target.closest('.model-row-item');
+        if (modelRow) {
             e.stopPropagation();
-            const model = modelItem.dataset.model;
+            const model = modelRow.dataset.model;
             if (model) {
                 activeModel = model;
-                console.log(`[Model Selected] Active model switched to "${activeModel}" with thinking level "${modelThinkingMap[activeModel] || 'high'}"`);
                 updateActiveModelDisplay();
                 if (dropdownOptionsMenu) {
                     dropdownOptionsMenu.classList.add('hidden');
@@ -140,38 +192,9 @@
             }
             return;
         }
-
-        // Toggle Tool Result Dropdown Output
-        const toolContainer = e.target.closest('.tool-call-container');
-        if (toolContainer) {
-            const dropdown = toolContainer.querySelector('.tool-result-dropdown');
-            if (dropdown) {
-                dropdown.classList.toggle('hidden');
-                toolContainer.classList.toggle('expanded');
-            }
-            return;
-        }
-
-        // Handle File Card Click
-        const fileCard = e.target.closest('.file-card');
-        if (fileCard) {
-            const filepath = fileCard.dataset.filepath || fileCard.querySelector('.file-card-name').textContent;
-            alert(`[VS Code Action] Opening file "${filepath}" in VS Code editor.`);
-            return;
-        }
-
-        // Toggle Thinking Process Content
-        const thinkingHeader = e.target.closest('.thinking-header');
-        if (thinkingHeader) {
-            const block = thinkingHeader.closest('.thinking-block');
-            const content = block ? block.querySelector('.thinking-content') : null;
-            if (content) {
-                content.classList.toggle('hidden');
-            }
-        }
     });
 
     // Initial render
-    updateFlyoutPills();
+    updateSegmentedButtons();
     updateActiveModelDisplay();
 })();

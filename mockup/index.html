@@ -3,22 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kai Agent UI Mockup - Resizable VS Code Sidebar Test Environment</title>
+    <title>Kai Agent UI Mockup - 1:1 Exact Official Replica</title>
     <!-- Codicons CSS for official VS Code icons -->
     <link rel="stylesheet" href="../code/node_modules/@vscode/codicons/dist/codicon.css">
     <link rel="stylesheet" href="main.css">
 </head>
 <body>
     <div class="mockup-header">
-        <h2>Kai Agent UI Mockup - Per-Model Thinking Flyout Submenu Prototype</h2>
-        <p><strong>Hover over any model in the dropdown to set its thinking depth!</strong> Settings are remembered per-model. Container borders are color-coded for visual clarity:</p>
+        <h2>Kai Agent UI Mockup - 1:1 Official Replica with Debug Container Borders</h2>
+        <p><strong>100% exact copy of official Kai Agent HTML/CSS.</strong> Debug borders test container bounds:</p>
         <div class="legend">
-            <span class="legend-item legend-response">Main Response Container (Red Border - No Padding)</span>
+            <span class="legend-item legend-response">Main Response Container (Red Border)</span>
             <span class="legend-item legend-thinking">Thinking Process Block (Cyan Border)</span>
-            <span class="legend-item legend-text">Text Block Container (Blue Border - Invisible BG)</span>
-            <span class="legend-item legend-tool">Tool Call Container (Green Border - Click for Output Dropdown)</span>
+            <span class="legend-item legend-text">Text Block Container (Blue Border)</span>
+            <span class="legend-item legend-tool">Tool Status Row & Output Dropdown (Green Border)</span>
             <span class="legend-item legend-files">Files Edited Row & Cards (Purple & Amber Borders)</span>
-            <span class="legend-item legend-thinking-menu">Per-Model Thinking Submenu (Pink & Gold Border)</span>
+            <span class="legend-item legend-thinking-menu">Per-Model Thinking Selector (Pink & Gold Border)</span>
         </div>
     </div>
 
@@ -30,28 +30,35 @@
             <div class="resize-handle" id="resize-handle" title="Drag to resize sidebar width"></div>
             
             <div class="sidebar-container">
-                <div class="sidebar-top-bar">
-                    <span class="sidebar-title">KAI AGENT</span>
-                    <span class="width-indicator" id="width-indicator">Width: 340px</span>
+                <div class="sidebar-header">
+                    <div class="header-actions">
+                        <button id="new-chat-btn" class="icon-btn-header" title="New Chat">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        </button>
+                        <button id="history-btn" class="icon-btn-header" title="History">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        </button>
+                        <button id="settings-btn" class="icon-btn-header" title="Settings">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="chat-container" id="chat-container">
 
-                    <!-- ===================================================================
-                         CHAT TURN 1
-                         =================================================================== -->
+                    <!-- User Message Bubble -->
                     <div class="message user-message">
                         <div class="message-content">Can you inspect the project tools and refactor the styling system?</div>
                     </div>
 
-                    <!-- Unified Assistant Response Container 1 (Red Border - 0 Padding) -->
+                    <!-- Assistant Response Container (Official 1:1) -->
                     <div class="response-container demo-highlight-response">
 
-                        <!-- Thinking Process Block -->
+                        <!-- Thinking Process Block (Official 1:1) -->
                         <div class="thinking-block demo-highlight-thinking">
                             <div class="thinking-header">
-                                <span>Thinking Process (High Depth)</span>
-                                <i class="codicon codicon-chevron-down thinking-chevron"></i>
+                                <span id="demo-thinking-header-text">Thinking Process</span>
+                                <svg class="thinking-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
                             </div>
                             <div class="thinking-content">
                                 <em>Analyzing codebase requirements... Checking tool execution loop in AgentExecutor.ts and CSS rules in main.css. Verifying container structure and horizontal scrolling rules.</em>
@@ -60,33 +67,35 @@
 
                         <!-- Text Content Block 1 -->
                         <div class="response-block text-block demo-highlight-text">
-                            <p>Sure! I am refactoring the codebase, updating the styling system, and optimizing the tool execution pipeline.</p>
+                            <div class="message-content">
+                                <p>Sure! I am refactoring the codebase, updating the styling system, and optimizing the tool execution pipeline.</p>
+                            </div>
                         </div>
 
-                        <!-- Tool Call Popup 1 -->
-                        <div class="response-block tool-call-container demo-highlight-tool">
+                        <!-- Tool Status Row 1 (Official 1:1 Copy from ChatUIController.js) -->
+                        <div class="tool-status-row completed demo-highlight-tool">
                             <div class="tool-call-header">
                                 <div class="tool-call-title">
-                                    <i class="codicon codicon-symbol-method js-icon"></i>
-                                    <span>editing</span>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                    <span>edited</span>
                                     <code>src/AgentExecutor.ts</code>
                                 </div>
-                                <i class="codicon codicon-chevron-right tool-chevron"></i>
+                                <svg class="tool-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                             </div>
                             <div class="tool-result-dropdown hidden">
-                                <pre><code>Successfully replaced lines 138-143 in src/AgentExecutor.ts (Added delete_item tool execution handler).</code></pre>
+                                <pre><code>Successfully replaced lines 138-143 in src/AgentExecutor.ts</code></pre>
                             </div>
                         </div>
 
-                        <!-- Tool Call Popup 2 -->
-                        <div class="response-block tool-call-container demo-highlight-tool">
+                        <!-- Tool Status Row 2 (Official 1:1 Copy from ChatUIController.js) -->
+                        <div class="tool-status-row completed demo-highlight-tool">
                             <div class="tool-call-header">
                                 <div class="tool-call-title">
-                                    <i class="codicon codicon-symbol-color css-icon"></i>
-                                    <span>editing</span>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                    <span>edited</span>
                                     <code>media/main.css</code>
                                 </div>
-                                <i class="codicon codicon-chevron-right tool-chevron"></i>
+                                <svg class="tool-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                             </div>
                             <div class="tool-result-dropdown hidden">
                                 <pre><code>Updated .tool-status-row padding, added .codicon color classes, and added horizontal flex row styling for file cards.</code></pre>
@@ -95,10 +104,12 @@
 
                         <!-- Text Content Block 2 -->
                         <div class="response-block text-block demo-highlight-text">
-                            <p>The files have been edited successfully. Summary of updated files (click to open):</p>
+                            <div class="message-content">
+                                <p>The files have been edited successfully. Summary of updated files (click to open):</p>
+                            </div>
                         </div>
 
-                        <!-- Files Edited Row (Horizontal Scrollbar, Side-by-Side Cards) -->
+                        <!-- Files Edited Row (Official 1:1 FileSummaryWidget structure) -->
                         <div class="response-block files-edited-container demo-highlight-files-row">
                             <div class="files-edited-scroll-row">
                                 
@@ -132,121 +143,106 @@
 
                         <!-- Text Content Block 3 -->
                         <div class="response-block text-block demo-highlight-text">
-                            <p>All changes have been compiled and verified with zero errors.</p>
+                            <div class="message-content">
+                                <p>All changes have been compiled and verified with zero errors.</p>
+                            </div>
                         </div>
 
                     </div>
 
                 </div>
 
-                <!-- Input Panel & Model Selector with Per-Model Thinking Flyout -->
+                <!-- Input Panel & Model Selector with Per-Model Thinking Segmented Controls -->
                 <div class="input-panel">
                     <div class="input-card">
-                        <textarea placeholder="Type a message or prompt…" rows="1"></textarea>
+                        <textarea id="message-input" placeholder="Type a message or prompt…" rows="1"></textarea>
                         <div class="input-toolbar">
                             <div class="toolbar-left">
                                 
                                 <!-- Custom Model Selector Dropdown -->
                                 <div class="custom-dropdown demo-highlight-thinking-menu" id="model-dropdown-container">
                                     <button type="button" class="dropdown-trigger" id="dropdown-trigger-btn" title="Active Model">
-                                        <span class="status-dot status-connected"></span>
+                                        <span id="status-dot" class="status-dot status-connected"></span>
                                         <span id="selected-model-text">gemini-3.6-flash</span>
-                                        <span class="model-thinking-badge" id="model-thinking-badge" title="Active Thinking Depth for this model">High</span>
-                                        <i class="codicon codicon-chevron-down dropdown-trigger-chevron"></i>
+                                        <span class="model-thinking-badge" id="model-thinking-badge" title="Active Thinking Depth for this model">Thinking: High</span>
+                                        <svg class="dropdown-trigger-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                     </button>
 
-                                    <!-- Popover Dropdown Options Menu with Hover Thinking Submenus -->
+                                    <!-- Popover Dropdown Options Menu -->
                                     <div class="dropdown-menu hidden" id="dropdown-options-menu">
+                                        
+                                        <!-- Gemini Models Category -->
                                         <div class="dropdown-category">
-                                            <div class="dropdown-category-header">
+                                            <div class="dropdown-category-header" data-category="gemini">
                                                 <span>Gemini Models</span>
-                                                <i class="codicon codicon-chevron-down"></i>
+                                                <i class="codicon codicon-chevron-down accordion-chevron"></i>
                                             </div>
-                                            <div class="dropdown-category-content">
+                                            <div class="dropdown-category-content" id="cat-gemini">
                                                 
                                                 <!-- Model Item 1: Gemini 3.6 Flash -->
-                                                <div class="dropdown-item model-hover-item" data-model="gemini-3.6-flash">
-                                                    <span class="status-dot status-connected"></span>
-                                                    <span class="dropdown-item-text">gemini-3.6-flash</span>
-                                                    <span class="item-thinking-pill" id="pill-gemini-3.6-flash">High</span>
-                                                    <i class="codicon codicon-chevron-right flyout-arrow"></i>
-
-                                                    <!-- Flyout Thinking Submenu -->
-                                                    <div class="thinking-flyout-menu">
-                                                        <div class="flyout-header">Thinking Depth</div>
-                                                        <div class="flyout-option" data-model="gemini-3.6-flash" data-level="high">
-                                                            <i class="codicon codicon-check"></i> High
-                                                        </div>
-                                                        <div class="flyout-option" data-model="gemini-3.6-flash" data-level="medium">
-                                                            <i class="codicon codicon-check opacity-0"></i> Medium
-                                                        </div>
-                                                        <div class="flyout-option" data-model="gemini-3.6-flash" data-level="low">
-                                                            <i class="codicon codicon-check opacity-0"></i> Low
-                                                        </div>
-                                                        <div class="flyout-option" data-model="gemini-3.6-flash" data-level="minimal">
-                                                            <i class="codicon codicon-check opacity-0"></i> Minimal (Off)
-                                                        </div>
+                                                <div class="dropdown-item model-row-item selected" data-model="gemini-3.6-flash">
+                                                    <div class="model-info-row">
+                                                        <span class="status-dot status-connected"></span>
+                                                        <span class="dropdown-item-text">gemini-3.6-flash</span>
+                                                    </div>
+                                                    <div class="model-thinking-segmented" title="Set thinking depth for gemini-3.6-flash">
+                                                        <button type="button" class="segmented-btn active" data-model="gemini-3.6-flash" data-level="high">High</button>
+                                                        <button type="button" class="segmented-btn" data-model="gemini-3.6-flash" data-level="medium">Med</button>
+                                                        <button type="button" class="segmented-btn" data-model="gemini-3.6-flash" data-level="low">Low</button>
+                                                        <button type="button" class="segmented-btn" data-model="gemini-3.6-flash" data-level="minimal">Off</button>
                                                     </div>
                                                 </div>
 
                                                 <!-- Model Item 2: Gemini 3.5 Flash Lite -->
-                                                <div class="dropdown-item model-hover-item" data-model="gemini-3.5-flash-lite">
-                                                    <span class="status-dot status-connected"></span>
-                                                    <span class="dropdown-item-text">gemini-3.5-flash-lite</span>
-                                                    <span class="item-thinking-pill" id="pill-gemini-3.5-flash-lite">Medium</span>
-                                                    <i class="codicon codicon-chevron-right flyout-arrow"></i>
-
-                                                    <!-- Flyout Thinking Submenu -->
-                                                    <div class="thinking-flyout-menu">
-                                                        <div class="flyout-header">Thinking Depth</div>
-                                                        <div class="flyout-option" data-model="gemini-3.5-flash-lite" data-level="high">
-                                                            <i class="codicon codicon-check opacity-0"></i> High
-                                                        </div>
-                                                        <div class="flyout-option" data-model="gemini-3.5-flash-lite" data-level="medium">
-                                                            <i class="codicon codicon-check"></i> Medium
-                                                        </div>
-                                                        <div class="flyout-option" data-model="gemini-3.5-flash-lite" data-level="low">
-                                                            <i class="codicon codicon-check opacity-0"></i> Low
-                                                        </div>
-                                                        <div class="flyout-option" data-model="gemini-3.5-flash-lite" data-level="minimal">
-                                                            <i class="codicon codicon-check opacity-0"></i> Minimal (Off)
-                                                        </div>
+                                                <div class="dropdown-item model-row-item" data-model="gemini-3.5-flash-lite">
+                                                    <div class="model-info-row">
+                                                        <span class="status-dot status-connected"></span>
+                                                        <span class="dropdown-item-text">gemini-3.5-flash-lite</span>
+                                                    </div>
+                                                    <div class="model-thinking-segmented" title="Set thinking depth for gemini-3.5-flash-lite">
+                                                        <button type="button" class="segmented-btn" data-model="gemini-3.5-flash-lite" data-level="high">High</button>
+                                                        <button type="button" class="segmented-btn active" data-model="gemini-3.5-flash-lite" data-level="medium">Med</button>
+                                                        <button type="button" class="segmented-btn" data-model="gemini-3.5-flash-lite" data-level="low">Low</button>
+                                                        <button type="button" class="segmented-btn" data-model="gemini-3.5-flash-lite" data-level="minimal">Off</button>
                                                     </div>
                                                 </div>
 
                                             </div>
                                         </div>
 
-                                        <!-- Category: LM Studio Models -->
+                                        <!-- LM Studio Models Category -->
                                         <div class="dropdown-category">
-                                            <div class="dropdown-category-header">
+                                            <div class="dropdown-category-header" data-category="lmstudio">
                                                 <span>LM Studio Models</span>
-                                                <i class="codicon codicon-chevron-down"></i>
+                                                <i class="codicon codicon-chevron-down accordion-chevron"></i>
                                             </div>
-                                            <div class="dropdown-category-content">
+                                            <div class="dropdown-category-content" id="cat-lmstudio">
                                                 
-                                                <!-- Model Item 3: Qwen 2.5 Coder -->
-                                                <div class="dropdown-item model-hover-item" data-model="qwen2.5-coder-7b">
-                                                    <span class="status-dot status-connected"></span>
-                                                    <span class="dropdown-item-text">qwen2.5-coder-7b</span>
-                                                    <span class="item-thinking-pill" id="pill-qwen2.5-coder-7b">Low</span>
-                                                    <i class="codicon codicon-chevron-right flyout-arrow"></i>
+                                                <!-- Model Item 3: Qwen 2.5 Coder 7B -->
+                                                <div class="dropdown-item model-row-item" data-model="qwen2.5-coder-7b">
+                                                    <div class="model-info-row">
+                                                        <span class="status-dot status-connected"></span>
+                                                        <span class="dropdown-item-text">qwen2.5-coder-7b</span>
+                                                    </div>
+                                                    <div class="model-thinking-segmented" title="Set thinking depth for qwen2.5-coder-7b">
+                                                        <button type="button" class="segmented-btn" data-model="qwen2.5-coder-7b" data-level="high">High</button>
+                                                        <button type="button" class="segmented-btn" data-model="qwen2.5-coder-7b" data-level="medium">Med</button>
+                                                        <button type="button" class="segmented-btn active" data-model="qwen2.5-coder-7b" data-level="low">Low</button>
+                                                        <button type="button" class="segmented-btn" data-model="qwen2.5-coder-7b" data-level="minimal">Off</button>
+                                                    </div>
+                                                </div>
 
-                                                    <!-- Flyout Thinking Submenu -->
-                                                    <div class="thinking-flyout-menu">
-                                                        <div class="flyout-header">Thinking Depth</div>
-                                                        <div class="flyout-option" data-model="qwen2.5-coder-7b" data-level="high">
-                                                            <i class="codicon codicon-check opacity-0"></i> High
-                                                        </div>
-                                                        <div class="flyout-option" data-model="qwen2.5-coder-7b" data-level="medium">
-                                                            <i class="codicon codicon-check opacity-0"></i> Medium
-                                                        </div>
-                                                        <div class="flyout-option" data-model="qwen2.5-coder-7b" data-level="low">
-                                                            <i class="codicon codicon-check"></i> Low
-                                                        </div>
-                                                        <div class="flyout-option" data-model="qwen2.5-coder-7b" data-level="minimal">
-                                                            <i class="codicon codicon-check opacity-0"></i> Minimal (Off)
-                                                        </div>
+                                                <!-- Model Item 4: Gemma 2 9B -->
+                                                <div class="dropdown-item model-row-item" data-model="gemma-2-9b">
+                                                    <div class="model-info-row">
+                                                        <span class="status-dot status-connected"></span>
+                                                        <span class="dropdown-item-text">gemma-2-9b</span>
+                                                    </div>
+                                                    <div class="model-thinking-segmented" title="Set thinking depth for gemma-2-9b">
+                                                        <button type="button" class="segmented-btn" data-model="gemma-2-9b" data-level="high">High</button>
+                                                        <button type="button" class="segmented-btn" data-model="gemma-2-9b" data-level="medium">Med</button>
+                                                        <button type="button" class="segmented-btn" data-model="gemma-2-9b" data-level="low">Low</button>
+                                                        <button type="button" class="segmented-btn active" data-model="gemma-2-9b" data-level="minimal">Off</button>
                                                     </div>
                                                 </div>
 
@@ -257,8 +253,8 @@
                                 </div>
 
                             </div>
-                            <button class="send-btn" title="Send message">
-                                <i class="codicon codicon-send"></i>
+                            <button id="send-btn" title="Send message">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                             </button>
                         </div>
                     </div>
