@@ -641,6 +641,14 @@ button:disabled {
   display: flex;
 }
 
+/* Flip flyout to left side when it overflows viewport on the right */
+.thinking-flyout-menu.flyout-flip-left {
+  left: auto;
+  right: 100%;
+  padding-left: 0;
+  padding-right: 6px;
+}
+
 /* Flyout option styled as clickable button */
 .flyout-option {
   padding: 6px 12px;

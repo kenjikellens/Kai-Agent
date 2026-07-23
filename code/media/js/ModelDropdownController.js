@@ -175,6 +175,18 @@ class ModelDropdownController {
                     });
                     flyoutMenu.appendChild(flyoutInner);
                     item.appendChild(flyoutMenu);
+
+                    /* Flip flyout to left side if it overflows viewport on the right */
+                    item.addEventListener('mouseenter', () => {
+                        const itemRect = item.getBoundingClientRect();
+                        const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+                        const flyoutWidth = 150;
+                        if (itemRect.right + flyoutWidth > viewportWidth) {
+                            flyoutMenu.classList.add('flyout-flip-left');
+                        } else {
+                            flyoutMenu.classList.remove('flyout-flip-left');
+                        }
+                    });
                 }
                 
                 item.addEventListener('click', (e) => {

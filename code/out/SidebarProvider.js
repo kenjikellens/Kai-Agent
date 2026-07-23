@@ -270,20 +270,7 @@ class SidebarProvider {
                 };
             });
         };
-        // 1. Post stored API keys and settings immediately to UI (0ms delay)
-        this._view.webview.postMessage({
-            type: 'connectionStatus',
-            connected: false,
-            model: 'local-model',
-            lmStudioModels: [],
-            geminiModels: [],
-            loadedModels: [],
-            freeProviders: buildFreeProviders(),
-            serverUrl: serverUrl,
-            apiKey: apiKey,
-            translations: translations,
-            language: activeLang
-        });
+        // 1. Send translations and API keys immediately (without connection status to avoid Offline flicker)
         // 2. Perform fast async model discovery
         const client = new LMStudioClient_1.LMStudioClient(serverUrl);
         const [lmResult, geminiResult] = await Promise.allSettled([
