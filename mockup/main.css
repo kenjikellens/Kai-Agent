@@ -1,6 +1,7 @@
 /* ==========================================================================
    Kai Agent UI Mockup Stylesheet
-   Demonstrates unified response container hierarchy and side-by-side file cards
+   Demonstrates unified response container hierarchy, side-by-side file cards,
+   and per-model thinking hover flyout submenus.
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -62,6 +63,7 @@ body {
 .legend-text { border: 1px dashed #3399ff; color: #80c0ff; background: rgba(51, 153, 255, 0.1); }
 .legend-tool { border: 1px solid #2ecc71; color: #73e6a3; background: rgba(46, 204, 113, 0.1); }
 .legend-files { border: 1px solid #a855f7; color: #c084fc; background: rgba(168, 85, 247, 0.1); }
+.legend-thinking-menu { border: 1px solid #ec4899; color: #f472b6; background: rgba(236, 72, 153, 0.1); }
 
 /* --------------------------------------------------------------------------
    VS Code IDE Layout & Resizable Sidebar Wrapper
@@ -91,7 +93,6 @@ body {
     flex-shrink: 0;
 }
 
-/* Drag handle on right edge of sidebar */
 .resize-handle {
     position: absolute;
     right: -4px;
@@ -192,6 +193,7 @@ body {
     flex-direction: column;
     gap: 12px;
     width: 100%;
+    flex: 1 1 auto;
 }
 
 /* User Message Bubble */
@@ -205,29 +207,22 @@ body {
     max-width: 85%;
 }
 
-/* --------------------------------------------------------------------------
-   UNIFIED RESPONSE CONTAINER (Container Level 1)
-   Wraps all output blocks for an assistant turn into 1 container with 0 padding
-   -------------------------------------------------------------------------- */
+/* Response Container Debug Border */
 .response-container {
     display: flex;
     flex-direction: column;
     width: 100%;
-    padding: 0; /* Strict requirement: no padding on main container */
+    padding: 0;
     margin: 4px 0;
     border-radius: 8px;
 }
 
-/* Temporary Color-Coded Border for Main Response Container */
 .demo-highlight-response {
     border: 2px stroke #ff4d4d;
     outline: 2px solid #ff4d4d;
     outline-offset: -2px;
 }
 
-/* --------------------------------------------------------------------------
-   THINKING PROCESS BLOCK
-   -------------------------------------------------------------------------- */
 .thinking-block {
     display: flex;
     flex-direction: column;
@@ -252,42 +247,12 @@ body {
     color: #aaaaaa;
     line-height: 1.35;
     font-style: italic;
-    margin: 0;
-    padding: 0;
 }
 
-.thinking-content p {
-    margin: 2px 0;
-}
+.demo-highlight-thinking { border: 1px solid #00e5ff; }
+.text-block { background: transparent; padding: 2px 4px; font-size: 0.85rem; color: #cccccc; }
+.demo-highlight-text { border: 1px dashed #3399ff; margin: 2px 0; }
 
-.demo-highlight-thinking {
-    border: 1px solid #00e5ff;
-}
-
-/* --------------------------------------------------------------------------
-   CHILD CONTAINER TYPE A: Text Block Container (Invisible, No Background)
-   -------------------------------------------------------------------------- */
-.text-block {
-    background: transparent;
-    padding: 2px 4px;
-    font-size: 0.85rem;
-    line-height: 1.4;
-    color: #cccccc;
-}
-
-.text-block p {
-    margin: 2px 0;
-}
-
-/* Temporary Color-Coded Border for Text Block Containers */
-.demo-highlight-text {
-    border: 1px dashed #3399ff;
-    margin: 2px 0;
-}
-
-/* --------------------------------------------------------------------------
-   CHILD CONTAINER TYPE B: Tool Call Popup Container (Light Hover Background)
-   -------------------------------------------------------------------------- */
 .tool-call-container {
     display: flex;
     flex-direction: column;
@@ -295,155 +260,236 @@ body {
     border-radius: 6px;
     font-size: 0.75rem;
     color: #888888;
-    background: transparent;
     cursor: pointer;
-    transition: background-color 0.15s ease;
 }
 
-.tool-call-header {
+.tool-call-header { display: flex; align-items: center; justify-content: space-between; }
+.tool-call-title { display: flex; align-items: center; gap: 6px; }
+.demo-highlight-tool { border: 1px solid #2ecc71; margin: 2px 0; }
+
+.files-edited-container { width: 100%; overflow: hidden; margin: 4px 0; }
+.demo-highlight-files-row { border: 1px solid #a855f7; }
+.files-edited-scroll-row { display: flex; gap: 8px; overflow-x: auto; padding: 6px 2px; }
+.file-card { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 6px; background: rgba(255, 255, 255, 0.04); }
+.demo-highlight-file-card { border: 1px solid #f59e0b; }
+
+/* --------------------------------------------------------------------------
+   INPUT PANEL & MODEL SELECTOR WITH PER-MODEL THINKING FLYOUT SUBMENU
+   -------------------------------------------------------------------------- */
+.input-panel {
+    margin-top: auto;
+    padding-top: 8px;
+}
+
+.input-card {
+    display: flex;
+    flex-direction: column;
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 8px;
+    gap: 6px;
+}
+
+.input-card textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 0.82rem;
+    resize: none;
+}
+
+.input-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Custom Dropdown Trigger */
+.custom-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.demo-highlight-thinking-menu {
+    border: 1px solid #ec4899;
+    border-radius: 6px;
+    padding: 1px;
+}
+
+.dropdown-trigger {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    color: #cccccc;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.status-connected { background: #2ecc71; box-shadow: 0 0 6px rgba(46, 204, 113, 0.4); }
+
+.model-thinking-badge {
+    font-size: 0.65rem;
+    padding: 1px 5px;
+    border-radius: 10px;
+    background: rgba(236, 72, 153, 0.2);
+    color: #f472b6;
+    border: 1px solid rgba(236, 72, 153, 0.4);
+    font-weight: 600;
+}
+
+/* Dropdown Menu Popover */
+.dropdown-menu {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    margin-bottom: 6px;
+    width: 260px;
+    background: #252526;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 200;
+    padding: 4px;
+}
+
+.dropdown-menu.hidden { display: none; }
+
+.dropdown-category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #888888;
+    text-transform: uppercase;
+}
+
+/* Model Hover Item & Flyout Submenu */
+.model-hover-item {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    width: 100%;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: #cccccc;
+    cursor: pointer;
 }
 
-.tool-call-title {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+.model-hover-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
 }
 
-.tool-chevron {
+.dropdown-item-text {
+    flex: 1 1 auto;
+    margin-left: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.item-thinking-pill {
+    font-size: 0.65rem;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: rgba(0, 229, 255, 0.15);
+    color: #80f3ff;
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    margin-right: 4px;
+}
+
+.flyout-arrow {
     font-size: 10px;
     color: #888888;
-    transition: transform 0.2s ease;
 }
 
-.tool-call-container.expanded .tool-chevron {
-    transform: rotate(90deg);
-}
-
-/* Light Background Hover Effect */
-.tool-call-container:hover {
-    background: rgba(255, 255, 255, 0.07);
-    color: #ffffff;
-}
-
-.tool-call-container code {
-    font-family: Consolas, Monaco, monospace;
-    background: rgba(255, 255, 255, 0.04);
-    padding: 1px 4px;
-    border-radius: 3px;
-    color: #cccccc;
-}
-
-/* Tool Result Dropdown Accordion */
-.tool-result-dropdown {
-    margin-top: 4px;
-    padding: 6px 8px;
-    background: rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.tool-result-dropdown.hidden {
+/* Hover Flyout Thinking Submenu */
+.thinking-flyout-menu {
+    position: absolute;
+    left: 100%;
+    top: 0;
+    margin-left: 4px;
+    width: 140px;
+    background: #2d2d2d;
+    border: 1px solid #ec4899;
+    border-radius: 6px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
     display: none;
+    flex-direction: column;
+    padding: 4px;
+    z-index: 300;
 }
 
-.tool-result-dropdown pre {
-    margin: 0;
-    white-space: pre-wrap;
-    word-break: break-all;
-    font-family: Consolas, Monaco, monospace;
-    font-size: 0.72rem;
-    color: #a5d6a7;
-}
-
-/* Temporary Color-Coded Border for Tool Call Popup Containers */
-.demo-highlight-tool {
-    border: 1px solid #2ecc71;
-    margin: 2px 0;
-}
-
-/* --------------------------------------------------------------------------
-   CHILD CONTAINER TYPE C: Files Edited Container (Horizontal Scrollbar)
-   Side-by-side file cards with horizontal overflow scrolling
-   -------------------------------------------------------------------------- */
-.files-edited-container {
-    width: 100%;
-    overflow: hidden;
-    margin: 4px 0;
-}
-
-/* Temporary Color-Coded Border for Outer Files Edited Row Container */
-.demo-highlight-files-row {
-    border: 1px solid #a855f7;
-}
-
-/* Horizontal Scroll Row for File Cards */
-.files-edited-scroll-row {
+.model-hover-item:hover .thinking-flyout-menu {
     display: flex;
-    flex-wrap: nowrap;
-    gap: 8px;
-    overflow-x: auto;
-    padding: 6px 2px;
-    scrollbar-width: thin;
 }
 
-.files-edited-scroll-row::-webkit-scrollbar {
-    height: 4px;
+.flyout-header {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #f472b6;
+    padding: 2px 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    margin-bottom: 2px;
 }
 
-.files-edited-scroll-row::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 2px;
-}
-
-/* Individual Side-by-Side File Card Container */
-.file-card {
+.flyout-option {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    flex-shrink: 0;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    gap: 4px;
+    padding: 4px 6px;
+    font-size: 0.72rem;
+    color: #cccccc;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
-.file-card:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.15);
-}
-
-/* Temporary Color-Coded Border for Individual File Cards */
-.demo-highlight-file-card {
-    border: 1px solid #f59e0b;
-}
-
-.file-card-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.file-card-name {
-    font-size: 0.78rem;
-    font-weight: 500;
+.flyout-option:hover {
+    background: rgba(236, 72, 153, 0.2);
     color: #ffffff;
-    white-space: nowrap;
 }
 
-.file-card-path {
-    font-size: 0.68rem;
-    color: #888888;
-    white-space: nowrap;
+.opacity-0 { opacity: 0; }
+
+.send-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: #007acc;
+    border: none;
+    border-radius: 6px;
+    color: #ffffff;
+    cursor: pointer;
 }
 
-/* --------------------------------------------------------------------------
-   VS Code Codicons Theme Category Colors
-   -------------------------------------------------------------------------- */
+.send-btn:hover { background: #0098ff; }
+
+/* Codicon colors */
 .html-icon { color: #e44d26; }
 .css-icon { color: #42a5f5; }
 .js-icon { color: #f7df1e; }

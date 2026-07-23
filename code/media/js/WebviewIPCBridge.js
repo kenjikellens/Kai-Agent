@@ -64,14 +64,16 @@ class WebviewIPCBridge {
      * Sends message payload to Extension Host to start agent generation.
      * @param {Array} messages Conversation messages array.
      * @param {string} model Selected model ID.
-     * @param {boolean} thinking Thinking toggle active status.
+     * @param {boolean} thinking Thinking toggle active status for local models.
+     * @param {string} geminiThinkingLevel Selected reasoning level for Gemini models.
      */
-    sendUserPrompt(messages, model, thinking) {
+    sendUserPrompt(messages, model, thinking, geminiThinkingLevel = 'high') {
         this.postMessage({
             type: 'sendMessage',
             messages,
             model,
-            thinking
+            thinking,
+            geminiThinkingLevel
         });
     }
 

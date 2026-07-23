@@ -223,10 +223,10 @@ class LMStudioClient {
      * @param temperature The sampling temperature (default: 0.7).
      * @returns A promise that resolves to the completion text response.
      */
-    async chatCompletion(messages, model = 'local-model', temperature = 0.7, signal) {
+    async chatCompletion(messages, model = 'local-model', temperature = 0.7, signal, thinking = true, geminiThinkingLevel = 'high') {
         const isGemini = model && model.toLowerCase().startsWith('gemini');
         if (isGemini) {
-            return this.chatGemini(messages, model, temperature, signal);
+            return this.chatGemini(messages, model, temperature, signal, geminiThinkingLevel);
         }
         // Route to a free-tier OpenAI-compatible cloud provider if model is namespaced
         const freeProvider = this._resolveFreeProvider(model);
@@ -236,12 +236,25 @@ class LMStudioClient {
         return new Promise((resolve, reject) => {
             const { hostname, port, pathPrefix } = this.parseServerUrl();
             // Build the standard OpenAI-compatible payload
-            const payload = JSON.stringify({
+            const requestParams = {
                 model: model,
                 messages: messages,
                 temperature: temperature,
                 stream: false
-            });
+            };
+            if (!thinking) {
+                requestParams.thinking = false;
+                requestParams.enable_thinking = false;
+                requestParams.chat_template_kwargs = {
+                    enable_thinking: false
+                };
+                requestParams.reasoning_effort = "none";
+                requestParams.reasoning = "off";
+            }
+            else {
+                requestParams.thinking = true;
+            }
+            const payload = JSON.stringify(requestParams);
             const options = {
                 hostname,
                 port,
@@ -294,10 +307,10 @@ class LMStudioClient {
      * @param signal An optional AbortSignal to cancel the HTTP request.
      * @returns A promise that resolves to the final concatenated completion text response.
      */
-    async chatCompletionStream(messages, model = 'local-model', temperature = 0.7, onToken, signal, thinking = true) {
+    async chatCompletionStream(messages, model = 'local-model', temperature = 0.7, onToken, signal, thinking = true, geminiThinkingLevel = 'high') {
         const isGemini = model && model.toLowerCase().startsWith('gemini');
         if (isGemini) {
-            return this.chatGeminiStream(messages, model, temperature, onToken, signal, thinking);
+            return this.chatGeminiStream(messages, model, temperature, onToken, signal, geminiThinkingLevel);
         }
         // Route to a free-tier OpenAI-compatible cloud provider if model is namespaced
         const freeProviderForStream = this._resolveFreeProvider(model);
@@ -799,7 +812,7 @@ class LMStudioClient {
     /**
      * Calls Gemini non-streaming API to get chat response.
      */
-    async chatGemini(messages, model, temperature, signal) {
+    async chatGemini(messages, model, temperature, signal, geminiThinkingLevel = 'high') {
         return new Promise((resolve, reject) => {
             const apiKey = this.apiKey;
             if (!apiKey) {
@@ -818,12 +831,14 @@ class LMStudioClient {
             const systemInstruction = systemMsg ? {
                 parts: [{ text: systemMsg.content }]
             } : undefined;
+            const level = geminiThinkingLevel || 'high';
             const requestBody = {
                 contents: contents,
                 generationConfig: {
                     temperature: temperature,
                     thinkingConfig: {
-                        thinking_level: 'HIGH'
+                        thinkingLevel: level,
+                        includeThoughts: level !== 'minimal'
                     }
                 }
             };
@@ -893,7 +908,7 @@ class LMStudioClient {
     /**
      * Calls Gemini streaming API and parses the response chunk-by-chunk.
      */
-    async chatGeminiStream(messages, model, temperature, onToken, signal, thinking = true) {
+    async chatGeminiStream(messages, model, temperature, onToken, signal, geminiThinkingLevel = 'high') {
         return new Promise((resolve, reject) => {
             const apiKey = this.apiKey;
             if (!apiKey) {
@@ -912,13 +927,13 @@ class LMStudioClient {
             const systemInstruction = systemMsg ? {
                 parts: [{ text: systemMsg.content }]
             } : undefined;
+            const level = geminiThinkingLevel || 'high';
             const generationConfig = {
-                temperature: temperature
-            };
-            // If thinking toggle is checked in the UI and the model supports it, enable it.
-            // In Gemini 3+ API, setting thinkingConfig with thinking_level controls reasoning.
-            generationConfig.thinkingConfig = {
-                thinking_level: thinking ? 'HIGH' : 'MINIMAL'
+                temperature: temperature,
+                thinkingConfig: {
+                    thinkingLevel: level,
+                    includeThoughts: level !== 'minimal'
+                }
             };
             const requestBody = {
                 contents: contents,
@@ -1005,7 +1020,20 @@ class LMStudioClient {
                                     if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
                                         const parts = data.candidates[0].content.parts;
                                         for (const part of parts) {
-                                            if (part.text) {
+                                            const isThoughtPart = part.thought === true || (typeof part.thought === 'string' && part.thought.length > 0) || Boolean(part.thinking);
+                                            if (isThoughtPart) {
+                                                const thoughtContent = typeof part.thought === 'string' ? part.thought : (part.thinking || part.text || '');
+                                                if (thoughtContent) {
+                                                    if (!inThinking) {
+                                                        onToken('<think>');
+                                                        fullText += '<think>';
+                                                        inThinking = true;
+                                                    }
+                                                    onToken(thoughtContent);
+                                                    fullText += thoughtContent;
+                                                }
+                                            }
+                                            else if (part.text) {
                                                 if (inThinking) {
                                                     onToken('</think>');
                                                     fullText += '</think>';
@@ -1013,15 +1041,6 @@ class LMStudioClient {
                                                 }
                                                 onToken(part.text);
                                                 fullText += part.text;
-                                            }
-                                            else if (part.thought) {
-                                                if (!inThinking) {
-                                                    onToken('<think>');
-                                                    fullText += '<think>';
-                                                    inThinking = true;
-                                                }
-                                                onToken(part.thought);
-                                                fullText += part.thought;
                                             }
                                         }
                                     }

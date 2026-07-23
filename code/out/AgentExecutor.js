@@ -62,7 +62,7 @@ class AgentExecutor {
      * @param thinking Toggle parameter for model reasoning phase.
      * @returns A promise that resolves to the final assistant response.
      */
-    async run(userPrompt, chatHistory, model = 'local-model', signal, activeFile, thinking = true) {
+    async run(userPrompt, chatHistory, model = 'local-model', signal, activeFile, thinking = true, geminiThinkingLevel = 'high') {
         // Deep copy history to avoid mutating the original until loop is complete
         const messages = [...chatHistory];
         // Find existing system prompt or inject ours at the beginning
@@ -95,7 +95,7 @@ class AgentExecutor {
             // Call the LLM with streaming tokens
             const response = await this.client.chatCompletionStream(messages, model, this.temperature, (token) => {
                 this.onProgress({ type: 'token', output: token });
-            }, signal, thinking);
+            }, signal, thinking, geminiThinkingLevel);
             lastAssistantResponse = response;
             // Parse response for tool calls
             const toolCall = this.parseToolCall(response);

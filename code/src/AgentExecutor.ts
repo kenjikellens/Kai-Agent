@@ -57,7 +57,8 @@ export class AgentExecutor {
         model: string = 'local-model',
         signal?: any,
         activeFile?: { fileName: string; filePath: string; content: string },
-        thinking: boolean = true
+        thinking: boolean = true,
+        geminiThinkingLevel: string = 'high'
     ): Promise<{ reply: string; messages: { role: string; content: string }[]; modifiedFiles: string[] }> {
         // Deep copy history to avoid mutating the original until loop is complete
         const messages = [...chatHistory];
@@ -101,7 +102,8 @@ export class AgentExecutor {
                     this.onProgress({ type: 'token', output: token });
                 },
                 signal,
-                thinking
+                thinking,
+                geminiThinkingLevel
             );
             lastAssistantResponse = response;
 

@@ -32,14 +32,13 @@
     const messageInput = document.getElementById('message-input');
     const sendBtn = document.getElementById('send-btn');
     const newChatBtn = document.getElementById('new-chat-btn');
-    const thinkingToggle = document.getElementById('thinking-toggle');
 
     /**
      * Persists current active chat session to workspace state.
      */
     function saveCurrentChat() {
-        const isThinkingChecked = thinkingToggle ? thinkingToggle.checked : true;
-        ipcBridge.saveChat(appState.toChatPayload(isThinkingChecked));
+        const details = modelDropdownController.getSelectedModelDetails();
+        ipcBridge.saveChat(appState.toChatPayload(details.thinking));
     }
 
     /**
@@ -76,8 +75,14 @@
         chatUIController.setUiLoading(true, appState);
         saveCurrentChat();
 
-        const isThinkingChecked = thinkingToggle ? thinkingToggle.checked : true;
-        ipcBridge.sendUserPrompt(appState.messages, appState.selectedModelValue, isThinkingChecked);
+        const modelDetails = modelDropdownController.getSelectedModelDetails();
+        const geminiThinkingLevel = settingsController.getGeminiThinkingLevel();
+        ipcBridge.sendUserPrompt(
+            appState.messages,
+            modelDetails.model,
+            modelDetails.thinking,
+            geminiThinkingLevel
+        );
     }
 
     /**
@@ -90,10 +95,6 @@
 
         chatUIController.renderUiEvents(appState.uiEvents, appState.messages);
         modelDropdownController.setSelectedModel(appState.selectedModelValue);
-
-        if (chat.thinking !== undefined && thinkingToggle) {
-            thinkingToggle.checked = chat.thinking;
-        }
 
         chatUIController.setUiLoading(false, appState);
         chatUIController.showView('chat');

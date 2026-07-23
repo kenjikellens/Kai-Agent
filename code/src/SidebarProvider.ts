@@ -65,7 +65,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         webviewView.webview.onDidReceiveMessage(async (data) => {
             switch (data.type) {
                 case 'sendMessage': {
-                    await this._handleSendMessage(data.messages, data.model, data.thinking);
+                    await this._handleSendMessage(data.messages, data.model, data.thinking, data.geminiThinkingLevel || 'high');
                     break;
                 }
                 case 'abort': {
@@ -81,8 +81,11 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                 }
                 case 'updateSettings': {
                     const config = vscode.workspace.getConfiguration('kai');
+                    const envUpdates: Record<string, string> = {};
+
                     if (data.apiKey !== undefined) {
                         await config.update('apiKey', data.apiKey, vscode.ConfigurationTarget.Global);
+                        envUpdates['GEMINI_API_KEY'] = data.apiKey;
                     }
                     if (data.language !== undefined) {
                         await config.update('language', data.language, vscode.ConfigurationTarget.Global);
@@ -91,8 +94,11 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                     if (data.providerKeys && typeof data.providerKeys === 'object') {
                         for (const [configKey, keyValue] of Object.entries(data.providerKeys)) {
                             await config.update(configKey, keyValue as string, vscode.ConfigurationTarget.Global);
+                            const envName = configKey.replace('ApiKey', '_API_KEY').toUpperCase();
+                            envUpdates[envName] = keyValue as string;
                         }
                     }
+                    this._syncEnvFile(envUpdates);
                     await this._handleCheckConnection();
                     break;
                 }
@@ -140,7 +146,12 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
      * and sends the response back to the webview UI.
      * @param messages The chat history payload array.
      */
-    private async _handleSendMessage(messages: { role: string; content: string }[], model?: string, thinking: boolean = true) {
+    private async _handleSendMessage(
+        messages: { role: string; content: string }[],
+        model?: string,
+        thinking: boolean = true,
+        geminiThinkingLevel: string = 'high'
+    ) {
         if (!this._view) {
             return;
         }
@@ -229,7 +240,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                 model || 'local-model',
                 this._activeAbortController.signal,
                 activeFile,
-                thinking
+                thinking,
+                geminiThinkingLevel
             );
 
             // Send final completion message to the webview
@@ -335,6 +347,63 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             translations: translations,
             language: activeLang
         });
+
+        // Also ensure current config keys are synced to .env file
+        const envSync: Record<string, string> = {
+            'GEMINI_API_KEY': apiKey
+        };
+        for (const p of FREE_PROVIDERS) {
+            const keyVal = config.get<string>(p.configKey) || '';
+            if (keyVal) {
+                const envName = p.configKey.replace('ApiKey', '_API_KEY').toUpperCase();
+                envSync[envName] = keyVal;
+            }
+        }
+        this._syncEnvFile(envSync);
+    }
+
+    /**
+     * Synchronizes API keys to the workspace root .env file.
+     * @param envEntries Mapping of environment variable names to API key values.
+     */
+    private _syncEnvFile(envEntries: Record<string, string>) {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders || workspaceFolders.length === 0) {
+            return;
+        }
+        const envPath = path.join(workspaceFolders[0].uri.fsPath, '.env');
+        let lines: string[] = [];
+        if (fs.existsSync(envPath)) {
+            lines = fs.readFileSync(envPath, 'utf8').split(/\r?\n/);
+        }
+
+        const envMap = new Map<string, string>();
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith('#')) continue;
+            const eqIdx = trimmed.indexOf('=');
+            if (eqIdx !== -1) {
+                const key = trimmed.slice(0, eqIdx).trim();
+                const val = trimmed.slice(eqIdx + 1).trim();
+                envMap.set(key, val);
+            }
+        }
+
+        for (const [key, val] of Object.entries(envEntries)) {
+            if (val) {
+                envMap.set(key, val);
+            }
+        }
+
+        const updatedContent = Array.from(envMap.entries())
+            .map(([k, v]) => `${k}=${v}`)
+            .join('\n') + '\n';
+
+        try {
+            fs.writeFileSync(envPath, updatedContent, 'utf8');
+        } catch (e) {
+            console.error('Failed to sync .env file:', e);
+        }
     }
 
     /**
@@ -549,11 +618,6 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                                                     <!-- Dynamically populated -->
                                                 </div>
                                             </div>
-                                            <label class="switch-container" title="Enable tool execution agent loop">
-                                                <input type="checkbox" id="thinking-toggle" checked>
-                                                <span class="slider-track"></span>
-                                                <span class="switch-label" id="thinking-toggle-label">${translations.thinkingToggle}</span>
-                                            </label>
                                         </div>
                                         <button id="send-btn" title="Send message">
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
@@ -594,6 +658,15 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                                         <option value="de">Deutsch</option>
                                         <option value="fr">Français</option>
                                         <option value="es">Español</option>
+                                    </select>
+                                </div>
+                                <div class="setting-item" style="margin-top: 10px; margin-bottom: 10px;">
+                                    <label for="gemini-thinking-level-input" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">Google Gemini Reasoning Level</label>
+                                    <select id="gemini-thinking-level-input" style="width: 100%; background: var(--app-input-bg); color: var(--app-fg); border: 1px solid var(--app-input-border); border-radius: var(--app-radius-sm); padding: 4px;">
+                                        <option value="high">High (Default)</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="low">Low</option>
+                                        <option value="minimal">Minimal (Disabled)</option>
                                     </select>
                                 </div>
                                 <label class="setting-row" title="${translations.showThinking}">

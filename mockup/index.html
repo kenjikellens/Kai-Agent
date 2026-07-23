@@ -10,14 +10,15 @@
 </head>
 <body>
     <div class="mockup-header">
-        <h2>Kai Agent UI Mockup - Resizable Sidebar Flexibility Test</h2>
-        <p><strong>Drag the border between the sidebar and editor to resize the sidebar width!</strong> Container borders are color-coded for visual clarity:</p>
+        <h2>Kai Agent UI Mockup - Per-Model Thinking Flyout Submenu Prototype</h2>
+        <p><strong>Hover over any model in the dropdown to set its thinking depth!</strong> Settings are remembered per-model. Container borders are color-coded for visual clarity:</p>
         <div class="legend">
             <span class="legend-item legend-response">Main Response Container (Red Border - No Padding)</span>
             <span class="legend-item legend-thinking">Thinking Process Block (Cyan Border)</span>
             <span class="legend-item legend-text">Text Block Container (Blue Border - Invisible BG)</span>
             <span class="legend-item legend-tool">Tool Call Container (Green Border - Click for Output Dropdown)</span>
-            <span class="legend-item legend-files">Files Edited Row & Cards (Purple & Amber Borders - Horizontal Scroll)</span>
+            <span class="legend-item legend-files">Files Edited Row & Cards (Purple & Amber Borders)</span>
+            <span class="legend-item legend-thinking-menu">Per-Model Thinking Submenu (Pink & Gold Border)</span>
         </div>
     </div>
 
@@ -49,7 +50,7 @@
                         <!-- Thinking Process Block -->
                         <div class="thinking-block demo-highlight-thinking">
                             <div class="thinking-header">
-                                <span>Thinking Process</span>
+                                <span>Thinking Process (High Depth)</span>
                                 <i class="codicon codicon-chevron-down thinking-chevron"></i>
                             </div>
                             <div class="thinking-content">
@@ -136,98 +137,133 @@
 
                     </div>
 
-
-                    <!-- ===================================================================
-                         CHAT TURN 2 (Follow-up Turn)
-                         =================================================================== -->
-                    <div class="message user-message">
-                        <div class="message-content">Now add gemini-3.6-flash and delete obsolete temporary files.</div>
-                    </div>
-
-                    <!-- Unified Assistant Response Container 2 (Red Border - 0 Padding) -->
-                    <div class="response-container demo-highlight-response">
-
-                        <!-- Thinking Process Block 2 -->
-                        <div class="thinking-block demo-highlight-thinking">
-                            <div class="thinking-header">
-                                <span>Thinking Process</span>
-                                <i class="codicon codicon-chevron-down thinking-chevron"></i>
-                            </div>
-                            <div class="thinking-content">
-                                <em>Verifying Gemini 3.6 Flash model strings in Google API documentation... Checking LMStudioClient.ts allowedModels and preparing delete_item tool invocation for temp cache files.</em>
-                            </div>
-                        </div>
-
-                        <!-- Text Content Block 1 -->
-                        <div class="response-block text-block demo-highlight-text">
-                            <p>I will inspect the model configuration, register the new Gemini 3.6 Flash model, and remove the temporary cache items.</p>
-                        </div>
-
-                        <!-- Tool Call Popup 1 -->
-                        <div class="response-block tool-call-container demo-highlight-tool">
-                            <div class="tool-call-header">
-                                <div class="tool-call-title">
-                                    <i class="codicon codicon-trash term-icon"></i>
-                                    <span>deleted</span>
-                                    <code>temp/old_cache.tmp</code>
-                                </div>
-                                <i class="codicon codicon-chevron-right tool-chevron"></i>
-                            </div>
-                            <div class="tool-result-dropdown hidden">
-                                <pre><code>Successfully deleted item: temp/old_cache.tmp</code></pre>
-                            </div>
-                        </div>
-
-                        <!-- Tool Call Popup 2 -->
-                        <div class="response-block tool-call-container demo-highlight-tool">
-                            <div class="tool-call-header">
-                                <div class="tool-call-title">
-                                    <i class="codicon codicon-file-code ts-icon"></i>
-                                    <span>editing</span>
-                                    <code>src/LMStudioClient.ts</code>
-                                </div>
-                                <i class="codicon codicon-chevron-right tool-chevron"></i>
-                            </div>
-                            <div class="tool-result-dropdown hidden">
-                                <pre><code>Added gemini-3.6-flash and gemini-3.5-flash-lite to allowedModels array in getGeminiModels().</code></pre>
-                            </div>
-                        </div>
-
-                        <!-- Text Content Block 2 -->
-                        <div class="response-block text-block demo-highlight-text">
-                            <p>Summary of updated workspace items:</p>
-                        </div>
-
-                        <!-- Files Edited Row -->
-                        <div class="response-block files-edited-container demo-highlight-files-row">
-                            <div class="files-edited-scroll-row">
-                                
-                                <div class="file-card demo-highlight-file-card" data-filepath="src/LMStudioClient.ts" title="Click to open LMStudioClient.ts in VS Code">
-                                    <i class="codicon codicon-file-code ts-icon"></i>
-                                    <span class="file-card-name">LMStudioClient.ts</span>
-                                </div>
-
-                                <div class="file-card demo-highlight-file-card" data-filepath="media/main.js" title="Click to open main.js in VS Code">
-                                    <i class="codicon codicon-symbol-method js-icon"></i>
-                                    <span class="file-card-name">main.js</span>
-                                </div>
-
-                                <div class="file-card demo-highlight-file-card" data-filepath="gemini_models.md" title="Click to open gemini_models.md in VS Code">
-                                    <i class="codicon codicon-markdown md-icon"></i>
-                                    <span class="file-card-name">gemini_models.md</span>
-                                </div>
-
-                            </div>
-                        </div>
-
-                        <!-- Text Content Block 3 -->
-                        <div class="response-block text-block demo-highlight-text">
-                            <p>Gemini 3.6 Flash is now registered and ready to use!</p>
-                        </div>
-
-                    </div>
-
                 </div>
+
+                <!-- Input Panel & Model Selector with Per-Model Thinking Flyout -->
+                <div class="input-panel">
+                    <div class="input-card">
+                        <textarea placeholder="Type a message or prompt…" rows="1"></textarea>
+                        <div class="input-toolbar">
+                            <div class="toolbar-left">
+                                
+                                <!-- Custom Model Selector Dropdown -->
+                                <div class="custom-dropdown demo-highlight-thinking-menu" id="model-dropdown-container">
+                                    <button type="button" class="dropdown-trigger" id="dropdown-trigger-btn" title="Active Model">
+                                        <span class="status-dot status-connected"></span>
+                                        <span id="selected-model-text">gemini-3.6-flash</span>
+                                        <span class="model-thinking-badge" id="model-thinking-badge" title="Active Thinking Depth for this model">High</span>
+                                        <i class="codicon codicon-chevron-down dropdown-trigger-chevron"></i>
+                                    </button>
+
+                                    <!-- Popover Dropdown Options Menu with Hover Thinking Submenus -->
+                                    <div class="dropdown-menu hidden" id="dropdown-options-menu">
+                                        <div class="dropdown-category">
+                                            <div class="dropdown-category-header">
+                                                <span>Gemini Models</span>
+                                                <i class="codicon codicon-chevron-down"></i>
+                                            </div>
+                                            <div class="dropdown-category-content">
+                                                
+                                                <!-- Model Item 1: Gemini 3.6 Flash -->
+                                                <div class="dropdown-item model-hover-item" data-model="gemini-3.6-flash">
+                                                    <span class="status-dot status-connected"></span>
+                                                    <span class="dropdown-item-text">gemini-3.6-flash</span>
+                                                    <span class="item-thinking-pill" id="pill-gemini-3.6-flash">High</span>
+                                                    <i class="codicon codicon-chevron-right flyout-arrow"></i>
+
+                                                    <!-- Flyout Thinking Submenu -->
+                                                    <div class="thinking-flyout-menu">
+                                                        <div class="flyout-header">Thinking Depth</div>
+                                                        <div class="flyout-option" data-model="gemini-3.6-flash" data-level="high">
+                                                            <i class="codicon codicon-check"></i> High
+                                                        </div>
+                                                        <div class="flyout-option" data-model="gemini-3.6-flash" data-level="medium">
+                                                            <i class="codicon codicon-check opacity-0"></i> Medium
+                                                        </div>
+                                                        <div class="flyout-option" data-model="gemini-3.6-flash" data-level="low">
+                                                            <i class="codicon codicon-check opacity-0"></i> Low
+                                                        </div>
+                                                        <div class="flyout-option" data-model="gemini-3.6-flash" data-level="minimal">
+                                                            <i class="codicon codicon-check opacity-0"></i> Minimal (Off)
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Model Item 2: Gemini 3.5 Flash Lite -->
+                                                <div class="dropdown-item model-hover-item" data-model="gemini-3.5-flash-lite">
+                                                    <span class="status-dot status-connected"></span>
+                                                    <span class="dropdown-item-text">gemini-3.5-flash-lite</span>
+                                                    <span class="item-thinking-pill" id="pill-gemini-3.5-flash-lite">Medium</span>
+                                                    <i class="codicon codicon-chevron-right flyout-arrow"></i>
+
+                                                    <!-- Flyout Thinking Submenu -->
+                                                    <div class="thinking-flyout-menu">
+                                                        <div class="flyout-header">Thinking Depth</div>
+                                                        <div class="flyout-option" data-model="gemini-3.5-flash-lite" data-level="high">
+                                                            <i class="codicon codicon-check opacity-0"></i> High
+                                                        </div>
+                                                        <div class="flyout-option" data-model="gemini-3.5-flash-lite" data-level="medium">
+                                                            <i class="codicon codicon-check"></i> Medium
+                                                        </div>
+                                                        <div class="flyout-option" data-model="gemini-3.5-flash-lite" data-level="low">
+                                                            <i class="codicon codicon-check opacity-0"></i> Low
+                                                        </div>
+                                                        <div class="flyout-option" data-model="gemini-3.5-flash-lite" data-level="minimal">
+                                                            <i class="codicon codicon-check opacity-0"></i> Minimal (Off)
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </div>
+
+                                        <!-- Category: LM Studio Models -->
+                                        <div class="dropdown-category">
+                                            <div class="dropdown-category-header">
+                                                <span>LM Studio Models</span>
+                                                <i class="codicon codicon-chevron-down"></i>
+                                            </div>
+                                            <div class="dropdown-category-content">
+                                                
+                                                <!-- Model Item 3: Qwen 2.5 Coder -->
+                                                <div class="dropdown-item model-hover-item" data-model="qwen2.5-coder-7b">
+                                                    <span class="status-dot status-connected"></span>
+                                                    <span class="dropdown-item-text">qwen2.5-coder-7b</span>
+                                                    <span class="item-thinking-pill" id="pill-qwen2.5-coder-7b">Low</span>
+                                                    <i class="codicon codicon-chevron-right flyout-arrow"></i>
+
+                                                    <!-- Flyout Thinking Submenu -->
+                                                    <div class="thinking-flyout-menu">
+                                                        <div class="flyout-header">Thinking Depth</div>
+                                                        <div class="flyout-option" data-model="qwen2.5-coder-7b" data-level="high">
+                                                            <i class="codicon codicon-check opacity-0"></i> High
+                                                        </div>
+                                                        <div class="flyout-option" data-model="qwen2.5-coder-7b" data-level="medium">
+                                                            <i class="codicon codicon-check opacity-0"></i> Medium
+                                                        </div>
+                                                        <div class="flyout-option" data-model="qwen2.5-coder-7b" data-level="low">
+                                                            <i class="codicon codicon-check"></i> Low
+                                                        </div>
+                                                        <div class="flyout-option" data-model="qwen2.5-coder-7b" data-level="minimal">
+                                                            <i class="codicon codicon-check opacity-0"></i> Minimal (Off)
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                            </div>
+                            <button class="send-btn" title="Send message">
+                                <i class="codicon codicon-send"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 

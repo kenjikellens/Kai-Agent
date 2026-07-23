@@ -14,6 +14,7 @@ class ModelDropdownController {
         this.selectedModelValue = localStorage.getItem('kai.selectedModel') || 'local-model';
         this.accordionStates = {};
         this.freeProvidersConfig = [...KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS];
+        this.lmStudioRawModels = [];
 
         this.dropdownTriggerBtn = document.getElementById('dropdown-trigger-btn');
         this.dropdownOptionsMenu = document.getElementById('dropdown-options-menu');
@@ -54,8 +55,9 @@ class ModelDropdownController {
      * @param {Array<string>} modelsList List of model IDs under this category.
      * @param {boolean} isInitiallyExpanded Initial expansion state.
      * @param {Function|null} isModelConnectedFn Optional model connection check callback.
+     * @param {boolean} isLMStudioCategory Whether this is the local LM Studio model category.
      */
-    createAccordionGroup(title, modelsList, isInitiallyExpanded, isModelConnectedFn = null) {
+    createAccordionGroup(title, modelsList, isInitiallyExpanded, isModelConnectedFn = null, isLMStudioCategory = false) {
         if (!this.dropdownOptionsMenu) return;
 
         const groupDiv = document.createElement('div');
@@ -100,14 +102,26 @@ class ModelDropdownController {
             placeholder.textContent = title.includes('Gemini') ? 'Add API key in settings' : (title.includes('LM Studio') ? 'LM Studio server offline' : 'No Models Available');
             contentDiv.appendChild(placeholder);
         } else {
-            modelsList.forEach(m => {
+            const displayItems = [];
+            if (isLMStudioCategory) {
+                modelsList.forEach(m => {
+                    displayItems.push({ value: `${m} (thinking)`, label: `${this.formatter.formatModelName(m)} (thinking)`, rawModel: m, thinking: true });
+                    displayItems.push({ value: m, label: this.formatter.formatModelName(m), rawModel: m, thinking: false });
+                });
+            } else {
+                modelsList.forEach(m => {
+                    displayItems.push({ value: m, label: this.formatter.formatModelName(m), rawModel: m, thinking: true });
+                });
+            }
+
+            displayItems.forEach(itemData => {
                 const item = document.createElement('div');
                 item.className = 'dropdown-item';
-                if (m === this.selectedModelValue) {
+                if (itemData.value === this.selectedModelValue) {
                     item.classList.add('selected');
                 }
-                item.dataset.value = m;
-                const isLoaded = isModelConnectedFn ? isModelConnectedFn(m) : true;
+                item.dataset.value = itemData.value;
+                const isLoaded = isModelConnectedFn ? isModelConnectedFn(itemData.rawModel) : true;
                 const dotClass = isLoaded ? 'status-connected' : 'status-disconnected';
                 
                 const statusDotSpan = document.createElement('span');
@@ -116,23 +130,23 @@ class ModelDropdownController {
 
                 const textSpan = document.createElement('span');
                 textSpan.className = 'dropdown-item-text';
-                textSpan.textContent = this.formatter.formatModelName(m);
+                textSpan.textContent = itemData.label;
                 item.appendChild(textSpan);
                 
                 item.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    this.selectedModelValue = m;
-                    localStorage.setItem('kai.selectedModel', m);
+                    this.selectedModelValue = itemData.value;
+                    localStorage.setItem('kai.selectedModel', itemData.value);
                     if (this.selectedModelText) {
-                        this.selectedModelText.textContent = this.formatter.formatModelName(m);
+                        this.selectedModelText.textContent = itemData.label;
                     }
                     if (this.statusDot) {
-                        this.statusDot.className = (isModelConnectedFn && isModelConnectedFn(m)) ? 'status-dot status-connected' : 'status-dot status-disconnected';
+                        this.statusDot.className = (isModelConnectedFn && isModelConnectedFn(itemData.rawModel)) ? 'status-dot status-connected' : 'status-dot status-disconnected';
                     }
                     this.dropdownOptionsMenu.classList.add('hidden');
                     
                     if (this.onSelect) {
-                        this.onSelect(m);
+                        this.onSelect(itemData.value);
                     }
                 });
                 contentDiv.appendChild(item);
@@ -159,7 +173,7 @@ class ModelDropdownController {
         const geminiTitle = 'Gemini';
 
         const showGeminiExpanded = this.selectedModelValue && this.selectedModelValue.toLowerCase().startsWith('gemini');
-        this.createAccordionGroup(lmTitle, [], !showGeminiExpanded);
+        this.createAccordionGroup(lmTitle, [], !showGeminiExpanded, null, true);
         this.createAccordionGroup(geminiTitle, defaultGemini, showGeminiExpanded);
 
         defaultProviders.forEach(p => {
@@ -177,25 +191,30 @@ class ModelDropdownController {
 
         const isModelConnected = (m) => {
             if (!m) return false;
-            const lowerM = m.toLowerCase();
+            const bare = m.endsWith(' (thinking)') ? m.slice(0, -11) : m;
+            const lowerM = bare.toLowerCase();
             if (lowerM.startsWith('gemini')) {
                 return !!message.apiKey;
             }
             const freeProviders = message.freeProviders || [];
             for (const provider of freeProviders) {
-                if (provider.models.includes(m)) {
+                if (provider.models.includes(bare)) {
                     return !!provider.apiKey;
                 }
             }
-            return message.connected && message.loadedModels && message.loadedModels.includes(m);
+            return message.connected && message.loadedModels && message.loadedModels.includes(bare);
         };
 
         const lmStudioModels = message.lmStudioModels || [];
+        this.lmStudioRawModels = lmStudioModels;
         const geminiModels = message.geminiModels || [];
         const combinedModels = [...lmStudioModels, ...geminiModels];
 
         if (this.selectedModelValue && this.selectedModelValue !== 'local-model' && this.selectedModelValue !== 'No Models Loaded') {
-            this.selectedModelText.textContent = this.formatter.formatModelName(this.selectedModelValue);
+            const cleanDisplay = this.selectedModelValue.endsWith(' (thinking)')
+                ? `${this.formatter.formatModelName(this.selectedModelValue.slice(0, -11))} (thinking)`
+                : this.formatter.formatModelName(this.selectedModelValue);
+            this.selectedModelText.textContent = cleanDisplay;
             this.statusDot.className = isModelConnected(this.selectedModelValue) ? 'status-dot status-connected' : 'status-dot status-disconnected';
         } else if (combinedModels.length > 0) {
             this.selectedModelValue = combinedModels[0];
@@ -215,7 +234,7 @@ class ModelDropdownController {
         const geminiTitle = 'Gemini';
 
         const showGeminiExpanded = this.selectedModelValue && this.selectedModelValue.toLowerCase().startsWith('gemini');
-        this.createAccordionGroup(lmTitle, lmStudioModels, !showGeminiExpanded, isModelConnected);
+        this.createAccordionGroup(lmTitle, lmStudioModels, !showGeminiExpanded, isModelConnected, true);
         this.createAccordionGroup(geminiTitle, geminiModels.length > 0 ? geminiModels : KAI_CONSTANTS.DEFAULT_GEMINI_MODELS, showGeminiExpanded, isModelConnected);
 
         const freeProviders = message.freeProviders || [];
@@ -228,7 +247,34 @@ class ModelDropdownController {
     }
 
     /**
-     * Gets currently selected model ID.
+     * Resolves currently selected model details including bare model ID and thinking toggle flag.
+     * @returns {object} Object containing model ID string and boolean thinking flag.
+     */
+    getSelectedModelDetails() {
+        let raw = this.selectedModelValue || 'local-model';
+        let thinking = true;
+
+        if (raw.endsWith(' (thinking)')) {
+            return {
+                model: raw.slice(0, -11),
+                thinking: true
+            };
+        }
+
+        // Check if raw model is a local LM Studio model without (thinking) suffix
+        const isLocalModel = this.lmStudioRawModels.includes(raw);
+        if (isLocalModel) {
+            thinking = false;
+        }
+
+        return {
+            model: raw,
+            thinking: thinking
+        };
+    }
+
+    /**
+     * Gets currently selected model ID string.
      * @returns {string} Selected model ID.
      */
     getSelectedModel() {
@@ -242,7 +288,10 @@ class ModelDropdownController {
     setSelectedModel(modelId) {
         this.selectedModelValue = modelId;
         if (this.selectedModelText) {
-            this.selectedModelText.textContent = this.formatter.formatModelName(modelId);
+            const cleanDisplay = modelId.endsWith(' (thinking)')
+                ? `${this.formatter.formatModelName(modelId.slice(0, -11))} (thinking)`
+                : this.formatter.formatModelName(modelId);
+            this.selectedModelText.textContent = cleanDisplay;
         }
         if (this.dropdownOptionsMenu) {
             const items = this.dropdownOptionsMenu.querySelectorAll('.dropdown-item');

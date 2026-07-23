@@ -1,6 +1,6 @@
 /**
  * SettingsController manages the settings panel UI, localStorage preferences,
- * language select, and the provider API key overlay modal.
+ * language select, Gemini thinking level, and the provider API key overlay modal.
  */
 class SettingsController {
     /**
@@ -16,6 +16,7 @@ class SettingsController {
         this.keepThinkingFinishedExpandedToggle = document.getElementById('keep-thinking-finished-expanded-toggle');
         this.apiKeyInput = document.getElementById('api-key-input');
         this.languageSelectInput = document.getElementById('language-select-input');
+        this.geminiThinkingLevelInput = document.getElementById('gemini-thinking-level-input');
         this.keysContainer = document.getElementById('keys-container');
         this.manageKeysBtn = document.getElementById('manage-keys-btn');
         this.closeKeysBtn = document.getElementById('close-keys-btn');
@@ -46,6 +47,11 @@ class SettingsController {
             this.keepThinkingFinishedExpandedToggle.checked = stored === null ? false : stored === 'true';
         }
 
+        if (this.geminiThinkingLevelInput) {
+            const storedLevel = localStorage.getItem('kai.geminiThinkingLevel');
+            this.geminiThinkingLevelInput.value = storedLevel || 'high';
+        }
+
         this.updateSubsettingsVisibility();
 
         if (this.languageSelectInput && window.KAI_LANG) {
@@ -73,6 +79,12 @@ class SettingsController {
         if (this.keepThinkingFinishedExpandedToggle) {
             this.keepThinkingFinishedExpandedToggle.addEventListener('change', () => {
                 localStorage.setItem('kai.keepThinkingFinishedExpanded', this.keepThinkingFinishedExpandedToggle.checked);
+            });
+        }
+
+        if (this.geminiThinkingLevelInput) {
+            this.geminiThinkingLevelInput.addEventListener('change', () => {
+                localStorage.setItem('kai.geminiThinkingLevel', this.geminiThinkingLevelInput.value);
             });
         }
 
@@ -106,6 +118,17 @@ class SettingsController {
                 }
             });
         }
+    }
+
+    /**
+     * Retrieves the active Gemini reasoning level setting (high, medium, low, minimal).
+     * @returns {string} The active reasoning level string.
+     */
+    getGeminiThinkingLevel() {
+        if (this.geminiThinkingLevelInput) {
+            return this.geminiThinkingLevelInput.value || 'high';
+        }
+        return localStorage.getItem('kai.geminiThinkingLevel') || 'high';
     }
 
     /**
