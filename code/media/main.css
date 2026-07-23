@@ -613,14 +613,9 @@ button:disabled {
   padding-left: 4px;
 }
 
-/* 2nd Dropdown Container - defaults to LEFT side (VS Code sidebar has no space on right) */
+/* 2nd Dropdown Container - position:fixed so it stays within the webview viewport */
 .thinking-flyout-menu {
-  position: absolute;
-  right: 100%;
-  left: auto;
-  top: -4px;
-  margin-right: 0;
-  padding-right: 6px;
+  position: fixed;
   width: 140px;
   z-index: 99999;
   display: none;
@@ -640,14 +635,6 @@ button:disabled {
 
 .dropdown-item.model-hover-item:hover > .thinking-flyout-menu {
   display: flex;
-}
-
-/* Flip flyout to RIGHT side when there is enough space */
-.thinking-flyout-menu.flyout-flip-right {
-  left: 100%;
-  right: auto;
-  padding-right: 0;
-  padding-left: 6px;
 }
 
 /* Flyout option styled as clickable button */

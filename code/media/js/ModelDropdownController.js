@@ -176,16 +176,20 @@ class ModelDropdownController {
                     flyoutMenu.appendChild(flyoutInner);
                     item.appendChild(flyoutMenu);
 
-                    /* Flip flyout to right side only if there is enough viewport space */
+                    /* Position flyout dynamically within the webview viewport */
                     item.addEventListener('mouseenter', () => {
                         const itemRect = item.getBoundingClientRect();
-                        const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
-                        const flyoutWidth = 150;
-                        if (itemRect.right + flyoutWidth <= viewportWidth) {
-                            flyoutMenu.classList.add('flyout-flip-right');
-                        } else {
-                            flyoutMenu.classList.remove('flyout-flip-right');
+                        const vw = window.innerWidth || document.documentElement.clientWidth;
+                        const flyoutW = 146;
+
+                        /* Try placing to the right of the item first */
+                        let left = itemRect.right + 4;
+                        if (left + flyoutW > vw) {
+                            /* Not enough space right — place to the left, clamped to 0 */
+                            left = Math.max(0, itemRect.left - flyoutW - 4);
                         }
+                        flyoutMenu.style.left = left + 'px';
+                        flyoutMenu.style.top  = itemRect.top + 'px';
                     });
                 }
                 
