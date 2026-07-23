@@ -28,6 +28,7 @@ const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const vscode = __importStar(require("vscode"));
 const Tool_1 = require("./Tool");
+const FileReplacementHelper_1 = require("./FileReplacementHelper");
 /**
  * Tool for replacing a single contiguous block of lines in a file.
  */
@@ -70,21 +71,17 @@ class ReplaceFileContentTool extends Tool_1.Tool {
         }
         const content = await fs.promises.readFile(targetPath, 'utf8');
         const lines = content.split(/\r?\n/);
-        const startIdx = args.startLine - 1;
-        const endIdx = args.endLine - 1;
-        if (startIdx < 0 || endIdx >= lines.length || startIdx > endIdx) {
-            return `Error: Line range [${args.startLine}, ${args.endLine}] is out of bounds for file ${args.path} (total lines: ${lines.length}).`;
+        const error = FileReplacementHelper_1.FileReplacementHelper.applyChunks(lines, [
+            {
+                startLine: args.startLine,
+                endLine: args.endLine,
+                targetContent: args.targetContent,
+                replacementContent: args.replacementContent
+            }
+        ], args.path);
+        if (error) {
+            return error;
         }
-        const targetLinesFromFile = lines.slice(startIdx, endIdx + 1);
-        const fileBlockNormalized = targetLinesFromFile.join('\n');
-        const targetContentNormalized = args.targetContent.replace(/\r?\n/g, '\n');
-        if (fileBlockNormalized !== targetContentNormalized) {
-            return `Error: The content at lines ${args.startLine}-${args.endLine} does not match the targetContent exactly.\n` +
-                `Expected:\n${targetContentNormalized}\n\n` +
-                `Found in file:\n${fileBlockNormalized}`;
-        }
-        const replacementLines = args.replacementContent.split(/\r?\n/);
-        lines.splice(startIdx, targetLinesFromFile.length, ...replacementLines);
         await fs.promises.writeFile(targetPath, lines.join('\n'), 'utf8');
         vscode.window.showInformationMessage(`Kai: Replaced content in ${path.basename(args.path)}`);
         return `Successfully updated file: ${args.path} (lines ${args.startLine}-${args.endLine})`;

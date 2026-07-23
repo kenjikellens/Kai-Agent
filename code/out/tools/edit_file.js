@@ -28,6 +28,7 @@ const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const vscode = __importStar(require("vscode"));
 const Tool_1 = require("./Tool");
+const FileToolUtils_1 = require("./FileToolUtils");
 /**
  * Tool for editing existing file content within the workspace using search-and-replace.
  */
@@ -63,8 +64,9 @@ class EditFileTool extends Tool_1.Tool {
      */
     async execute(args, context) {
         const targetPath = (0, Tool_1.resolveSafePath)(args.path, context.workspacePath);
-        if (!fs.existsSync(targetPath)) {
-            return `File does not exist: ${args.path}`;
+        const existsError = FileToolUtils_1.FileToolUtils.checkFileExists(targetPath, args.path);
+        if (existsError) {
+            return existsError;
         }
         const content = await fs.promises.readFile(targetPath, 'utf8');
         const searchStr = args.search;

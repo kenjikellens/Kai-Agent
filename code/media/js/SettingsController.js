@@ -143,13 +143,7 @@ class SettingsController {
         if (!this.dynamicKeysList) return;
         this.dynamicKeysList.innerHTML = '';
 
-        const providers = freeProviders && freeProviders.length > 0 ? freeProviders : [
-            { name: 'Mistral AI', configKey: 'mistralApiKey', keyHint: 'Get free key at console.mistral.ai' },
-            { name: 'Cohere', configKey: 'cohereApiKey', keyHint: 'Get free key at dashboard.cohere.com' },
-            { name: 'Cerebras', configKey: 'cerebrasApiKey', keyHint: 'Get free key at cloud.cerebras.ai' },
-            { name: 'Zhipu AI', configKey: 'zhipuApiKey', keyHint: 'Get free key at open.bigmodel.cn' },
-            { name: 'OmniRoute Gateway', configKey: 'omnirouteApiKey', keyHint: 'Run OmniRoute via npm: npx omniroute' }
-        ];
+        const providers = freeProviders && freeProviders.length > 0 ? freeProviders : KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS;
 
         for (const provider of providers) {
             const wrapper = document.createElement('div');

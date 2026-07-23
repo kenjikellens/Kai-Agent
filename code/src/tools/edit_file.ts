@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { Tool, ToolContext, FunctionDeclaration, resolveSafePath } from './Tool';
+import { FileToolUtils } from './FileToolUtils';
 
 /**
  * Tool for editing existing file content within the workspace using search-and-replace.
@@ -37,9 +38,11 @@ export class EditFileTool extends Tool {
      */
     public async execute(args: { path: string; search: string; replace: string }, context: ToolContext): Promise<string> {
         const targetPath = resolveSafePath(args.path, context.workspacePath);
-        if (!fs.existsSync(targetPath)) {
-            return `File does not exist: ${args.path}`;
+        const existsError = FileToolUtils.checkFileExists(targetPath, args.path);
+        if (existsError) {
+            return existsError;
         }
+
         const content = await fs.promises.readFile(targetPath, 'utf8');
         const searchStr = args.search;
         const replaceStr = args.replace;

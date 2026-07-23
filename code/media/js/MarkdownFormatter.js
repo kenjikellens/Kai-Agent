@@ -44,7 +44,7 @@ class MarkdownFormatter {
      */
     formatMarkdown(text, forceThinkingCollapsed = null, isThinkingEnabled = true) {
         if (!text) return '';
-        const chevronSvg = `<svg class="custom-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px; display: inline-block; vertical-align: middle;"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+        const chevronSvg = DOMUtils.getChevronSvgString('custom-chevron');
 
         let cleanText = text;
 
@@ -98,8 +98,8 @@ class MarkdownFormatter {
             const keepThinkingExpanded = localStorage.getItem('kai.keepThinkingExpanded') !== 'false';
             const keepThinkingFinishedExpanded = localStorage.getItem('kai.keepThinkingFinishedExpanded') === 'true';
 
-            const chevronUp = `<svg class="thinking-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>`;
-            const chevronDown = `<svg class="thinking-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+            const chevronUp = DOMUtils.getChevronUpSvgString('thinking-chevron');
+            const chevronDown = DOMUtils.getChevronSvgString('thinking-chevron');
 
             const i18n = window.KAI_I18N || {};
             const thinkingProcessTitle = i18n.thinkingProcess || 'Thinking Process';

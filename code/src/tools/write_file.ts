@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { Tool, ToolContext, FunctionDeclaration, resolveSafePath } from './Tool';
+import { FileToolUtils } from './FileToolUtils';
 
 /**
  * Tool for writing or creating new file content within the workspace.
@@ -42,12 +43,7 @@ export class WriteFileTool extends Tool {
      */
     public async execute(args: { path: string; content: string }, context: ToolContext): Promise<string> {
         const targetPath = resolveSafePath(args.path, context.workspacePath);
-        const parentDir = path.dirname(targetPath);
-
-        // Recursively create parent directories if they don't exist
-        if (!fs.existsSync(parentDir)) {
-            await fs.promises.mkdir(parentDir, { recursive: true });
-        }
+        await FileToolUtils.ensureParentDirExists(targetPath);
 
         await fs.promises.writeFile(targetPath, args.content, 'utf8');
         vscode.window.showInformationMessage(`Kai: Created/Updated file ${path.basename(args.path)}`);

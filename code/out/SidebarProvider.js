@@ -434,6 +434,8 @@ class SidebarProvider {
      */
     _getHtmlForWebview(webview) {
         // Resolve resources from media directory
+        const constantsUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'Constants.js'));
+        const domUtilsUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'DOMUtils.js'));
         const appStateUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'AppState.js'));
         const markdownFormatterUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'MarkdownFormatter.js'));
         const ipcBridgeUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'WebviewIPCBridge.js'));
@@ -592,6 +594,8 @@ class SidebarProvider {
                     </div>
                 </div>
 
+                <script nonce="${nonce}" src="${constantsUri}"></script>
+                <script nonce="${nonce}" src="${domUtilsUri}"></script>
                 <script nonce="${nonce}" src="${appStateUri}"></script>
                 <script nonce="${nonce}" src="${markdownFormatterUri}"></script>
                 <script nonce="${nonce}" src="${ipcBridgeUri}"></script>

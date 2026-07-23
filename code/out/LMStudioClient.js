@@ -90,7 +90,6 @@ exports.FREE_PROVIDERS = [
         models: [
             'omniroute/auto',
             'omniroute/free-aggregate',
-            'omniroute/gemini-2.0-flash',
             'omniroute/claude-3-5-sonnet',
             'omniroute/deepseek-r1',
             'omniroute/gpt-4o'

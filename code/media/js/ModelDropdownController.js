@@ -13,13 +13,7 @@ class ModelDropdownController {
         this.onSelect = onSelect;
         this.selectedModelValue = localStorage.getItem('kai.selectedModel') || 'local-model';
         this.accordionStates = {};
-        this.freeProvidersConfig = [
-            { name: 'Mistral AI', configKey: 'mistralApiKey', keyHint: 'Get free key at console.mistral.ai' },
-            { name: 'Cohere', configKey: 'cohereApiKey', keyHint: 'Get free key at dashboard.cohere.com' },
-            { name: 'Cerebras', configKey: 'cerebrasApiKey', keyHint: 'Get free key at cloud.cerebras.ai' },
-            { name: 'Zhipu AI', configKey: 'zhipuApiKey', keyHint: 'Get free key at open.bigmodel.cn' },
-            { name: 'OmniRoute Gateway', configKey: 'omnirouteApiKey', keyHint: 'Run OmniRoute via npm: npx omniroute' }
-        ];
+        this.freeProvidersConfig = [...KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS];
 
         this.dropdownTriggerBtn = document.getElementById('dropdown-trigger-btn');
         this.dropdownOptionsMenu = document.getElementById('dropdown-options-menu');
@@ -74,21 +68,7 @@ class ModelDropdownController {
         titleSpan.textContent = title;
         headerDiv.appendChild(titleSpan);
 
-        const svgNS = 'http://www.w3.org/2000/svg';
-        const chevronSvg = document.createElementNS(svgNS, 'svg');
-        chevronSvg.setAttribute('class', 'chevron-icon');
-        chevronSvg.setAttribute('width', '8');
-        chevronSvg.setAttribute('height', '8');
-        chevronSvg.setAttribute('viewBox', '0 0 24 24');
-        chevronSvg.setAttribute('fill', 'none');
-        chevronSvg.setAttribute('stroke', 'currentColor');
-        chevronSvg.setAttribute('stroke-width', '3');
-        chevronSvg.setAttribute('stroke-linecap', 'round');
-        chevronSvg.setAttribute('stroke-linejoin', 'round');
-
-        const polyline = document.createElementNS(svgNS, 'polyline');
-        polyline.setAttribute('points', '6 9 12 15 18 9');
-        chevronSvg.appendChild(polyline);
+        const chevronSvg = DOMUtils.createChevronIcon('chevron-icon');
         headerDiv.appendChild(chevronSvg);
 
         const contentDiv = document.createElement('div');
@@ -172,21 +152,8 @@ class ModelDropdownController {
         this.dropdownOptionsMenu.innerHTML = '';
         
         const i18n = window.KAI_I18N || {};
-        const defaultGemini = [
-            'gemini-3.6-flash',
-            'gemini-3.5-flash',
-            'gemini-3.5-flash-lite',
-            'gemini-3-flash-preview',
-            'gemini-3.1-pro-preview',
-            'gemini-3.1-flash-lite',
-        ];
-        const defaultProviders = [
-            { name: 'OmniRoute Gateway', models: ['omniroute/auto'] },
-            { name: 'Mistral AI', models: ['mistral/mistral-small-latest', 'mistral/codestral-latest', 'mistral/open-mixtral-8x22b'] },
-            { name: 'Cohere', models: ['cohere/command-r-plus', 'cohere/command-r'] },
-            { name: 'Cerebras', models: ['cerebras/llama-3.3-70b', 'cerebras/llama-3.1-8b'] },
-            { name: 'Zhipu AI', models: ['zhipu/glm-4-flash', 'zhipu/glm-4-plus'] }
-        ];
+        const defaultGemini = KAI_CONSTANTS.DEFAULT_GEMINI_MODELS.slice(0, 6);
+        const defaultProviders = KAI_CONSTANTS.DEFAULT_PROVIDERS_WITH_MODELS;
 
         const lmTitle = `${i18n.lmStudioHeader || 'LM Studio'} (${i18n.checkingServer || 'Checking...'})`;
         const geminiTitle = 'Gemini';
@@ -249,7 +216,7 @@ class ModelDropdownController {
 
         const showGeminiExpanded = this.selectedModelValue && this.selectedModelValue.toLowerCase().startsWith('gemini');
         this.createAccordionGroup(lmTitle, lmStudioModels, !showGeminiExpanded, isModelConnected);
-        this.createAccordionGroup(geminiTitle, geminiModels.length > 0 ? geminiModels : ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3-flash-preview', 'gemini-3.1-pro-preview', 'gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash-lite'], showGeminiExpanded, isModelConnected);
+        this.createAccordionGroup(geminiTitle, geminiModels.length > 0 ? geminiModels : KAI_CONSTANTS.DEFAULT_GEMINI_MODELS, showGeminiExpanded, isModelConnected);
 
         const freeProviders = message.freeProviders || [];
         this.freeProvidersConfig = freeProviders;

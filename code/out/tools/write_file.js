@@ -28,6 +28,7 @@ const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const vscode = __importStar(require("vscode"));
 const Tool_1 = require("./Tool");
+const FileToolUtils_1 = require("./FileToolUtils");
 /**
  * Tool for writing or creating new file content within the workspace.
  */
@@ -68,11 +69,7 @@ class WriteFileTool extends Tool_1.Tool {
      */
     async execute(args, context) {
         const targetPath = (0, Tool_1.resolveSafePath)(args.path, context.workspacePath);
-        const parentDir = path.dirname(targetPath);
-        // Recursively create parent directories if they don't exist
-        if (!fs.existsSync(parentDir)) {
-            await fs.promises.mkdir(parentDir, { recursive: true });
-        }
+        await FileToolUtils_1.FileToolUtils.ensureParentDirExists(targetPath);
         await fs.promises.writeFile(targetPath, args.content, 'utf8');
         vscode.window.showInformationMessage(`Kai: Created/Updated file ${path.basename(args.path)}`);
         return `Successfully wrote ${args.content.length} characters to file: ${args.path}`;

@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import { Tool, ToolContext, FunctionDeclaration, resolveSafePath } from './Tool';
+import { FileToolUtils } from './FileToolUtils';
 
 /**
  * Tool for reading the content of a file within the workspace.
@@ -36,9 +37,11 @@ export class ReadFileTool extends Tool {
      */
     public async execute(args: { path: string }, context: ToolContext): Promise<string> {
         const targetPath = resolveSafePath(args.path, context.workspacePath);
-        if (!fs.existsSync(targetPath)) {
-            return `File does not exist: ${args.path}`;
+        const existsError = FileToolUtils.checkFileExists(targetPath, args.path);
+        if (existsError) {
+            return existsError;
         }
+
         const content = await fs.promises.readFile(targetPath, 'utf8');
         if (content.length === 0) {
             return '';
