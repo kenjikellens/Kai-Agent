@@ -266,41 +266,66 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         const config = vscode.workspace.getConfiguration('kai');
         const serverUrl = config.get<string>('serverUrl') || 'http://localhost:1234/v1';
         const apiKey = config.get<string>('apiKey') || '';
+        const translations = I18nManager.getTranslations();
+        const activeLang = I18nManager.getActiveLanguage();
+
+        const buildFreeProviders = (omniModels: string[] = []) => {
+            return FREE_PROVIDERS.map(p => {
+                let models = p.models;
+                if (p.configKey === 'omnirouteApiKey' && omniModels.length > 0) {
+                    const combinedSet = new Set([...models, ...omniModels]);
+                    models = Array.from(combinedSet);
+                }
+                return {
+                    name: p.name,
+                    configKey: p.configKey,
+                    keyHint: p.keyHint,
+                    models: models,
+                    apiKey: config.get<string>(p.configKey) || ''
+                };
+            });
+        };
+
+        // 1. Post stored API keys and settings immediately to UI (0ms delay)
+        this._view.webview.postMessage({
+            type: 'connectionStatus',
+            connected: false,
+            model: 'local-model',
+            lmStudioModels: [],
+            geminiModels: [],
+            loadedModels: [],
+            freeProviders: buildFreeProviders(),
+            serverUrl: serverUrl,
+            apiKey: apiKey,
+            translations: translations,
+            language: activeLang
+        });
+
+        // 2. Perform fast async model discovery
         const client = new LMStudioClient(serverUrl);
 
-        const [lmResult, geminiResult, loadedResult, omniResult] = await Promise.allSettled([
+        const [lmResult, geminiResult, omniResult] = await Promise.allSettled([
             client.getLMStudioModels(),
             client.getGeminiModels(apiKey),
-            client.getLoadedModels(),
             client.getOmniRouteModels()
         ]);
 
         const lmModels = lmResult.status === 'fulfilled' ? lmResult.value : [];
-        const lmStudioConnected = lmResult.status === 'fulfilled';
+        const lmStudioConnected = lmResult.status === 'fulfilled' && lmModels.length > 0;
         const geminiModels = geminiResult.status === 'fulfilled' ? geminiResult.value : [];
-        const loadedModels = loadedResult.status === 'fulfilled' ? loadedResult.value : [];
         const omniModels = omniResult.status === 'fulfilled' ? omniResult.value : [];
 
+        let loadedModels: string[] = [];
+        if (lmStudioConnected) {
+            loadedModels = await client.getLoadedModels().catch(() => []);
+        } else {
+            loadedModels = [...geminiModels];
+        }
+
         const activeModel = lmModels.length > 0 ? lmModels[0] : (geminiModels.length > 0 ? geminiModels[0] : 'local-model');
-        // Build per-provider model lists for the dropdown
-        const freeProviders = FREE_PROVIDERS.map(p => {
-            let models = p.models;
-            if (p.configKey === 'omnirouteApiKey' && omniModels.length > 0) {
-                const combinedSet = new Set([...models, ...omniModels]);
-                models = Array.from(combinedSet);
-            }
-            return {
-                name: p.name,
-                configKey: p.configKey,
-                keyHint: p.keyHint,
-                models: models,
-                apiKey: config.get<string>(p.configKey) || ''
-            };
-        });
+        const updatedFreeProviders = buildFreeProviders(omniModels);
 
-        const translations = I18nManager.getTranslations();
-        const activeLang = I18nManager.getActiveLanguage();
-
+        // 3. Post updated model availability
         this._view.webview.postMessage({
             type: 'connectionStatus',
             connected: lmStudioConnected,
@@ -308,7 +333,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             lmStudioModels: lmModels,
             geminiModels: geminiModels,
             loadedModels: loadedModels,
-            freeProviders: freeProviders,
+            freeProviders: updatedFreeProviders,
             serverUrl: serverUrl,
             apiKey: apiKey,
             translations: translations,

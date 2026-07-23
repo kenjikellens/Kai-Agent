@@ -1033,12 +1033,16 @@ button:disabled {
   min-height: 0;
 }
 
-.history-list {
+.history-empty-state {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex: 1 1 auto;
-  overflow-y: auto;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--app-muted);
+  font-size: 0.8rem;
+  background: transparent;
+  border: none;
 }
 
 .history-item {

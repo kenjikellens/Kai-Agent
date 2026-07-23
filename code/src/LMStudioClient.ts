@@ -885,39 +885,56 @@ export class LMStudioClient {
             }
 
             const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
-            const req = https.get(url, (res) => {
-                let data = '';
-                res.on('data', (chunk) => {
-                    data += chunk;
-                });
-                res.on('end', () => {
-                    if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
-                        try {
-                            const parsed = JSON.parse(data);
-                            if (parsed && Array.isArray(parsed.models)) {
-                                const models = parsed.models
-                                    .filter((m: any) => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
-                                    .map((m: any) => m.name.replace(/^models\//, ''))
-                                    .filter((name: string) => allowedModels.includes(name.toLowerCase()));
-                                
-                                if (models.length > 0) {
-                                    resolve(models);
-                                    return;
+            try {
+                const parsedUrl = new URL(url);
+                const options: https.RequestOptions = {
+                    hostname: parsedUrl.hostname,
+                    path: parsedUrl.pathname + parsedUrl.search,
+                    method: 'GET',
+                    timeout: 2500
+                };
+
+                const req = https.request(options, (res) => {
+                    let data = '';
+                    res.on('data', (chunk) => {
+                        data += chunk;
+                    });
+                    res.on('end', () => {
+                        if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+                            try {
+                                const parsed = JSON.parse(data);
+                                if (parsed && Array.isArray(parsed.models)) {
+                                    const models = parsed.models
+                                        .filter((m: any) => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'))
+                                        .map((m: any) => m.name.replace(/^models\//, ''))
+                                        .filter((name: string) => allowedModels.includes(name.toLowerCase()));
+                                    
+                                    if (models.length > 0) {
+                                        resolve(models);
+                                        return;
+                                    }
                                 }
+                            } catch (err) {
+                                // ignore error, fallback below
                             }
-                        } catch (err) {
-                            // ignore error, fallback below
                         }
-                    }
+                        resolve(allowedModels);
+                    });
+                });
+
+                req.on('error', () => {
                     resolve(allowedModels);
                 });
-            });
 
-            req.on('error', () => {
+                req.on('timeout', () => {
+                    req.destroy();
+                    resolve(allowedModels);
+                });
+
+                req.end();
+            } catch {
                 resolve(allowedModels);
-            });
-
-            req.end();
+            }
         });
     }
 

@@ -21,6 +21,8 @@ class SettingsController {
         this.closeKeysBtn = document.getElementById('close-keys-btn');
         this.dynamicKeysList = document.getElementById('dynamic-keys-list');
 
+        this.freeProviders = [...KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS];
+
         this.initSettings();
         this.initEventListeners();
     }
@@ -92,6 +94,7 @@ class SettingsController {
             this.manageKeysBtn.addEventListener('click', () => {
                 if (this.keysContainer) {
                     this.keysContainer.classList.remove('hidden');
+                    this.renderProviderKeyInputs();
                 }
             });
         }
@@ -103,6 +106,20 @@ class SettingsController {
                 }
             });
         }
+    }
+
+    /**
+     * Updates settings state and renders API key inputs when connection status arrives from extension host.
+     * @param {object} message Connection status message.
+     */
+    updateConnectionStatus(message) {
+        if (this.apiKeyInput && message.apiKey !== undefined) {
+            this.apiKeyInput.value = message.apiKey;
+        }
+        if (message.freeProviders && message.freeProviders.length > 0) {
+            this.freeProviders = message.freeProviders;
+        }
+        this.renderProviderKeyInputs();
     }
 
     /**
@@ -137,13 +154,13 @@ class SettingsController {
 
     /**
      * Renders API key input fields for free tier providers in the keys overlay modal.
-     * @param {Array<object>} freeProviders List of provider config objects.
+     * @param {Array<object>|null} freeProviders Optional override list of provider config objects.
      */
-    renderProviderKeyInputs(freeProviders) {
+    renderProviderKeyInputs(freeProviders = null) {
         if (!this.dynamicKeysList) return;
         this.dynamicKeysList.innerHTML = '';
 
-        const providers = freeProviders && freeProviders.length > 0 ? freeProviders : KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS;
+        const providers = freeProviders || (this.freeProviders && this.freeProviders.length > 0 ? this.freeProviders : KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS);
 
         for (const provider of providers) {
             const wrapper = document.createElement('div');
