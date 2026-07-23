@@ -143,6 +143,9 @@ class ModelDropdownController {
                     const flyoutMenu = document.createElement('div');
                     flyoutMenu.className = 'thinking-flyout-menu';
 
+                    const flyoutInner = document.createElement('div');
+                    flyoutInner.className = 'thinking-flyout-menu-inner';
+
                     const currentGeminiLevel = localStorage.getItem('kai.geminiThinkingLevel') || 'high';
                     const levels = [
                         { level: 'high', label: 'High' },
@@ -168,8 +171,9 @@ class ModelDropdownController {
                                 this.onSelect(itemData.value);
                             }
                         });
-                        flyoutMenu.appendChild(flyoutOpt);
+                        flyoutInner.appendChild(flyoutOpt);
                     });
+                    flyoutMenu.appendChild(flyoutInner);
                     item.appendChild(flyoutMenu);
                 }
                 
