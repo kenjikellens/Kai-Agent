@@ -70,8 +70,7 @@ class HistoryManager {
         if (!chats || chats.length === 0) {
             const i18n = window.KAI_I18N || {};
             const emptyDiv = document.createElement('div');
-            emptyDiv.className = 'system-message';
-            emptyDiv.style.padding = '20px';
+            emptyDiv.className = 'history-empty-state';
             emptyDiv.textContent = i18n.noPreviousChats || 'No previous chats found.';
             this.historyList.appendChild(emptyDiv);
             return;

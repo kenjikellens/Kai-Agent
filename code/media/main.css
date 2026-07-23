@@ -1047,16 +1047,16 @@ button:disabled {
   justify-content: space-between;
   padding: 6px 10px;
   gap: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid transparent;
   border-radius: var(--app-radius-md);
-  background: rgba(255, 255, 255, 0.02);
+  background: transparent;
   cursor: pointer;
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .history-item:hover {
   background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .history-item-content {
