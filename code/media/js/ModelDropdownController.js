@@ -381,13 +381,7 @@ class ModelDropdownController {
                         item.classList.add('flyout-open');
 
                         const itemRect = item.getBoundingClientRect();
-                        const vw = window.innerWidth || document.documentElement.clientWidth;
-                        const flyoutW = 165;
-
                         let left = itemRect.right - 2;
-                        if (left + flyoutW > vw) {
-                            left = Math.max(0, itemRect.left - flyoutW + 2);
-                        }
                         flyoutMenu.style.left = left + 'px';
                         flyoutMenu.style.top  = itemRect.top + 'px';
                     };

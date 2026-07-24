@@ -62,7 +62,7 @@ class AgentExecutor {
      * @param thinking Toggle parameter for model reasoning phase.
      * @returns A promise that resolves to the final assistant response.
      */
-    async run(userPrompt, chatHistory, model = 'local-model', signal, activeFile, thinking = true, geminiThinkingLevel = 'high') {
+    async run(userPrompt, chatHistory, model = 'local-model', signal, activeFile, thinking = true, geminiThinkingLevel = 'high', planningMode = false) {
         // Deep copy history to avoid mutating the original until loop is complete
         const messages = [...chatHistory];
         // Find existing system prompt or inject ours at the beginning
@@ -82,6 +82,10 @@ class AgentExecutor {
         // Build workspace root & active file indicator context for first new chat message
         const isFirstMessage = messages.filter((m) => m.role === 'user' || m.role === 'assistant').length === 0;
         let contextPrefix = '';
+        if (planningMode) {
+            contextPrefix += `[PLANNING MODE ACTIVE]\n`;
+            contextPrefix += `You are operating in strict Planning Mode. Before invoking tools or modifying any files, you MUST first outline a clear, structured step-by-step implementation plan explaining your proposed changes and approach. Wait for user approval before making invasive modifications.\n\n`;
+        }
         if (isFirstMessage && this.workspacePath && fs.existsSync(this.workspacePath)) {
             try {
                 const entries = fs.readdirSync(this.workspacePath, { withFileTypes: true });

@@ -32,6 +32,45 @@
     const messageInput = document.getElementById('message-input');
     const sendBtn = document.getElementById('send-btn');
     const newChatBtn = document.getElementById('new-chat-btn');
+    const attachFileBtn = document.getElementById('attach-file-btn');
+    const atMentionTriggerBtn = document.getElementById('at-mention-trigger-btn');
+    const contextOptionsMenu = document.getElementById('context-options-menu');
+    const planningModeOptionRow = document.getElementById('planning-mode-option-row');
+
+    /**
+     * Dynamically resizes the message input textarea based on content scrollHeight.
+     */
+    function adjustInputHeight() {
+        if (!messageInput) return;
+        messageInput.style.height = 'auto';
+        const MAX_HEIGHT = 180;
+        const newHeight = Math.min(messageInput.scrollHeight, MAX_HEIGHT);
+        messageInput.style.height = `${newHeight}px`;
+        messageInput.style.overflowY = messageInput.scrollHeight > MAX_HEIGHT ? 'auto' : 'hidden';
+    }
+
+    /**
+     * Initializes the Planning Mode switch toggle inside the @ options menu using ToggleComponent.
+     */
+    if (planningModeOptionRow) {
+        const planningToggleEl = ToggleComponent.create({
+            id: 'planning-mode-toggle-switch',
+            label: window.KAI_I18N?.planningMode || 'Planning Mode',
+            checked: appState.isPlanningModeEnabled,
+            title: window.KAI_I18N?.planningModeDesc || 'Enforce step-by-step planning before execution',
+            onChange: (checked) => {
+                appState.isPlanningModeEnabled = checked;
+                localStorage.setItem('kai.planningMode', checked ? 'true' : 'false');
+                if (atMentionTriggerBtn) {
+                    atMentionTriggerBtn.classList.toggle('active-mode', checked);
+                }
+            }
+        });
+        planningModeOptionRow.appendChild(planningToggleEl);
+        if (atMentionTriggerBtn && appState.isPlanningModeEnabled) {
+            atMentionTriggerBtn.classList.add('active-mode');
+        }
+    }
 
     /**
      * Persists current active chat session to workspace state.
@@ -69,7 +108,10 @@
 
         chatUIController.appendMessage('user', userDisplayText);
 
-        if (messageInput) messageInput.value = '';
+        if (messageInput) {
+            messageInput.value = '';
+            adjustInputHeight();
+        }
         appState.selectedCodeContext = '';
 
         chatUIController.setUiLoading(true, appState);
@@ -81,7 +123,8 @@
             appState.messages,
             modelDetails.model,
             modelDetails.thinking,
-            geminiThinkingLevel
+            geminiThinkingLevel,
+            appState.isPlanningModeEnabled
         );
     }
 
@@ -101,9 +144,30 @@
         ipcBridge.checkConnection();
     }
 
-    // Bind Primary UI Buttons
+    // Bind Primary UI Buttons & Input Handlers
     if (sendBtn) {
         sendBtn.addEventListener('click', sendMessage);
+    }
+
+    if (attachFileBtn) {
+        attachFileBtn.addEventListener('click', () => {
+            if (messageInput) {
+                messageInput.focus();
+            }
+        });
+    }
+
+    if (atMentionTriggerBtn && contextOptionsMenu) {
+        atMentionTriggerBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            contextOptionsMenu.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!contextOptionsMenu.contains(e.target) && !atMentionTriggerBtn.contains(e.target)) {
+                contextOptionsMenu.classList.add('hidden');
+            }
+        });
     }
 
     if (newChatBtn) {
@@ -119,6 +183,7 @@
     }
 
     if (messageInput) {
+        messageInput.addEventListener('input', adjustInputHeight);
         messageInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();

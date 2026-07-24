@@ -74,7 +74,7 @@ class SidebarProvider {
         webviewView.webview.onDidReceiveMessage(async (data) => {
             switch (data.type) {
                 case 'sendMessage': {
-                    await this._handleSendMessage(data.messages, data.model, data.thinking, data.geminiThinkingLevel || 'high');
+                    await this._handleSendMessage(data.messages, data.model, data.thinking, data.geminiThinkingLevel || 'high', data.planningMode || false);
                     break;
                 }
                 case 'abort': {
@@ -151,7 +151,7 @@ class SidebarProvider {
      * and sends the response back to the webview UI.
      * @param messages The chat history payload array.
      */
-    async _handleSendMessage(messages, model, thinking = true, geminiThinkingLevel = 'high') {
+    async _handleSendMessage(messages, model, thinking = true, geminiThinkingLevel = 'high', planningMode = false) {
         if (!this._view) {
             return;
         }
@@ -173,7 +173,7 @@ class SidebarProvider {
         const lastUserMsg = messages[messages.length - 1];
         const userPrompt = lastUserMsg ? lastUserMsg.content : '';
         try {
-            fs.appendFileSync(path.join(workspacePath, 'kai_debug.log'), `[DEBUG] _handleSendMessage payload: model="${model}", prompt="${userPrompt}", totalMessages=${messages.length}\n`);
+            fs.appendFileSync(path.join(workspacePath, 'kai_debug.log'), `[DEBUG] _handleSendMessage payload: model="${model}", prompt="${userPrompt}", totalMessages=${messages.length}, planningMode=${planningMode}\n`);
         }
         catch { }
         // Remove last user message from conversation history and filter out UI-only messages
@@ -217,7 +217,7 @@ class SidebarProvider {
             // Signal the webview that the agent loop has started
             this._view.webview.postMessage({ type: 'typing' });
             // Execute the agent loop with the cancellation signal
-            const runResult = await executor.run(userPrompt, chatHistoryWithoutLast, model || 'local-model', this._activeAbortController.signal, activeFile, thinking, geminiThinkingLevel);
+            const runResult = await executor.run(userPrompt, chatHistoryWithoutLast, model || 'local-model', this._activeAbortController.signal, activeFile, thinking, geminiThinkingLevel, planningMode);
             // Send final completion message to the webview
             this._view.webview.postMessage({
                 type: 'reply',
@@ -547,6 +547,11 @@ class SidebarProvider {
                                     <textarea id="message-input" placeholder="${translations.messagePlaceholder}" rows="1"></textarea>
                                     <div class="input-toolbar">
                                          <div class="toolbar-left">
+                                            <!-- FILE UPLOAD ATTACHMENT BUTTON -->
+                                            <button type="button" class="toolbar-icon-btn" id="attach-file-btn" title="${translations.uploadFile}">
+                                                ${svgs.plus || ''}
+                                            </button>
+
                                             <!-- 
                                                 MODEL SELECTOR DROPDOWN:
                                                 Primary dropdown menu for selecting active AI provider/model (LM Studio, Gemini, Mistral, etc.).
@@ -564,11 +569,24 @@ class SidebarProvider {
                                                     <!-- Dynamically populated with model option buttons -->
                                                 </div>
                                             </div>
-                                            <!-- 
-                                                THINKING DROPDOWN:
-                                                Sub-dropdown menu (.thinking-flyout-menu) attached to thinking-capable models (e.g., Gemini High/Medium/Low/Minimal)
-                                                or thinking toggle configuration in settings.
+
+                                            <!--
+                                                CONTEXT & CAPABILITIES DROPDOWN ("@" BUTTON):
+                                                Dropdown containing feature toggles such as Planning Mode.
                                             -->
+                                            <div class="custom-dropdown" id="context-options-dropdown-container">
+                                                <button type="button" class="toolbar-icon-btn" id="at-mention-trigger-btn" title="Capabilities & Mentions (@)">
+                                                    ${svgs.at || ''}
+                                                </button>
+                                                <div class="dropdown-menu hidden" id="context-options-menu">
+                                                    <div class="context-options-header">
+                                                        <span>Capabilities</span>
+                                                    </div>
+                                                    <div class="context-option-row" id="planning-mode-option-row">
+                                                        <!-- Planning Mode toggle populated dynamically via ToggleComponent -->
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                         <button id="send-btn" title="Send message">
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
