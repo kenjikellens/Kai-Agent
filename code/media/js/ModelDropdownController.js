@@ -185,10 +185,19 @@ class ModelDropdownController {
                         // Thinking Dropdown Option Button
                         const flyoutOpt = document.createElement('button');
                         flyoutOpt.type = 'button';
-                        flyoutOpt.className = `flyout-option ${lvl.level === currentGeminiLevel ? 'selected' : ''}`;
-                        flyoutOpt.textContent = lvl.label;
+                        const isSelected = lvl.level === currentGeminiLevel;
+                        flyoutOpt.className = `flyout-option ${isSelected ? 'selected' : ''}`;
                         flyoutOpt.setAttribute('role', 'button');
                         flyoutOpt.setAttribute('aria-label', `Set thinking level to ${lvl.label}`);
+                        
+                        const labelSpan = document.createElement('span');
+                        labelSpan.textContent = lvl.label;
+                        flyoutOpt.appendChild(labelSpan);
+
+                        if (isSelected) {
+                            const checkSvg = DOMUtils.createCheckIcon('check-icon');
+                            flyoutOpt.appendChild(checkSvg);
+                        }
                         
                         const handleFlyoutSelect = (e) => {
                             e.stopPropagation();

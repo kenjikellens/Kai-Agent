@@ -541,21 +541,21 @@ button:disabled {
   flex-shrink: 0;
 }
 
-/* Options menu container for the Model Selector Dropdown */
+/* Options menu container for the Model Selector Dropdown (No borders) */
 .dropdown-menu {
   position: absolute;
   left: 0;
   bottom: calc(100% + 6px);
   z-index: 1000;
-  width: 200px;
+  width: 210px;
   max-width: calc(100% - 120px);
   min-width: 160px;
-  padding: 4px 0;
+  padding: 4px 2px;
   box-sizing: border-box;
   background: var(--vscode-dropdown-background, #252526);
-  border: 1px solid var(--vscode-dropdown-border, rgba(255, 255, 255, 0.12));
+  border: 0;
   border-radius: var(--app-radius-md);
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
   overflow: visible;
 }
 
@@ -570,13 +570,14 @@ button:disabled {
   border-bottom: 0;
 }
 
-/* Category header toggle button for provider accordions */
+/* Category header toggle button for provider accordions - styled as pill button */
 .dropdown-category-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
+  padding: 5px 12px;
+  margin: 1px 2px;
   background: rgba(255, 255, 255, 0.02);
   color: var(--app-muted);
   font-size: 0.75rem;
@@ -584,12 +585,14 @@ button:disabled {
   cursor: pointer;
   user-select: none;
   border: 0;
+  border-radius: 9999px;
   outline: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .dropdown-category-header:hover,
 .dropdown-category-header:focus-visible {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--app-fg);
 }
 
@@ -610,12 +613,13 @@ button:disabled {
   overflow: hidden;
 }
 
-/* Individual model option button item within the Model Selector Dropdown */
+/* Individual model option button item within the Model Selector Dropdown - styled as pill button */
 .dropdown-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
+  gap: 8px;
+  padding: 5px 12px;
+  margin: 1px 2px;
   overflow: visible;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -625,11 +629,13 @@ button:disabled {
   position: relative;
   cursor: pointer;
   user-select: none;
-  border: 0;
+  border: 1px solid transparent;
+  border-radius: 9999px;
   outline: none;
-  width: 100%;
+  width: calc(100% - 4px);
   text-align: left;
   box-sizing: border-box;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .dropdown-item:hover,
@@ -652,21 +658,23 @@ button:disabled {
 /* Thinking Dropdown Flyout Sub-Menu Container */
 .thinking-flyout-menu {
   position: fixed;
-  width: 140px;
+  min-width: 165px;
+  width: auto;
   z-index: 99999;
   display: none;
   flex-direction: column;
 }
 
-/* Inner visible box of the Thinking Dropdown flyout */
+/* Inner visible box of the Thinking Dropdown flyout (No borders) */
 .thinking-flyout-menu-inner {
   background: var(--vscode-dropdown-background, #252526);
-  border: 1px solid var(--vscode-dropdown-border, rgba(255, 255, 255, 0.14));
+  border: 0;
   border-radius: var(--app-radius-md);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  padding: 4px 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  padding: 4px;
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
 .dropdown-item.model-hover-item:hover > .thinking-flyout-menu,
@@ -674,33 +682,45 @@ button:disabled {
   display: flex;
 }
 
-/* Individual button option inside the Thinking Dropdown flyout */
+/* Individual button option inside the Thinking Dropdown flyout - styled as pill button with ample padding */
 .flyout-option {
-  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 12px;
   font-size: 0.72rem;
   color: var(--app-muted);
   cursor: pointer;
   white-space: nowrap;
-  border-radius: 4px;
-  margin: 1px 4px;
-  border: 0;
+  border-radius: 9999px;
+  margin: 1px 0;
+  border: 1px solid transparent;
   background: transparent;
   text-align: left;
-  width: calc(100% - 8px);
+  width: 100%;
   box-sizing: border-box;
   outline: none;
+  user-select: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .flyout-option:hover,
 .flyout-option:focus-visible {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--vscode-foreground, #ffffff);
 }
 
 .flyout-option.selected {
-  color: var(--app-accent);
-  font-weight: 600;
-  background: rgba(0, 122, 204, 0.12);
+  font-weight: 500;
+}
+
+.flyout-option .check-icon {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  color: var(--vscode-foreground, #ffffff);
 }
 
 .dropdown-item.selected {

@@ -56,4 +56,26 @@ class DOMUtils {
     static getChevronUpSvgString(className = 'thinking-chevron') {
         return `<svg class="${className}" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>`;
     }
+
+    /**
+     * Generates a standard checkmark SVG element.
+     * @param {string} className CSS class name.
+     * @returns {SVGElement} Checkmark SVG element.
+     */
+    static createCheckIcon(className = 'check-icon') {
+        const svg = DOMUtils.createSvg('svg', {
+            class: className,
+            width: '12',
+            height: '12',
+            viewBox: '0 0 24 24',
+            fill: 'none',
+            stroke: 'currentColor',
+            'stroke-width': '2.5',
+            'stroke-linecap': 'round',
+            'stroke-linejoin': 'round'
+        });
+        const polyline = DOMUtils.createSvg('polyline', { points: '20 6 9 17 4 12' });
+        svg.appendChild(polyline);
+        return svg;
+    }
 }

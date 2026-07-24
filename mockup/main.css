@@ -4,8 +4,8 @@
   --vscode-foreground: #ffffff;
   --app-muted: #888888;
   --app-accent: #007acc;
-  --app-radius-md: 6px;
-  --app-radius-sm: 4px;
+  --app-radius-pill: 9999px;
+  --app-radius-md: 8px;
 }
 
 body {
@@ -35,37 +35,56 @@ body {
 .dropdown-menu {
   position: relative;
   width: 220px;
-  padding: 4px 0;
+  padding: 4px 2px;
   background: var(--vscode-dropdown-background);
   border: 1px solid var(--vscode-dropdown-border);
   border-radius: var(--app-radius-md);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
+/* Category header toggle button */
 .dropdown-category-header {
-  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 5px 12px;
+  margin: 1px 0;
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--app-muted);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--app-radius-pill);
+  border: 1px solid transparent;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.dropdown-category-header:hover,
+.dropdown-category-header:focus-visible {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--vscode-foreground);
 }
 
 /* Model Selector Item Button */
 .dropdown-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
+  gap: 8px;
+  padding: 5px 12px;
+  margin: 1px 0;
   font-size: 0.72rem;
   color: var(--app-muted);
   background: transparent;
-  border: 0;
+  border: 1px solid transparent;
+  border-radius: var(--app-radius-pill);
   outline: none;
   cursor: pointer;
   user-select: none;
   width: 100%;
   box-sizing: border-box;
   position: relative;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .dropdown-item:hover,
@@ -84,50 +103,53 @@ body {
   margin-left: auto;
 }
 
-/* Thinking Dropdown Sub-menu */
+/* Thinking Dropdown Sub-menu Container - Wide enough to give text ample room */
 .thinking-flyout-menu {
   position: absolute;
   left: 100%;
   top: 0;
-  width: 150px;
-  margin-left: 4px;
+  min-width: 165px;
+  width: auto;
+  margin-left: 6px;
   z-index: 100;
 }
 
+/* Inner Container for Thinking Dropdown */
 .thinking-flyout-menu-inner {
   background: var(--vscode-dropdown-background);
   border: 1px solid var(--vscode-dropdown-border);
   border-radius: var(--app-radius-md);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  padding: 4px 0;
+  padding: 4px;
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
-/* Thinking Option Button: matching .dropdown-item hover effect */
+/* Thinking Option Button - Ample horizontal padding & gap between text label and borders/check icon */
 .flyout-option {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
-  padding: 6px 10px;
+  gap: 10px;
+  padding: 5px 12px;
+  margin: 0;
   font-size: 0.72rem;
   color: var(--app-muted);
   cursor: pointer;
   white-space: nowrap;
-  border-radius: var(--app-radius-sm);
-  margin: 1px 4px;
-  border: 0;
+  border-radius: var(--app-radius-pill);
+  border: 1px solid transparent;
   background: transparent;
   text-align: left;
-  width: calc(100% - 8px);
+  width: 100%;
   box-sizing: border-box;
   outline: none;
   user-select: none;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-/* Exact same hover styling as model selector (.dropdown-item:hover) */
+/* Hover styling matching .dropdown-trigger and .dropdown-item */
 .flyout-option:hover,
 .flyout-option:focus-visible {
   background: rgba(255, 255, 255, 0.06);
@@ -135,9 +157,7 @@ body {
 }
 
 .flyout-option.selected {
-  color: var(--app-accent);
-  font-weight: 600;
-  background: rgba(0, 122, 204, 0.12);
+  font-weight: 500;
 }
 
 /* Checkmark SVG on the right of selected option */
@@ -146,5 +166,5 @@ body {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  color: var(--app-accent);
+  color: var(--vscode-foreground);
 }
