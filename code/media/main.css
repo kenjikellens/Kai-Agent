@@ -30,8 +30,8 @@
   --app-gap: 8px;
   --app-gap-sm: 4px;
   --app-gap-lg: 12px;
-  --app-font: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
-  --app-mono: var(--vscode-editor-font-family, Consolas, Monaco, monospace);
+  --app-font: var(--vscode-font-family, "Inter", "Segoe UI Variable Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
+  --app-mono: var(--vscode-editor-font-family, "Cascadia Code", "Fira Code", "JetBrains Mono", "Consolas", "Courier New", monospace);
 }
 
 /* -----------------------------
@@ -52,6 +52,8 @@ body {
   background: var(--app-bg);
   color: var(--app-fg);
   font-family: var(--app-font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 *,
@@ -290,8 +292,11 @@ button:disabled {
 
 .message-content {
   padding: 6px 8px;
+  font-family: var(--app-font);
   font-size: 0.85rem;
-  line-height: 1.45;
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -309,8 +314,10 @@ button:disabled {
 }
 
 .message-content :where(h1, h2, h3) {
-  margin: 8px 0 4px;
-  font-weight: 600;
+  margin: 10px 0 4px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
   color: var(--app-fg);
 }
 
@@ -327,26 +334,130 @@ button:disabled {
 }
 
 .message-content code {
-  background: rgba(0, 0, 0, 0.25);
-  padding: 2px 4px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 2px 5px;
   border-radius: var(--app-radius-sm);
-  font-size: 0.8rem;
+  font-family: var(--app-mono);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+/* Code Block Wrapper with Syntax Header Bar & Copy Button */
+.code-block-wrapper {
+  margin: 8px 0;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--app-radius-md);
+  overflow: hidden;
+}
+
+.code-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  font-family: var(--app-mono);
+  font-size: 0.7rem;
+  color: var(--app-muted);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  user-select: none;
+}
+
+.code-lang-label {
+  text-transform: lowercase;
+  font-weight: 500;
+  color: var(--app-muted);
+}
+
+.copy-code-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: var(--app-muted);
+  font-size: 0.68rem;
+  font-family: var(--app-font);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.copy-code-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--vscode-foreground, #ffffff);
 }
 
 .message-content pre {
-  margin: 6px 0;
-  padding: 8px;
+  margin: 0;
+  padding: 8px 10px;
   overflow-x: auto;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: var(--app-radius-md);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  tab-size: 2;
 }
 
 .message-content pre code {
   display: block;
   padding: 0;
   border-radius: 0;
+  border: none;
   background: transparent;
+  font-family: var(--app-mono);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  font-variant-ligatures: contextual;
+}
+
+/* Blockquote Styling */
+.message-content blockquote {
+  margin: 8px 0;
+  padding: 6px 12px;
+  background: rgba(0, 122, 204, 0.08);
+  border-left: 3px solid var(--app-accent);
+  border-radius: 0 var(--app-radius-sm) var(--app-radius-sm) 0;
+  color: var(--app-fg);
+  font-style: italic;
+}
+
+/* List Styling */
+.message-content .md-list {
+  margin: 6px 0;
+  padding-left: 18px;
+}
+
+.message-content .md-list li {
+  margin-bottom: 3px;
+  line-height: 1.45;
+}
+
+/* Markdown Table Styling */
+.message-content .md-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 0.78rem;
+}
+
+.message-content .md-table th,
+.message-content .md-table td {
+  padding: 5px 8px;
+  text-align: left;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.message-content .md-table th {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--vscode-foreground, #ffffff);
+  font-weight: 600;
+}
+
+.message-content .md-table tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .typing-indicator,
@@ -526,13 +637,64 @@ button:disabled {
   color: var(--vscode-foreground, #ffffff);
 }
 
-/* Active selected model label text in the Model Selector Dropdown trigger */
+/* Active selected model label text container in the Model Selector Dropdown trigger */
 #selected-model-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Inherits display: inline-block and flex-shrink: 0 from .model-text-inner */
+}
+
+/* Outer container clipping text behind the component & applying right edge fade out */
+.model-text-container {
   flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  
+  /* Fade out right edge of text when static */
+  mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 20px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 20px), transparent 100%);
+  transition: mask-image 0.2s ease, -webkit-mask-image 0.2s ease;
+}
+
+/* Inner Text Element - flex-shrink: 0 ensures text retains natural width for overflow measurement */
+.model-text-inner {
+  display: inline-block;
+  white-space: nowrap;
+  flex-shrink: 0;
+  will-change: transform;
+  transform: translateX(0);
+  transition: transform 0.3s ease-out;
+}
+
+/* Soft fade on both sides during scroll on hover */
+.dropdown-trigger:hover .model-text-container.has-overflow,
+.dropdown-item:hover .model-text-container.has-overflow,
+.model-text-container.has-overflow:hover {
+  mask-image: linear-gradient(to right, transparent 0px, #000 12px, #000 calc(100% - 14px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0px, #000 12px, #000 calc(100% - 14px), transparent 100%);
+}
+
+.dropdown-trigger:hover .model-text-container.has-overflow .model-text-inner,
+.dropdown-item:hover .model-text-container.has-overflow .model-text-inner,
+.model-text-container.has-overflow:hover .model-text-inner {
+  animation: modelTextPingPong var(--scroll-duration, 8s) ease-in-out infinite !important;
+}
+
+/* Keyframes for no-delay, smooth continuous ping-pong scroll on hover */
+@keyframes modelTextPingPong {
+  0% {
+    transform: translateX(0);
+  }
+  48% {
+    transform: translateX(var(--scroll-offset, -100px));
+  }
+  62% {
+    transform: translateX(var(--scroll-offset, -100px));
+  }
+  100% {
+    transform: translateX(0);
+  }
 }
 
 .dropdown-trigger-chevron,

@@ -35,6 +35,53 @@ class ModelDropdownController {
 
         this.initEventListeners();
         this.initDefaultDropdown();
+        
+        window.addEventListener('resize', () => this.updateTextOverflowMetrics());
+        setTimeout(() => this.updateTextOverflowMetrics(), 50);
+    }
+
+    /**
+     * Checks text overflow for all .model-text-container elements and calculates
+     * the exact scroll distance and speed duration needed for the ping-pong hover loop.
+     */
+    updateTextOverflowMetrics() {
+        const containers = document.querySelectorAll('.model-text-container');
+        
+        containers.forEach(container => {
+            const innerSpan = container.querySelector('.model-text-inner');
+            if (!innerSpan) return;
+
+            // Ensure innerSpan doesn't shrink so scrollWidth gives true content width
+            innerSpan.style.flexShrink = '0';
+
+            const containerWidth = container.clientWidth;
+            const contentWidth = innerSpan.scrollWidth;
+            const overflowAmount = contentWidth - containerWidth;
+
+            if (overflowAmount > 2) {
+                // Content overflows container boundary
+                container.classList.add('has-overflow');
+                
+                // Add safety padding (8px) so the end of text is comfortably visible
+                const targetOffset = -(overflowAmount + 8);
+                
+                // Calculate dynamic animation duration proportional to scroll distance
+                // Base pause time at end = 1.2s
+                // In-between travel speed = 22px per second
+                const basePauseTime = 1.2;
+                const travelSpeed = 22;
+                const travelTime = (2 * Math.abs(targetOffset)) / travelSpeed;
+                
+                const duration = Math.min(24, Math.max(4.5, basePauseTime + travelTime)).toFixed(2);
+                
+                container.style.setProperty('--scroll-offset', `${targetOffset}px`);
+                container.style.setProperty('--scroll-duration', `${duration}s`);
+            } else {
+                container.classList.remove('has-overflow');
+                container.style.removeProperty('--scroll-offset');
+                container.style.removeProperty('--scroll-duration');
+            }
+        });
     }
 
     /**
@@ -71,6 +118,37 @@ class ModelDropdownController {
                 this.dropdownOptionsMenu.classList.add('hidden');
             }
         });
+
+        // Global mouseover delegation listener to calculate overflow & trigger ping-pong scroll instantly on hover
+        document.addEventListener('mouseover', (e) => {
+            const targetContainer = e.target.closest('.model-text-container') || e.target.closest('.dropdown-trigger') || e.target.closest('.dropdown-item');
+            if (!targetContainer) return;
+
+            const container = targetContainer.classList.contains('model-text-container') ? targetContainer : targetContainer.querySelector('.model-text-container');
+            if (!container) return;
+
+            const innerSpan = container.querySelector('.model-text-inner');
+            if (!innerSpan) return;
+
+            innerSpan.style.flexShrink = '0';
+            const containerWidth = container.clientWidth;
+            const contentWidth = innerSpan.scrollWidth;
+            const overflowAmount = contentWidth - containerWidth;
+
+            if (overflowAmount > 2) {
+                container.classList.add('has-overflow');
+                const targetOffset = -(overflowAmount + 8);
+                const basePauseTime = 1.2;
+                const travelSpeed = 22;
+                const travelTime = (2 * Math.abs(targetOffset)) / travelSpeed;
+                const duration = Math.min(24, Math.max(4.5, basePauseTime + travelTime)).toFixed(2);
+
+                container.style.setProperty('--scroll-offset', `${targetOffset}px`);
+                container.style.setProperty('--scroll-duration', `${duration}s`);
+            } else {
+                container.classList.remove('has-overflow');
+            }
+        }, true);
     }
 
     /**
@@ -174,10 +252,15 @@ class ModelDropdownController {
                 statusDotSpan.className = `status-dot ${dotClass}`;
                 item.appendChild(statusDotSpan);
 
+                const textContainer = document.createElement('div');
+                textContainer.className = 'model-text-container';
+
                 const textSpan = document.createElement('span');
-                textSpan.className = 'dropdown-item-text';
+                textSpan.className = 'model-text-inner dropdown-item-text';
                 textSpan.textContent = itemData.label;
-                item.appendChild(textSpan);
+
+                textContainer.appendChild(textSpan);
+                item.appendChild(textContainer);
 
                 // THINKING DROPDOWN / FLYOUT MENU (Attached sub-menu for thinking levels)
                 if (isGemini) {
@@ -304,6 +387,7 @@ class ModelDropdownController {
                     localStorage.setItem('kai.selectedModel', itemData.value);
                     if (this.selectedModelText) {
                         this.selectedModelText.textContent = itemData.label;
+                        setTimeout(() => this.updateTextOverflowMetrics(), 20);
                     }
                     if (this.statusDot) {
                         this.statusDot.className = (isModelConnectedFn && isModelConnectedFn(itemData.rawModel)) ? 'status-dot status-connected' : 'status-dot status-disconnected';

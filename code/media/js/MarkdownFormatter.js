@@ -145,8 +145,12 @@ class MarkdownFormatter {
         // Replace tool call placeholders
         escaped = escaped.replace(/\[\[\[TOOL_CALL_START\]\]\]([\s\S]*?)\[\[\[TOOL_CALL_END\]\]\]/g, '');
 
-        // Triple backtick code blocks
-        escaped = escaped.replace(/```(?:[a-zA-Z0-9\-]+)?\n([\s\S]*?)\n```/g, '<pre><code>$1</code></pre>');
+        // Triple backtick code blocks with rich header bar and copy button
+        escaped = escaped.replace(/```([a-zA-Z0-9_\-\+]+)?\r?\n([\s\S]*?)\r?\n```/g, (match, lang, code) => {
+            const languageLabel = (lang || 'code').toLowerCase();
+            const copyIconSvg = `<svg class="copy-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+            return `<div class="code-block-wrapper"><div class="code-block-header"><span class="code-lang-label">${this.escapeHtml(languageLabel)}</span><button type="button" class="copy-code-btn" title="Copy code">${copyIconSvg}<span>Copy</span></button></div><pre><code class="language-${this.escapeHtml(languageLabel)}">${code}</code></pre></div>`;
+        });
 
         // Inline code
         escaped = escaped.replace(/`([^`]+)`/g, '<code>$1</code>');
@@ -162,8 +166,52 @@ class MarkdownFormatter {
         escaped = escaped.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
         escaped = escaped.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
 
+        // Blockquotes
+        escaped = escaped.replace(/^&gt;\s*(.+)$/gm, '<blockquote>$1</blockquote>');
+
+        // Markdown Tables
+        escaped = escaped.replace(/((?:\|[^\n]+\|\r?\n)+)/g, (tableMatch) => {
+            const lines = tableMatch.trim().split(/\r?\n/);
+            if (lines.length < 2) return tableMatch;
+
+            const isSeparator = (line) => /^\|?\s*(?::?-+:?\s*\|)+\s*(?::?-+:?\s*)?\|?$/.test(line.trim());
+            
+            let headerLine = '';
+            let rows = [];
+            
+            if (lines.length >= 2 && isSeparator(lines[1])) {
+                headerLine = lines[0];
+                rows = lines.slice(2);
+            } else {
+                rows = lines;
+            }
+
+            const parseRow = (rowStr, cellTag) => {
+                const parts = rowStr.split('|').map(c => c.trim());
+                if (parts.length > 2 && parts[0] === '' && parts[parts.length - 1] === '') {
+                    parts.shift();
+                    parts.pop();
+                }
+                if (parts.length === 0) return '';
+                return `<tr>${parts.map(c => `<${cellTag}>${c}</${cellTag}>`).join('')}</tr>`;
+            };
+
+            let tableHtml = '<table class="md-table">';
+            if (headerLine) {
+                tableHtml += `<thead>${parseRow(headerLine, 'th')}</thead>`;
+            }
+            if (rows.length > 0) {
+                tableHtml += `<tbody>${rows.map(r => parseRow(r, 'td')).join('')}</tbody>`;
+            }
+            tableHtml += '</table>';
+            return tableHtml;
+        });
+
         // Bullet lists
-        escaped = escaped.replace(/^[-\*]\s+(.+)$/gm, '• $1');
+        escaped = escaped.replace(/(^[-\*]\s+.+(?:\r?\n^[-\*]\s+.+)*)/gm, (listMatch) => {
+            const items = listMatch.split(/\r?\n/).map(line => line.replace(/^[-\*]\s+/, '').trim());
+            return `<ul class="md-list">${items.map(item => `<li>${item}</li>`).join('')}</ul>`;
+        });
 
         return escaped;
     }
