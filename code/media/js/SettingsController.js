@@ -143,10 +143,12 @@ class SettingsController {
             const perModel = localStorage.getItem(`kai.geminiThinkingLevel.${modelId}`);
             if (perModel) return perModel;
         }
+        const globalSaved = localStorage.getItem('kai.geminiThinkingLevel');
+        if (globalSaved) return globalSaved;
         if (this.geminiThinkingLevelInput) {
             return this.geminiThinkingLevelInput.value || 'high';
         }
-        return localStorage.getItem('kai.geminiThinkingLevel') || 'high';
+        return 'high';
     }
 
     /**

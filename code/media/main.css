@@ -939,8 +939,8 @@ button:disabled {
 /* Thinking Dropdown Flyout Sub-Menu Container */
 .thinking-flyout-menu {
   position: fixed;
-  min-width: 155px;
-  width: auto;
+  min-width: max-content;
+  width: max-content;
   z-index: 99999;
   display: none;
   flex-direction: column;

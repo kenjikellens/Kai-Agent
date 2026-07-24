@@ -313,10 +313,27 @@ class ModelDropdownController {
                                 localStorage.setItem('kai.geminiThinkingLevel', lvl.level);
                                 this.selectedModelValue = itemData.value;
                                 localStorage.setItem('kai.selectedModel', itemData.value);
+
+                                // Dynamically update selected state and checkmarks across flyout items
+                                flyoutInner.querySelectorAll('.flyout-option').forEach(opt => {
+                                    opt.classList.remove('selected');
+                                    const oldCheck = opt.querySelector('.check-icon');
+                                    if (oldCheck) oldCheck.remove();
+                                });
+                                flyoutOpt.classList.add('selected');
+                                const checkSvg = DOMUtils.createCheckIcon('check-icon');
+                                flyoutOpt.appendChild(checkSvg);
+
+                                const levelLabels = { high: 'High', medium: 'Med', low: 'Low', minimal: 'Off' };
+                                const suffix = levelLabels[lvl.level] ? ` (${levelLabels[lvl.level]})` : '';
                                 if (this.selectedModelText) {
-                                    this.selectedModelText.textContent = itemData.label;
+                                    this.selectedModelText.textContent = itemData.label + suffix;
                                 }
-                                this.dropdownOptionsMenu.classList.add('hidden');
+
+                                this.closeActiveFlyoutImmediately();
+                                if (this.dropdownOptionsMenu) {
+                                    this.dropdownOptionsMenu.classList.add('hidden');
+                                }
                                 if (this.onSelect) {
                                     this.onSelect(itemData.value);
                                 }
@@ -607,9 +624,17 @@ class ModelDropdownController {
     setSelectedModel(modelId) {
         this.selectedModelValue = modelId;
         if (this.selectedModelText) {
-            const cleanDisplay = modelId.endsWith(' (thinking)')
+            let cleanDisplay = modelId.endsWith(' (thinking)')
                 ? `${this.formatter.formatModelName(modelId.slice(0, -11))} (thinking)`
                 : this.formatter.formatModelName(modelId);
+
+            if (modelId.toLowerCase().includes('gemini')) {
+                const lvl = localStorage.getItem(`kai.geminiThinkingLevel.${modelId}`) || localStorage.getItem('kai.geminiThinkingLevel');
+                const levelLabels = { high: 'High', medium: 'Med', low: 'Low', minimal: 'Off' };
+                if (lvl && levelLabels[lvl]) {
+                    cleanDisplay += ` (${levelLabels[lvl]})`;
+                }
+            }
             this.selectedModelText.textContent = cleanDisplay;
         }
         if (this.dropdownOptionsMenu) {
