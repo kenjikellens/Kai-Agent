@@ -66,14 +66,16 @@ class WebviewIPCBridge {
      * @param {string} model Selected model ID.
      * @param {boolean} thinking Thinking toggle active status for local models.
      * @param {string} geminiThinkingLevel Selected reasoning level for Gemini models.
+     * @param {boolean} planningMode Whether planning mode is toggled on.
      */
-    sendUserPrompt(messages, model, thinking, geminiThinkingLevel = 'high') {
+    sendUserPrompt(messages, model, thinking, geminiThinkingLevel = 'high', planningMode = false) {
         this.postMessage({
             type: 'sendMessage',
             messages,
             model,
             thinking,
-            geminiThinkingLevel
+            geminiThinkingLevel,
+            planningMode
         });
     }
 

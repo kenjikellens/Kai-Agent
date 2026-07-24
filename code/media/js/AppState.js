@@ -12,6 +12,7 @@ class AppState {
         this.selectedCodeContext = '';
         this.isWaitingForResponse = false;
         this.selectedModelValue = localStorage.getItem('kai.selectedModel') || 'local-model';
+        this.isPlanningModeEnabled = localStorage.getItem('kai.planningMode') === 'true';
         this.accordionStates = {};
     }
 

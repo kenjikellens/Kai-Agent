@@ -25,6 +25,9 @@ export interface Translations {
     selectModel: string;
     noWorkspaceError: string;
     language: string;
+    uploadFile: string;
+    planningMode: string;
+    planningModeDesc: string;
 }
 
 const LOCALES: Record<string, Translations> = {
@@ -49,7 +52,10 @@ const LOCALES: Record<string, Translations> = {
         cloudProvidersHeader: 'Cloud & Free Providers',
         selectModel: 'Select Model',
         noWorkspaceError: 'No active workspace directory found. Please open a folder first.',
-        language: 'Language'
+        language: 'Language',
+        uploadFile: 'Attach file',
+        planningMode: 'Planning Mode',
+        planningModeDesc: 'Enforce step-by-step planning before execution'
     },
     nl: {
         newChat: 'Nieuwe Chat',
@@ -72,7 +78,10 @@ const LOCALES: Record<string, Translations> = {
         cloudProvidersHeader: 'Cloud & Gratis Providers',
         selectModel: 'Selecteer Model',
         noWorkspaceError: 'Geen actieve werkruimte gevonden. Open eerst een map.',
-        language: 'Taal'
+        language: 'Taal',
+        uploadFile: 'Bestand bijvoegen',
+        planningMode: 'Planning Mode',
+        planningModeDesc: 'Stapsgewijze planning vereisen voor uitvoering'
     },
     de: {
         newChat: 'Neuer Chat',
@@ -95,7 +104,10 @@ const LOCALES: Record<string, Translations> = {
         cloudProvidersHeader: 'Cloud & Kostenlose Anbieter',
         selectModel: 'Modell auswählen',
         noWorkspaceError: 'Kein aktiver Arbeitsbereich gefunden. Bitte zuerst einen Ordner öffnen.',
-        language: 'Sprache'
+        language: 'Sprache',
+        uploadFile: 'Datei anhängen',
+        planningMode: 'Planungsmodus',
+        planningModeDesc: 'Schritt-für-Schritt-Planung vor Ausführung erzwingen'
     },
     fr: {
         newChat: 'Nouvelle Discussion',
@@ -118,7 +130,10 @@ const LOCALES: Record<string, Translations> = {
         cloudProvidersHeader: 'Fournisseurs Cloud & Gratuits',
         selectModel: 'Sélectionner le modèle',
         noWorkspaceError: 'Aucun dossier de travail actif. Veuillez d\'abord ouvrir un dossier.',
-        language: 'Langue'
+        language: 'Langue',
+        uploadFile: 'Joindre un fichier',
+        planningMode: 'Mode Planification',
+        planningModeDesc: 'Exiger une planification étape par étape avant l\'exécution'
     },
     es: {
         newChat: 'Nuevo Chat',
@@ -141,7 +156,10 @@ const LOCALES: Record<string, Translations> = {
         cloudProvidersHeader: 'Proveedores Cloud y Gratuitos',
         selectModel: 'Seleccionar Modelo',
         noWorkspaceError: 'No se encontró un directorio de trabajo activo. Por favor abra una carpeta primero.',
-        language: 'Idioma'
+        language: 'Idioma',
+        uploadFile: 'Adjuntar archivo',
+        planningMode: 'Modo Planificación',
+        planningModeDesc: 'Requerir planificación paso a paso antes de la ejecución'
     }
 };
 
