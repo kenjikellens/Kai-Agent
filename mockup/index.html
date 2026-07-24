@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thinking Dropdown Mockup</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <h2 class="mockup-title">Thinking Dropdown Mockup</h2>
+    <p class="mockup-description">Demonstrating identical hover effect for thinking options & checkmark SVG icon on selected option.</p>
+
+    <div class="dropdown-menu">
+        <div class="dropdown-category-header">Gemini Models</div>
+        <div class="dropdown-item model-hover-item" role="button" tabindex="0">
+            <span class="status-dot status-connected" style="width: 6px; height: 6px; border-radius: 50%; background: #2ecc71;"></span>
+            <span>Gemini 2.5 Flash</span>
+            <span class="model-flyout-chevron">›</span>
+
+            <!-- Thinking Flyout Dropdown Sub-Menu -->
+            <div class="thinking-flyout-menu">
+                <div class="thinking-flyout-menu-inner">
+                    <button type="button" class="flyout-option selected" role="button">
+                        <span>High</span>
+                        <span class="check-icon">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </span>
+                    </button>
+                    <button type="button" class="flyout-option" role="button">
+                        <span>Medium</span>
+                    </button>
+                    <button type="button" class="flyout-option" role="button">
+                        <span>Low</span>
+                    </button>
+                    <button type="button" class="flyout-option" role="button">
+                        <span>Minimal (Off)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>

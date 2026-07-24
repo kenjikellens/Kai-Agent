@@ -546,7 +546,12 @@ class SidebarProvider {
                                 <div class="input-card">
                                     <textarea id="message-input" placeholder="${translations.messagePlaceholder}" rows="1"></textarea>
                                     <div class="input-toolbar">
-                                        <div class="toolbar-left">
+                                         <div class="toolbar-left">
+                                            <!-- 
+                                                MODEL SELECTOR DROPDOWN:
+                                                Primary dropdown menu for selecting active AI provider/model (LM Studio, Gemini, Mistral, etc.).
+                                                Options inside are dynamically created interactive button items (.dropdown-item).
+                                            -->
                                             <div class="custom-dropdown" id="model-dropdown-container">
                                                 <button type="button" class="dropdown-trigger" id="dropdown-trigger-btn" title="Active Model">
                                                     <span id="status-dot" class="status-dot status-disconnected"></span>
@@ -554,10 +559,14 @@ class SidebarProvider {
                                                     <svg class="dropdown-trigger-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                                 </button>
                                                 <div class="dropdown-menu hidden" id="dropdown-options-menu">
-                                                    <!-- Dynamically populated -->
+                                                    <!-- Dynamically populated with model option buttons -->
                                                 </div>
                                             </div>
-                                            <!-- 2nd Dropdown Container: Gemini Thinking Level -->
+                                            <!-- 
+                                                THINKING DROPDOWN:
+                                                Sub-dropdown menu (.thinking-flyout-menu) attached to thinking-capable models (e.g., Gemini High/Medium/Low/Minimal)
+                                                or thinking toggle configuration in settings.
+                                            -->
                                         </div>
                                         <button id="send-btn" title="Send message">
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>

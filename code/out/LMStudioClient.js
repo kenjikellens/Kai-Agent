@@ -236,12 +236,15 @@ class LMStudioClient {
         return new Promise((resolve, reject) => {
             const { hostname, port, pathPrefix } = this.parseServerUrl();
             // Build the standard OpenAI-compatible payload
+            // MODEL SELECTION: 'model' comes from Model Selector Dropdown.
+            // THINKING TOGGLE: 'thinking' boolean comes from Thinking Dropdown / settings or (thinking) suffix.
             const requestParams = {
                 model: model,
                 messages: messages,
                 temperature: temperature,
                 stream: false
             };
+            // Configure Thinking / Reasoning parameters for different model architectures (Gemma, Qwen, GLM)
             if (!thinking) {
                 requestParams.thinking = false;
                 requestParams.enable_thinking = false;

@@ -11,3 +11,7 @@ When editing or implementing completions inside the `LMStudioClient.ts` class, a
    - Disable: `"thinking": false`, `"enable_thinking": false`, `"chat_template_kwargs": { "enable_thinking": false }`, `"reasoning_effort": "none"`, `"reasoning": "off"`
 
 Always check the model ID dynamically and pass these parameters to avoid models ignoring the toggle.
+
+## Build Scripts Rule
+- **Do NOT execute `install.bat`**: Never run `isntall.bat` (or `.\isntall.bat`). The user will execute `isntall.bat` manually.
+

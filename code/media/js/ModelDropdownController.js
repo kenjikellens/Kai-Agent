@@ -1,12 +1,18 @@
 /**
  * ModelDropdownController manages model status dots, provider accordions,
  * and active model selection state in the dropdown menu.
+ * 
+ * ARCHITECTURAL DISTINCTION:
+ * - MODEL SELECTOR DROPDOWN: The primary dropdown menu (#dropdown-options-menu) where users
+ *   choose which AI Provider and Model to interact with (LM Studio, Gemini, Mistral, etc.).
+ * - THINKING DROPDOWN / FLYOUT MENU: The sub-dropdown menu (.thinking-flyout-menu) where users
+ *   configure the thinking/reasoning budget/level (High, Medium, Low, Minimal) for thinking models.
  */
 class ModelDropdownController {
     /**
      * Initializes DOM references, initial dropdown values, and listeners.
      * @param {MarkdownFormatter} formatter Formatter instance.
-     * @param {Function} onSelect Callback when a model selection changes.
+     * @param {Function} onSelect Callback when a model selection changes in the Model Selector Dropdown.
      */
     constructor(formatter, onSelect) {
         this.formatter = formatter;
@@ -30,7 +36,7 @@ class ModelDropdownController {
     }
 
     /**
-     * Registers dropdown trigger and global click-outside listeners.
+     * Registers dropdown trigger and global click-outside listeners for the Model Selector Dropdown.
      */
     initEventListeners() {
         if (this.dropdownTriggerBtn) {
@@ -50,7 +56,10 @@ class ModelDropdownController {
     }
 
     /**
-     * Creates and appends an accordion category group to the dropdown menu.
+     * Creates and appends an accordion category group to the Model Selector Dropdown menu.
+     * Each model option is rendered as an explicit interactive button element (role="button").
+     * For reasoning models (e.g. Gemini), an attached sub-menu (Thinking Dropdown) is rendered.
+     * 
      * @param {string} title Category title string.
      * @param {Array<string>} modelsList List of model IDs under this category.
      * @param {boolean} isInitiallyExpanded Initial expansion state.
@@ -65,6 +74,9 @@ class ModelDropdownController {
 
         const headerDiv = document.createElement('div');
         headerDiv.className = 'dropdown-category-header';
+        headerDiv.setAttribute('role', 'button');
+        headerDiv.setAttribute('tabindex', '0');
+        headerDiv.setAttribute('aria-label', `Toggle category ${title}`);
         
         const titleSpan = document.createElement('span');
         titleSpan.textContent = title;
@@ -89,11 +101,19 @@ class ModelDropdownController {
             chevronSvg.style.transform = 'rotate(0deg)';
         }
 
-        headerDiv.addEventListener('click', (e) => {
+        const toggleAccordion = (e) => {
             e.stopPropagation();
             const isCollapsed = contentDiv.classList.toggle('collapsed');
             chevronSvg.style.transform = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
             this.accordionStates[title] = !isCollapsed;
+        };
+
+        headerDiv.addEventListener('click', toggleAccordion);
+        headerDiv.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleAccordion(e);
+            }
         });
 
         if (modelsList.length === 0) {
@@ -116,8 +136,14 @@ class ModelDropdownController {
 
             displayItems.forEach(itemData => {
                 const isGemini = itemData.rawModel.toLowerCase().includes('gemini');
+                
+                // Model Selector Dropdown Button Item (Interactive button element)
                 const item = document.createElement('div');
                 item.className = isGemini ? 'dropdown-item model-hover-item' : 'dropdown-item';
+                item.setAttribute('role', 'button');
+                item.setAttribute('tabindex', '0');
+                item.setAttribute('aria-label', `Select model ${itemData.label}`);
+                
                 if (itemData.value === this.selectedModelValue) {
                     item.classList.add('selected');
                 }
@@ -134,6 +160,7 @@ class ModelDropdownController {
                 textSpan.textContent = itemData.label;
                 item.appendChild(textSpan);
 
+                // THINKING DROPDOWN / FLYOUT MENU (Attached sub-menu for thinking levels)
                 if (isGemini) {
                     const chevronSpan = document.createElement('span');
                     chevronSpan.className = 'model-flyout-chevron';
@@ -155,10 +182,15 @@ class ModelDropdownController {
                     ];
 
                     levels.forEach(lvl => {
-                        const flyoutOpt = document.createElement('div');
+                        // Thinking Dropdown Option Button
+                        const flyoutOpt = document.createElement('button');
+                        flyoutOpt.type = 'button';
                         flyoutOpt.className = `flyout-option ${lvl.level === currentGeminiLevel ? 'selected' : ''}`;
                         flyoutOpt.textContent = lvl.label;
-                        flyoutOpt.addEventListener('click', (e) => {
+                        flyoutOpt.setAttribute('role', 'button');
+                        flyoutOpt.setAttribute('aria-label', `Set thinking level to ${lvl.label}`);
+                        
+                        const handleFlyoutSelect = (e) => {
                             e.stopPropagation();
                             localStorage.setItem(`kai.geminiThinkingLevel.${itemData.value}`, lvl.level);
                             localStorage.setItem('kai.geminiThinkingLevel', lvl.level);
@@ -171,13 +203,15 @@ class ModelDropdownController {
                             if (this.onSelect) {
                                 this.onSelect(itemData.value);
                             }
-                        });
+                        };
+
+                        flyoutOpt.addEventListener('click', handleFlyoutSelect);
                         flyoutInner.appendChild(flyoutOpt);
                     });
                     flyoutMenu.appendChild(flyoutInner);
                     item.appendChild(flyoutMenu);
 
-                    /* Position flyout dynamically within the webview viewport */
+                    /* Position thinking flyout dropdown dynamically within the webview viewport */
                     item.addEventListener('mouseenter', () => {
                         const itemRect = item.getBoundingClientRect();
                         const vw = window.innerWidth || document.documentElement.clientWidth;
@@ -194,7 +228,11 @@ class ModelDropdownController {
                     });
                 }
                 
-                item.addEventListener('click', (e) => {
+                const handleItemClick = (e) => {
+                    // Prevent trigger when clicking directly inside the sub-thinking flyout menu
+                    if (e.target.closest('.thinking-flyout-menu')) {
+                        return;
+                    }
                     e.stopPropagation();
                     this.selectedModelValue = itemData.value;
                     localStorage.setItem('kai.selectedModel', itemData.value);
@@ -209,7 +247,16 @@ class ModelDropdownController {
                     if (this.onSelect) {
                         this.onSelect(itemData.value);
                     }
+                };
+
+                item.addEventListener('click', handleItemClick);
+                item.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleItemClick(e);
+                    }
                 });
+
                 contentDiv.appendChild(item);
             });
         }
