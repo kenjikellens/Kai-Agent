@@ -67,15 +67,26 @@ class WebviewIPCBridge {
      * @param {boolean} thinking Thinking toggle active status for local models.
      * @param {string} geminiThinkingLevel Selected reasoning level for Gemini models.
      * @param {boolean} planningMode Whether planning mode is toggled on.
+     * @param {Array} attachedFiles Array of attached file objects.
      */
-    sendUserPrompt(messages, model, thinking, geminiThinkingLevel = 'high', planningMode = false) {
+    sendUserPrompt(messages, model, thinking, geminiThinkingLevel = 'high', planningMode = false, attachedFiles = []) {
         this.postMessage({
             type: 'sendMessage',
             messages,
             model,
             thinking,
             geminiThinkingLevel,
-            planningMode
+            planningMode,
+            attachedFiles
+        });
+    }
+
+    /**
+     * Requests Extension Host to open native file picker.
+     */
+    openFilePicker() {
+        this.postMessage({
+            type: 'openFilePicker'
         });
     }
 

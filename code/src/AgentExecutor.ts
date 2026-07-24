@@ -59,7 +59,8 @@ export class AgentExecutor {
         activeFile?: { fileName: string; filePath: string },
         thinking: boolean = true,
         geminiThinkingLevel: string = 'high',
-        planningMode: boolean = false
+        planningMode: boolean = false,
+        attachedFiles?: any[]
     ): Promise<{ reply: string; messages: { role: string; content: string }[]; modifiedFiles: string[] }> {
         // Deep copy history to avoid mutating the original until loop is complete
         const messages = [...chatHistory];
@@ -116,6 +117,15 @@ export class AgentExecutor {
 
         if (activeFile) {
             contextPrefix += `[Active Opened File: ${activeFile.filePath}]\n`;
+        }
+
+        if (attachedFiles && attachedFiles.length > 0) {
+            for (const file of attachedFiles) {
+                contextPrefix += `[Attached File: ${file.relativePath || file.fileName}]\n`;
+                if (file.content) {
+                    contextPrefix += `\`\`\`\n${file.content}\n\`\`\`\n\n`;
+                }
+            }
         }
 
         let promptWithContext = userPrompt;

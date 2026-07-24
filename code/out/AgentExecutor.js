@@ -62,7 +62,7 @@ class AgentExecutor {
      * @param thinking Toggle parameter for model reasoning phase.
      * @returns A promise that resolves to the final assistant response.
      */
-    async run(userPrompt, chatHistory, model = 'local-model', signal, activeFile, thinking = true, geminiThinkingLevel = 'high', planningMode = false) {
+    async run(userPrompt, chatHistory, model = 'local-model', signal, activeFile, thinking = true, geminiThinkingLevel = 'high', planningMode = false, attachedFiles) {
         // Deep copy history to avoid mutating the original until loop is complete
         const messages = [...chatHistory];
         // Find existing system prompt or inject ours at the beginning
@@ -115,6 +115,14 @@ class AgentExecutor {
         }
         if (activeFile) {
             contextPrefix += `[Active Opened File: ${activeFile.filePath}]\n`;
+        }
+        if (attachedFiles && attachedFiles.length > 0) {
+            for (const file of attachedFiles) {
+                contextPrefix += `[Attached File: ${file.relativePath || file.fileName}]\n`;
+                if (file.content) {
+                    contextPrefix += `\`\`\`\n${file.content}\n\`\`\`\n\n`;
+                }
+            }
         }
         let promptWithContext = userPrompt;
         if (contextPrefix) {

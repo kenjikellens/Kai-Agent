@@ -9,6 +9,7 @@ class AppState {
         this.currentChatId = this.generateChatId();
         this.messages = [];
         this.uiEvents = [];
+        this.attachedFiles = [];
         this.selectedCodeContext = '';
         this.isWaitingForResponse = false;
         this.selectedModelValue = localStorage.getItem('kai.selectedModel') || 'local-model';
@@ -31,6 +32,7 @@ class AppState {
         this.currentChatId = this.generateChatId();
         this.messages = [];
         this.uiEvents = [];
+        this.attachedFiles = [];
         this.selectedCodeContext = '';
         this.isWaitingForResponse = false;
     }

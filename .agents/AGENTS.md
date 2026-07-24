@@ -15,3 +15,7 @@ Always check the model ID dynamically and pass these parameters to avoid models 
 ## Build Scripts Rule
 - **Do NOT execute `install.bat`**: Never run `isntall.bat` (or `.\isntall.bat`). The user will execute `isntall.bat` manually.
 
+## Object-Oriented Programming (OOP) Rule
+- **Always apply OOP**: Never write ad-hoc procedural logic for UI features or components. Always encapsulate UI features, widgets, and state handlers into dedicated Class files in their respective directories (`code/media/js/`, `code/src/`, etc.).
+
+

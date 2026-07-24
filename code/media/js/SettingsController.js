@@ -29,22 +29,61 @@ class SettingsController {
     }
 
     /**
-     * Initializes setting toggles from localStorage.
+     * Initializes setting toggles from localStorage using ToggleComponent.
      */
     initSettings() {
-        if (this.showThinkingToggle) {
+        const i18n = window.KAI_I18N || {};
+
+        const showContainer = document.getElementById('show-thinking-toggle-container');
+        if (showContainer) {
+            showContainer.innerHTML = '';
             const stored = localStorage.getItem('kai.showThinking');
-            this.showThinkingToggle.checked = stored === null ? true : stored === 'true';
+            const isChecked = stored === null ? true : stored === 'true';
+            const el = ToggleComponent.create({
+                id: 'show-thinking-toggle',
+                checked: isChecked,
+                label: i18n.showThinking || 'Show thinking process',
+                onChange: (checked) => {
+                    localStorage.setItem('kai.showThinking', checked);
+                    this.updateSubsettingsVisibility();
+                }
+            });
+            showContainer.appendChild(el);
+            this.showThinkingToggle = el.querySelector('input[type="checkbox"]');
         }
 
-        if (this.keepThinkingExpandedToggle) {
+        const keepContainer = document.getElementById('keep-thinking-expanded-container');
+        if (keepContainer) {
+            keepContainer.innerHTML = '';
             const stored = localStorage.getItem('kai.keepThinkingExpanded');
-            this.keepThinkingExpandedToggle.checked = stored === null ? true : stored === 'true';
+            const isChecked = stored === null ? true : stored === 'true';
+            const el = ToggleComponent.create({
+                id: 'keep-thinking-expanded-toggle',
+                checked: isChecked,
+                label: i18n.keepThinkingGenerating || 'Keep thinking expanded while generating',
+                onChange: (checked) => {
+                    localStorage.setItem('kai.keepThinkingExpanded', checked);
+                }
+            });
+            keepContainer.appendChild(el);
+            this.keepThinkingExpandedToggle = el.querySelector('input[type="checkbox"]');
         }
 
-        if (this.keepThinkingFinishedExpandedToggle) {
+        const finishedContainer = document.getElementById('keep-thinking-finished-container');
+        if (finishedContainer) {
+            finishedContainer.innerHTML = '';
             const stored = localStorage.getItem('kai.keepThinkingFinishedExpanded');
-            this.keepThinkingFinishedExpandedToggle.checked = stored === null ? false : stored === 'true';
+            const isChecked = stored === null ? false : stored === 'true';
+            const el = ToggleComponent.create({
+                id: 'keep-thinking-finished-expanded-toggle',
+                checked: isChecked,
+                label: i18n.keepThinkingFinished || 'Keep thinking expanded after reasoning',
+                onChange: (checked) => {
+                    localStorage.setItem('kai.keepThinkingFinishedExpanded', checked);
+                }
+            });
+            finishedContainer.appendChild(el);
+            this.keepThinkingFinishedExpandedToggle = el.querySelector('input[type="checkbox"]');
         }
 
         if (this.geminiThinkingLevelInput) {
@@ -63,42 +102,10 @@ class SettingsController {
      * Registers event listeners for settings controls and keys panel.
      */
     initEventListeners() {
-        if (this.showThinkingToggle) {
-            this.showThinkingToggle.addEventListener('change', () => {
-                localStorage.setItem('kai.showThinking', this.showThinkingToggle.checked);
-                this.updateSubsettingsVisibility();
-            });
-        }
-
-        if (this.keepThinkingExpandedToggle) {
-            this.keepThinkingExpandedToggle.addEventListener('change', () => {
-                localStorage.setItem('kai.keepThinkingExpanded', this.keepThinkingExpandedToggle.checked);
-            });
-        }
-
-        if (this.keepThinkingFinishedExpandedToggle) {
-            this.keepThinkingFinishedExpandedToggle.addEventListener('change', () => {
-                localStorage.setItem('kai.keepThinkingFinishedExpanded', this.keepThinkingFinishedExpandedToggle.checked);
-            });
-        }
-
         if (this.geminiThinkingLevelInput) {
             this.geminiThinkingLevelInput.addEventListener('change', () => {
                 const val = this.geminiThinkingLevelInput.value;
                 localStorage.setItem('kai.geminiThinkingLevel', val);
-                const textEl = document.getElementById('gemini-thinking-text');
-                const menuEl = document.getElementById('gemini-thinking-menu');
-                if (textEl) {
-                    const labels = { 'high': 'Thinking: High', 'medium': 'Thinking: Med', 'low': 'Thinking: Low', 'minimal': 'Thinking: Off' };
-                    textEl.textContent = labels[val] || 'Thinking: High';
-                }
-                if (menuEl) {
-                    const items = menuEl.querySelectorAll('.dropdown-item');
-                    items.forEach(item => {
-                        if (item.dataset.level === val) item.classList.add('selected');
-                        else item.classList.remove('selected');
-                    });
-                }
             });
         }
 

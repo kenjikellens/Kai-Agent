@@ -70,7 +70,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                         data.model,
                         data.thinking,
                         data.geminiThinkingLevel || 'high',
-                        data.planningMode || false
+                        data.planningMode || false,
+                        data.attachedFiles || []
                     );
                     break;
                 }
@@ -132,6 +133,10 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                     await this._handleOpenFile(data.filePath);
                     break;
                 }
+                case 'openFilePicker': {
+                    await this._handleOpenFilePicker();
+                    break;
+                }
             }
         });
 
@@ -157,7 +162,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         model?: string,
         thinking: boolean = true,
         geminiThinkingLevel: string = 'high',
-        planningMode: boolean = false
+        planningMode: boolean = false,
+        attachedFiles: any[] = []
     ) {
         if (!this._view) {
             return;
@@ -184,7 +190,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         const userPrompt = lastUserMsg ? lastUserMsg.content : '';
         
         try {
-            fs.appendFileSync(path.join(workspacePath, 'kai_debug.log'), `[DEBUG] _handleSendMessage payload: model="${model}", prompt="${userPrompt}", totalMessages=${messages.length}, planningMode=${planningMode}\n`);
+            fs.appendFileSync(path.join(workspacePath, 'kai_debug.log'), `[DEBUG] _handleSendMessage payload: model="${model}", prompt="${userPrompt}", totalMessages=${messages.length}, planningMode=${planningMode}, attachedFiles=${attachedFiles.length}\n`);
         } catch {}
         
         // Remove last user message from conversation history and filter out UI-only messages
@@ -248,7 +254,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                 activeFile,
                 thinking,
                 geminiThinkingLevel,
-                planningMode
+                planningMode,
+                attachedFiles
             );
 
             // Send final completion message to the webview
@@ -505,6 +512,67 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         }
     }
 
+    /**
+     * Opens VS Code native file open dialog to select text/code/image files.
+     */
+    private async _handleOpenFilePicker() {
+        if (!this._view) {
+            return;
+        }
+
+        const selectedUris = await vscode.window.showOpenDialog({
+            canSelectFiles: true,
+            canSelectFolders: false,
+            canSelectMany: true,
+            openLabel: 'Attach Files',
+            filters: {
+                'Code & Text Files': ['js', 'ts', 'jsx', 'tsx', 'py', 'html', 'css', 'json', 'md', 'txt', 'csv', 'java', 'c', 'cpp', 'rs', 'go', 'php', 'rb', 'sql', 'sh', 'yaml', 'yml', 'xml', 'env', 'toml'],
+                'Images (Multimodal)': ['png', 'jpg', 'jpeg', 'webp', 'gif']
+            }
+        });
+
+        if (!selectedUris || selectedUris.length === 0) {
+            return;
+        }
+
+        const files: { fileName: string; filePath: string; relativePath: string; content: string }[] = [];
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        const workspacePath = workspaceFolders && workspaceFolders.length > 0 ? workspaceFolders[0].uri.fsPath : '';
+
+        for (const uri of selectedUris) {
+            try {
+                const stat = await vscode.workspace.fs.stat(uri);
+                if (stat.size > 2 * 1024 * 1024) {
+                    vscode.window.showWarningMessage(`File ${path.basename(uri.fsPath)} exceeds 2MB limit and was skipped.`);
+                    continue;
+                }
+
+                let relPath = uri.fsPath;
+                if (workspacePath && uri.fsPath.startsWith(workspacePath)) {
+                    relPath = path.relative(workspacePath, uri.fsPath);
+                }
+
+                const fileContent = await fs.promises.readFile(uri.fsPath, 'utf8').catch(() => '');
+
+                files.push({
+                    fileName: path.basename(uri.fsPath),
+                    filePath: uri.fsPath,
+                    relativePath: relPath,
+                    content: fileContent
+                });
+            } catch {
+                // skip unreadable files
+            }
+        }
+
+        if (files.length > 0) {
+            this._view.webview.postMessage({
+                type: 'filesSelected',
+                files: files
+            });
+        }
+    }
+
     private _loadSvgs(): Record<string, string> {
         const svgDir = path.join(this._extensionUri.fsPath, 'media', 'svg');
         const svgs: Record<string, string> = {};
@@ -542,6 +610,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         const modelDropdownControllerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'ModelDropdownController.js'));
         const settingsControllerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'SettingsController.js'));
         const historyManagerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'HistoryManager.js'));
+        const fileUploadControllerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'FileUploadController.js'));
         const chatUIControllerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'ChatUIController.js'));
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js'));
         const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.css'));
@@ -600,6 +669,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                             <!-- Chat Input Area -->
                             <div class="input-panel">
                                 <div class="input-card">
+                                    <div id="attached-files-bar" class="attached-files-bar hidden"></div>
                                     <textarea id="message-input" placeholder="${translations.messagePlaceholder}" rows="1"></textarea>
                                     <div class="input-toolbar">
                                          <div class="toolbar-left">
@@ -685,19 +755,10 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                                         <option value="es">Español</option>
                                     </select>
                                 </div>
-                                <label class="setting-row" title="${translations.showThinking}">
-                                    <input type="checkbox" id="show-thinking-toggle" checked>
-                                    <span>${translations.showThinking}</span>
-                                </label>
+                                <div id="show-thinking-toggle-container"></div>
                                 <div id="thinking-subsettings" class="setting-sub-panel">
-                                    <label class="setting-row" title="${translations.keepThinkingGenerating}">
-                                        <input type="checkbox" id="keep-thinking-expanded-toggle" checked>
-                                        <span>${translations.keepThinkingGenerating}</span>
-                                    </label>
-                                    <label class="setting-row" title="${translations.keepThinkingFinished}">
-                                        <input type="checkbox" id="keep-thinking-finished-expanded-toggle">
-                                        <span>${translations.keepThinkingFinished}</span>
-                                    </label>
+                                    <div id="keep-thinking-expanded-container"></div>
+                                    <div id="keep-thinking-finished-container"></div>
                                 </div>
                             </div>
 
@@ -731,6 +792,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                 <script nonce="${nonce}" src="${modelDropdownControllerUri}"></script>
                 <script nonce="${nonce}" src="${settingsControllerUri}"></script>
                 <script nonce="${nonce}" src="${historyManagerUri}"></script>
+                <script nonce="${nonce}" src="${fileUploadControllerUri}"></script>
                 <script nonce="${nonce}" src="${chatUIControllerUri}"></script>
                 <script nonce="${nonce}" src="${scriptUri}"></script>
             </body>

@@ -11,6 +11,7 @@
 
     // 2. Instantiate Feature and View Controllers
     const settingsController = new SettingsController(ipcBridge);
+    const fileUploadController = new FileUploadController(ipcBridge, appState);
 
     const modelDropdownController = new ModelDropdownController(formatter, (selectedModel) => {
         appState.selectedModelValue = selectedModel;
@@ -119,12 +120,17 @@
 
         const modelDetails = modelDropdownController.getSelectedModelDetails();
         const geminiThinkingLevel = settingsController.getGeminiThinkingLevel(modelDetails.model);
+
+        const attachedFilesCopy = fileUploadController.getAttachedFiles();
+        fileUploadController.clear();
+
         ipcBridge.sendUserPrompt(
             appState.messages,
             modelDetails.model,
             modelDetails.thinking,
             geminiThinkingLevel,
-            appState.isPlanningModeEnabled
+            appState.isPlanningModeEnabled,
+            attachedFilesCopy
         );
     }
 
@@ -147,14 +153,6 @@
     // Bind Primary UI Buttons & Input Handlers
     if (sendBtn) {
         sendBtn.addEventListener('click', sendMessage);
-    }
-
-    if (attachFileBtn) {
-        attachFileBtn.addEventListener('click', () => {
-            if (messageInput) {
-                messageInput.focus();
-            }
-        });
     }
 
     if (atMentionTriggerBtn && contextOptionsMenu) {
@@ -234,6 +232,8 @@
             messageInput.focus();
         }
     });
+
+
 
     ipcBridge.on('agentProgress', (message) => {
         chatUIController.handleAgentProgress(message, appState);
