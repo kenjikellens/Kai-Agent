@@ -702,6 +702,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                 <script nonce="${nonce}" src="${markdownFormatterUri}"></script>
                 <script nonce="${nonce}" src="${ipcBridgeUri}"></script>
                 <script nonce="${nonce}" src="${fileSummaryWidgetUri}"></script>
+                <script nonce="${nonce}" src="${toggleComponentUri}"></script>
                 <script nonce="${nonce}" src="${modelDropdownControllerUri}"></script>
                 <script nonce="${nonce}" src="${settingsControllerUri}"></script>
                 <script nonce="${nonce}" src="${historyManagerUri}"></script>
