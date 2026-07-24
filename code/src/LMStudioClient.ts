@@ -257,23 +257,12 @@ export class LMStudioClient {
             };
 
             // Configure Thinking / Reasoning parameters for different model architectures per AGENTS.md rules
-            const modelLower = model.toLowerCase();
             if (thinking) {
-                if (modelLower.includes('gemma')) {
-                    requestParams.thinking = true;
-                } else if (modelLower.includes('qwen') || modelLower.includes('glm')) {
-                    requestParams.thinking = true;
-                    requestParams.enable_thinking = true;
-                    requestParams.chat_template_kwargs = {
-                        enable_thinking: true
-                    };
-                } else {
-                    requestParams.thinking = true;
-                    requestParams.enable_thinking = true;
-                    requestParams.chat_template_kwargs = {
-                        enable_thinking: true
-                    };
-                }
+                requestParams.thinking = true;
+                requestParams.enable_thinking = true;
+                requestParams.chat_template_kwargs = {
+                    enable_thinking: true
+                };
             } else {
                 requestParams.thinking = false;
                 requestParams.enable_thinking = false;

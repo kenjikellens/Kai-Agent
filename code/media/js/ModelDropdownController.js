@@ -580,8 +580,7 @@ class ModelDropdownController {
      */
     getSelectedModelDetails() {
         let raw = this.selectedModelValue || 'local-model';
-        let thinking = true;
-
+        
         if (raw.endsWith(' (thinking)')) {
             return {
                 model: raw.slice(0, -11),
@@ -589,11 +588,9 @@ class ModelDropdownController {
             };
         }
 
-        // Check if raw model is a local LM Studio model without (thinking) suffix
-        const isLocalModel = this.lmStudioRawModels.includes(raw);
-        if (isLocalModel) {
-            thinking = false;
-        }
+        // Read model thinking toggle state from localStorage for LM Studio models
+        const lmThinkingSaved = localStorage.getItem(`kai.lmStudioThinking.${raw}`);
+        const thinking = lmThinkingSaved !== null ? lmThinkingSaved === 'true' : true;
 
         return {
             model: raw,
