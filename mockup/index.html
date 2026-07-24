@@ -3,38 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thinking Dropdown Mockup</title>
+    <title>Long Model Name Fade & Hover Scroll Mockup</title>
     <link rel="stylesheet" href="main.css">
 </head>
 <body>
-    <h2 class="mockup-title">Thinking Dropdown Mockup</h2>
-    <p class="mockup-description">Demonstrating identical hover effect for thinking options & checkmark SVG icon on selected option.</p>
+    <h2 class="mockup-title">Model Name Overflow & Hover Scroll Demo</h2>
+    <p class="mockup-description">Long model names are clipped inside the container with a right fade-out gradient. Hover over any long model name to smoothly scroll and see the full text.</p>
 
-    <div class="dropdown-menu">
-        <div class="dropdown-category-header">Gemini Models</div>
-        <div class="dropdown-item model-hover-item" role="button" tabindex="0">
-            <span class="status-dot status-connected" style="width: 6px; height: 6px; border-radius: 50%; background: #2ecc71;"></span>
-            <span>Gemini 2.5 Flash</span>
-            <span class="model-flyout-chevron">›</span>
+    <!-- Toolbar Trigger Mockup -->
+    <div class="demo-section">
+        <h3>1. Active Model Trigger Button</h3>
+        <div class="custom-dropdown" id="model-dropdown-container">
+            <button type="button" class="dropdown-trigger" id="dropdown-trigger-btn" title="Active Model">
+                <span class="status-dot status-connected"></span>
+                <div class="model-text-container" id="trigger-text-container">
+                    <span class="model-text-inner" id="selected-model-text">deepseek-ai/DeepSeek-R1-Distill-Qwen-32B@q4_k_m</span>
+                </div>
+                <svg class="dropdown-trigger-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+        </div>
+    </div>
 
-            <!-- Thinking Flyout Dropdown Sub-Menu -->
-            <div class="thinking-flyout-menu">
-                <div class="thinking-flyout-menu-inner">
-                    <button type="button" class="flyout-option selected" role="button">
-                        <span>High</span>
-                        <span class="check-icon">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        </span>
-                    </button>
-                    <button type="button" class="flyout-option" role="button">
-                        <span>Medium</span>
-                    </button>
-                    <button type="button" class="flyout-option" role="button">
-                        <span>Low</span>
-                    </button>
-                    <button type="button" class="flyout-option" role="button">
-                        <span>Minimal (Off)</span>
-                    </button>
+    <!-- Dropdown Menu List Mockup -->
+    <div class="demo-section">
+        <h3>2. Dropdown Menu Model Options</h3>
+        <div class="dropdown-menu">
+            <div class="dropdown-category-header">
+                <span>LM Studio Models</span>
+                <svg class="chevron-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+            
+            <!-- Long model option 1 -->
+            <div class="dropdown-item selected" role="button" tabindex="0">
+                <span class="status-dot status-connected"></span>
+                <div class="model-text-container">
+                    <span class="model-text-inner">deepseek-ai/DeepSeek-R1-Distill-Qwen-32B@q4_k_m</span>
+                </div>
+            </div>
+
+            <!-- Long model option 2 -->
+            <div class="dropdown-item" role="button" tabindex="0">
+                <span class="status-dot status-connected"></span>
+                <div class="model-text-container">
+                    <span class="model-text-inner">mistralai/Mixtral-8x22B-Instruct-v0.1-GGUF</span>
+                </div>
+            </div>
+
+            <!-- Long model option 3 -->
+            <div class="dropdown-item" role="button" tabindex="0">
+                <span class="status-dot status-connected"></span>
+                <div class="model-text-container">
+                    <span class="model-text-inner">qwen/qwen2.5-coder-32b-instruct@q4_k_m (thinking)</span>
+                </div>
+            </div>
+
+            <!-- Normal length model option -->
+            <div class="dropdown-item" role="button" tabindex="0">
+                <span class="status-dot status-connected"></span>
+                <div class="model-text-container">
+                    <span class="model-text-inner">GPT-4o Mini</span>
+                </div>
+            </div>
+
+            <!-- Gemini Thinking Model with Submenu -->
+            <div class="dropdown-category-header" style="margin-top: 6px;">
+                <span>Google Gemini</span>
+                <svg class="chevron-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+
+            <div class="dropdown-item model-hover-item" role="button" tabindex="0">
+                <span class="status-dot status-connected"></span>
+                <div class="model-text-container">
+                    <span class="model-text-inner">google/gemini-2.5-flash-thinking-exp-0121</span>
+                </div>
+                <span class="model-flyout-chevron">›</span>
+
+                <!-- Submenu -->
+                <div class="thinking-flyout-menu">
+                    <div class="thinking-flyout-menu-inner">
+                        <button type="button" class="flyout-option selected">
+                            <span>High</span>
+                            <span class="check-icon">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </span>
+                        </button>
+                        <button type="button" class="flyout-option"><span>Medium</span></button>
+                        <button type="button" class="flyout-option"><span>Low</span></button>
+                        <button type="button" class="flyout-option"><span>Minimal (Off)</span></button>
+                    </div>
                 </div>
             </div>
         </div>

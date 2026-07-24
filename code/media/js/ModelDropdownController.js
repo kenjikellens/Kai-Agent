@@ -21,6 +21,8 @@ class ModelDropdownController {
         this.accordionStates = {};
         this.freeProvidersConfig = [...KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS];
         this.lmStudioRawModels = [];
+        this.activeFlyoutItem = null;
+        this.flyoutCloseTimer = null;
 
         this.dropdownTriggerBtn = document.getElementById('dropdown-trigger-btn');
         this.dropdownOptionsMenu = document.getElementById('dropdown-options-menu');
@@ -36,12 +38,27 @@ class ModelDropdownController {
     }
 
     /**
+     * Closes any currently open thinking flyout sub-menu immediately with 0ms delay.
+     */
+    closeActiveFlyoutImmediately() {
+        if (this.flyoutCloseTimer) {
+            clearTimeout(this.flyoutCloseTimer);
+            this.flyoutCloseTimer = null;
+        }
+        if (this.activeFlyoutItem) {
+            this.activeFlyoutItem.classList.remove('flyout-open');
+            this.activeFlyoutItem = null;
+        }
+    }
+
+    /**
      * Registers dropdown trigger and global click-outside listeners for the Model Selector Dropdown.
      */
     initEventListeners() {
         if (this.dropdownTriggerBtn) {
             this.dropdownTriggerBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                this.closeActiveFlyoutImmediately();
                 if (this.dropdownOptionsMenu) {
                     this.dropdownOptionsMenu.classList.toggle('hidden');
                 }
@@ -50,6 +67,7 @@ class ModelDropdownController {
 
         document.addEventListener('click', (e) => {
             if (!e.target.closest('#model-dropdown-container') && this.dropdownOptionsMenu) {
+                this.closeActiveFlyoutImmediately();
                 this.dropdownOptionsMenu.classList.add('hidden');
             }
         });
@@ -103,6 +121,7 @@ class ModelDropdownController {
 
         const toggleAccordion = (e) => {
             e.stopPropagation();
+            this.closeActiveFlyoutImmediately();
             const isCollapsed = contentDiv.classList.toggle('collapsed');
             chevronSvg.style.transform = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
             this.accordionStates[title] = !isCollapsed;
@@ -182,11 +201,11 @@ class ModelDropdownController {
                     ];
 
                     levels.forEach(lvl => {
-                        // Thinking Dropdown Option Button
+                        // Thinking Dropdown Option Button (Uses dropdown-item class for 1:1 styling parity)
                         const flyoutOpt = document.createElement('button');
                         flyoutOpt.type = 'button';
                         const isSelected = lvl.level === currentGeminiLevel;
-                        flyoutOpt.className = `flyout-option ${isSelected ? 'selected' : ''}`;
+                        flyoutOpt.className = `dropdown-item flyout-option ${isSelected ? 'selected' : ''}`;
                         flyoutOpt.setAttribute('role', 'button');
                         flyoutOpt.setAttribute('aria-label', `Set thinking level to ${lvl.label}`);
                         
@@ -220,22 +239,60 @@ class ModelDropdownController {
                     flyoutMenu.appendChild(flyoutInner);
                     item.appendChild(flyoutMenu);
 
-                    /* Position thinking flyout dropdown dynamically within the webview viewport */
-                    item.addEventListener('mouseenter', () => {
+                    /* Position thinking flyout dropdown & manage 0.5s timeout on container leave vs 0ms on model switch */
+                    const positionFlyout = () => {
+                        if (this.flyoutCloseTimer) {
+                            clearTimeout(this.flyoutCloseTimer);
+                            this.flyoutCloseTimer = null;
+                        }
+                        if (this.activeFlyoutItem && this.activeFlyoutItem !== item) {
+                            this.closeActiveFlyoutImmediately();
+                        }
+                        this.activeFlyoutItem = item;
+                        item.classList.add('flyout-open');
+
                         const itemRect = item.getBoundingClientRect();
                         const vw = window.innerWidth || document.documentElement.clientWidth;
-                        const flyoutW = 146;
+                        const flyoutW = 165;
 
-                        /* Try placing to the right of the item first */
-                        let left = itemRect.right + 4;
+                        let left = itemRect.right - 2;
                         if (left + flyoutW > vw) {
-                            /* Not enough space right — place to the left, clamped to 0 */
-                            left = Math.max(0, itemRect.left - flyoutW - 4);
+                            left = Math.max(0, itemRect.left - flyoutW + 2);
                         }
                         flyoutMenu.style.left = left + 'px';
                         flyoutMenu.style.top  = itemRect.top + 'px';
+                    };
+
+                    item.addEventListener('mouseenter', positionFlyout);
+
+                    flyoutMenu.addEventListener('mouseenter', () => {
+                        if (this.flyoutCloseTimer) {
+                            clearTimeout(this.flyoutCloseTimer);
+                            this.flyoutCloseTimer = null;
+                        }
+                        this.activeFlyoutItem = item;
+                        item.classList.add('flyout-open');
+                    });
+
+                    flyoutMenu.addEventListener('mouseleave', () => {
+                        if (this.flyoutCloseTimer) {
+                            clearTimeout(this.flyoutCloseTimer);
+                        }
+                        // 0.5s (500ms) timeout when hovering away from the thinking container into empty space
+                        this.flyoutCloseTimer = setTimeout(() => {
+                            if (this.activeFlyoutItem === item) {
+                                this.closeActiveFlyoutImmediately();
+                            }
+                        }, 500);
                     });
                 }
+
+                // Immediately close any open flyout from another item when hovering over this model item (0ms delay)
+                item.addEventListener('mouseenter', () => {
+                    if (this.activeFlyoutItem && this.activeFlyoutItem !== item) {
+                        this.closeActiveFlyoutImmediately();
+                    }
+                });
                 
                 const handleItemClick = (e) => {
                     // Prevent trigger when clicking directly inside the sub-thinking flyout menu
