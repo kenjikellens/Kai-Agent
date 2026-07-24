@@ -804,15 +804,15 @@ button:disabled {
   flex-shrink: 0;
 }
 
-/* Options menu container for the Model Selector Dropdown (Leaves 175px reserved space on the right for the thinking flyout menu) */
+/* Options menu container for the Model Selector Dropdown (Leaves 195px reserved distance from the right side for the thinking flyout menu) */
 .dropdown-menu {
   position: absolute;
   left: 0;
   bottom: calc(100% + 6px);
   z-index: 1000;
-  width: calc(100cqw - 175px);
+  width: calc(100cqw - 195px);
   min-width: 140px;
-  max-width: calc(100cqw - 175px);
+  max-width: calc(100cqw - 195px);
   padding: 4px 2px;
   box-sizing: border-box;
   background: var(--vscode-dropdown-background, #252526);
