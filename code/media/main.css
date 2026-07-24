@@ -826,11 +826,6 @@ button:disabled {
 .dropdown-category {
   display: flex;
   flex-direction: column;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.dropdown-category:last-child {
-  border-bottom: 0;
 }
 
 /* Category header toggle button for provider accordions (LM Studio, Gemini, Mistral AI, etc.) */
@@ -840,23 +835,23 @@ button:disabled {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  margin: 0;
-  background: transparent;
-  color: var(--app-muted);
+  margin: 1px 0;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--app-muted, #888888);
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
   user-select: none;
   border: 0;
-  border-radius: 0;
+  border-radius: var(--app-radius-sm);
   outline: none;
   transition: color 0.15s ease;
 }
 
 .dropdown-category-header:hover,
 .dropdown-category-header:focus-visible {
-  background: transparent;
-  color: var(--vscode-foreground, #ffffff);
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
 }
 
 .dropdown-category-header .chevron-icon {
