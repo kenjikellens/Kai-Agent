@@ -1,6 +1,6 @@
 import * as path from 'path';
 import * as fs from 'fs';
-import { LMStudioClient } from './LMStudioClient';
+import { LLMProviderFactory } from './providers/LLMProviderFactory';
 import { Tool, getRegisteredTools } from './tools';
 
 /**
@@ -11,7 +11,7 @@ import { Tool, getRegisteredTools } from './tools';
 export class AgentExecutor {
     private workspacePath: string;
     private extensionPath: string;
-    private client: LMStudioClient;
+    private serverUrl: string;
     private temperature: number;
     private onProgress: (event: { type: string; tool?: string; query?: string; output?: string; toolId?: string; fileName?: string }) => void;
     private tools: Tool[];
@@ -33,7 +33,7 @@ export class AgentExecutor {
     ) {
         this.workspacePath = workspacePath;
         this.extensionPath = extensionPath;
-        this.client = new LMStudioClient(serverUrl);
+        this.serverUrl = serverUrl;
         this.temperature = temperature;
         this.onProgress = onProgress;
         this.tools = getRegisteredTools();
@@ -93,8 +93,9 @@ export class AgentExecutor {
             iteration++;
             this.onProgress({ type: 'thinking', output: `Step ${iteration}: Consulting model...` });
 
-            // Call the LLM with streaming tokens
-            const response = await this.client.chatCompletionStream(
+            // Call the LLM provider strategy with streaming tokens
+            const provider = LLMProviderFactory.getProvider(model, this.serverUrl);
+            const response = await provider.chatCompletionStream(
                 messages,
                 model,
                 this.temperature,

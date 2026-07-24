@@ -26,7 +26,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AgentExecutor = void 0;
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
-const LMStudioClient_1 = require("./LMStudioClient");
+const LLMProviderFactory_1 = require("./providers/LLMProviderFactory");
 const tools_1 = require("./tools");
 /**
  * AgentExecutor coordinates the autonomous AI agent loop.
@@ -45,7 +45,7 @@ class AgentExecutor {
     constructor(workspacePath, extensionPath, serverUrl, temperature, onProgress) {
         this.workspacePath = workspacePath;
         this.extensionPath = extensionPath;
-        this.client = new LMStudioClient_1.LMStudioClient(serverUrl);
+        this.serverUrl = serverUrl;
         this.temperature = temperature;
         this.onProgress = onProgress;
         this.tools = (0, tools_1.getRegisteredTools)();
@@ -92,8 +92,9 @@ class AgentExecutor {
         while (iteration < maxIterations) {
             iteration++;
             this.onProgress({ type: 'thinking', output: `Step ${iteration}: Consulting model...` });
-            // Call the LLM with streaming tokens
-            const response = await this.client.chatCompletionStream(messages, model, this.temperature, (token) => {
+            // Call the LLM provider strategy with streaming tokens
+            const provider = LLMProviderFactory_1.LLMProviderFactory.getProvider(model, this.serverUrl);
+            const response = await provider.chatCompletionStream(messages, model, this.temperature, (token) => {
                 this.onProgress({ type: 'token', output: token });
             }, signal, thinking, geminiThinkingLevel);
             lastAssistantResponse = response;

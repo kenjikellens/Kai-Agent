@@ -1,6 +1,6 @@
 import { ILLMProvider } from './ILLMProvider';
 import { GeminiClient } from './GeminiClient';
-import { FreeProviderClient, FREE_PROVIDERS } from './FreeProviderClient';
+import { FreeProviderClient } from './FreeProviderClient';
 import { LMStudioClient } from '../LMStudioClient';
 
 /**
