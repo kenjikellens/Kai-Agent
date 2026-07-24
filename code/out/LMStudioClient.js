@@ -244,8 +244,28 @@ class LMStudioClient {
                 temperature: temperature,
                 stream: false
             };
-            // Configure Thinking / Reasoning parameters for different model architectures (Gemma, Qwen, GLM)
-            if (!thinking) {
+            // Configure Thinking / Reasoning parameters for different model architectures per AGENTS.md rules
+            const modelLower = model.toLowerCase();
+            if (thinking) {
+                if (modelLower.includes('gemma')) {
+                    requestParams.thinking = true;
+                }
+                else if (modelLower.includes('qwen') || modelLower.includes('glm')) {
+                    requestParams.thinking = true;
+                    requestParams.enable_thinking = true;
+                    requestParams.chat_template_kwargs = {
+                        enable_thinking: true
+                    };
+                }
+                else {
+                    requestParams.thinking = true;
+                    requestParams.enable_thinking = true;
+                    requestParams.chat_template_kwargs = {
+                        enable_thinking: true
+                    };
+                }
+            }
+            else {
                 requestParams.thinking = false;
                 requestParams.enable_thinking = false;
                 requestParams.chat_template_kwargs = {
@@ -253,9 +273,6 @@ class LMStudioClient {
                 };
                 requestParams.reasoning_effort = "none";
                 requestParams.reasoning = "off";
-            }
-            else {
-                requestParams.thinking = true;
             }
             const payload = JSON.stringify(requestParams);
             const options = {
@@ -342,24 +359,35 @@ class LMStudioClient {
                 temperature: temperature,
                 stream: true
             };
-            if (!thinking) {
-                // 1. Standard thinking toggle (Gemma, general)
+            // Configure Thinking / Reasoning parameters for different model architectures per AGENTS.md rules
+            const modelLowerStream = model.toLowerCase();
+            if (thinking) {
+                if (modelLowerStream.includes('gemma')) {
+                    requestParams.thinking = true;
+                }
+                else if (modelLowerStream.includes('qwen') || modelLowerStream.includes('glm')) {
+                    requestParams.thinking = true;
+                    requestParams.enable_thinking = true;
+                    requestParams.chat_template_kwargs = {
+                        enable_thinking: true
+                    };
+                }
+                else {
+                    requestParams.thinking = true;
+                    requestParams.enable_thinking = true;
+                    requestParams.chat_template_kwargs = {
+                        enable_thinking: true
+                    };
+                }
+            }
+            else {
                 requestParams.thinking = false;
-                // 2. Qwen, GLM, DeepSeek, Gemma, and template-based thinking parameters
                 requestParams.enable_thinking = false;
                 requestParams.chat_template_kwargs = {
                     enable_thinking: false
                 };
-                // 3. OpenAI-spec compatible reasoning effort (for newer LM Studio models)
                 requestParams.reasoning_effort = "none";
                 requestParams.reasoning = "off";
-            }
-            else {
-                requestParams.thinking = true;
-                requestParams.enable_thinking = true;
-                requestParams.chat_template_kwargs = {
-                    enable_thinking: true
-                };
             }
             const payload = JSON.stringify(requestParams);
             const options = {

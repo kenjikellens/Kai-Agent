@@ -486,6 +486,7 @@ class SidebarProvider {
         const markdownFormatterUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'MarkdownFormatter.js'));
         const ipcBridgeUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'WebviewIPCBridge.js'));
         const fileSummaryWidgetUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'FileSummaryWidget.js'));
+        const toggleComponentUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'ToggleComponent.js'));
         const modelDropdownControllerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'ModelDropdownController.js'));
         const settingsControllerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'SettingsController.js'));
         const historyManagerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'HistoryManager.js'));
@@ -653,6 +654,7 @@ class SidebarProvider {
                 <script nonce="${nonce}" src="${markdownFormatterUri}"></script>
                 <script nonce="${nonce}" src="${ipcBridgeUri}"></script>
                 <script nonce="${nonce}" src="${fileSummaryWidgetUri}"></script>
+                <script nonce="${nonce}" src="${toggleComponentUri}"></script>
                 <script nonce="${nonce}" src="${modelDropdownControllerUri}"></script>
                 <script nonce="${nonce}" src="${settingsControllerUri}"></script>
                 <script nonce="${nonce}" src="${historyManagerUri}"></script>

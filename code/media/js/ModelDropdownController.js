@@ -321,12 +321,20 @@ class ModelDropdownController {
                             flyoutInner.appendChild(flyoutOpt);
                         });
                     } else if (isLMStudio) {
-                        flyoutInner.style.padding = '6px 10px';
                         const isLmThinkingOn = localStorage.getItem(`kai.lmStudioThinking.${itemData.rawModel}`) === 'true';
                         
+                        // Dropdown flyout option row matching 1:1 with standard .dropdown-item.flyout-option styling
+                        const flyoutRow = document.createElement('div');
+                        flyoutRow.className = 'dropdown-item flyout-option';
+                        flyoutRow.style.width = 'calc(100% - 4px)';
+                        flyoutRow.style.justifyContent = 'space-between';
+                        flyoutRow.style.gap = '12px';
+
+                        const labelSpan = document.createElement('span');
+                        labelSpan.textContent = 'Thinking';
+
                         const toggleEl = ToggleComponent.create({
                             id: `lm-thinking-toggle-${itemData.rawModel.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
-                            label: 'Thinking',
                             checked: isLmThinkingOn,
                             title: 'Enable reasoning/thinking for this model',
                             onChange: (checked) => {
@@ -337,14 +345,25 @@ class ModelDropdownController {
                             }
                         });
 
-                        toggleEl.addEventListener('click', (e) => e.stopPropagation());
-                        flyoutInner.appendChild(toggleEl);
+                        flyoutRow.appendChild(labelSpan);
+                        flyoutRow.appendChild(toggleEl);
+
+                        flyoutRow.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const checkbox = toggleEl.querySelector('input[type="checkbox"]');
+                            if (checkbox && e.target !== checkbox) {
+                                checkbox.checked = !checkbox.checked;
+                                checkbox.dispatchEvent(new Event('change'));
+                            }
+                        });
+
+                        flyoutInner.appendChild(flyoutRow);
                     }
 
                     flyoutMenu.appendChild(flyoutInner);
                     item.appendChild(flyoutMenu);
 
-                    /* Position thinking flyout dropdown & manage timeout on hover */
+                    /* Position thinking flyout dropdown & manage 0.5s timeout on container leave vs 0ms on model switch */
                     const positionFlyout = () => {
                         if (this.flyoutCloseTimer) {
                             clearTimeout(this.flyoutCloseTimer);
@@ -368,7 +387,27 @@ class ModelDropdownController {
                         flyoutMenu.style.top  = itemRect.top + 'px';
                     };
 
-                    item.addEventListener('mouseenter', positionFlyout);
+                    const startCloseTimer = () => {
+                        if (this.flyoutCloseTimer) {
+                            clearTimeout(this.flyoutCloseTimer);
+                        }
+                        // 0.5s (500ms) timeout when hovering away from the container into empty space
+                        this.flyoutCloseTimer = setTimeout(() => {
+                            if (this.activeFlyoutItem === item) {
+                                this.closeActiveFlyoutImmediately();
+                            }
+                        }, 500);
+                    };
+
+                    item.addEventListener('mouseenter', () => {
+                        if (this.flyoutCloseTimer) {
+                            clearTimeout(this.flyoutCloseTimer);
+                            this.flyoutCloseTimer = null;
+                        }
+                        positionFlyout();
+                    });
+
+                    item.addEventListener('mouseleave', startCloseTimer);
 
                     flyoutMenu.addEventListener('mouseenter', () => {
                         if (this.flyoutCloseTimer) {
@@ -379,20 +418,10 @@ class ModelDropdownController {
                         item.classList.add('flyout-open');
                     });
 
-                    flyoutMenu.addEventListener('mouseleave', () => {
-                        if (this.flyoutCloseTimer) {
-                            clearTimeout(this.flyoutCloseTimer);
-                        }
-                        // 0.5s (500ms) timeout when hovering away from the thinking container into empty space
-                        this.flyoutCloseTimer = setTimeout(() => {
-                            if (this.activeFlyoutItem === item) {
-                                this.closeActiveFlyoutImmediately();
-                            }
-                        }, 500);
-                    });
+                    flyoutMenu.addEventListener('mouseleave', startCloseTimer);
                 }
 
-                // Immediately close any open flyout from another item when hovering over this model item (0ms delay)
+                // Immediately close any open flyout from another item when hovering over a non-flyout model item (0ms delay)
                 item.addEventListener('mouseenter', () => {
                     if (this.activeFlyoutItem && this.activeFlyoutItem !== item) {
                         this.closeActiveFlyoutImmediately();
