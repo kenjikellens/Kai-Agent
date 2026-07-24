@@ -58,7 +58,7 @@ class AgentExecutor {
      * @param chatHistory The active message log array.
      * @param model The target model selected in the dropdown.
      * @param signal AbortSignal to cancel HTTP requests.
-     * @param activeFile Active text editor file details.
+     * @param activeFile Active text editor file path details (without content).
      * @param thinking Toggle parameter for model reasoning phase.
      * @returns A promise that resolves to the final assistant response.
      */
@@ -79,10 +79,42 @@ class AgentExecutor {
                 content: this.getSystemPrompt()
             });
         }
-        // Add the user request (with active file context if available)
-        let promptWithContext = userPrompt;
+        // Build workspace root & active file indicator context for first new chat message
+        const isFirstMessage = messages.filter((m) => m.role === 'user' || m.role === 'assistant').length === 0;
+        let contextPrefix = '';
+        if (isFirstMessage && this.workspacePath && fs.existsSync(this.workspacePath)) {
+            try {
+                const entries = fs.readdirSync(this.workspacePath, { withFileTypes: true });
+                const folders = [];
+                const files = [];
+                for (const entry of entries) {
+                    if (entry.name === '.git' || entry.name === 'node_modules')
+                        continue;
+                    if (entry.isDirectory()) {
+                        folders.push(entry.name + '/');
+                    }
+                    else if (entry.isFile()) {
+                        files.push(entry.name);
+                    }
+                }
+                contextPrefix += `[Workspace Root Structure]\n`;
+                if (folders.length > 0) {
+                    contextPrefix += `Folders: ${folders.join(', ')}\n`;
+                }
+                if (files.length > 0) {
+                    contextPrefix += `Files: ${files.join(', ')}\n`;
+                }
+            }
+            catch {
+                // ignore readdir errors
+            }
+        }
         if (activeFile) {
-            promptWithContext = `[Active File: ${activeFile.filePath}]\n\`\`\`\n${activeFile.content}\n\`\`\`\n\n${userPrompt}`;
+            contextPrefix += `[Active Opened File: ${activeFile.filePath}]\n`;
+        }
+        let promptWithContext = userPrompt;
+        if (contextPrefix) {
+            promptWithContext = `${contextPrefix}\n${userPrompt}`;
         }
         messages.push({ role: 'user', content: promptWithContext });
         let iteration = 0;

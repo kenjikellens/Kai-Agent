@@ -212,20 +212,19 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         this._activeAbortController = new AbortController();
 
         try {
-            // Retrieve active editor file context if available
+            // Retrieve active editor file info (path only, no content)
             const activeEditor = vscode.window.activeTextEditor;
-            let activeFile: { fileName: string; filePath: string; content: string } | undefined = undefined;
+            let activeFile: { fileName: string; filePath: string } | undefined = undefined;
             if (activeEditor) {
                 const doc = activeEditor.document;
-                if (doc.uri.scheme === 'file' && doc.getText().length < 50000) {
+                if (doc.uri.scheme === 'file') {
                     let relPath = doc.uri.fsPath;
                     if (workspaceFolders && workspaceFolders.length > 0) {
                         relPath = path.relative(workspaceFolders[0].uri.fsPath, relPath);
                     }
                     activeFile = {
                         fileName: path.basename(doc.uri.fsPath),
-                        filePath: relPath,
-                        content: doc.getText()
+                        filePath: relPath
                     };
                 }
             }
