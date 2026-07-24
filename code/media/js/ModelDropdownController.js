@@ -96,6 +96,11 @@ class ModelDropdownController {
             this.activeFlyoutItem.classList.remove('flyout-open');
             this.activeFlyoutItem = null;
         }
+        const openFlyouts = document.querySelectorAll('.model-hover-item.flyout-open');
+        openFlyouts.forEach(el => el.classList.remove('flyout-open'));
+        if (document.activeElement && document.activeElement.closest('.thinking-flyout-menu')) {
+            document.activeElement.blur();
+        }
     }
 
     /**

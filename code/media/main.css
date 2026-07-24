@@ -885,16 +885,12 @@ button:disabled {
   gap: 1px;
 }
 
-.dropdown-item.model-hover-item:hover,
 .dropdown-item.model-hover-item.flyout-open {
   color: var(--vscode-foreground, #ffffff);
   background: rgba(255, 255, 255, 0.06);
 }
 
-.dropdown-item.model-hover-item:hover>.thinking-flyout-menu,
-.dropdown-item.model-hover-item.flyout-open>.thinking-flyout-menu,
-.dropdown-item.model-hover-item:focus-within>.thinking-flyout-menu,
-.thinking-flyout-menu:hover {
+.dropdown-item.model-hover-item.flyout-open > .thinking-flyout-menu {
   display: flex;
 }
 
