@@ -528,7 +528,9 @@ button:disabled {
   left: 0;
   bottom: calc(100% + 6px);
   z-index: 1000;
-  width: 100%;
+  width: 200px;
+  max-width: calc(100% - 120px);
+  min-width: 160px;
   padding: 4px 0;
   box-sizing: border-box;
   background: var(--vscode-dropdown-background, #252526);

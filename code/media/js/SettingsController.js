@@ -138,7 +138,11 @@ class SettingsController {
      * Retrieves the active Gemini reasoning level setting (high, medium, low, minimal).
      * @returns {string} The active reasoning level string.
      */
-    getGeminiThinkingLevel() {
+    getGeminiThinkingLevel(modelId) {
+        if (modelId) {
+            const perModel = localStorage.getItem(`kai.geminiThinkingLevel.${modelId}`);
+            if (perModel) return perModel;
+        }
         if (this.geminiThinkingLevelInput) {
             return this.geminiThinkingLevelInput.value || 'high';
         }

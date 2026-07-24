@@ -76,7 +76,7 @@
         saveCurrentChat();
 
         const modelDetails = modelDropdownController.getSelectedModelDetails();
-        const geminiThinkingLevel = settingsController.getGeminiThinkingLevel();
+        const geminiThinkingLevel = settingsController.getGeminiThinkingLevel(modelDetails.model);
         ipcBridge.sendUserPrompt(
             appState.messages,
             modelDetails.model,

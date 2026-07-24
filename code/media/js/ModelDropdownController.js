@@ -146,7 +146,7 @@ class ModelDropdownController {
                     const flyoutInner = document.createElement('div');
                     flyoutInner.className = 'thinking-flyout-menu-inner';
 
-                    const currentGeminiLevel = localStorage.getItem('kai.geminiThinkingLevel') || 'high';
+                    const currentGeminiLevel = localStorage.getItem(`kai.geminiThinkingLevel.${itemData.value}`) || localStorage.getItem('kai.geminiThinkingLevel') || 'high';
                     const levels = [
                         { level: 'high', label: 'High' },
                         { level: 'medium', label: 'Medium' },
@@ -160,6 +160,7 @@ class ModelDropdownController {
                         flyoutOpt.textContent = lvl.label;
                         flyoutOpt.addEventListener('click', (e) => {
                             e.stopPropagation();
+                            localStorage.setItem(`kai.geminiThinkingLevel.${itemData.value}`, lvl.level);
                             localStorage.setItem('kai.geminiThinkingLevel', lvl.level);
                             this.selectedModelValue = itemData.value;
                             localStorage.setItem('kai.selectedModel', itemData.value);
