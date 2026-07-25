@@ -1157,9 +1157,18 @@ button:disabled {
 .category-content {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding-top: 10px;
-  padding-bottom: 14px;
+  gap: 12px;
+  padding-top: 12px;
+  padding-bottom: 16px;
+}
+
+.category-content .setting-item {
+  margin-bottom: 2px;
+}
+
+#manage-keys-container {
+  margin-top: 4px;
+  margin-bottom: 2px;
 }
 
 .settings-category.collapsed .category-content {
