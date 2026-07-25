@@ -116,6 +116,26 @@ class SettingsController {
                 }
             });
         }
+
+        const styleContainer = document.getElementById('thinking-display-style-container');
+        if (styleContainer && typeof CustomSelectComponent !== 'undefined') {
+            const storedStyle = localStorage.getItem('kai.thinkingDisplayStyle') || 'both';
+            const styleOptions = [
+                { value: 'both', label: 'Battery Icon + Text' },
+                { value: 'icon', label: 'Battery Icon Only' },
+                { value: 'text', label: 'Text Only' }
+            ];
+            this.thinkingStyleComponent = new CustomSelectComponent({
+                container: styleContainer,
+                id: 'thinking-display-style-input',
+                options: styleOptions,
+                value: storedStyle,
+                onChange: (selectedStyle) => {
+                    localStorage.setItem('kai.thinkingDisplayStyle', selectedStyle);
+                    window.dispatchEvent(new CustomEvent('kaiThinkingStyleChanged', { detail: { style: selectedStyle } }));
+                }
+            });
+        }
     }
 
     /**

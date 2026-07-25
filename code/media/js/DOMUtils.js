@@ -78,4 +78,76 @@ class DOMUtils {
         svg.appendChild(polyline);
         return svg;
     }
+
+    /**
+     * Generates a 3-block vector battery SVG element representing thinking level.
+     * @param {string|boolean} level Reasoning level ('high', 'medium', 'low', 'minimal', 'off') or boolean (true/false).
+     * @param {string} className CSS class name.
+     * @returns {SVGElement} Battery SVG element.
+     */
+    static createBatteryIcon(level = 'high', className = 'thinking-battery-icon') {
+        let filledCount = 0;
+        if (typeof level === 'boolean') {
+            filledCount = level ? 3 : 0;
+        } else {
+            const normalized = String(level).toLowerCase();
+            if (normalized === 'high' || normalized === 'full') {
+                filledCount = 3;
+            } else if (normalized === 'medium' || normalized === 'med') {
+                filledCount = 2;
+            } else if (normalized === 'low') {
+                filledCount = 1;
+            } else {
+                filledCount = 0;
+            }
+        }
+
+        const svg = DOMUtils.createSvg('svg', {
+            class: className,
+            width: '18',
+            height: '10',
+            viewBox: '0 0 22 11',
+            fill: 'none',
+            stroke: 'currentColor'
+        });
+
+        const body = DOMUtils.createSvg('rect', {
+            x: '1',
+            y: '1',
+            width: '16',
+            height: '9',
+            rx: '1.5',
+            ry: '1.5',
+            'stroke-width': '1.2',
+            fill: 'none'
+        });
+        svg.appendChild(body);
+
+        const tip = DOMUtils.createSvg('path', {
+            d: 'M18.5 3.5 V7.5',
+            'stroke-width': '1.2',
+            'stroke-linecap': 'round'
+        });
+        svg.appendChild(tip);
+
+        const blockPositions = ['2.5', '7.25', '12'];
+        for (let i = 0; i < 3; i++) {
+            const isFilled = i < filledCount;
+            const block = DOMUtils.createSvg('rect', {
+                x: blockPositions[i],
+                y: '2.5',
+                width: '3.25',
+                height: '6',
+                rx: '0.75',
+                ry: '0.75',
+                fill: isFilled ? 'currentColor' : 'none',
+                stroke: isFilled ? 'currentColor' : 'rgba(255, 255, 255, 0.2)',
+                'stroke-width': isFilled ? '0' : '0.5',
+                opacity: isFilled ? '1' : '0.25'
+            });
+            svg.appendChild(block);
+        }
+
+        return svg;
+    }
 }

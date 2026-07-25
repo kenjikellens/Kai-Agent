@@ -326,7 +326,7 @@ class ModelDropdownController {
                                 const checkSvg = DOMUtils.createCheckIcon('check-icon');
                                 flyoutOpt.appendChild(checkSvg);
 
-                                const levelLabels = { high: 'High', medium: 'Med', low: 'Low', minimal: 'Off' };
+                                const levelLabels = { high: 'High', medium: 'Medium', low: 'Low', minimal: 'Off' };
                                 const suffix = levelLabels[lvl.level] ? ` (${levelLabels[lvl.level]})` : '';
                                 if (this.selectedModelText) {
                                     this.selectedModelText.textContent = itemData.label + suffix;
@@ -679,7 +679,7 @@ class ModelDropdownController {
 
             if (modelId.toLowerCase().includes('gemini')) {
                 const lvl = localStorage.getItem(`kai.geminiThinkingLevel.${modelId}`) || localStorage.getItem('kai.geminiThinkingLevel');
-                const levelLabels = { high: 'High', medium: 'Med', low: 'Low', minimal: 'Off' };
+                const levelLabels = { high: 'High', medium: 'Medium', low: 'Low', minimal: 'Off' };
                 if (lvl && levelLabels[lvl]) {
                     cleanDisplay += ` (${levelLabels[lvl]})`;
                 }

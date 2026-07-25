@@ -753,6 +753,10 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                                 <div id="thinking-subsettings" class="setting-sub-panel">
                                     <div id="keep-thinking-expanded-container"></div>
                                     <div id="keep-thinking-finished-container"></div>
+                                    <div class="setting-item" style="margin-top: 8px; margin-bottom: 4px;">
+                                        <label for="thinking-display-style-container" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">Thinking Display Format</label>
+                                        <div id="thinking-display-style-container"></div>
+                                    </div>
                                 </div>
                             </div>
 
