@@ -673,23 +673,55 @@ class SidebarProvider {
                                 <button id="close-settings-btn" class="icon-btn-header" title="Close Settings">✕</button>
                             </div>
                             <div class="settings-content-panel">
-                                <div class="setting-item" id="manage-keys-container">
-                                    <button type="button" class="btn-primary" id="manage-keys-btn">
-                                        ${svgs.manage_keys || ''}
-                                        <span>${translations.manageApiKeys}</span>
+                                <!-- CATEGORY 1: GENERAL SETTINGS -->
+                                <div class="settings-category" id="category-general">
+                                    <button type="button" class="category-header-btn" data-category="general">
+                                        <span class="category-title">${translations.generalSettings || 'General Settings'}</span>
+                                        <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                     </button>
+                                    <div class="category-content">
+                                        <div class="setting-item">
+                                            <label for="language-select-container" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">${translations.language}</label>
+                                            <div id="language-select-container"></div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="setting-item" style="margin-top: 10px; margin-bottom: 10px;">
-                                    <label for="language-select-container" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">${translations.language}</label>
-                                    <div id="language-select-container"></div>
+
+                                <!-- CATEGORY 2: THINKING & REASONING -->
+                                <div class="settings-category" id="category-thinking">
+                                    <button type="button" class="category-header-btn" data-category="thinking">
+                                        <span class="category-title">${translations.thinkingSettings || 'Thinking & Reasoning'}</span>
+                                        <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    </button>
+                                    <div class="category-content">
+                                        <!-- Format setting FIRST (top-level, before show thinking toggle) -->
+                                        <div class="setting-item" style="margin-bottom: 8px;">
+                                            <label for="thinking-display-style-container" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">Thinking Display Format</label>
+                                            <div id="thinking-display-style-container"></div>
+                                        </div>
+                                        <!-- Show thinking toggle SECOND -->
+                                        <div id="show-thinking-toggle-container"></div>
+                                        <!-- Subsettings panel -->
+                                        <div id="thinking-subsettings" class="setting-sub-panel">
+                                            <div id="keep-thinking-expanded-container"></div>
+                                            <div id="keep-thinking-finished-container"></div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div id="show-thinking-toggle-container"></div>
-                                <div id="thinking-subsettings" class="setting-sub-panel">
-                                    <div id="keep-thinking-expanded-container"></div>
-                                    <div id="keep-thinking-finished-container"></div>
-                                    <div class="setting-item" style="margin-top: 8px; margin-bottom: 4px;">
-                                        <label for="thinking-display-style-container" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">Thinking Display Format</label>
-                                        <div id="thinking-display-style-container"></div>
+
+                                <!-- CATEGORY 3: API KEYS & PROVIDERS -->
+                                <div class="settings-category" id="category-apikeys">
+                                    <button type="button" class="category-header-btn" data-category="apikeys">
+                                        <span class="category-title">${translations.apiKeysSettings || 'API Keys & Providers'}</span>
+                                        <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    </button>
+                                    <div class="category-content">
+                                        <div class="setting-item" id="manage-keys-container">
+                                            <button type="button" class="btn-primary btn-hover-only" id="manage-keys-btn">
+                                                ${svgs.manage_keys || ''}
+                                                <span>${translations.manageApiKeys}</span>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

@@ -28,6 +28,9 @@ export interface Translations {
     uploadFile: string;
     planningMode: string;
     planningModeDesc: string;
+    generalSettings: string;
+    thinkingSettings: string;
+    apiKeysSettings: string;
 }
 
 const LOCALES: Record<string, Translations> = {
@@ -55,7 +58,10 @@ const LOCALES: Record<string, Translations> = {
         language: 'Language',
         uploadFile: 'Attach file',
         planningMode: 'Planning Mode',
-        planningModeDesc: 'Enforce step-by-step planning before execution'
+        planningModeDesc: 'Enforce step-by-step planning before execution',
+        generalSettings: 'General Settings',
+        thinkingSettings: 'Thinking & Reasoning',
+        apiKeysSettings: 'API Keys & Providers'
     },
     nl: {
         newChat: 'Nieuwe Chat',

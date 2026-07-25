@@ -60,13 +60,14 @@ body {
   border-top: none;
 }
 
-/* Accordion Header Toggle Button - Borderless, hover highlight only */
+/* Accordion Header Toggle Button - Completely borderless & transparent */
 .category-header-btn {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 8px 10px;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 6px 0;
   background: transparent;
   border: 0;
   border-radius: var(--radius-sm);
@@ -75,18 +76,31 @@ body {
   font-weight: 600;
   cursor: pointer;
   user-select: none;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: color 0.15s ease;
 }
 
 .category-header-btn:hover,
 .category-header-btn:focus-visible {
-  background: var(--bg-hover);
+  background: transparent;
   color: var(--text-bright);
 }
 
+/* Chevron icon placed directly next to title text, visible on hover only */
 .category-chevron {
   color: var(--text-muted);
-  transition: transform 0.2s ease;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.2s ease;
+}
+
+.category-header-btn:hover .category-chevron,
+.category-header-btn:focus-visible .category-chevron {
+  opacity: 1;
+  visibility: visible;
+}
+
+.settings-category.collapsed .category-chevron {
+  transform: rotate(-90deg);
 }
 
 .settings-category.collapsed .category-chevron {

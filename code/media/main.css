@@ -1054,6 +1054,97 @@ button:disabled {
 }
 
 /* ==========================================================================
+   SETTINGS CATEGORIES & ACCORDIONS (.settings-category)
+   Collapsible setting categories with persistent top divider lines
+   and text-adjacent chevrons that fade in on hover only.
+   ========================================================================== */
+
+/* Settings category wrapper with top divider line */
+.settings-category {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--app-border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+.settings-category:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+/* Category header toggle button - Transparent background, hover chevron only */
+.category-header-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 4px 0;
+  margin-bottom: 4px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--app-radius-sm, 4px);
+  color: var(--vscode-foreground, #ffffff);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease;
+}
+
+.settings-category.collapsed .category-header-btn {
+  margin-bottom: 2px;
+}
+
+.category-header-btn:hover,
+.category-header-btn:focus-visible {
+  background: transparent;
+  color: var(--vscode-foreground, #ffffff);
+}
+
+/* Chevron icon next to category title, hidden by default, visible on hover only */
+.category-chevron {
+  color: var(--app-muted, #888888);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.2s ease;
+}
+
+.category-header-btn:hover .category-chevron,
+.category-header-btn:focus-visible .category-chevron {
+  opacity: 1;
+  visibility: visible;
+}
+
+.settings-category.collapsed .category-chevron {
+  transform: rotate(-90deg);
+}
+
+/* Category Content Container */
+.category-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-category.collapsed .category-content {
+  display: none !important;
+}
+
+/* Borderless Hover-Only Button (Matching Tool Call Card Button Style) */
+.btn-hover-only {
+  background: transparent;
+  border: 1px solid transparent;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-hover-only:hover,
+.btn-hover-only:focus-visible {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--app-border-subtle, rgba(255, 255, 255, 0.12));
+}
+
+/* ==========================================================================
    CUSTOM SELECT DROPDOWN COMPONENT (.custom-select-container)
    Standalone custom dropdown used in Settings for Language Select & Thinking Display Format,
    matching the dark aesthetic, borders, hover states, and checkmarks of thinking dropdowns.

@@ -121,8 +121,8 @@ class SettingsController {
         if (styleContainer && typeof CustomSelectComponent !== 'undefined') {
             const storedStyle = localStorage.getItem('kai.thinkingDisplayStyle') || 'both';
             const styleOptions = [
-                { value: 'both', label: 'Battery Icon + Text' },
-                { value: 'icon', label: 'Battery Icon Only' },
+                { value: 'both', label: 'Icon + Text' },
+                { value: 'icon', label: 'Icon Only' },
                 { value: 'text', label: 'Text Only' }
             ];
             this.thinkingStyleComponent = new CustomSelectComponent({
@@ -142,6 +142,16 @@ class SettingsController {
      * Registers event listeners for settings controls and keys panel.
      */
     initEventListeners() {
+        const categoryBtns = document.querySelectorAll('.category-header-btn');
+        categoryBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const categoryEl = btn.closest('.settings-category');
+                if (categoryEl) {
+                    categoryEl.classList.toggle('collapsed');
+                }
+            });
+        });
+
         if (this.geminiThinkingLevelInput) {
             this.geminiThinkingLevelInput.addEventListener('change', () => {
                 const val = this.geminiThinkingLevelInput.value;
