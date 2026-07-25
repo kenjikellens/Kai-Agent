@@ -83,8 +83,18 @@ class AgentExecutor {
         const isFirstMessage = messages.filter((m) => m.role === 'user' || m.role === 'assistant').length === 0;
         let contextPrefix = '';
         if (planningMode) {
-            contextPrefix += `[PLANNING MODE ACTIVE]\n`;
-            contextPrefix += `You are operating in strict Planning Mode. Before invoking tools or modifying any files, you MUST first outline a clear, structured step-by-step implementation plan explaining your proposed changes and approach. Wait for user approval before making invasive modifications.\n\n`;
+            contextPrefix += `[STRICT PLANNING MODE ACTIVE]\n`;
+            contextPrefix += `You are operating in strict Planning Mode. Follow this protocol strictly:\n`;
+            contextPrefix += `1. RESEARCH PHASE: First, inspect the codebase using read-only tools (view_file, list_dir, grep_search) to understand context.\n`;
+            contextPrefix += `2. ARTIFACT CREATION: Create a dedicated directory '.kai/artifacts/' in the workspace if it does not exist, and write a comprehensive, structured implementation plan to '.kai/artifacts/implementation_plan.md'.\n`;
+            contextPrefix += `3. ARTIFACT FORMATTING: The plan file MUST follow standard markdown headings:\n`;
+            contextPrefix += `   # Implementation Plan: [Goal Description]\n`;
+            contextPrefix += `   ## User Review Required (highlight critical choices / breaking changes)\n`;
+            contextPrefix += `   ## Open Questions\n`;
+            contextPrefix += `   ## Proposed Changes (grouped by component with [MODIFY] [NEW] [DELETE] file scheme links)\n`;
+            contextPrefix += `   ## Verification Plan (Automated and Manual checks)\n`;
+            contextPrefix += `4. CHAT OUTPUT: DO NOT dump the full plan into the chat. In the chat message, output ONLY a brief 2-sentence summary pointing the user to the artifact link: '[Implementation Plan](file:///.kai/artifacts/implementation_plan.md)'.\n`;
+            contextPrefix += `5. GUARDRAIL: Do NOT make any code modifications or run invasive commands until the user reviews and approves the artifact plan.\n\n`;
         }
         if (isFirstMessage && this.workspacePath && fs.existsSync(this.workspacePath)) {
             try {
