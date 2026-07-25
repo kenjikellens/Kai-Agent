@@ -178,6 +178,7 @@ class LMStudioClient {
             if (thinking) {
                 requestParams.thinking = true;
                 requestParams.enable_thinking = true;
+                requestParams.reasoning_effort = "high";
                 requestParams.chat_template_kwargs = {
                     enable_thinking: true
                 };
@@ -253,6 +254,7 @@ class LMStudioClient {
             if (thinking) {
                 requestParams.thinking = true;
                 requestParams.enable_thinking = true;
+                requestParams.reasoning_effort = "high";
                 requestParams.chat_template_kwargs = {
                     enable_thinking: true
                 };

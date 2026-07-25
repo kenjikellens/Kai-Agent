@@ -1,14 +1,29 @@
 import { ILLMProvider } from './ILLMProvider';
 import { GeminiClient } from './GeminiClient';
+import { MistralClient } from './MistralClient';
+import { CohereClient } from './CohereClient';
+import { CerebrasClient } from './CerebrasClient';
+import { ZhipuClient } from './ZhipuClient';
+import { OmniRouteClient } from './OmniRouteClient';
 import { FreeProviderClient } from './FreeProviderClient';
 import { LMStudioClient } from '../LMStudioClient';
+
+/**
+ * Singleton/Factory instances for dedicated cloud providers.
+ */
+const mistralClient = new MistralClient();
+const cohereClient = new CohereClient();
+const cerebrasClient = new CerebrasClient();
+const zhipuClient = new ZhipuClient();
+const omniRouteClient = new OmniRouteClient();
+const freeProviderClient = new FreeProviderClient();
 
 /**
  * LLMProviderFactory instantiates and resolves the appropriate ILLMProvider strategy for a target model ID.
  */
 export class LLMProviderFactory {
     /**
-     * Resolves the provider implementation for a given model ID.
+     * Resolves the dedicated provider implementation for a given model ID.
      * @param model Model ID string (e.g. "gemini-3.6-flash", "mistral/mistral-small-latest", or "gemma-4-e2b").
      * @param serverUrl Optional base server URL for LM Studio.
      * @param apiKey Optional API key for Gemini.
@@ -22,13 +37,29 @@ export class LLMProviderFactory {
             return new GeminiClient(apiKey);
         }
 
-        // 2. Free Tier Cloud Providers (Mistral, Cohere, Cerebras, Zhipu GLM, OmniRoute)
-        const freeProviderClient = new FreeProviderClient();
+        // 2. Specific Cloud Providers (OOP dedicated class strategies)
+        if (mistralClient.supportsModel(model)) {
+            return mistralClient;
+        }
+        if (cohereClient.supportsModel(model)) {
+            return cohereClient;
+        }
+        if (cerebrasClient.supportsModel(model)) {
+            return cerebrasClient;
+        }
+        if (zhipuClient.supportsModel(model)) {
+            return zhipuClient;
+        }
+        if (omniRouteClient.supportsModel(model) || cleanModel.startsWith('omniroute/')) {
+            return omniRouteClient;
+        }
+
+        // 3. Composite Free Provider Fallback
         if (freeProviderClient.resolveFreeProvider(model)) {
             return freeProviderClient;
         }
 
-        // 3. Local LM Studio Instance
+        // 4. Local LM Studio Instance
         return new LMStudioClient(serverUrl || 'http://localhost:1234/v1', apiKey);
     }
 }

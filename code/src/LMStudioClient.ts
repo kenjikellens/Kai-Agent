@@ -178,6 +178,7 @@ export class LMStudioClient implements ILLMProvider {
             if (thinking) {
                 requestParams.thinking = true;
                 requestParams.enable_thinking = true;
+                requestParams.reasoning_effort = "high";
                 requestParams.chat_template_kwargs = {
                     enable_thinking: true
                 };
@@ -266,6 +267,7 @@ export class LMStudioClient implements ILLMProvider {
             if (thinking) {
                 requestParams.thinking = true;
                 requestParams.enable_thinking = true;
+                requestParams.reasoning_effort = "high";
                 requestParams.chat_template_kwargs = {
                     enable_thinking: true
                 };
