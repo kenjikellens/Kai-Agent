@@ -763,7 +763,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                                     </button>
                                     <div class="category-content">
                                         <!-- Format setting FIRST (top-level, before show thinking toggle) -->
-                                        <div class="setting-item" style="margin-bottom: 8px;">
+                                        <div class="setting-item">
                                             <label for="thinking-display-style-container" class="setting-label">${translations.thinkingDisplayStyle}</label>
                                             <div id="thinking-display-style-container"></div>
                                         </div>

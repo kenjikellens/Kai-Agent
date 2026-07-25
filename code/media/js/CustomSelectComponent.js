@@ -220,7 +220,7 @@ class CustomSelectComponent {
      * @param {MouseEvent} e Mouse click event.
      */
     handleOutsideClick(e) {
-        if (this.isOpen && this.element && !this.element.contains(e.target)) {
+        if (this.isOpen && this.element && !this.element.contains(e.target) && !this.menuEl.contains(e.target)) {
             this.close();
         }
     }

@@ -1068,11 +1068,13 @@ button:disabled {
   scrollbar-gutter: stable;
 }
 
-/* Settings category wrapper - Clean, fixed static layout without top border line */
+/* Settings category wrapper - 1px minimal distance between category containers */
 .settings-category {
   position: relative;
-  margin-top: 4px;
+  margin-top: 1px;
+  margin-bottom: 0;
   padding-top: 0;
+  padding-bottom: 0;
   border-top: none;
   box-sizing: border-box;
   width: 100%;
@@ -1096,7 +1098,7 @@ button:disabled {
   justify-content: flex-start;
   gap: 6px;
   padding: 2px 0;
-  margin-bottom: 2px;
+  margin-bottom: 0;
   background: transparent;
   border: 0;
   border-radius: var(--app-radius-sm, 4px);
@@ -1114,10 +1116,10 @@ button:disabled {
   color: var(--vscode-foreground, #ffffff);
 }
 
-/* Category Title - Uppercase, muted grey, refined spacing */
+/* Category Title - Uppercase, muted grey, refined larger text size */
 .category-title {
   text-transform: uppercase;
-  font-size: 0.72rem;
+  font-size: 0.80rem;
   font-weight: 600;
   letter-spacing: 0.6px;
   color: var(--app-muted, #888888);
@@ -1151,11 +1153,13 @@ button:disabled {
   transform: rotate(-90deg);
 }
 
-/* Category Content Container */
+/* Category Content Container - Generous internal spacing BEFORE first item and AFTER last item */
 .category-content {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  padding-top: 10px;
+  padding-bottom: 14px;
 }
 
 .settings-category.collapsed .category-content {
