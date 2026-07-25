@@ -955,6 +955,7 @@ button:disabled {
 
 .dropdown-item.selected,
 .flyout-option.selected {
+  color: var(--vscode-foreground, #ffffff);
   font-weight: 500;
 }
 
@@ -1015,6 +1016,7 @@ button:disabled {
 }
 
 .dropdown-item.selected {
+  color: var(--vscode-foreground, #ffffff);
   font-weight: 500;
 }
 
