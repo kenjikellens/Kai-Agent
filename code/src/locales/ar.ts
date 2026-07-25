@@ -10,7 +10,7 @@ export const ar: Translations = {
     history: 'السجل',
     settings: 'الإعدادات',
     manageApiKeys: 'إدارة مفاتيح API',
-    showThinking: 'إظهار عملية التفكير',
+    showThinking: 'Verbose (إظهار عملية التفكير)',
     keepThinkingGenerating: 'إبقاء التفكير موسعاً أثناء التوليد',
     keepThinkingFinished: 'إبقاء التفكير موسعاً بعد الانتهاء',
     thinkingToggle: 'التفكير',

@@ -10,7 +10,7 @@ export const hi: Translations = {
     history: 'इतिहास',
     settings: 'सेटिंग्स',
     manageApiKeys: 'API कुंजी प्रबंधित करें',
-    showThinking: 'सोचने की प्रक्रिया दिखाएं',
+    showThinking: 'Verbose (सोचने की प्रक्रिया दिखाएं)',
     keepThinkingGenerating: 'जनरेट करते समय सोच को विस्तारित रखें',
     keepThinkingFinished: 'विचार पूरा होने के बाद भी विस्तारित रखें',
     thinkingToggle: 'सोच',

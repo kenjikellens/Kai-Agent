@@ -47,11 +47,13 @@ body {
   color: var(--text-muted);
 }
 
-/* Category Accordion Section with persistent divider line ABOVE category title */
+/* Category Accordion Section without top border line */
 .settings-category {
   margin-top: 6px;
-  padding-top: 6px;
-  border-top: 1px solid var(--border-subtle);
+  padding-top: 4px;
+  border-top: none;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .settings-category:first-child {

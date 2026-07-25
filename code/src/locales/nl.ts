@@ -10,7 +10,7 @@ export const nl: Translations = {
     history: 'Geschiedenis',
     settings: 'Instellingen',
     manageApiKeys: 'API Sleutels Beheren',
-    showThinking: 'Denkproces tonen',
+    showThinking: 'Verbose (Denkproces tonen)',
     keepThinkingGenerating: 'Denkproces uitgeklapt houden tijdens genereren',
     keepThinkingFinished: 'Denkproces uitgeklapt houden na voltooien',
     thinkingToggle: 'Denken',

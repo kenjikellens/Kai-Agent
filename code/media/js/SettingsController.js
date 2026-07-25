@@ -96,13 +96,9 @@ class SettingsController {
         const langContainer = document.getElementById('language-select-container');
         if (langContainer && typeof CustomSelectComponent !== 'undefined') {
             const initialLang = window.KAI_LANG || 'auto';
-            const langOptions = [
+            const langOptions = window.KAI_SUPPORTED_LANGUAGES || [
                 { value: 'auto', label: 'Auto (VS Code)' },
-                { value: 'en', label: 'English' },
-                { value: 'nl', label: 'Nederlands' },
-                { value: 'de', label: 'Deutsch' },
-                { value: 'fr', label: 'Français' },
-                { value: 'es', label: 'Español' }
+                { value: 'en', label: 'English' }
             ];
             this.languageSelectComponent = new CustomSelectComponent({
                 container: langContainer,

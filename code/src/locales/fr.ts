@@ -10,7 +10,7 @@ export const fr: Translations = {
     history: 'Historique',
     settings: 'Paramètres',
     manageApiKeys: 'Gérer les clés API',
-    showThinking: 'Afficher le processus de réflexion',
+    showThinking: 'Verbose (Afficher le processus de réflexion)',
     keepThinkingGenerating: 'Garder la réflexion ouverte pendant la génération',
     keepThinkingFinished: 'Garder la réflexion ouverte une fois terminée',
     thinkingToggle: 'Réflexion',

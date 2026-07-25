@@ -147,6 +147,11 @@ class CustomSelectComponent {
     open() {
         if (this.isOpen) return;
         this.isOpen = true;
+        this.element.classList.add('open');
+        const parentCategory = this.element.closest('.settings-category');
+        if (parentCategory) {
+            parentCategory.classList.add('has-open-select');
+        }
         this.menuEl.classList.remove('hidden');
         this.triggerBtn.setAttribute('aria-expanded', 'true');
         this.triggerBtn.classList.add('active');
@@ -158,6 +163,11 @@ class CustomSelectComponent {
     close() {
         if (!this.isOpen) return;
         this.isOpen = false;
+        this.element.classList.remove('open');
+        const parentCategory = this.element.closest('.settings-category');
+        if (parentCategory) {
+            parentCategory.classList.remove('has-open-select');
+        }
         this.menuEl.classList.add('hidden');
         this.triggerBtn.setAttribute('aria-expanded', 'false');
         this.triggerBtn.classList.remove('active');

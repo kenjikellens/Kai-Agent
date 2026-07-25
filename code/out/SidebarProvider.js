@@ -575,6 +575,7 @@ class SidebarProvider {
                     window.KAI_SVGS = ${JSON.stringify(svgs)};
                     window.KAI_I18N = ${JSON.stringify(translations)};
                     window.KAI_LANG = "${activeLang}";
+                    window.KAI_SUPPORTED_LANGUAGES = ${JSON.stringify(i18n_1.I18nManager.getSupportedLanguages())};
                 </script>
             </head>
             <body>
@@ -700,7 +701,9 @@ class SidebarProvider {
                                             <div id="thinking-display-style-container"></div>
                                         </div>
                                         <!-- Show thinking toggle SECOND -->
-                                        <div id="show-thinking-toggle-container"></div>
+                                        <div class="setting-item">
+                                            <div id="show-thinking-toggle-container"></div>
+                                        </div>
                                         <!-- Subsettings panel -->
                                         <div id="thinking-subsettings" class="setting-sub-panel">
                                             <div id="keep-thinking-expanded-container"></div>

@@ -10,7 +10,7 @@ export const zh: Translations = {
     history: '历史记录',
     settings: '设置',
     manageApiKeys: '管理 API 密钥',
-    showThinking: '显示思考过程',
+    showThinking: 'Verbose (显示思考过程)',
     keepThinkingGenerating: '生成时保持思考过程展开',
     keepThinkingFinished: '思考完成后保持展开',
     thinkingToggle: '思考',

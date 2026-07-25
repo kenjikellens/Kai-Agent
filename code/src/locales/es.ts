@@ -10,7 +10,7 @@ export const es: Translations = {
     history: 'Historial',
     settings: 'Configuración',
     manageApiKeys: 'Gestionar Claves API',
-    showThinking: 'Mostrar proceso de pensamiento',
+    showThinking: 'Verbose (Mostrar proceso de pensamiento)',
     keepThinkingGenerating: 'Mantener pensamiento abierto mientras genera',
     keepThinkingFinished: 'Mantener pensamiento abierto al finalizar',
     thinkingToggle: 'Pensamiento',

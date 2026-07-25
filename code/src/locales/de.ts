@@ -10,7 +10,7 @@ export const de: Translations = {
     history: 'Verlauf',
     settings: 'Einstellungen',
     manageApiKeys: 'API-Schlüssel verwalten',
-    showThinking: 'Denkprozess anzeigen',
+    showThinking: 'Verbose (Denkprozess anzeigen)',
     keepThinkingGenerating: 'Denkprozess während der Generierung ausgeklappt lassen',
     keepThinkingFinished: 'Denkprozess nach Beendung ausgeklappt lassen',
     thinkingToggle: 'Denken',
