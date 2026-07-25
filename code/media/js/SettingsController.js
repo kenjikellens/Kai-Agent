@@ -93,8 +93,28 @@ class SettingsController {
 
         this.updateSubsettingsVisibility();
 
-        if (this.languageSelectInput && window.KAI_LANG) {
-            this.languageSelectInput.value = window.KAI_LANG;
+        const langContainer = document.getElementById('language-select-container');
+        if (langContainer && typeof CustomSelectComponent !== 'undefined') {
+            const initialLang = window.KAI_LANG || 'auto';
+            const langOptions = [
+                { value: 'auto', label: 'Auto (VS Code)' },
+                { value: 'en', label: 'English' },
+                { value: 'nl', label: 'Nederlands' },
+                { value: 'de', label: 'Deutsch' },
+                { value: 'fr', label: 'Français' },
+                { value: 'es', label: 'Español' }
+            ];
+            this.languageSelectComponent = new CustomSelectComponent({
+                container: langContainer,
+                id: 'language-select-input',
+                options: langOptions,
+                value: initialLang,
+                onChange: (selectedLang) => {
+                    this.ipcBridge.updateSettings({
+                        language: selectedLang
+                    });
+                }
+            });
         }
     }
 
@@ -112,14 +132,6 @@ class SettingsController {
         if (this.apiKeyInput) {
             this.apiKeyInput.addEventListener('change', () => {
                 this.saveAllApiKeys();
-            });
-        }
-
-        if (this.languageSelectInput) {
-            this.languageSelectInput.addEventListener('change', () => {
-                this.ipcBridge.updateSettings({
-                    language: this.languageSelectInput.value
-                });
             });
         }
 

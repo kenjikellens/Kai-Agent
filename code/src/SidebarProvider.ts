@@ -607,6 +607,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         const ipcBridgeUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'WebviewIPCBridge.js'));
         const fileSummaryWidgetUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'FileSummaryWidget.js'));
         const toggleComponentUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'ToggleComponent.js'));
+        const customSelectComponentUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'CustomSelectComponent.js'));
         const modelDropdownControllerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'ModelDropdownController.js'));
         const settingsControllerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'SettingsController.js'));
         const historyManagerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'HistoryManager.js'));
@@ -745,15 +746,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                                     </button>
                                 </div>
                                 <div class="setting-item" style="margin-top: 10px; margin-bottom: 10px;">
-                                    <label for="language-select-input" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">${translations.language}</label>
-                                    <select id="language-select-input" style="width: 100%; background: var(--app-input-bg); color: var(--app-fg); border: 1px solid var(--app-input-border); border-radius: var(--app-radius-sm); padding: 4px;">
-                                        <option value="auto">Auto (VS Code)</option>
-                                        <option value="en">English</option>
-                                        <option value="nl">Nederlands</option>
-                                        <option value="de">Deutsch</option>
-                                        <option value="fr">Français</option>
-                                        <option value="es">Español</option>
-                                    </select>
+                                    <label for="language-select-container" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">${translations.language}</label>
+                                    <div id="language-select-container"></div>
                                 </div>
                                 <div id="show-thinking-toggle-container"></div>
                                 <div id="thinking-subsettings" class="setting-sub-panel">
@@ -789,6 +783,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                 <script nonce="${nonce}" src="${ipcBridgeUri}"></script>
                 <script nonce="${nonce}" src="${fileSummaryWidgetUri}"></script>
                 <script nonce="${nonce}" src="${toggleComponentUri}"></script>
+                <script nonce="${nonce}" src="${customSelectComponentUri}"></script>
                 <script nonce="${nonce}" src="${modelDropdownControllerUri}"></script>
                 <script nonce="${nonce}" src="${settingsControllerUri}"></script>
                 <script nonce="${nonce}" src="${historyManagerUri}"></script>

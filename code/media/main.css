@@ -1030,6 +1030,94 @@ button:disabled {
   font-style: italic;
 }
 
+/* ==========================================================================
+   CUSTOM SELECT DROPDOWN COMPONENT (.custom-select-container)
+   Standalone custom dropdown used in Settings for Language Select,
+   matching the dark aesthetic, borders, hover states, and checkmarks of thinking dropdowns.
+   ========================================================================== */
+
+/* Outer container positioning wrapper for custom select component */
+.custom-select-container {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Custom Select trigger button styling */
+.custom-select-trigger {
+  width: 100%;
+  height: 28px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  background: var(--app-input-bg, rgba(255, 255, 255, 0.04));
+  color: var(--app-fg, #cccccc);
+  border: 1px solid var(--app-input-border, rgba(255, 255, 255, 0.12));
+  border-radius: var(--app-radius-sm, 4px);
+  font-size: 0.75rem;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.custom-select-trigger:hover,
+.custom-select-trigger:focus,
+.custom-select-trigger.active {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--app-border-strong, rgba(255, 255, 255, 0.25));
+  color: var(--vscode-foreground, #ffffff);
+}
+
+/* Label text container within custom select trigger button */
+.custom-select-label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  flex: 1 1 auto;
+  text-align: left;
+}
+
+/* Chevron icon indicator inside custom select trigger button */
+.custom-select-chevron {
+  color: var(--app-muted);
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+
+/* Custom Select popup menu panel container matching thinking dropdown styling */
+.custom-select-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%;
+  z-index: 10000;
+  background: var(--vscode-dropdown-background, #252526);
+  border: 1px solid var(--app-border-strong, rgba(255, 255, 255, 0.2));
+  border-radius: var(--app-radius-md, 6px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  padding: 3px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.custom-select-menu.hidden {
+  display: none !important;
+}
+
+/* Custom Select option item button styling, reusing dropdown-item style tokens */
+.custom-select-option {
+  width: 100%;
+  margin: 0;
+  border-radius: var(--app-radius-sm, 4px);
+}
+
 .toggle-container,
 .switch-container {
   display: flex;
