@@ -1059,13 +1059,25 @@ button:disabled {
    and text-adjacent chevrons that fade in on hover only.
    ========================================================================== */
 
-/* Settings container & panel layout - Stable scrollbar gutter prevents horizontal jumping on expand/collapse */
+/* Settings panel header & container layout - Clean, zero lopsided margins */
+.settings-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 4px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--vscode-foreground, #ffffff);
+}
+
 .settings-container,
 .settings-content-panel {
   box-sizing: border-box;
   width: 100%;
-  overflow-x: hidden;
-  scrollbar-gutter: stable;
+  padding: 2px 0;
+  margin: 0;
 }
 
 /* Settings category wrapper - 1px minimal distance between category containers */
@@ -1090,18 +1102,19 @@ button:disabled {
   border-top: none;
 }
 
-/* Category header toggle button - Transparent background, fixed static spacing */
+/* Category header toggle button - Completely borderless & transparent, hover chevron only */
 .category-header-btn {
   width: 100%;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: 6px;
-  padding: 2px 0;
+  padding: 4px 0;
   margin-bottom: 0;
   background: transparent;
   border: 0;
-  border-radius: var(--app-radius-sm, 4px);
+  border-radius: 0;
   color: var(--vscode-foreground, #ffffff);
   font-size: 0.82rem;
   font-weight: 600;
@@ -1113,6 +1126,7 @@ button:disabled {
 .category-header-btn:hover,
 .category-header-btn:focus-visible {
   background: transparent;
+  border: 0;
   color: var(--vscode-foreground, #ffffff);
 }
 
@@ -1153,13 +1167,13 @@ button:disabled {
   transform: rotate(-90deg);
 }
 
-/* Category Content Container - Generous internal spacing BEFORE first item and AFTER last item */
+/* Category Content Container - Internal padding on all sides (top, bottom, left, right) for all items */
 .category-content {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding-top: 12px;
-  padding-bottom: 16px;
+  gap: 10px;
+  padding: 16px 6px 20px 6px;
+  box-sizing: border-box;
 }
 
 .category-content .setting-item {
