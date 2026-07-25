@@ -26,7 +26,59 @@ class CustomSelectComponent {
         this.menuEl = null;
 
         this.handleOutsideClick = this.handleOutsideClick.bind(this);
+        this.handleScroll = this.handleScroll.bind(this);
         this.render();
+    }
+
+    /**
+     * Updates fixed popup menu positioning based on trigger button bounding rectangle.
+     */
+    updatePosition() {
+        if (!this.isOpen || !this.triggerBtn || !this.menuEl) return;
+        const rect = this.triggerBtn.getBoundingClientRect();
+        this.menuEl.style.position = 'fixed';
+        this.menuEl.style.top = `${rect.bottom + 4}px`;
+        this.menuEl.style.left = `${rect.left}px`;
+        this.menuEl.style.width = `${rect.width}px`;
+        this.menuEl.style.zIndex = '99999';
+    }
+
+    /**
+     * Opens the dropdown options popup menu.
+     */
+    open() {
+        if (this.isOpen) return;
+        this.isOpen = true;
+        this.element.classList.add('open');
+        this.updatePosition();
+        this.menuEl.classList.remove('hidden');
+        this.triggerBtn.setAttribute('aria-expanded', 'true');
+        this.triggerBtn.classList.add('active');
+        window.addEventListener('scroll', this.handleScroll, true);
+        window.addEventListener('resize', this.handleScroll, true);
+    }
+
+    /**
+     * Closes the dropdown options popup menu.
+     */
+    close() {
+        if (!this.isOpen) return;
+        this.isOpen = false;
+        this.element.classList.remove('open');
+        this.menuEl.classList.add('hidden');
+        this.triggerBtn.setAttribute('aria-expanded', 'false');
+        this.triggerBtn.classList.remove('active');
+        window.removeEventListener('scroll', this.handleScroll, true);
+        window.removeEventListener('resize', this.handleScroll, true);
+    }
+
+    /**
+     * Scroll event handler to close popup on container scroll.
+     */
+    handleScroll() {
+        if (this.isOpen) {
+            this.close();
+        }
     }
 
     /**
@@ -139,38 +191,6 @@ class CustomSelectComponent {
         } else {
             this.open();
         }
-    }
-
-    /**
-     * Opens the dropdown options popup menu.
-     */
-    open() {
-        if (this.isOpen) return;
-        this.isOpen = true;
-        this.element.classList.add('open');
-        const parentCategory = this.element.closest('.settings-category');
-        if (parentCategory) {
-            parentCategory.classList.add('has-open-select');
-        }
-        this.menuEl.classList.remove('hidden');
-        this.triggerBtn.setAttribute('aria-expanded', 'true');
-        this.triggerBtn.classList.add('active');
-    }
-
-    /**
-     * Closes the dropdown options popup menu.
-     */
-    close() {
-        if (!this.isOpen) return;
-        this.isOpen = false;
-        this.element.classList.remove('open');
-        const parentCategory = this.element.closest('.settings-category');
-        if (parentCategory) {
-            parentCategory.classList.remove('has-open-select');
-        }
-        this.menuEl.classList.add('hidden');
-        this.triggerBtn.setAttribute('aria-expanded', 'false');
-        this.triggerBtn.classList.remove('active');
     }
 
     /**

@@ -47,10 +47,11 @@ body {
   color: var(--text-muted);
 }
 
-/* Category Accordion Section without top border line */
+/* Category Accordion Section without top border line - Fixed static margins */
 .settings-category {
-  margin-top: 6px;
-  padding-top: 4px;
+  position: relative;
+  margin-top: 4px;
+  padding-top: 0;
   border-top: none;
   box-sizing: border-box;
   width: 100%;
@@ -62,15 +63,15 @@ body {
   border-top: none;
 }
 
-/* Accordion Header Toggle Button - Completely borderless & transparent */
+/* Accordion Header Toggle Button - Completely borderless & transparent, fixed static spacing */
 .category-header-btn {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: 6px;
-  padding: 4px 0;
-  margin-bottom: 4px;
+  padding: 2px 0;
+  margin-bottom: 2px;
   background: transparent;
   border: 0;
   border-radius: var(--radius-sm);
@@ -80,10 +81,6 @@ body {
   cursor: pointer;
   user-select: none;
   transition: color 0.15s ease;
-}
-
-.settings-category.collapsed .category-header-btn {
-  margin-bottom: 2px;
 }
 
 .category-header-btn:hover,

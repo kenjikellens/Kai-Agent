@@ -1068,14 +1068,18 @@ button:disabled {
   scrollbar-gutter: stable;
 }
 
-/* Settings category wrapper - Clean layout without top border line */
+/* Settings category wrapper - Clean, fixed static layout without top border line */
 .settings-category {
-  margin-top: 6px;
-  padding-top: 4px;
+  position: relative;
+  margin-top: 4px;
+  padding-top: 0;
   border-top: none;
   box-sizing: border-box;
   width: 100%;
-  overflow-x: hidden;
+}
+
+.settings-category.has-open-select {
+  z-index: 10000;
 }
 
 .settings-category:first-child {
@@ -1084,20 +1088,15 @@ button:disabled {
   border-top: none;
 }
 
-.settings-category.collapsed {
-  margin-top: 2px;
-  padding-top: 0;
-}
-
-/* Category header toggle button - Transparent background, hover chevron only */
+/* Category header toggle button - Transparent background, fixed static spacing */
 .category-header-btn {
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: 6px;
-  padding: 4px 0;
-  margin-bottom: 4px;
+  padding: 2px 0;
+  margin-bottom: 2px;
   background: transparent;
   border: 0;
   border-radius: var(--app-radius-sm, 4px);
@@ -1107,11 +1106,6 @@ button:disabled {
   cursor: pointer;
   user-select: none;
   transition: color 0.15s ease;
-}
-
-.settings-category.collapsed .category-header-btn {
-  margin-bottom: 0;
-  padding: 2px 0;
 }
 
 .category-header-btn:hover,
