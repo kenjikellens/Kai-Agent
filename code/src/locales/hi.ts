@@ -1,0 +1,35 @@
+import { Translations } from '../i18n';
+
+/**
+ * Hindi (हिन्दी) translation dictionary.
+ */
+export const hi: Translations = {
+    newChat: 'नया चैट',
+    previousChats: 'पिछला चैट',
+    noPreviousChats: 'कोई पिछला चैट नहीं मिला।',
+    history: 'इतिहास',
+    settings: 'सेटिंग्स',
+    manageApiKeys: 'API कुंजी प्रबंधित करें',
+    showThinking: 'सोचने की प्रक्रिया दिखाएं',
+    keepThinkingGenerating: 'जनरेट करते समय सोच को विस्तारित रखें',
+    keepThinkingFinished: 'विचार पूरा होने के बाद भी विस्तारित रखें',
+    thinkingToggle: 'सोच',
+    thinkingProcess: 'सोचने की प्रक्रिया',
+    thinkingText: 'सोच रहा है...',
+    messagePlaceholder: 'AI एजेंट को संदेश भेजें...',
+    lmStudioHeader: 'LM Studio',
+    checkingServer: 'सर्वर की जाँच की जा रही है...',
+    connected: 'कनेक्टेड',
+    offline: 'ऑफ़लाइन',
+    cloudProvidersHeader: 'क्लाउड और मुफ़्त प्रदाता',
+    selectModel: 'मॉडल चुनें',
+    noWorkspaceError: 'कोई सक्रिय कार्यक्षेत्र नहीं मिला। कृपया पहले एक फ़ोल्डर खोलें।',
+    language: 'भाषा',
+    uploadFile: 'फ़ाइल संलग्न करें',
+    planningMode: 'योजना मोड',
+    planningModeDesc: 'निष्पादन से पहले चरण-दर-चरण योजना लागू करें',
+    generalSettings: 'सामान्य सेटिंग्स',
+    thinkingSettings: 'सोच और विचारशीलता',
+    apiKeysSettings: 'API कुंजियाँ और प्रदाता',
+    thinkingDisplayStyle: 'सोचने का प्रदर्शन प्रारूप'
+};

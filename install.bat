@@ -9,7 +9,10 @@ if exist "%USERPROFILE%\.vscode\extensions\local-llm.lm-studio-agent-0.0.1" rmdi
 if exist "%USERPROFILE%\.antigravity\extensions\local-llm.lm-studio-agent-0.0.1" rmdir /S /Q "%USERPROFILE%\.antigravity\extensions\local-llm.lm-studio-agent-0.0.1"
 if exist "%DEST_VSCODE%" rmdir /S /Q "%DEST_VSCODE%"
 if exist "%DEST_ANTIGRAVITY%" rmdir /S /Q "%DEST_ANTIGRAVITY%"
+echo.
+echo Running node...
 
+node code/node_modules/typescript/bin/tsc -p code
 echo.
 echo Copying to VS Code extensions directory: %DEST_VSCODE%
 if not exist "%DEST_VSCODE%" mkdir "%DEST_VSCODE%"

@@ -696,7 +696,7 @@ class SidebarProvider {
                                     <div class="category-content">
                                         <!-- Format setting FIRST (top-level, before show thinking toggle) -->
                                         <div class="setting-item" style="margin-bottom: 8px;">
-                                            <label for="thinking-display-style-container" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">Thinking Display Format</label>
+                                            <label for="thinking-display-style-container" class="setting-label">${translations.thinkingDisplayStyle}</label>
                                             <div id="thinking-display-style-container"></div>
                                         </div>
                                         <!-- Show thinking toggle SECOND -->
@@ -717,7 +717,7 @@ class SidebarProvider {
                                     </button>
                                     <div class="category-content">
                                         <div class="setting-item" id="manage-keys-container">
-                                            <button type="button" class="btn-primary btn-hover-only" id="manage-keys-btn">
+                                            <button type="button" class="btn-primary" id="manage-keys-btn">
                                                 ${svgs.manage_keys || ''}
                                                 <span>${translations.manageApiKeys}</span>
                                             </button>

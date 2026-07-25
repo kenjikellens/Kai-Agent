@@ -1102,6 +1102,25 @@ button:disabled {
   color: var(--vscode-foreground, #ffffff);
 }
 
+/* Category Title - Uppercase, muted grey, refined spacing */
+.category-title {
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  color: var(--app-muted, #888888);
+}
+
+/* Setting Item Label & Switch Label - Thinner font weight (400) and soft lighter color */
+.setting-item label,
+.setting-label,
+.switch-label {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 4px;
+}
+
 /* Chevron icon next to category title, hidden by default, visible on hover only */
 .category-chevron {
   color: var(--app-muted, #888888);

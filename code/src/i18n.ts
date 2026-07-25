@@ -31,6 +31,7 @@ export interface Translations {
     generalSettings: string;
     thinkingSettings: string;
     apiKeysSettings: string;
+    thinkingDisplayStyle: string;
 }
 
 const LOCALES: Record<string, Translations> = {
@@ -61,7 +62,8 @@ const LOCALES: Record<string, Translations> = {
         planningModeDesc: 'Enforce step-by-step planning before execution',
         generalSettings: 'General Settings',
         thinkingSettings: 'Thinking & Reasoning',
-        apiKeysSettings: 'API Keys & Providers'
+        apiKeysSettings: 'API Keys & Providers',
+        thinkingDisplayStyle: 'Thinking Display Format'
     },
     nl: {
         newChat: 'Nieuwe Chat',
@@ -87,7 +89,11 @@ const LOCALES: Record<string, Translations> = {
         language: 'Taal',
         uploadFile: 'Bestand bijvoegen',
         planningMode: 'Planning Mode',
-        planningModeDesc: 'Stapsgewijze planning vereisen voor uitvoering'
+        planningModeDesc: 'Stapsgewijze planning vereisen voor uitvoering',
+        generalSettings: 'Algemene Instellingen',
+        thinkingSettings: 'Denken & Redeneren',
+        apiKeysSettings: 'API Sleutels & Providers',
+        thinkingDisplayStyle: 'Weergaveformaat denkproces'
     },
     de: {
         newChat: 'Neuer Chat',
@@ -113,7 +119,11 @@ const LOCALES: Record<string, Translations> = {
         language: 'Sprache',
         uploadFile: 'Datei anhängen',
         planningMode: 'Planungsmodus',
-        planningModeDesc: 'Schritt-für-Schritt-Planung vor Ausführung erzwingen'
+        planningModeDesc: 'Schritt-für-Schritt-Planung vor Ausführung erzwingen',
+        generalSettings: 'Allgemeine Einstellungen',
+        thinkingSettings: 'Denken & Nachdenken',
+        apiKeysSettings: 'API-Schlüssel & Anbieter',
+        thinkingDisplayStyle: 'Anzeigeformat des Denkprozesses'
     },
     fr: {
         newChat: 'Nouvelle Discussion',
@@ -139,7 +149,11 @@ const LOCALES: Record<string, Translations> = {
         language: 'Langue',
         uploadFile: 'Joindre un fichier',
         planningMode: 'Mode Planification',
-        planningModeDesc: 'Exiger une planification étape par étape avant l\'exécution'
+        planningModeDesc: 'Exiger une planification étape par étape avant l\'exécution',
+        generalSettings: 'Paramètres généraux',
+        thinkingSettings: 'Réflexion & Raisonnement',
+        apiKeysSettings: 'Clés API & Fournisseurs',
+        thinkingDisplayStyle: 'Format d\'affichage de la réflexion'
     },
     es: {
         newChat: 'Nuevo Chat',
@@ -165,7 +179,11 @@ const LOCALES: Record<string, Translations> = {
         language: 'Idioma',
         uploadFile: 'Adjuntar archivo',
         planningMode: 'Modo Planificación',
-        planningModeDesc: 'Requerir planificación paso a paso antes de la ejecución'
+        planningModeDesc: 'Requerir planificación paso a paso antes de la ejecución',
+        generalSettings: 'Configuración general',
+        thinkingSettings: 'Pensamiento y Razonamiento',
+        apiKeysSettings: 'Claves API y Proveedores',
+        thinkingDisplayStyle: 'Formato de visualización del pensamiento'
     }
 };
 
