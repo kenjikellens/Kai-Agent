@@ -37,6 +37,10 @@ class ModelDropdownController {
         this.initDefaultDropdown();
         
         window.addEventListener('resize', () => this.updateTextOverflowMetrics());
+        window.addEventListener('kaiThinkingStyleChanged', () => {
+            this.setSelectedModel(this.selectedModelValue);
+            this.initDefaultDropdown();
+        });
         setTimeout(() => this.updateTextOverflowMetrics(), 50);
     }
 
@@ -300,9 +304,7 @@ class ModelDropdownController {
                             flyoutOpt.setAttribute('role', 'button');
                             flyoutOpt.setAttribute('aria-label', `Set thinking level to ${lvl.label}`);
                             
-                            const labelSpan = document.createElement('span');
-                            labelSpan.textContent = lvl.label;
-                            flyoutOpt.appendChild(labelSpan);
+                            ThinkingStateFormatter.renderFlyoutOptionContent(flyoutOpt, lvl.label, lvl.level);
 
                             if (isSelected) {
                                 const checkSvg = DOMUtils.createCheckIcon('check-icon');
@@ -316,7 +318,6 @@ class ModelDropdownController {
                                 this.selectedModelValue = itemData.value;
                                 localStorage.setItem('kai.selectedModel', itemData.value);
 
-                                // Dynamically update selected state and checkmarks across flyout items
                                 flyoutInner.querySelectorAll('.flyout-option').forEach(opt => {
                                     opt.classList.remove('selected');
                                     const oldCheck = opt.querySelector('.check-icon');
@@ -326,11 +327,7 @@ class ModelDropdownController {
                                 const checkSvg = DOMUtils.createCheckIcon('check-icon');
                                 flyoutOpt.appendChild(checkSvg);
 
-                                const levelLabels = { high: 'High', medium: 'Medium', low: 'Low', minimal: 'Off' };
-                                const suffix = levelLabels[lvl.level] ? ` (${levelLabels[lvl.level]})` : '';
-                                if (this.selectedModelText) {
-                                    this.selectedModelText.textContent = itemData.label + suffix;
-                                }
+                                this.setSelectedModel(itemData.value);
 
                                 this.closeActiveFlyoutImmediately();
                                 if (this.dropdownOptionsMenu) {
@@ -353,8 +350,12 @@ class ModelDropdownController {
                         flyoutRow.style.justifyContent = 'space-between';
                         flyoutRow.style.gap = '12px';
 
-                        const labelSpan = document.createElement('span');
-                        labelSpan.textContent = 'Thinking';
+                        const leftWrapper = document.createElement('div');
+                        leftWrapper.style.display = 'inline-flex';
+                        leftWrapper.style.alignItems = 'center';
+                        leftWrapper.style.gap = '6px';
+
+                        ThinkingStateFormatter.renderFlyoutOptionContent(leftWrapper, 'Thinking', isMistralThinkingOn);
 
                         const toggleEl = ToggleComponent.create({
                             id: `mistral-thinking-toggle-${itemData.rawModel.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
@@ -362,13 +363,14 @@ class ModelDropdownController {
                             title: 'Enable reasoning/thinking for this Mistral model',
                             onChange: (checked) => {
                                 localStorage.setItem(`kai.mistralThinking.${itemData.rawModel}`, checked ? 'true' : 'false');
+                                this.setSelectedModel(this.selectedModelValue);
                                 if (this.onSelect && this.selectedModelValue === itemData.value) {
                                     this.onSelect(itemData.value);
                                 }
                             }
                         });
 
-                        flyoutRow.appendChild(labelSpan);
+                        flyoutRow.appendChild(leftWrapper);
                         flyoutRow.appendChild(toggleEl);
 
                         flyoutRow.addEventListener('click', (e) => {
@@ -384,15 +386,18 @@ class ModelDropdownController {
                     } else if (isLMStudio) {
                         const isLmThinkingOn = localStorage.getItem(`kai.lmStudioThinking.${itemData.rawModel}`) === 'true';
                         
-                        // Dropdown flyout option row matching 1:1 with standard .dropdown-item.flyout-option styling
                         const flyoutRow = document.createElement('div');
                         flyoutRow.className = 'dropdown-item flyout-option';
                         flyoutRow.style.width = 'calc(100% - 4px)';
                         flyoutRow.style.justifyContent = 'space-between';
                         flyoutRow.style.gap = '12px';
 
-                        const labelSpan = document.createElement('span');
-                        labelSpan.textContent = 'Thinking';
+                        const leftWrapper = document.createElement('div');
+                        leftWrapper.style.display = 'inline-flex';
+                        leftWrapper.style.alignItems = 'center';
+                        leftWrapper.style.gap = '6px';
+
+                        ThinkingStateFormatter.renderFlyoutOptionContent(leftWrapper, 'Thinking', isLmThinkingOn);
 
                         const toggleEl = ToggleComponent.create({
                             id: `lm-thinking-toggle-${itemData.rawModel.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
@@ -400,13 +405,14 @@ class ModelDropdownController {
                             title: 'Enable reasoning/thinking for this model',
                             onChange: (checked) => {
                                 localStorage.setItem(`kai.lmStudioThinking.${itemData.rawModel}`, checked ? 'true' : 'false');
+                                this.setSelectedModel(this.selectedModelValue);
                                 if (this.onSelect && this.selectedModelValue === itemData.value) {
                                     this.onSelect(itemData.value);
                                 }
                             }
                         });
 
-                        flyoutRow.appendChild(labelSpan);
+                        flyoutRow.appendChild(leftWrapper);
                         flyoutRow.appendChild(toggleEl);
 
                         flyoutRow.addEventListener('click', (e) => {
@@ -491,10 +497,9 @@ class ModelDropdownController {
                     e.stopPropagation();
                     this.selectedModelValue = itemData.value;
                     localStorage.setItem('kai.selectedModel', itemData.value);
-                    if (this.selectedModelText) {
-                        this.selectedModelText.textContent = itemData.label;
-                        setTimeout(() => this.updateTextOverflowMetrics(), 20);
-                    }
+                    
+                    this.setSelectedModel(itemData.value);
+
                     if (this.statusDot) {
                         this.statusDot.className = (isModelConnectedFn && isModelConnectedFn(itemData.rawModel)) ? 'status-dot status-connected' : 'status-dot status-disconnected';
                     }
@@ -672,20 +677,12 @@ class ModelDropdownController {
      */
     setSelectedModel(modelId) {
         this.selectedModelValue = modelId;
-        if (this.selectedModelText) {
-            let cleanDisplay = modelId.endsWith(' (thinking)')
-                ? `${this.formatter.formatModelName(modelId.slice(0, -11))} (thinking)`
-                : this.formatter.formatModelName(modelId);
+        ThinkingStateFormatter.renderTriggerLabel({
+            modelId: modelId,
+            container: this.selectedModelText,
+            formatter: this.formatter
+        });
 
-            if (modelId.toLowerCase().includes('gemini')) {
-                const lvl = localStorage.getItem(`kai.geminiThinkingLevel.${modelId}`) || localStorage.getItem('kai.geminiThinkingLevel');
-                const levelLabels = { high: 'High', medium: 'Medium', low: 'Low', minimal: 'Off' };
-                if (lvl && levelLabels[lvl]) {
-                    cleanDisplay += ` (${levelLabels[lvl]})`;
-                }
-            }
-            this.selectedModelText.textContent = cleanDisplay;
-        }
         if (this.dropdownOptionsMenu) {
             const items = this.dropdownOptionsMenu.querySelectorAll('.dropdown-item');
             items.forEach(item => {

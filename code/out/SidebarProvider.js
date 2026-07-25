@@ -544,6 +544,7 @@ class SidebarProvider {
         const fileSummaryWidgetUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'FileSummaryWidget.js'));
         const toggleComponentUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'ToggleComponent.js'));
         const customSelectComponentUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'CustomSelectComponent.js'));
+        const thinkingStateFormatterUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'ThinkingStateFormatter.js'));
         const modelDropdownControllerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'ModelDropdownController.js'));
         const settingsControllerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'SettingsController.js'));
         const historyManagerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'HistoryManager.js'));
@@ -686,6 +687,10 @@ class SidebarProvider {
                                 <div id="thinking-subsettings" class="setting-sub-panel">
                                     <div id="keep-thinking-expanded-container"></div>
                                     <div id="keep-thinking-finished-container"></div>
+                                    <div class="setting-item" style="margin-top: 8px; margin-bottom: 4px;">
+                                        <label for="thinking-display-style-container" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">Thinking Display Format</label>
+                                        <div id="thinking-display-style-container"></div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -717,6 +722,7 @@ class SidebarProvider {
                 <script nonce="${nonce}" src="${fileSummaryWidgetUri}"></script>
                 <script nonce="${nonce}" src="${toggleComponentUri}"></script>
                 <script nonce="${nonce}" src="${customSelectComponentUri}"></script>
+                <script nonce="${nonce}" src="${thinkingStateFormatterUri}"></script>
                 <script nonce="${nonce}" src="${modelDropdownControllerUri}"></script>
                 <script nonce="${nonce}" src="${settingsControllerUri}"></script>
                 <script nonce="${nonce}" src="${historyManagerUri}"></script>

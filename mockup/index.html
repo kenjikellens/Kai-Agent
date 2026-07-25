@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kai Settings UI Mockup</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <div class="mockup-container">
+        <header class="mockup-header">
+            <h2>Kai Settings Panel Mockup</h2>
+            <p>Interactive prototype featuring categorized settings accordions and borderless hover controls.</p>
+        </header>
+
+        <div class="settings-panel">
+            <!-- CATEGORY 1: GENERAL -->
+            <div class="settings-category">
+                <button type="button" class="category-header-btn" data-category="general">
+                    <span class="category-title">General Settings</span>
+                    <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <div class="category-content" id="cat-general">
+                    <div class="setting-row">
+                        <label class="setting-label" for="lang-select-trigger">Language</label>
+                        <div id="mock-lang-container" class="custom-select-wrapper"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CATEGORY 2: THINKING & REASONING -->
+            <div class="settings-category">
+                <button type="button" class="category-header-btn" data-category="thinking">
+                    <span class="category-title">Thinking & Reasoning</span>
+                    <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <div class="category-content" id="cat-thinking">
+                    <!-- Format setting BEFORE show thinking toggle -->
+                    <div class="setting-row">
+                        <label class="setting-label" for="style-select-trigger">Thinking Display Format</label>
+                        <div id="mock-style-container" class="custom-select-wrapper"></div>
+                    </div>
+
+                    <div class="setting-row">
+                        <label class="switch-container">
+                            <input type="checkbox" id="mock-show-thinking" checked>
+                            <span class="slider-track"></span>
+                            <span class="switch-label">Show thinking process</span>
+                        </label>
+                    </div>
+
+                    <div class="setting-sub-panel" id="mock-subsettings">
+                        <div class="setting-row">
+                            <label class="switch-container">
+                                <input type="checkbox" checked>
+                                <span class="slider-track"></span>
+                                <span class="switch-label">Keep thinking expanded while generating</span>
+                            </label>
+                        </div>
+                        <div class="setting-row">
+                            <label class="switch-container">
+                                <input type="checkbox">
+                                <span class="slider-track"></span>
+                                <span class="switch-label">Keep thinking expanded after reasoning</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CATEGORY 3: API KEYS -->
+            <div class="settings-category">
+                <button type="button" class="category-header-btn" data-category="apikeys">
+                    <span class="category-title">API Keys & Providers</span>
+                    <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <div class="category-content" id="cat-apikeys">
+                    <div class="setting-row">
+                        <button type="button" class="btn-hover-only" id="manage-keys-mock-btn">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-1-1l-4 4m6 0l-4-4m-5 9l-4 4-2-2-4 4 2 2 4-4 2 2 4-4-2-2z"></path></svg>
+                            <span>Manage API Keys</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>

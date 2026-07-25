@@ -608,6 +608,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         const fileSummaryWidgetUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'FileSummaryWidget.js'));
         const toggleComponentUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'ToggleComponent.js'));
         const customSelectComponentUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'CustomSelectComponent.js'));
+        const thinkingStateFormatterUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'ThinkingStateFormatter.js'));
         const modelDropdownControllerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'ModelDropdownController.js'));
         const settingsControllerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'SettingsController.js'));
         const historyManagerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'HistoryManager.js'));
@@ -788,6 +789,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                 <script nonce="${nonce}" src="${fileSummaryWidgetUri}"></script>
                 <script nonce="${nonce}" src="${toggleComponentUri}"></script>
                 <script nonce="${nonce}" src="${customSelectComponentUri}"></script>
+                <script nonce="${nonce}" src="${thinkingStateFormatterUri}"></script>
                 <script nonce="${nonce}" src="${modelDropdownControllerUri}"></script>
                 <script nonce="${nonce}" src="${settingsControllerUri}"></script>
                 <script nonce="${nonce}" src="${historyManagerUri}"></script>

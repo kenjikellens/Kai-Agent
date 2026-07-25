@@ -1033,8 +1033,29 @@ button:disabled {
 }
 
 /* ==========================================================================
+   THINKING BATTERY SVG ICON STYLING (.thinking-battery-icon)
+   Vector SVG battery level indicator rendered in trigger buttons & flyout menus
+   ========================================================================== */
+
+.thinking-battery-icon,
+.flyout-battery-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  vertical-align: middle;
+  margin-right: 4px;
+  margin-left: 2px;
+  color: var(--vscode-foreground, #ffffff);
+}
+
+.flyout-option .flyout-battery-icon {
+  margin-left: 6px;
+  margin-right: 0;
+}
+
+/* ==========================================================================
    CUSTOM SELECT DROPDOWN COMPONENT (.custom-select-container)
-   Standalone custom dropdown used in Settings for Language Select,
+   Standalone custom dropdown used in Settings for Language Select & Thinking Display Format,
    matching the dark aesthetic, borders, hover states, and checkmarks of thinking dropdowns.
    ========================================================================== */
 
