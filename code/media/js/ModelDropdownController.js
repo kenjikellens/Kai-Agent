@@ -236,9 +236,11 @@ class ModelDropdownController {
             });
 
             displayItems.forEach(itemData => {
-                const isGemini = itemData.rawModel.toLowerCase().includes('gemini');
+                const lowerModel = itemData.rawModel.toLowerCase();
+                const isGemini = lowerModel.includes('gemini');
+                const isMistralReasoning = lowerModel.includes('mistral-small') || lowerModel.includes('mistral-medium') || lowerModel.includes('codestral');
                 const isLMStudio = isLMStudioCategory;
-                const hasFlyout = isGemini || isLMStudio;
+                const hasFlyout = isGemini || isMistralReasoning || isLMStudio;
                 
                 // Model Selector Dropdown Button Item (Interactive button element)
                 const item = document.createElement('div');
@@ -342,6 +344,43 @@ class ModelDropdownController {
                             flyoutOpt.addEventListener('click', handleFlyoutSelect);
                             flyoutInner.appendChild(flyoutOpt);
                         });
+                    } else if (isMistralReasoning) {
+                        const isMistralThinkingOn = localStorage.getItem(`kai.mistralThinking.${itemData.rawModel}`) !== 'false';
+                        
+                        const flyoutRow = document.createElement('div');
+                        flyoutRow.className = 'dropdown-item flyout-option';
+                        flyoutRow.style.width = 'calc(100% - 4px)';
+                        flyoutRow.style.justifyContent = 'space-between';
+                        flyoutRow.style.gap = '12px';
+
+                        const labelSpan = document.createElement('span');
+                        labelSpan.textContent = 'Thinking';
+
+                        const toggleEl = ToggleComponent.create({
+                            id: `mistral-thinking-toggle-${itemData.rawModel.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
+                            checked: isMistralThinkingOn,
+                            title: 'Enable reasoning/thinking for this Mistral model',
+                            onChange: (checked) => {
+                                localStorage.setItem(`kai.mistralThinking.${itemData.rawModel}`, checked ? 'true' : 'false');
+                                if (this.onSelect && this.selectedModelValue === itemData.value) {
+                                    this.onSelect(itemData.value);
+                                }
+                            }
+                        });
+
+                        flyoutRow.appendChild(labelSpan);
+                        flyoutRow.appendChild(toggleEl);
+
+                        flyoutRow.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const checkbox = toggleEl.querySelector('input[type="checkbox"]');
+                            if (checkbox && e.target !== checkbox) {
+                                checkbox.checked = !checkbox.checked;
+                                checkbox.dispatchEvent(new Event('change'));
+                            }
+                        });
+
+                        flyoutInner.appendChild(flyoutRow);
                     } else if (isLMStudio) {
                         const isLmThinkingOn = localStorage.getItem(`kai.lmStudioThinking.${itemData.rawModel}`) === 'true';
                         
@@ -599,6 +638,16 @@ class ModelDropdownController {
             };
         }
 
+        const lowerRaw = raw.toLowerCase();
+        if (lowerRaw.includes('mistral') || lowerRaw.includes('codestral') || lowerRaw.includes('pixtral')) {
+            const mistralThinkingSaved = localStorage.getItem(`kai.mistralThinking.${raw}`);
+            const thinking = mistralThinkingSaved !== null ? mistralThinkingSaved === 'true' : true;
+            return {
+                model: raw,
+                thinking: thinking
+            };
+        }
+
         // Read model thinking toggle state from localStorage for LM Studio models
         const lmThinkingSaved = localStorage.getItem(`kai.lmStudioThinking.${raw}`);
         const thinking = lmThinkingSaved !== null ? lmThinkingSaved === 'true' : true;
@@ -648,5 +697,20 @@ class ModelDropdownController {
             });
         }
         this.updateGeminiThinkingVisibility();
+    }
+
+    /**
+     * Updates visibility of reasoning sub-settings.
+     */
+    updateGeminiThinkingVisibility() {
+        const container = document.getElementById('gemini-thinking-level-container');
+        if (container) {
+            const isGemini = this.selectedModelValue && this.selectedModelValue.toLowerCase().startsWith('gemini');
+            if (isGemini) {
+                container.style.display = 'block';
+            } else {
+                container.style.display = 'none';
+            }
+        }
     }
 }

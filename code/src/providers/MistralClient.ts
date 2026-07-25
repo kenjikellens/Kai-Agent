@@ -39,7 +39,13 @@ export class MistralClient extends BaseCloudProviderClient {
         thinking?: boolean
     ): Record<string, any> {
         const payload = super.preparePayload(model, messages, temperature, stream, thinking);
-        payload.reasoning_effort = thinking !== false ? 'high' : 'none';
+        const bareModel = this.stripProviderPrefix(model).toLowerCase();
+        
+        // Only attach reasoning_effort to models that support adjustable reasoning
+        const supportsReasoning = bareModel.includes('small') || bareModel.includes('medium') || bareModel.includes('codestral');
+        if (supportsReasoning) {
+            payload.reasoning_effort = thinking !== false ? 'high' : 'none';
+        }
         return payload;
     }
 }
