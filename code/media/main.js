@@ -73,13 +73,30 @@
         }
     }
 
+    let isDirty = false;
+
+    /**
+     * Marks state as changed so the 500ms debounced timer will persist it.
+     */
+    function markDirty() {
+        isDirty = true;
+    }
+
     /**
      * Persists current active chat session to workspace state.
      */
     function saveCurrentChat() {
         const details = modelDropdownController.getSelectedModelDetails();
         ipcBridge.saveChat(appState.toChatPayload(details.thinking));
+        isDirty = false;
     }
+
+    // Auto-save interval checking every 500ms if there are unsaved state changes
+    setInterval(() => {
+        if (isDirty && appState.currentChatId) {
+            saveCurrentChat();
+        }
+    }, 500);
 
     /**
      * Sends user prompt input to extension host or aborts ongoing generation.
@@ -237,6 +254,7 @@
 
     ipcBridge.on('agentProgress', (message) => {
         chatUIController.handleAgentProgress(message, appState);
+        markDirty();
     });
 
     ipcBridge.on('typing', () => {
