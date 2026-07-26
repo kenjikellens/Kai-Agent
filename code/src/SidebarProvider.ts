@@ -89,12 +89,15 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                 case 'updateSettings': {
                     const config = vscode.workspace.getConfiguration('kai');
                     const envUpdates: Record<string, string> = {};
+                    let languageChanged = false;
 
                     if (data.apiKey !== undefined) {
                         await config.update('apiKey', data.apiKey, vscode.ConfigurationTarget.Global);
                         envUpdates['GEMINI_API_KEY'] = data.apiKey;
                     }
                     if (data.language !== undefined) {
+                        const currentLang = config.get<string>('language') || 'auto';
+                        languageChanged = (data.language !== currentLang);
                         await config.update('language', data.language, vscode.ConfigurationTarget.Global);
                     }
                     // Persist per-provider API keys sent from the settings panel
@@ -106,6 +109,10 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                         }
                     }
                     this._syncEnvFile(envUpdates);
+
+                    if (languageChanged && this._view) {
+                        this._view.webview.html = this._getHtmlForWebview(this._view.webview);
+                    }
                     await this._handleCheckConnection();
                     break;
                 }

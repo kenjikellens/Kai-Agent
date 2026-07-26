@@ -1655,12 +1655,12 @@ button:disabled {
   padding: 4px 0;
   box-sizing: border-box;
   background: var(--app-bg);
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .keys-container {
   position: absolute;
-  top: 36px;
+  top: 0;
   left: 0;
   right: 0;
   bottom: 0;
@@ -1688,9 +1688,14 @@ button:disabled {
 }
 
 .history-list,
-.keys-content-panel,
+.keys-content-panel {
+  min-height: 0;
+}
+
 .settings-content-panel {
   min-height: 0;
+  overflow-y: auto;
+  flex: 1 1 auto;
 }
 
 .history-empty-state {

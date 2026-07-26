@@ -164,6 +164,7 @@ class SettingsController {
         if (this.manageKeysBtn) {
             this.manageKeysBtn.addEventListener('click', () => {
                 if (this.keysContainer) {
+                    this.keysContainer.scrollTop = 0;
                     this.keysContainer.classList.remove('hidden');
                     this.renderProviderKeyInputs();
                 }
