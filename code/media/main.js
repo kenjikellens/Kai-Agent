@@ -265,6 +265,7 @@
 
     ipcBridge.on('reply', (message) => {
         chatUIController.setUiLoading(false, appState);
+        appState.finalizeAssistantUiEvent();
 
         let forceThinkingCollapsed = null;
         if (chatUIController.currentAssistantMsgElement) {
@@ -293,7 +294,9 @@
             appState.addMessage({ role: 'assistant', content: message.content });
         }
 
-        if (message.content) {
+        // If assistant content was not already streamed into uiEvents, add it now
+        const lastEvt = appState.uiEvents[appState.uiEvents.length - 1];
+        if (message.content && (!lastEvt || lastEvt.type !== 'assistant')) {
             appState.addUiEvent({ type: 'assistant', content: message.content });
         }
 

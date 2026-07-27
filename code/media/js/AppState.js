@@ -46,6 +46,30 @@ class AppState {
     }
 
     /**
+     * Updates or appends the current assistant response UI event payload.
+     * @param {string} text Live assistant response text.
+     */
+    updateOrAddAssistantUiEvent(text) {
+        if (!text) return;
+        const lastEvt = this.uiEvents[this.uiEvents.length - 1];
+        if (lastEvt && lastEvt.type === 'assistant' && lastEvt.isStreaming) {
+            lastEvt.content = text;
+        } else {
+            this.uiEvents.push({ type: 'assistant', content: text, isStreaming: true });
+        }
+    }
+
+    /**
+     * Finalizes streaming on the active assistant UI event.
+     */
+    finalizeAssistantUiEvent() {
+        const lastEvt = this.uiEvents[this.uiEvents.length - 1];
+        if (lastEvt && lastEvt.type === 'assistant') {
+            delete lastEvt.isStreaming;
+        }
+    }
+
+    /**
      * Appends a UI event record to the uiEvents stack.
      * @param {object} evt UI event payload.
      */

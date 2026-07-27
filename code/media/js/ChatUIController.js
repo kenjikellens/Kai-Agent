@@ -154,6 +154,7 @@ class ChatUIController {
     handleAgentProgress(progress, appState) {
         if (progress.progressType === 'token') {
             this.currentAssistantText += progress.output;
+            appState.updateOrAddAssistantUiEvent(this.currentAssistantText);
             
             let forceThinkingCollapsed = null;
             if (this.currentAssistantMsgElement) {
@@ -209,6 +210,7 @@ class ChatUIController {
                 }
             }
         } else if (progress.progressType === 'tool_start') {
+            appState.finalizeAssistantUiEvent();
             if (this.currentAssistantMsgElement) {
                 const contentEl = this.currentAssistantMsgElement.querySelector('.message-content');
                 if (contentEl && !contentEl.innerText.trim()) {
@@ -291,16 +293,30 @@ class ChatUIController {
             case 'search_web':
                 verb = state === 'start' ? 'searching' : (state === 'success' ? 'searched' : 'failed searching');
                 break;
+            case 'symbol_search':
+                verb = state === 'start' ? 'indexing symbols' : (state === 'success' ? 'found symbols' : 'failed symbol search');
+                break;
+            case 'get_diagnostics':
+                verb = state === 'start' ? 'checking diagnostics' : (state === 'success' ? 'checked diagnostics' : 'failed diagnostics');
+                break;
+            case 'fetch_url':
+                verb = state === 'start' ? 'fetching' : (state === 'success' ? 'fetched' : 'failed fetching');
+                break;
             case 'run_command':
                 verb = state === 'start' ? 'running' : (state === 'success' ? 'ran' : 'failed running');
+                break;
+            case 'delete_item':
+                verb = state === 'start' ? 'deleting' : (state === 'success' ? 'deleted' : 'failed deleting');
                 break;
             default:
                 verb = state === 'start' ? 'running' : (state === 'success' ? 'completed' : 'failed');
         }
 
-        const prefixSvg = state === 'start' ? '' : (state === 'success' 
-            ? (window.KAI_SVGS['success'] || '') 
-            : (window.KAI_SVGS['error'] || ''));
+        const prefixSvg = state === 'start' 
+            ? (window.KAI_SVGS['spinner'] || '') 
+            : (state === 'success' 
+                ? (window.KAI_SVGS['success'] || '') 
+                : (window.KAI_SVGS['error'] || ''));
         
         let target = targetName || '';
         if (tool === 'run_command' && target.length > 40) {

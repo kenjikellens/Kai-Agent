@@ -175,23 +175,7 @@ class LMStudioClient {
                 temperature: temperature,
                 stream: false
             };
-            if (thinking) {
-                requestParams.thinking = true;
-                requestParams.enable_thinking = true;
-                requestParams.reasoning_effort = "high";
-                requestParams.chat_template_kwargs = {
-                    enable_thinking: true
-                };
-            }
-            else {
-                requestParams.thinking = false;
-                requestParams.enable_thinking = false;
-                requestParams.chat_template_kwargs = {
-                    enable_thinking: false
-                };
-                requestParams.reasoning_effort = "none";
-                requestParams.reasoning = "off";
-            }
+            this.applyThinkingParameters(requestParams, model, thinking);
             const payload = JSON.stringify(requestParams);
             const options = {
                 hostname,
@@ -251,23 +235,7 @@ class LMStudioClient {
                 temperature: temperature,
                 stream: true
             };
-            if (thinking) {
-                requestParams.thinking = true;
-                requestParams.enable_thinking = true;
-                requestParams.reasoning_effort = "high";
-                requestParams.chat_template_kwargs = {
-                    enable_thinking: true
-                };
-            }
-            else {
-                requestParams.thinking = false;
-                requestParams.enable_thinking = false;
-                requestParams.chat_template_kwargs = {
-                    enable_thinking: false
-                };
-                requestParams.reasoning_effort = "none";
-                requestParams.reasoning = "off";
-            }
+            this.applyThinkingParameters(requestParams, model, thinking);
             const payload = JSON.stringify(requestParams);
             const options = {
                 hostname,
@@ -357,6 +325,58 @@ class LMStudioClient {
             req.write(payload);
             req.end();
         });
+    }
+    /**
+     * Dynamically applies thinking/reasoning parameters based on the target model family.
+     * @param requestParams Target HTTP payload object.
+     * @param model Model ID string.
+     * @param thinking Whether thinking phase is enabled.
+     */
+    applyThinkingParameters(requestParams, model, thinking) {
+        const modelLower = (model || '').toLowerCase();
+        if (thinking) {
+            if (modelLower.includes('gemma')) {
+                requestParams.thinking = true;
+            }
+            else if (modelLower.includes('qwen') || modelLower.includes('glm')) {
+                requestParams.thinking = true;
+                requestParams.enable_thinking = true;
+                requestParams.chat_template_kwargs = { enable_thinking: true };
+            }
+            else if (modelLower.includes('mistral') || modelLower.includes('codestral')) {
+                requestParams.reasoning_effort = 'high';
+            }
+            else {
+                requestParams.thinking = true;
+                requestParams.enable_thinking = true;
+                requestParams.reasoning_effort = 'high';
+                requestParams.chat_template_kwargs = { enable_thinking: true };
+            }
+        }
+        else {
+            if (modelLower.includes('gemma')) {
+                requestParams.thinking = false;
+                requestParams.reasoning_effort = 'none';
+                requestParams.reasoning = 'off';
+            }
+            else if (modelLower.includes('qwen') || modelLower.includes('glm')) {
+                requestParams.thinking = false;
+                requestParams.enable_thinking = false;
+                requestParams.chat_template_kwargs = { enable_thinking: false };
+                requestParams.reasoning_effort = 'none';
+                requestParams.reasoning = 'off';
+            }
+            else if (modelLower.includes('mistral') || modelLower.includes('codestral')) {
+                requestParams.reasoning_effort = 'none';
+            }
+            else {
+                requestParams.thinking = false;
+                requestParams.enable_thinking = false;
+                requestParams.chat_template_kwargs = { enable_thinking: false };
+                requestParams.reasoning_effort = 'none';
+                requestParams.reasoning = 'off';
+            }
+        }
     }
 }
 exports.LMStudioClient = LMStudioClient;

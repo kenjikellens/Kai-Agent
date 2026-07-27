@@ -191,6 +191,10 @@ export class AgentExecutor {
                 fileName: targetName
             });
 
+            // Yield to the event loop so the webview IPC can flush the tool_start
+            // render before we block on the actual tool execution
+            await new Promise<void>(resolve => setTimeout(resolve, 0));
+
             // Execute the tool polymorphically
             let toolResult = '';
             try {
