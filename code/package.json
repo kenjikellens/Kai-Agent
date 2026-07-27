@@ -21,7 +21,7 @@
       "activitybar": [
         {
           "id": "kai-agent-activitybar",
-          "title": "Kai Agent",
+          "title": "KAI",
           "icon": "media/svg/kai_icon.svg"
         }
       ]
@@ -31,7 +31,7 @@
         {
           "type": "webview",
           "id": "kai-chat-sidebar",
-          "name": "Kai Agent"
+          "name": "KAI"
         }
       ]
     },

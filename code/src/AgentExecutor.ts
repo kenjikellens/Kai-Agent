@@ -256,21 +256,16 @@ export class AgentExecutor {
      * @param text The model's response.
      * @returns An object representing the tool call name, args, and a readable query, or null if none found.
      */
-    /**
-     * Parses the assistant's reply text to extract the first JSON tool call.
-     * @param text The model's response.
-     * @returns An object representing the tool call name, args, and a readable query, or null if none found.
-     */
     private parseToolCall(text: string): { name: string; args: any; query: string } | null {
-        // 1. Regex to extract JSON block inside ```json ... ``` code fences
-        const jsonBlockRegex = /```json\s*([\s\S]*?)\s*(?:```|$)/i;
-        const match = jsonBlockRegex.exec(text);
-        if (match) {
-            const parsed = this.parseJsonString(match[1]);
+        // 1. Primary: Extract tool call payload enclosed in <|tool_call|> ... <|tool_call|> or <tool_call> ... </tool_call> tags
+        const explicitTagRegex = /<\|?tool_call\|?>\s*([\s\S]*?)\s*(?:<\|?\/tool_call\|?>|<\|?tool_call\|?>|$)/i;
+        const explicitTagMatch = explicitTagRegex.exec(text);
+        if (explicitTagMatch) {
+            const parsed = this.parseJsonString(explicitTagMatch[1]);
             if (parsed) return parsed;
         }
 
-        // 2. Regex to extract tool call JSON payload surrounded by <tool_call|>, <|tool_call>, <tool_call>, or call:name
+        // 2. Secondary: Regex to extract tool call JSON payload surrounded by optional call:name or loose tags
         const tagRegex = /(?:<\|?tool_call\|?>)?\s*(?:call:\w+)?\s*(\{[\s\S]*?\})\s*(?:<\|?tool_call\|?>)?/i;
         const tagMatch = tagRegex.exec(text);
         if (tagMatch) {
@@ -278,7 +273,15 @@ export class AgentExecutor {
             if (parsed) return parsed;
         }
 
-        // 3. Fallback: Try extracting using brace counting starting at any JSON object containing known keys
+        // 3. Fallback: Extract JSON block inside ```json ... ``` code fences
+        const jsonBlockRegex = /```json\s*([\s\S]*?)\s*(?:```|$)/i;
+        const match = jsonBlockRegex.exec(text);
+        if (match) {
+            const parsed = this.parseJsonString(match[1]);
+            if (parsed) return parsed;
+        }
+
+        // 4. Fallback: Try extracting using brace counting starting at any JSON object containing known keys
         const braceJson = this.extractJsonBlock(text);
         if (braceJson) {
             const parsed = this.parseJsonString(braceJson);
