@@ -187,7 +187,8 @@ class SidebarProvider {
         }
         catch { }
         // Remove last user message from conversation history and filter out UI-only messages
-        const chatHistoryWithoutLast = messages.slice(0, -1).filter((m) => m.role !== 'file-summary');
+        // Retain user, assistant, system, and tool result messages
+        const chatHistoryWithoutLast = messages.slice(0, -1).filter((m) => m.role === 'user' || m.role === 'assistant' || m.role === 'system');
         this._currentStreamingMessages = messages;
         this._currentStreamingText = '';
         // Instantiate the AgentExecutor with workspace path and settings
