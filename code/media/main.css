@@ -11,12 +11,14 @@
 ------------------------------ */
 :root {
   --app-bg: var(--vscode-sideBar-background, #1e1e1e);
-  --app-fg: var(--vscode-editor-foreground, #cccccc);
+  --app-fg: var(--vscode-editor-foreground, var(--vscode-foreground, #cccccc));
   --app-muted: var(--vscode-descriptionForeground, #888888);
   --app-border: rgba(255, 255, 255, 0.08);
   --app-border-strong: rgba(255, 255, 255, 0.14);
+  --app-border-subtle: rgba(255, 255, 255, 0.05);
   --app-surface: rgba(255, 255, 255, 0.03);
   --app-surface-strong: rgba(255, 255, 255, 0.06);
+  --app-surface-hover: rgba(255, 255, 255, 0.08);
   --app-accent: var(--vscode-button-background, #007acc);
   --app-accent-hover: var(--vscode-button-hoverBackground, #0062a3);
   --app-input-bg: var(--vscode-input-background, #252526);
@@ -31,6 +33,54 @@
   --app-gap-lg: 12px;
   --app-font: var(--vscode-font-family, "Inter", "Segoe UI Variable Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
   --app-mono: var(--vscode-editor-font-family, "Cascadia Code", "Fira Code", "JetBrains Mono", "Consolas", "Courier New", monospace);
+
+  /* Component specific theme tokens for dark theme default */
+  --app-code-bg: rgba(0, 0, 0, 0.35);
+  --app-inline-code-bg: rgba(0, 0, 0, 0.3);
+  --app-tool-dropdown-bg: rgba(0, 0, 0, 0.25);
+  --app-tool-dropdown-text: #a5d6a7;
+  --app-tool-call-text: #00bcd4;
+  --app-tool-query-text: #80deea;
+  --app-tool-query-bg: rgba(0, 0, 0, 0.15);
+  --app-tool-error-bg: rgba(0, 0, 0, 0.25);
+  --app-tool-error-text: #ff8a80;
+  --app-file-summary-bg: var(--vscode-editor-background, #1e1e1e);
+  --app-dropdown-bg: var(--vscode-dropdown-background, #252526);
+  --app-dropdown-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
+  --app-flyout-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --app-scrollbar-thumb: rgba(255, 255, 255, 0.12);
+  --app-scrollbar-thumb-hover: rgba(255, 255, 255, 0.22);
+}
+
+/* Light Theme Tokens Override for VS Code Light & High Contrast Light Themes */
+body.vscode-light,
+body.vscode-high-contrast-light {
+  --app-bg: var(--vscode-sideBar-background, #f3f3f3);
+  --app-fg: var(--vscode-editor-foreground, var(--vscode-foreground, #24292e));
+  --app-muted: var(--vscode-descriptionForeground, #57606a);
+  --app-border: var(--vscode-widget-border, rgba(0, 0, 0, 0.12));
+  --app-border-strong: var(--vscode-widget-border, rgba(0, 0, 0, 0.22));
+  --app-border-subtle: rgba(0, 0, 0, 0.08);
+  --app-surface: rgba(0, 0, 0, 0.03);
+  --app-surface-strong: rgba(0, 0, 0, 0.06);
+  --app-surface-hover: rgba(0, 0, 0, 0.08);
+  --app-input-bg: var(--vscode-input-background, #ffffff);
+  --app-input-border: var(--vscode-input-border, rgba(0, 0, 0, 0.18));
+  --app-code-bg: var(--vscode-editor-background, #f6f8fa);
+  --app-inline-code-bg: rgba(0, 0, 0, 0.05);
+  --app-tool-dropdown-bg: rgba(0, 0, 0, 0.04);
+  --app-tool-dropdown-text: #2e7d32;
+  --app-tool-call-text: #007acc;
+  --app-tool-query-text: #00838f;
+  --app-tool-query-bg: rgba(0, 0, 0, 0.05);
+  --app-tool-error-bg: rgba(211, 47, 47, 0.08);
+  --app-tool-error-text: #c62828;
+  --app-file-summary-bg: var(--vscode-editor-background, #ffffff);
+  --app-dropdown-bg: var(--vscode-dropdown-background, #ffffff);
+  --app-dropdown-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --app-flyout-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  --app-scrollbar-thumb: rgba(0, 0, 0, 0.15);
+  --app-scrollbar-thumb-hover: rgba(0, 0, 0, 0.25);
 }
 
 .kai-spinner {
@@ -113,7 +163,7 @@ body {
   gap: var(--app-gap);
   padding: 6px 4px;
   margin-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--app-border-subtle);
   font-size: 0.75rem;
   color: var(--app-muted);
 }
@@ -173,7 +223,7 @@ button:disabled {
 
 .icon-btn-header:hover {
   color: var(--app-fg);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--app-surface-hover);
 }
 
 .icon-btn {
@@ -183,7 +233,7 @@ button:disabled {
 }
 
 .icon-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--app-surface-hover);
 }
 
 #send-btn {
@@ -208,7 +258,7 @@ button:disabled {
 }
 
 .secondary-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--app-surface-hover);
 }
 
 .btn-primary {
@@ -301,8 +351,8 @@ button:disabled {
   width: 100%;
   max-width: 100%;
   text-align: center;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px dashed rgba(255, 255, 255, 0.05);
+  background: var(--app-surface);
+  border: 1px dashed var(--app-border-subtle);
   border-radius: var(--app-radius-sm);
   color: var(--app-muted);
   font-size: 0.8rem;
@@ -360,8 +410,9 @@ button:disabled {
 }
 
 .message-content code {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--app-inline-code-bg);
+  border: 1px solid var(--app-border-subtle);
+  color: var(--app-fg);
   padding: 2px 5px;
   border-radius: var(--app-radius-sm);
   font-family: var(--app-mono);
@@ -372,8 +423,8 @@ button:disabled {
 /* Code Block Wrapper with Syntax Header Bar & Copy Button */
 .code-block-wrapper {
   margin: 8px 0;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--app-code-bg);
+  border: 1px solid var(--app-border);
   border-radius: var(--app-radius-md);
   overflow: hidden;
 }
@@ -383,11 +434,11 @@ button:disabled {
   justify-content: space-between;
   align-items: center;
   padding: 4px 10px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--app-surface-strong);
   font-family: var(--app-mono);
   font-size: 0.7rem;
   color: var(--app-muted);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--app-border-subtle);
   user-select: none;
 }
 
@@ -413,8 +464,8 @@ button:disabled {
 }
 
 .copy-code-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--vscode-foreground, #ffffff);
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
 }
 
 .message-content pre {
@@ -473,17 +524,17 @@ button:disabled {
 .message-content .md-table td {
   padding: 5px 8px;
   text-align: left;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--app-border);
 }
 
 .message-content .md-table th {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--vscode-foreground, #ffffff);
+  background: var(--app-surface-strong);
+  color: var(--app-fg);
   font-weight: 600;
 }
 
 .message-content .md-table tr:nth-child(even) {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--app-surface);
 }
 
 .typing-indicator,
@@ -574,7 +625,7 @@ button:disabled {
   display: flex;
   flex-direction: column;
   padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--app-border-subtle);
   flex-shrink: 0;
   min-height: 0;
 }
@@ -602,7 +653,7 @@ button:disabled {
   gap: 6px;
   margin-bottom: 6px;
   padding-bottom: 4px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--app-border-subtle);
 }
 
 /* Individual preview chip badge representing an attached file */
@@ -613,8 +664,8 @@ button:disabled {
   max-width: 200px;
   padding: 2px 8px;
   border-radius: var(--app-radius-sm);
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--app-fg, #ffffff);
+  background: var(--app-surface-strong);
+  color: var(--app-fg);
   font-size: 0.72rem;
   user-select: none;
 }
@@ -649,7 +700,7 @@ button:disabled {
   resize: none;
   overflow-y: hidden;
   background: transparent;
-  color: var(--vscode-input-foreground, #cccccc);
+  color: var(--vscode-input-foreground, var(--app-fg));
   font-size: 0.85rem;
   line-height: 1.4;
   transition: height 0.1s ease-out;
@@ -668,7 +719,7 @@ button:disabled {
   gap: 12px;
   margin-top: 4px;
   padding-top: 4px;
-  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  border-top: 1px solid var(--app-border-subtle);
 }
 
 /* Left alignment group for plus file upload, model selector, and @ capabilities dropdown */
@@ -691,7 +742,7 @@ button:disabled {
   padding: 0;
   border: 0 !important;
   border-radius: var(--app-radius-md);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--app-surface-strong);
   color: var(--app-muted);
   cursor: pointer;
   box-sizing: border-box;
@@ -700,8 +751,8 @@ button:disabled {
 }
 
 .toolbar-icon-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--vscode-foreground, #ffffff);
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
 }
 
 /* Active indicator highlight when Planning Mode is enabled */
@@ -720,10 +771,10 @@ button:disabled {
   min-width: 200px;
   padding: 8px 10px;
   box-sizing: border-box;
-  background: var(--vscode-dropdown-background, #252526);
+  background: var(--app-dropdown-bg);
   border: 1px solid var(--app-border-strong);
   border-radius: var(--app-radius-md);
-  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--app-dropdown-shadow);
 }
 
 .context-options-header {
@@ -734,7 +785,7 @@ button:disabled {
   color: var(--app-muted);
   margin-bottom: 6px;
   padding-bottom: 4px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--app-border-subtle);
 }
 
 .context-option-row {
@@ -784,7 +835,7 @@ button:disabled {
   padding: 0 8px;
   border: 0 !important;
   border-radius: var(--app-radius-md);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--app-surface-strong);
   color: var(--app-muted);
   font-size: 0.72rem;
   text-align: left;
@@ -795,8 +846,8 @@ button:disabled {
 
 .dropdown-trigger:hover,
 .dropdown-trigger:focus {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--vscode-foreground, #ffffff);
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
 }
 
 /* Outer container clipping text behind the component */
@@ -878,10 +929,10 @@ button:disabled {
   max-width: calc(100cqw - 195px);
   padding: 4px 2px;
   box-sizing: border-box;
-  background: var(--vscode-dropdown-background, #252526);
+  background: var(--app-dropdown-bg);
   border: 1px solid var(--app-border-strong);
   border-radius: var(--app-radius-md);
-  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--app-dropdown-shadow);
   overflow: visible;
 }
 
@@ -899,8 +950,8 @@ button:disabled {
   gap: 6px;
   padding: 6px 12px;
   margin: 1px 0;
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--app-muted, #888888);
+  background: var(--app-surface-strong);
+  color: var(--app-muted);
   font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
@@ -913,8 +964,8 @@ button:disabled {
 
 .dropdown-category-header:hover,
 .dropdown-category-header:focus-visible {
-  background: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
 }
 
 .dropdown-category-header .chevron-icon {
@@ -965,14 +1016,14 @@ button:disabled {
 .dropdown-item:focus-visible,
 .flyout-option:hover,
 .flyout-option:focus-visible {
-  color: var(--vscode-foreground, #ffffff);
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--app-fg);
+  background: var(--vscode-list-hoverBackground, var(--app-surface-hover));
 }
 
 .dropdown-item.selected,
 .flyout-option.selected {
-  color: rgba(255, 255, 255, 0.85);
-  font-weight: 500;
+  color: var(--app-fg);
+  font-weight: 600;
 }
 
 .dropdown-item .check-icon,
@@ -981,7 +1032,7 @@ button:disabled {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  color: var(--vscode-foreground, #ffffff);
+  color: var(--app-accent);
 }
 
 .dropdown-item.model-hover-item {
@@ -1007,10 +1058,10 @@ button:disabled {
 
 /* Inner visible box of the Thinking Dropdown flyout (No borders, 1px button gap) */
 .thinking-flyout-menu-inner {
-  background: var(--vscode-dropdown-background, #252526);
-  border: 0;
+  background: var(--app-dropdown-bg);
+  border: 1px solid var(--app-border-strong);
   border-radius: var(--app-radius-md);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--app-flyout-shadow);
   padding: 3px;
   display: flex;
   flex-direction: column;
@@ -1018,8 +1069,8 @@ button:disabled {
 }
 
 .dropdown-item.model-hover-item.flyout-open {
-  color: var(--vscode-foreground, #ffffff);
-  background: rgba(255, 255, 255, 0.06);
+  color: var(--app-fg);
+  background: var(--app-surface-hover);
 }
 
 .dropdown-item.model-hover-item.flyout-open > .thinking-flyout-menu {
@@ -1061,7 +1112,7 @@ button:disabled {
   vertical-align: middle;
   margin-right: 4px;
   margin-left: 2px;
-  color: var(--vscode-foreground, #ffffff);
+  color: var(--app-fg);
 }
 
 .flyout-option .flyout-battery-icon {
@@ -1082,10 +1133,10 @@ button:disabled {
   align-items: center;
   padding: 4px 4px;
   margin-bottom: 2px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--app-border-subtle);
   font-size: 0.82rem;
   font-weight: 600;
-  color: var(--vscode-foreground, #ffffff);
+  color: var(--app-fg);
 }
 
 .settings-container,
@@ -1131,7 +1182,7 @@ button:disabled {
   background: transparent;
   border: 0;
   border-radius: 0;
-  color: var(--vscode-foreground, #ffffff);
+  color: var(--app-fg);
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
@@ -1143,7 +1194,7 @@ button:disabled {
 .category-header-btn:focus-visible {
   background: transparent;
   border: 0;
-  color: var(--vscode-foreground, #ffffff);
+  color: var(--app-fg);
 }
 
 /* Category Title - Uppercase, muted grey, refined larger text size */
@@ -1152,7 +1203,7 @@ button:disabled {
   font-size: 0.80rem;
   font-weight: 600;
   letter-spacing: 0.6px;
-  color: var(--app-muted, #888888);
+  color: var(--app-muted);
 }
 
 /* Setting Item Label & Switch Label - Thinner font weight (400) and soft lighter color */
@@ -1161,7 +1212,7 @@ button:disabled {
 .switch-label {
   font-size: 0.75rem;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--app-fg);
   margin-bottom: 4px;
 }
 
@@ -1214,8 +1265,8 @@ button:disabled {
 
 .btn-hover-only:hover,
 .btn-hover-only:focus-visible {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: var(--app-border-subtle, rgba(255, 255, 255, 0.12));
+  background: var(--app-surface-hover);
+  border-color: var(--app-border);
 }
 
 /* ==========================================================================
@@ -1240,10 +1291,10 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   padding: 0 10px;
-  background: var(--app-input-bg, rgba(255, 255, 255, 0.04));
-  color: var(--app-fg, #cccccc);
-  border: 1px solid var(--app-input-border, rgba(255, 255, 255, 0.12));
-  border-radius: var(--app-radius-sm, 4px);
+  background: var(--app-input-bg);
+  color: var(--app-fg);
+  border: 1px solid var(--app-input-border);
+  border-radius: var(--app-radius-sm);
   font-size: 0.75rem;
   cursor: pointer;
   user-select: none;
@@ -1254,9 +1305,9 @@ button:disabled {
 .custom-select-trigger:hover,
 .custom-select-trigger:focus,
 .custom-select-trigger.active {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--app-border-strong, rgba(255, 255, 255, 0.25));
-  color: var(--vscode-foreground, #ffffff);
+  background: var(--app-surface-hover);
+  border-color: var(--app-border-strong);
+  color: var(--app-fg);
 }
 
 /* Label text container within custom select trigger button */
@@ -1282,10 +1333,10 @@ button:disabled {
   left: 0;
   width: 100%;
   z-index: 10000;
-  background: var(--vscode-dropdown-background, #252526);
-  border: 1px solid var(--app-border-strong, rgba(255, 255, 255, 0.2));
-  border-radius: var(--app-radius-md, 6px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  background: var(--app-dropdown-bg);
+  border: 1px solid var(--app-border-strong);
+  border-radius: var(--app-radius-md);
+  box-shadow: var(--app-flyout-shadow);
   padding: 3px;
   box-sizing: border-box;
   display: flex;
@@ -1337,7 +1388,7 @@ button:disabled {
   width: 28px;
   height: 16px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--app-surface-strong);
   transition: background-color 0.2s ease;
 }
 
@@ -1349,7 +1400,7 @@ button:disabled {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: var(--vscode-foreground, #ffffff);
+  background: var(--app-fg);
   transition: left 0.2s ease;
 }
 
@@ -1420,7 +1471,7 @@ button:disabled {
   width: 12px;
   height: 12px;
   margin-right: 6px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid var(--app-border-strong);
   border-top-color: var(--app-muted);
   border-radius: 50%;
   animation: spin-loader 1s linear infinite;
@@ -1469,7 +1520,7 @@ button:disabled {
 }
 
 .tool-status-row:hover {
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--app-surface-hover);
   color: var(--app-fg);
 }
 
@@ -1499,8 +1550,8 @@ button:disabled {
 .tool-result-dropdown {
   margin-top: 4px;
   padding: 6px 8px;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--app-tool-dropdown-bg);
+  border: 1px solid var(--app-border-subtle);
   border-radius: var(--app-radius-sm);
   overflow: hidden;
 }
@@ -1515,7 +1566,7 @@ button:disabled {
   word-break: break-all;
   font-family: var(--app-mono);
   font-size: 0.72rem;
-  color: #a5d6a7;
+  color: var(--app-tool-dropdown-text);
 }
 
 .tool-status-row svg {
@@ -1528,7 +1579,7 @@ button:disabled {
   margin-left: 4px;
   padding: 1px 3px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--app-surface);
   color: var(--app-fg);
   font-size: 0.72rem;
 }
@@ -1552,8 +1603,8 @@ button:disabled {
   margin-top: 4px;
   padding: 4px 8px;
   border-radius: var(--app-radius-sm);
-  background: rgba(0, 0, 0, 0.25);
-  color: #ff8a80;
+  background: var(--app-tool-error-bg);
+  color: var(--app-tool-error-text);
   font-family: var(--app-mono);
   font-size: 0.7rem;
   white-space: pre-wrap;
@@ -1573,20 +1624,20 @@ button:disabled {
 }
 
 .agent-step-card {
-  border-color: rgba(255, 255, 255, 0.03);
+  border-color: var(--app-border-subtle);
   color: var(--app-muted);
 }
 
 .tool-call-card {
   background: rgba(0, 122, 204, 0.05);
   border: 1px solid rgba(0, 122, 204, 0.2);
-  color: #00bcd4;
+  color: var(--app-tool-call-text);
   text-align: left;
 }
 
 .tool-result-card {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--app-surface);
+  border: 1px solid var(--app-border-subtle);
   color: var(--app-fg);
   text-align: left;
 }
@@ -1600,8 +1651,8 @@ button:disabled {
   margin-top: 4px;
   padding: 3px 6px;
   border-radius: var(--app-radius-sm);
-  background: rgba(0, 0, 0, 0.15);
-  color: #80deea;
+  background: var(--app-tool-query-bg);
+  color: var(--app-tool-query-text);
   font-size: 0.75rem;
 }
 
@@ -1617,8 +1668,8 @@ button:disabled {
   max-height: 120px;
   overflow: auto;
   padding: 6px;
-  background: #121212;
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: var(--app-tool-dropdown-bg);
+  border: 1px solid var(--app-border-subtle);
   border-radius: var(--app-radius-sm);
 }
 
@@ -1626,7 +1677,7 @@ button:disabled {
   display: block;
   white-space: pre;
   background: transparent;
-  color: #a5d6a7;
+  color: var(--app-tool-dropdown-text);
   font-size: 0.75rem;
 }
 
@@ -1697,7 +1748,7 @@ button:disabled {
   align-items: center;
   margin-bottom: 12px;
   padding-bottom: 6px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--app-border-subtle);
   color: var(--app-fg);
   font-size: 0.85rem;
   font-weight: 600;
@@ -1740,7 +1791,7 @@ button:disabled {
 }
 
 .history-item:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--app-surface-hover);
 }
 
 .history-item-content {
@@ -1833,10 +1884,10 @@ button:disabled {
 
 .setting-item :is(select, input[type="password"], input[type="text"]) {
   padding: 6px 10px;
-  border: 1px solid var(--vscode-input-border, #3c3c3c);
+  border: 1px solid var(--app-input-border);
   border-radius: var(--app-radius-sm);
-  background: var(--vscode-input-background, #2d2d2d);
-  color: var(--vscode-input-foreground, #ffffff);
+  background: var(--app-input-bg);
+  color: var(--vscode-input-foreground, var(--app-fg));
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -1852,7 +1903,7 @@ button:disabled {
   margin-top: 4px;
   margin-left: 16px;
   padding-left: 12px;
-  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  border-left: 1px solid var(--app-border-subtle);
 }
 
 .keys-content-panel {
@@ -1874,8 +1925,8 @@ button:disabled {
 
 .file-summary-widget {
   padding: 8px 12px;
-  background: var(--vscode-editor-background, #1e1e1e);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--app-file-summary-bg);
+  border: 1px solid var(--app-border);
   border-radius: var(--app-radius-md);
 }
 
@@ -1885,7 +1936,7 @@ button:disabled {
   align-items: center;
   margin-bottom: 8px;
   padding-bottom: 6px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--app-border-subtle);
   color: var(--app-muted);
   font-size: 0.8rem;
   font-weight: 700;
@@ -1911,7 +1962,7 @@ button:disabled {
 }
 
 .files-edited-scroll-row::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--app-scrollbar-thumb);
   border-radius: 2px;
 }
 
@@ -1921,22 +1972,22 @@ button:disabled {
   gap: 6px;
   padding: 5px 9px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--app-surface-strong);
+  border: 1px solid var(--app-border);
   flex-shrink: 0;
   cursor: pointer;
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .file-card:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--app-surface-hover);
+  border-color: var(--app-border-strong);
 }
 
 .file-card-name {
   font-size: 0.78rem;
   font-weight: 500;
-  color: var(--vscode-foreground, #cccccc);
+  color: var(--app-fg);
   white-space: nowrap;
 }
 
@@ -2022,7 +2073,7 @@ button:disabled {
 }
 
 .file-name {
-  color: var(--vscode-foreground, #cccccc);
+  color: var(--app-fg);
   font-weight: 500;
 }
 
@@ -2077,12 +2128,12 @@ details[open]>summary>.custom-chevron {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--app-scrollbar-thumb);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: var(--app-scrollbar-thumb-hover);
 }
 
 /* -----------------------------
