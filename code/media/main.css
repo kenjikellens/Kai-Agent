@@ -1020,9 +1020,11 @@ button:disabled {
   background: var(--vscode-list-hoverBackground, var(--app-surface-hover));
 }
 
+/* Selected item state for dropdown options */
 .dropdown-item.selected,
 .flyout-option.selected {
   color: var(--app-fg);
+  background: var(--app-surface-strong);
   font-weight: 600;
 }
 
@@ -1082,10 +1084,6 @@ button:disabled {
   display: none !important;
 }
 
-.dropdown-item.selected {
-  color: rgba(255, 255, 255, 0.85);
-  font-weight: 500;
-}
 
 .dropdown-item .status-dot {
   margin-right: 0;
