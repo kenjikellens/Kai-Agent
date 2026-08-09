@@ -35,6 +35,8 @@ class ReadFileTool extends Tool_1.Tool {
         super(...arguments);
         this.name = 'read_file';
         this.description = 'Reads the content of a file in the workspace, returning line-numbered text.';
+        this.maxOutputLines = 100;
+        this.maxOutputBytes = 6000;
     }
     getFunctionDeclaration() {
         return {

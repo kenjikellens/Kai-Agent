@@ -35,6 +35,8 @@ class GrepSearchTool extends Tool_1.Tool {
         super(...arguments);
         this.name = 'grep_search';
         this.description = 'Searches text files recursively for exact pattern matches, returning matching lines and file paths.';
+        this.maxOutputLines = 80;
+        this.maxOutputBytes = 5000;
         /** Directory names to ignore during traversal. */
         this.ignoreDirs = new Set(['.git', 'node_modules', 'out', 'dist', '.vscode']);
         /** File extensions to skip during content reading. */

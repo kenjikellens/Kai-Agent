@@ -2,6 +2,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { LLMProviderFactory } from './providers/LLMProviderFactory';
 import { Tool, getRegisteredTools } from './tools';
+import { ContextManager, ContextMessage } from './ContextManager';
 
 /**
  * AgentExecutor coordinates the autonomous AI agent loop.
@@ -15,6 +16,7 @@ export class AgentExecutor {
     private temperature: number;
     private onProgress: (event: { type: string; tool?: string; query?: string; output?: string; toolId?: string; fileName?: string }) => void;
     private tools: Tool[];
+    private contextManager: ContextManager;
 
     /**
      * Initializes a new instance of the AgentExecutor.
@@ -37,6 +39,7 @@ export class AgentExecutor {
         this.temperature = temperature;
         this.onProgress = onProgress;
         this.tools = getRegisteredTools();
+        this.contextManager = new ContextManager();
     }
 
     /**
@@ -60,10 +63,12 @@ export class AgentExecutor {
         thinking: boolean = true,
         geminiThinkingLevel: string = 'high',
         planningMode: boolean = false,
-        attachedFiles?: any[]
+        attachedFiles?: any[],
+        maxContextTokens: number = 16000
     ): Promise<{ reply: string; messages: { role: string; content: string }[]; modifiedFiles: string[] }> {
         // Deep copy history to avoid mutating the original until loop is complete
-        const messages = [...chatHistory];
+        let messages: ContextMessage[] = [...chatHistory];
+        this.contextManager = new ContextManager(maxContextTokens);
 
         // Find existing system prompt or inject ours at the beginning
         const existingSystemIndex = messages.findIndex((m) => m.role === 'system');
@@ -178,6 +183,7 @@ export class AgentExecutor {
 
             // Append the model's response containing the tool call to the history
             messages.push({ role: 'assistant', content: response });
+            messages = this.contextManager.compressIfNeeded(messages);
 
             const activeToolId = `tool-${Date.now()}-${iteration}`;
             const targetName = this.getToolTarget(toolCall.name, toolCall.args);
@@ -223,6 +229,7 @@ export class AgentExecutor {
                 role: 'user',
                 content: `[Tool Result for ${toolCall.name}]:\n${toolResult}\n\nPlease proceed with the next step based on this result.`
             });
+            messages = this.contextManager.compressIfNeeded(messages);
         }
 
         if (iteration >= maxIterations) {
@@ -406,7 +413,29 @@ export class AgentExecutor {
         if (!matchedTool) {
             throw new Error(`Unknown tool: ${tool}`);
         }
-        return await matchedTool.execute(args, { workspacePath: this.workspacePath });
+
+        let result = await matchedTool.execute(args, { workspacePath: this.workspacePath });
+        const absoluteMaxBytes = 10000;
+        if (Buffer.byteLength(result, 'utf8') > absoluteMaxBytes) {
+            result = this.truncateToolOutput(result, absoluteMaxBytes);
+        }
+        return result;
+    }
+
+    /** Applies a final size guard for tools that do not enforce their own output limits. */
+    private truncateToolOutput(output: string, maxBytes: number): string {
+        const lines = output.split('\n');
+        const marker = `\n\n... [AgentExecutor: output truncated from ${lines.length} lines] ...\n\n`;
+        const availableBytes = Math.max(0, maxBytes - Buffer.byteLength(marker, 'utf8'));
+        const head = lines.slice(0, 60).join('\n');
+        const tail = lines.slice(-30).join('\n');
+        const combined = `${head}${marker}${tail}`;
+
+        if (Buffer.byteLength(combined, 'utf8') <= maxBytes) {
+            return combined;
+        }
+
+        return `${Buffer.from(combined, 'utf8').subarray(0, availableBytes).toString('utf8')}${marker.trimEnd()}`;
     }
 
     /**

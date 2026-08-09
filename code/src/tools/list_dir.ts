@@ -7,6 +7,8 @@ import { Tool, ToolContext, FunctionDeclaration, resolveSafePath } from './Tool'
 export class ListDirTool extends Tool {
     public readonly name = 'list_dir';
     public readonly description = 'Lists all files and subdirectories within a given relative directory path.';
+    protected readonly maxOutputLines = 200;
+    protected readonly maxOutputBytes = 10000;
 
     public getFunctionDeclaration(): FunctionDeclaration {
         return {

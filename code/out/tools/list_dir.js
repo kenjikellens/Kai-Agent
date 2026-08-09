@@ -34,6 +34,8 @@ class ListDirTool extends Tool_1.Tool {
         super(...arguments);
         this.name = 'list_dir';
         this.description = 'Lists all files and subdirectories within a given relative directory path.';
+        this.maxOutputLines = 200;
+        this.maxOutputBytes = 10000;
     }
     getFunctionDeclaration() {
         return {

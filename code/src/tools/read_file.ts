@@ -8,6 +8,8 @@ import { FileToolUtils } from './FileToolUtils';
 export class ReadFileTool extends Tool {
     public readonly name = 'read_file';
     public readonly description = 'Reads the content of a file in the workspace, returning line-numbered text.';
+    protected readonly maxOutputLines = 100;
+    protected readonly maxOutputBytes = 6000;
 
     public getFunctionDeclaration(): FunctionDeclaration {
         return {

@@ -8,6 +8,8 @@ import { Tool, ToolContext, FunctionDeclaration } from './Tool';
 export class FetchUrlTool extends Tool {
     public readonly name = 'fetch_url';
     public readonly description = 'Fetches raw text content from a web URL for documentation or reference.';
+    protected readonly maxOutputLines = 60;
+    protected readonly maxOutputBytes = 4000;
 
     public getFunctionDeclaration(): FunctionDeclaration {
         return {

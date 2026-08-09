@@ -8,6 +8,8 @@ import { Tool, ToolContext, FunctionDeclaration } from './Tool';
 export class SymbolSearchTool extends Tool {
     public readonly name = 'symbol_search';
     public readonly description = 'Searches for AST symbols (classes, functions, methods, variables) across the workspace.';
+    protected readonly maxOutputLines = 100;
+    protected readonly maxOutputBytes = 6000;
 
     public getFunctionDeclaration(): FunctionDeclaration {
         return {

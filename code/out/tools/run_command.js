@@ -35,6 +35,8 @@ class RunCommandTool extends Tool_1.Tool {
         super(...arguments);
         this.name = 'run_command';
         this.description = 'Executes a shell command in the workspace directory. Requires explicit user approval.';
+        this.maxOutputLines = 80;
+        this.maxOutputBytes = 6000;
     }
     getFunctionDeclaration() {
         return {

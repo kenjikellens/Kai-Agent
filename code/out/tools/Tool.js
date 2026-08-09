@@ -30,28 +30,55 @@ const path = __importStar(require("path"));
  * Provides OOP structure, schema generation for function calling, and output truncation utilities.
  */
 class Tool {
+    constructor() {
+        /** Maximum number of lines returned by this tool. Subclasses may override this. */
+        this.maxOutputLines = 150;
+        /** Maximum number of UTF-8 bytes returned by this tool. Subclasses may override this. */
+        this.maxOutputBytes = 8000;
+    }
     /**
      * Truncates large tool execution output to save context window tokens.
      * Keeps head and tail lines with a clear truncation marker.
      */
-    truncateOutput(output, maxLines = 150, maxBytes = 8000) {
+    truncateOutput(output, maxLines = this.maxOutputLines, maxBytes = this.maxOutputBytes) {
         if (!output) {
             return output;
         }
         let result = output;
-        if (Buffer.byteLength(result, 'utf8') > maxBytes) {
-            result = result.slice(0, maxBytes);
-        }
-        const lines = result.split('\n');
-        if (lines.length > maxLines) {
-            const headCount = Math.floor(maxLines / 2);
+        // Truncate by complete lines first, retaining useful context from both ends.
+        const allLines = result.split('\n');
+        if (allLines.length > maxLines) {
+            const headCount = Math.floor(maxLines * 0.6);
             const tailCount = maxLines - headCount;
-            const head = lines.slice(0, headCount).join('\n');
-            const tail = lines.slice(-tailCount).join('\n');
-            const omitted = lines.length - maxLines;
-            return `${head}\n\n... [Output truncated: ${omitted} lines omitted to optimize context window] ...\n\n${tail}`;
+            const head = allLines.slice(0, headCount).join('\n');
+            const tail = allLines.slice(-tailCount).join('\n');
+            const omitted = allLines.length - maxLines;
+            result = `${head}\n\n... [${omitted} lines omitted] ...\n\n${tail}`;
         }
-        return result;
+        if (Buffer.byteLength(result, 'utf8') <= maxBytes) {
+            return result;
+        }
+        // Keep the byte limit UTF-8 safe and avoid cutting through a line where possible.
+        const marker = '\n... [Output truncated at byte limit]';
+        const availableBytes = Math.max(0, maxBytes - Buffer.byteLength(marker, 'utf8'));
+        const lines = result.split('\n');
+        let byteLength = 0;
+        const keptLines = [];
+        for (const line of lines) {
+            const lineBytes = Buffer.byteLength(line, 'utf8');
+            const separatorBytes = keptLines.length > 0 ? 1 : 0;
+            if (byteLength + separatorBytes + lineBytes > availableBytes) {
+                break;
+            }
+            keptLines.push(line);
+            byteLength += separatorBytes + lineBytes;
+        }
+        if (keptLines.length > 0) {
+            return `${keptLines.join('\n')}${marker}`;
+        }
+        // A single very long line cannot fit as a complete line; Buffer safely handles
+        // the UTF-8 boundary and the marker makes the truncation explicit.
+        return `${Buffer.from(result, 'utf8').subarray(0, availableBytes).toString('utf8')}${marker}`;
     }
 }
 exports.Tool = Tool;

@@ -28,6 +28,7 @@ const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
 const LLMProviderFactory_1 = require("./providers/LLMProviderFactory");
 const tools_1 = require("./tools");
+const ContextManager_1 = require("./ContextManager");
 /**
  * AgentExecutor coordinates the autonomous AI agent loop.
  * It manages polymorphic tool execution (file operations, search, terminal commands, diagnostics, AST symbols),
@@ -49,6 +50,7 @@ class AgentExecutor {
         this.temperature = temperature;
         this.onProgress = onProgress;
         this.tools = (0, tools_1.getRegisteredTools)();
+        this.contextManager = new ContextManager_1.ContextManager();
     }
     /**
      * The main execution loop of the agent.
@@ -62,9 +64,10 @@ class AgentExecutor {
      * @param thinking Toggle parameter for model reasoning phase.
      * @returns A promise that resolves to the final assistant response.
      */
-    async run(userPrompt, chatHistory, model = 'local-model', signal, activeFile, thinking = true, geminiThinkingLevel = 'high', planningMode = false, attachedFiles) {
+    async run(userPrompt, chatHistory, model = 'local-model', signal, activeFile, thinking = true, geminiThinkingLevel = 'high', planningMode = false, attachedFiles, maxContextTokens = 16000) {
         // Deep copy history to avoid mutating the original until loop is complete
-        const messages = [...chatHistory];
+        let messages = [...chatHistory];
+        this.contextManager = new ContextManager_1.ContextManager(maxContextTokens);
         // Find existing system prompt or inject ours at the beginning
         const existingSystemIndex = messages.findIndex((m) => m.role === 'system');
         if (existingSystemIndex !== -1) {
@@ -160,6 +163,7 @@ class AgentExecutor {
             }
             // Append the model's response containing the tool call to the history
             messages.push({ role: 'assistant', content: response });
+            messages = this.contextManager.compressIfNeeded(messages);
             const activeToolId = `tool-${Date.now()}-${iteration}`;
             const targetName = this.getToolTarget(toolCall.name, toolCall.args);
             // Report the tool invocation to the UI
@@ -199,6 +203,7 @@ class AgentExecutor {
                 role: 'user',
                 content: `[Tool Result for ${toolCall.name}]:\n${toolResult}\n\nPlease proceed with the next step based on this result.`
             });
+            messages = this.contextManager.compressIfNeeded(messages);
         }
         if (iteration >= maxIterations) {
             lastAssistantResponse += '\n\n*(Agent execution halted: Maximum tool execution steps reached)*';
@@ -382,7 +387,25 @@ class AgentExecutor {
         if (!matchedTool) {
             throw new Error(`Unknown tool: ${tool}`);
         }
-        return await matchedTool.execute(args, { workspacePath: this.workspacePath });
+        let result = await matchedTool.execute(args, { workspacePath: this.workspacePath });
+        const absoluteMaxBytes = 10000;
+        if (Buffer.byteLength(result, 'utf8') > absoluteMaxBytes) {
+            result = this.truncateToolOutput(result, absoluteMaxBytes);
+        }
+        return result;
+    }
+    /** Applies a final size guard for tools that do not enforce their own output limits. */
+    truncateToolOutput(output, maxBytes) {
+        const lines = output.split('\n');
+        const marker = `\n\n... [AgentExecutor: output truncated from ${lines.length} lines] ...\n\n`;
+        const availableBytes = Math.max(0, maxBytes - Buffer.byteLength(marker, 'utf8'));
+        const head = lines.slice(0, 60).join('\n');
+        const tail = lines.slice(-30).join('\n');
+        const combined = `${head}${marker}${tail}`;
+        if (Buffer.byteLength(combined, 'utf8') <= maxBytes) {
+            return combined;
+        }
+        return `${Buffer.from(combined, 'utf8').subarray(0, availableBytes).toString('utf8')}${marker.trimEnd()}`;
     }
     /**
      * Extracts the target file basename or command name for compact UI representation.

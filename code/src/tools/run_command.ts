@@ -8,6 +8,8 @@ import { Tool, ToolContext, FunctionDeclaration } from './Tool';
 export class RunCommandTool extends Tool {
     public readonly name = 'run_command';
     public readonly description = 'Executes a shell command in the workspace directory. Requires explicit user approval.';
+    protected readonly maxOutputLines = 80;
+    protected readonly maxOutputBytes = 6000;
 
     public getFunctionDeclaration(): FunctionDeclaration {
         return {

@@ -8,6 +8,8 @@ import { Tool, ToolContext, FunctionDeclaration, resolveSafePath } from './Tool'
 export class GrepSearchTool extends Tool {
     public readonly name = 'grep_search';
     public readonly description = 'Searches text files recursively for exact pattern matches, returning matching lines and file paths.';
+    protected readonly maxOutputLines = 80;
+    protected readonly maxOutputBytes = 5000;
 
     public getFunctionDeclaration(): FunctionDeclaration {
         return {
