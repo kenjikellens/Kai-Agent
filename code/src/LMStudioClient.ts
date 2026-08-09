@@ -12,6 +12,10 @@ export { FreeProvider, FREE_PROVIDERS };
  * LMStudioClient handles communication with the locally running LM Studio HTTP API server.
  */
 export class LMStudioClient implements ILLMProvider {
+    /** Local models retain the existing text-based tool-call protocol. */
+    public supportsNativeFunctionCalling(): boolean {
+        return false;
+    }
     private serverUrl: string;
     private apiKey: string;
     private geminiClient: GeminiClient;

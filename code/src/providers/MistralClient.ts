@@ -4,6 +4,7 @@ import { BaseCloudProviderClient } from './BaseCloudProviderClient';
  * Dedicated client implementation for Mistral AI cloud API.
  */
 export class MistralClient extends BaseCloudProviderClient {
+    protected override readonly nativeFunctionCalling = true;
     /** Display name of provider shown in UI. */
     public readonly name = 'Mistral AI';
     /** Base URL endpoint for Mistral AI API. */

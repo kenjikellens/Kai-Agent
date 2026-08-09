@@ -69,18 +69,22 @@ export class AgentExecutor {
         // Deep copy history to avoid mutating the original until loop is complete
         let messages: ContextMessage[] = [...chatHistory];
         this.contextManager = new ContextManager(maxContextTokens);
+        const provider = LLMProviderFactory.getProvider(model, this.serverUrl);
+        const useNativeFunctionCalling = Boolean(
+            provider.supportsNativeFunctionCalling?.() && provider.chatCompletionStreamWithTools
+        );
 
         // Find existing system prompt or inject ours at the beginning
         const existingSystemIndex = messages.findIndex((m) => m.role === 'system');
         if (existingSystemIndex !== -1) {
             messages[existingSystemIndex] = {
                 role: 'system',
-                content: this.getSystemPrompt()
+                content: this.getSystemPrompt(useNativeFunctionCalling)
             };
         } else {
             messages.unshift({
                 role: 'system',
-                content: this.getSystemPrompt()
+                content: this.getSystemPrompt(useNativeFunctionCalling)
             });
         }
 
@@ -158,31 +162,73 @@ export class AgentExecutor {
             iteration++;
             this.onProgress({ type: 'thinking', output: `Step ${iteration}: Consulting model...` });
 
-            // Call the LLM provider strategy with streaming tokens
-            const provider = LLMProviderFactory.getProvider(model, this.serverUrl);
-            const response = await provider.chatCompletionStream(
-                messages,
-                model,
-                this.temperature,
-                (token) => {
-                    this.onProgress({ type: 'token', output: token });
-                },
-                signal,
-                thinking,
-                geminiThinkingLevel
-            );
-            lastAssistantResponse = response;
+            let response = '';
+            let nativeToolCallId: string | undefined;
+            let toolCall: { name: string; args: any; query: string } | null;
 
-            // Parse response for tool calls
-            const toolCall = this.parseToolCall(response);
+            if (useNativeFunctionCalling && provider.chatCompletionStreamWithTools) {
+                const nativeResult = await provider.chatCompletionStreamWithTools(
+                    messages,
+                    model,
+                    this.temperature,
+                    this.getToolSchemas(),
+                    (token) => {
+                        this.onProgress({ type: 'token', output: token });
+                    },
+                    signal,
+                    thinking,
+                    geminiThinkingLevel
+                );
+                response = nativeResult.text;
+                if (nativeResult.type === 'tool_call' && nativeResult.toolCall) {
+                    nativeToolCallId = nativeResult.toolCall.id;
+                    toolCall = {
+                        name: nativeResult.toolCall.name,
+                        args: nativeResult.toolCall.args,
+                        query: `Native tool call: ${nativeResult.toolCall.name}`
+                    };
+                } else {
+                    toolCall = null;
+                }
+            } else {
+                response = await provider.chatCompletionStream(
+                    messages,
+                    model,
+                    this.temperature,
+                    (token) => {
+                        this.onProgress({ type: 'token', output: token });
+                    },
+                    signal,
+                    thinking,
+                    geminiThinkingLevel
+                );
+                toolCall = this.parseToolCall(response);
+            }
+            lastAssistantResponse = response;
 
             if (!toolCall) {
                 // No tools requested, agent is done
                 break;
             }
 
-            // Append the model's response containing the tool call to the history
-            messages.push({ role: 'assistant', content: response });
+            // Preserve native call metadata so the provider can associate the tool result
+            // with the exact call on the following model turn.
+            if (nativeToolCallId) {
+                messages.push({
+                    role: 'assistant',
+                    content: response,
+                    tool_calls: [{
+                        id: nativeToolCallId,
+                        type: 'function',
+                        function: {
+                            name: toolCall.name,
+                            arguments: JSON.stringify(toolCall.args)
+                        }
+                    }]
+                });
+            } else {
+                messages.push({ role: 'assistant', content: response });
+            }
             messages = this.contextManager.compressIfNeeded(messages);
 
             const activeToolId = `tool-${Date.now()}-${iteration}`;
@@ -224,11 +270,20 @@ export class AgentExecutor {
                 fileName: targetName
             });
 
-            // Feed the tool output back into the message history for the next iteration
-            messages.push({
-                role: 'user',
-                content: `[Tool Result for ${toolCall.name}]:\n${toolResult}\n\nPlease proceed with the next step based on this result.`
-            });
+            // Feed native results back with their call ID; legacy providers keep the existing text protocol.
+            if (nativeToolCallId) {
+                messages.push({
+                    role: 'tool',
+                    name: toolCall.name,
+                    tool_call_id: nativeToolCallId,
+                    content: toolResult
+                });
+            } else {
+                messages.push({
+                    role: 'user',
+                    content: `[Tool Result for ${toolCall.name}]:\n${toolResult}\n\nPlease proceed with the next step based on this result.`
+                });
+            }
             messages = this.contextManager.compressIfNeeded(messages);
         }
 
@@ -250,16 +305,33 @@ export class AgentExecutor {
      * Constructs the system prompt by loading it from system_prompt.md.
      * @returns The formatting guide system instructions.
      */
-    private getSystemPrompt(): string {
+    private getSystemPrompt(nativeFunctionCalling: boolean = false): string {
         const promptPath = path.join(this.extensionPath, 'system_prompt.md');
         try {
             if (fs.existsSync(promptPath)) {
-                return fs.readFileSync(promptPath, 'utf8');
+                const prompt = fs.readFileSync(promptPath, 'utf8');
+                return nativeFunctionCalling ? this.getNativeFunctionCallingPrompt(prompt) : prompt;
             }
         } catch (e) {
             console.error('Error reading system_prompt.md:', e);
         }
         return `You are a powerful, autonomous local AI Developer Agent operating directly within the user's workspace directory. You have full access to view, list, search, and edit the workspace using tools.`;
+    }
+
+    /** Removes text-protocol instructions when providers receive native tool schemas separately. */
+    private getNativeFunctionCallingPrompt(prompt: string): string {
+        return prompt
+            .replace(
+                'Execute actions by outputting exactly ONE tool call enclosed inside `<|tool_call|>` tags per turn.',
+                'Execute actions using the provided native function tools. Make at most one function call per turn.'
+            )
+            .replace(/\n## RESPONSE FORMAT[\s\S]*?\n## CORE OPERATIONAL RULES/, '\n## CORE OPERATIONAL RULES')
+            .replace(/\n## ACTION SCHEMAS[\s\S]*?\n## JSON ESCAPING RULES/, '\n## JSON ESCAPING RULES');
+    }
+
+    /** Returns the native function declarations for all registered tools. */
+    private getToolSchemas() {
+        return this.tools.map((tool) => tool.getFunctionDeclaration());
     }
 
     /**

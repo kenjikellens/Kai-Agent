@@ -1,8 +1,7 @@
+import type { ChatMessage } from './providers/ILLMProvider';
+
 /** A chat message exchanged during an agent run. */
-export interface ContextMessage {
-    role: string;
-    content: string;
-}
+export interface ContextMessage extends ChatMessage {}
 
 /**
  * Keeps the agent conversation within a configurable context budget.

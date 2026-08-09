@@ -4,6 +4,7 @@ import { BaseCloudProviderClient } from './BaseCloudProviderClient';
  * Dedicated client implementation for Cerebras AI cloud API.
  */
 export class CerebrasClient extends BaseCloudProviderClient {
+    protected override readonly nativeFunctionCalling = true;
     /** Display name of provider shown in UI. */
     public readonly name = 'Cerebras';
     /** Base URL endpoint for Cerebras API. */

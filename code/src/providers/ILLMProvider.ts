@@ -1,6 +1,36 @@
-/**
- * Standard interface contract for all LLM Provider strategy implementations.
- */
+import type { FunctionDeclaration } from '../tools/Tool';
+
+/** A provider-neutral chat message, optionally carrying native tool metadata. */
+export interface ChatMessage {
+    role: string;
+    content: string;
+    tool_calls?: NativeToolCall[];
+    tool_call_id?: string;
+    name?: string;
+}
+
+/** An OpenAI-compatible representation of a native function call. */
+export interface NativeToolCall {
+    id: string;
+    type: 'function';
+    function: {
+        name: string;
+        arguments: string;
+    };
+}
+
+/** Result returned by a provider that executed a request with native tools. */
+export interface NativeToolCallResult {
+    type: 'text' | 'tool_call';
+    text: string;
+    toolCall?: {
+        id: string;
+        name: string;
+        args: Record<string, any>;
+    };
+}
+
+/** Standard interface contract for all LLM Provider strategy implementations. */
 export interface ILLMProvider {
     /**
      * Retrieves list of available model IDs for this provider.
@@ -47,4 +77,22 @@ export interface ILLMProvider {
         thinking?: boolean,
         geminiThinkingLevel?: string
     ): Promise<string>;
+
+    /** Indicates whether this provider can receive and return native function calls. */
+    supportsNativeFunctionCalling?(): boolean;
+
+    /**
+     * Streams a response with native function schemas. Providers without this capability
+     * continue to use chatCompletionStream and the legacy text parser.
+     */
+    chatCompletionStreamWithTools?(
+        messages: ChatMessage[],
+        model: string,
+        temperature: number,
+        tools: FunctionDeclaration[],
+        onToken: (token: string) => void,
+        signal?: any,
+        thinking?: boolean,
+        geminiThinkingLevel?: string
+    ): Promise<NativeToolCallResult>;
 }

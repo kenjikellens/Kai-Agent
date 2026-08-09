@@ -34,6 +34,10 @@ Object.defineProperty(exports, "FREE_PROVIDERS", { enumerable: true, get: functi
  * LMStudioClient handles communication with the locally running LM Studio HTTP API server.
  */
 class LMStudioClient {
+    /** Local models retain the existing text-based tool-call protocol. */
+    supportsNativeFunctionCalling() {
+        return false;
+    }
     /**
      * Initializes a new instance of LMStudioClient.
      * @param serverUrl Base API URL of LM Studio (default: "http://localhost:1234/v1").

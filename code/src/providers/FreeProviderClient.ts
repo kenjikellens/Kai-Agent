@@ -1,4 +1,5 @@
-import { ILLMProvider } from './ILLMProvider';
+import { ChatMessage, ILLMProvider, NativeToolCallResult } from './ILLMProvider';
+import { FunctionDeclaration } from '../tools/Tool';
 import { BaseCloudProviderClient } from './BaseCloudProviderClient';
 import { MistralClient } from './MistralClient';
 import { CohereClient } from './CohereClient';
@@ -130,5 +131,28 @@ export class FreeProviderClient implements ILLMProvider {
             throw new Error(`Unknown provider for model ${model}`);
         }
         return client.chatCompletionStream(messages, model, temperature, onToken, signal, thinking, geminiThinkingLevel);
+    }
+
+    /** Delegates native-tool support to the provider selected for the requested model. */
+    public supportsNativeFunctionCalling(): boolean {
+        return false;
+    }
+
+    /** Delegates a native-tool request to the concrete resolved provider. */
+    public async chatCompletionStreamWithTools(
+        messages: ChatMessage[],
+        model: string,
+        temperature: number,
+        tools: FunctionDeclaration[],
+        onToken: (token: string) => void,
+        signal?: any,
+        thinking?: boolean,
+        geminiThinkingLevel?: string
+    ): Promise<NativeToolCallResult> {
+        const client = this.resolveClient(model);
+        if (!client || !client.supportsNativeFunctionCalling()) {
+            throw new Error(`Native function calling is not available for model ${model}.`);
+        }
+        return client.chatCompletionStreamWithTools(messages, model, temperature, tools, onToken, signal, thinking, geminiThinkingLevel);
     }
 }

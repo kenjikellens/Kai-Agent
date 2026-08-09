@@ -3,7 +3,8 @@ import * as https from 'https';
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { ILLMProvider } from './ILLMProvider';
+import { ChatMessage, ILLMProvider, NativeToolCall, NativeToolCallResult } from './ILLMProvider';
+import { FunctionDeclaration } from '../tools/Tool';
 
 /**
  * Base abstract class for OpenAI-compatible cloud LLM providers.
@@ -19,6 +20,8 @@ export abstract class BaseCloudProviderClient implements ILLMProvider {
     public abstract readonly models: string[];
     /** Short description shown in UI placeholder. */
     public abstract readonly keyHint: string;
+    /** Override only for providers whose endpoint accepts OpenAI-compatible tools. */
+    protected readonly nativeFunctionCalling: boolean = false;
 
     /**
      * Retrieves the supported model IDs for this provider.
@@ -26,6 +29,11 @@ export abstract class BaseCloudProviderClient implements ILLMProvider {
      */
     public async getModels(): Promise<string[]> {
         return this.models;
+    }
+
+    /** Returns whether this provider has an explicitly supported native tool format. */
+    public supportsNativeFunctionCalling(): boolean {
+        return this.nativeFunctionCalling;
     }
 
     /**
@@ -319,6 +327,154 @@ export abstract class BaseCloudProviderClient implements ILLMProvider {
                         inThinking = false;
                     }
                     resolve(fullText);
+                });
+            });
+
+            req.on('error', reject);
+            req.write(payload);
+            req.end();
+        });
+    }
+
+    /** Streams an OpenAI-compatible chat completion with native function tools. */
+    public async chatCompletionStreamWithTools(
+        messages: ChatMessage[],
+        model: string,
+        temperature: number,
+        tools: FunctionDeclaration[],
+        onToken: (token: string) => void,
+        signal?: any,
+        thinking?: boolean,
+        _geminiThinkingLevel?: string
+    ): Promise<NativeToolCallResult> {
+        if (!this.supportsNativeFunctionCalling()) {
+            throw new Error(`${this.name} does not support native function calling.`);
+        }
+
+        return new Promise((resolve, reject) => {
+            const apiKey = this.getProviderApiKey();
+            if (!apiKey) {
+                reject(new Error(`No API key configured for ${this.name}. Add it in Settings.`));
+                return;
+            }
+
+            const requestBody = this.preparePayload(model, messages, temperature, true, thinking);
+            requestBody.tools = tools;
+            requestBody.tool_choice = 'auto';
+            const payload = JSON.stringify(requestBody);
+            const baseUrl = this.getProviderBaseUrl();
+            const parsedUrl = new URL(`${baseUrl}/chat/completions`);
+            const clientModule = parsedUrl.protocol === 'https:' ? https : http;
+            const options: http.RequestOptions = {
+                hostname: parsedUrl.hostname,
+                port: parsedUrl.port ? parseInt(parsedUrl.port, 10) : (parsedUrl.protocol === 'https:' ? 443 : 80),
+                path: parsedUrl.pathname + parsedUrl.search,
+                method: 'POST',
+                signal,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Content-Length': Buffer.byteLength(payload),
+                    'Authorization': `Bearer ${apiKey}`
+                }
+            };
+
+            const req = clientModule.request(options, (res) => {
+                if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
+                    let errData = '';
+                    res.on('data', (chunk) => { errData += chunk; });
+                    res.on('end', () => {
+                        try {
+                            const parsed = JSON.parse(errData);
+                            reject(new Error(parsed.message || parsed.error?.message || `${this.name} returned HTTP ${res.statusCode}`));
+                        } catch {
+                            reject(new Error(`${this.name} returned HTTP ${res.statusCode}`));
+                        }
+                    });
+                    return;
+                }
+
+                let buffer = '';
+                let fullText = '';
+                let inThinking = false;
+                const toolCalls = new Map<number, NativeToolCall>();
+
+                const processDelta = (delta: any) => {
+                    if (delta.reasoning_content !== undefined && delta.reasoning_content !== null) {
+                        let text = '';
+                        if (!inThinking) {
+                            text += '<think>';
+                            inThinking = true;
+                        }
+                        text += delta.reasoning_content;
+                        fullText += text;
+                        onToken(text);
+                    } else if (delta.content !== undefined && delta.content !== null) {
+                        let text = '';
+                        if (inThinking) {
+                            text += '</think>';
+                            inThinking = false;
+                        }
+                        text += delta.content;
+                        fullText += text;
+                        onToken(text);
+                    }
+
+                    for (const partialCall of delta.tool_calls || []) {
+                        const index = partialCall.index ?? 0;
+                        const call = toolCalls.get(index) || {
+                            id: partialCall.id || `call_${index}`,
+                            type: 'function' as const,
+                            function: { name: '', arguments: '' }
+                        };
+                        if (partialCall.id) call.id = partialCall.id;
+                        if (partialCall.function?.name) call.function.name += partialCall.function.name;
+                        if (partialCall.function?.arguments) call.function.arguments += partialCall.function.arguments;
+                        toolCalls.set(index, call);
+                    }
+                };
+
+                res.on('data', (chunk) => {
+                    buffer += chunk.toString();
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+                    for (const line of lines) {
+                        const trimmed = line.trim();
+                        if (!trimmed || trimmed === 'data: [DONE]' || !trimmed.startsWith('data: ')) continue;
+                        try {
+                            processDelta(JSON.parse(trimmed.slice(6)).choices?.[0]?.delta || {});
+                        } catch {
+                            // Ignore malformed SSE events and wait for the next complete event.
+                        }
+                    }
+                });
+
+                res.on('end', () => {
+                    if (inThinking) {
+                        fullText += '</think>';
+                        onToken('</think>');
+                    }
+                    if (toolCalls.size > 1) {
+                        reject(new Error(`${this.name} returned multiple tool calls; multi-tool execution is not supported yet.`));
+                        return;
+                    }
+                    const toolCall = toolCalls.values().next().value as NativeToolCall | undefined;
+                    if (!toolCall) {
+                        resolve({ type: 'text', text: fullText });
+                        return;
+                    }
+                    try {
+                        resolve({
+                            type: 'tool_call',
+                            text: fullText,
+                            toolCall: {
+                                id: toolCall.id,
+                                name: toolCall.function.name,
+                                args: toolCall.function.arguments ? JSON.parse(toolCall.function.arguments) : {}
+                            }
+                        });
+                    } catch {
+                        reject(new Error(`${this.name} returned invalid JSON arguments for tool ${toolCall.function.name}.`));
+                    }
                 });
             });
 

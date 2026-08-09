@@ -1,6 +1,7 @@
 import * as https from 'https';
 import * as vscode from 'vscode';
-import { ILLMProvider } from './ILLMProvider';
+import { ChatMessage, ILLMProvider, NativeToolCallResult } from './ILLMProvider';
+import { FunctionDeclaration } from '../tools/Tool';
 
 /**
  * GeminiClient handles API communication directly with Google Gemini REST endpoints.
@@ -15,6 +16,11 @@ export class GeminiClient implements ILLMProvider {
     constructor(apiKey?: string) {
         const config = vscode.workspace.getConfiguration('kai');
         this.apiKey = apiKey || config.get<string>('apiKey') || process.env.GEMINI_API_KEY || '';
+    }
+
+    /** Gemini receives tool declarations and returns structured functionCall parts. */
+    public supportsNativeFunctionCalling(): boolean {
+        return true;
     }
 
     /**
@@ -320,5 +326,212 @@ export class GeminiClient implements ILLMProvider {
                 reject(err);
             }
         });
+    }
+
+    /** Streams a Gemini GenerateContent response with native function declarations. */
+    public async chatCompletionStreamWithTools(
+        messages: ChatMessage[],
+        model: string,
+        temperature: number,
+        tools: FunctionDeclaration[],
+        onToken: (token: string) => void,
+        signal?: any,
+        _thinking?: boolean,
+        geminiThinkingLevel: string = 'high'
+    ): Promise<NativeToolCallResult> {
+        return new Promise((resolve, reject) => {
+            const apiKey = this.apiKey;
+            if (!apiKey) {
+                reject(new Error('Gemini API key is not configured in settings. Please add your API key.'));
+                return;
+            }
+
+            const modelParam = model || 'gemini-3.1-flash-lite';
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelParam}:streamGenerateContent?key=${apiKey}`;
+            const level = geminiThinkingLevel || 'high';
+            const requestBody: any = {
+                contents: this.toGeminiContents(messages),
+                generationConfig: {
+                    temperature,
+                    thinkingConfig: {
+                        thinkingLevel: level,
+                        includeThoughts: level !== 'minimal'
+                    }
+                },
+                tools: [{
+                    functionDeclarations: tools.map((tool) => ({
+                        name: tool.function.name,
+                        description: tool.function.description,
+                        parameters: tool.function.parameters
+                    }))
+                }],
+                toolConfig: {
+                    functionCallingConfig: { mode: 'AUTO' }
+                }
+            };
+            const systemInstruction = this.getSystemInstruction(messages);
+            if (systemInstruction) {
+                requestBody.systemInstruction = systemInstruction;
+            }
+            const payload = JSON.stringify(requestBody);
+
+            try {
+                const parsedUrl = new URL(url);
+                const options: https.RequestOptions = {
+                    hostname: parsedUrl.hostname,
+                    path: parsedUrl.pathname + parsedUrl.search,
+                    method: 'POST',
+                    signal,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Content-Length': Buffer.byteLength(payload)
+                    }
+                };
+
+                const req = https.request(options, (res) => {
+                    if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
+                        let errData = '';
+                        res.on('data', (chunk) => { errData += chunk; });
+                        res.on('end', () => {
+                            try {
+                                reject(new Error(JSON.parse(errData).error?.message || `Gemini returned HTTP status ${res.statusCode}`));
+                            } catch {
+                                reject(new Error(`Gemini returned HTTP status ${res.statusCode}`));
+                            }
+                        });
+                        return;
+                    }
+
+                    let buffer = '';
+                    let fullText = '';
+                    let inThinking = false;
+                    const toolCalls = new Map<string, { id: string; name: string; args: Record<string, any> }>();
+
+                    const processResponse = (parsed: any) => {
+                        const parts = parsed.candidates?.[0]?.content?.parts || [];
+                        for (const part of parts) {
+                            if (part.thought === true && part.text) {
+                                const text = `${inThinking ? '' : '<think>'}${part.text}`;
+                                inThinking = true;
+                                fullText += text;
+                                onToken(text);
+                            } else if (part.text) {
+                                const text = `${inThinking ? '</think>' : ''}${part.text}`;
+                                inThinking = false;
+                                fullText += text;
+                                onToken(text);
+                            } else if (part.functionCall) {
+                                const functionCall = part.functionCall;
+                                const id = functionCall.id || `gemini_call_${toolCalls.size}`;
+                                toolCalls.set(id, {
+                                    id,
+                                    name: functionCall.name,
+                                    args: functionCall.args || {}
+                                });
+                            }
+                        }
+                    };
+
+                    res.on('data', (chunk) => {
+                        buffer += chunk.toString();
+                        while (true) {
+                            const openBrace = buffer.indexOf('{');
+                            if (openBrace === -1) return;
+                            let depth = 0;
+                            let inString = false;
+                            let escaped = false;
+                            let endBrace = -1;
+                            for (let index = openBrace; index < buffer.length; index++) {
+                                const character = buffer[index];
+                                if (escaped) {
+                                    escaped = false;
+                                } else if (character === '\\') {
+                                    escaped = true;
+                                } else if (character === '"') {
+                                    inString = !inString;
+                                } else if (!inString && character === '{') {
+                                    depth++;
+                                } else if (!inString && character === '}') {
+                                    depth--;
+                                    if (depth === 0) {
+                                        endBrace = index;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (endBrace === -1) return;
+                            try {
+                                processResponse(JSON.parse(buffer.slice(openBrace, endBrace + 1)));
+                            } catch {
+                                // Ignore malformed chunks; the next complete response can still be processed.
+                            }
+                            buffer = buffer.slice(endBrace + 1);
+                        }
+                    });
+
+                    res.on('end', () => {
+                        if (inThinking) {
+                            fullText += '</think>';
+                            onToken('</think>');
+                        }
+                        if (toolCalls.size > 1) {
+                            reject(new Error('Gemini returned multiple tool calls; multi-tool execution is not supported yet.'));
+                            return;
+                        }
+                        const toolCall = toolCalls.values().next().value as { id: string; name: string; args: Record<string, any> } | undefined;
+                        resolve(toolCall ? { type: 'tool_call', text: fullText, toolCall } : { type: 'text', text: fullText });
+                    });
+                });
+
+                req.on('error', reject);
+                req.write(payload);
+                req.end();
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    private toGeminiContents(messages: ChatMessage[]): any[] {
+        return messages
+            .filter((message) => message.role !== 'system')
+            .map((message) => {
+                if (message.role === 'assistant') {
+                    const parts: any[] = [];
+                    if (message.content) {
+                        parts.push({ text: message.content });
+                    }
+                    for (const toolCall of message.tool_calls || []) {
+                        parts.push({
+                            functionCall: {
+                                id: toolCall.id,
+                                name: toolCall.function.name,
+                                args: JSON.parse(toolCall.function.arguments || '{}')
+                            }
+                        });
+                    }
+                    return { role: 'model', parts };
+                }
+
+                if (message.role === 'tool') {
+                    return {
+                        role: 'user',
+                        parts: [{
+                            functionResponse: {
+                                id: message.tool_call_id,
+                                name: message.name,
+                                response: { result: message.content }
+                            }
+                        }]
+                    };
+                }
+
+                return { role: 'user', parts: [{ text: message.content }] };
+            });
+    }
+
+    private getSystemInstruction(messages: ChatMessage[]): { parts: { text: string }[] } | undefined {
+        const systemMessage = messages.find((message) => message.role === 'system');
+        return systemMessage ? { parts: [{ text: systemMessage.content }] } : undefined;
     }
 }
