@@ -17,6 +17,7 @@ export interface NativeToolCall {
         name: string;
         arguments: string;
     };
+    thoughtSignature?: string;
 }
 
 /** Result returned by a provider that executed a request with native tools. */
@@ -27,6 +28,7 @@ export interface NativeToolCallResult {
         id: string;
         name: string;
         args: Record<string, any>;
+        thoughtSignature?: string;
     };
 }
 

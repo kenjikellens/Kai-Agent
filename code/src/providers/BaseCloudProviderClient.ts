@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ChatMessage, ILLMProvider, NativeToolCall, NativeToolCallResult } from './ILLMProvider';
 import { FunctionDeclaration } from '../tools/Tool';
+import { normalizeReasoningSegments, ReasoningSegment } from './ReasoningContent';
 
 /**
  * Base abstract class for OpenAI-compatible cloud LLM providers.
@@ -198,11 +199,23 @@ export abstract class BaseCloudProviderClient implements ILLMProvider {
                         try {
                             const parsed = JSON.parse(data);
                             const message = parsed.choices?.[0]?.message;
-                            if (message?.reasoning_content) {
-                                resolve(`<think>${message.reasoning_content}</think>\n\n${message.content || ''}`);
-                            } else {
-                                resolve(message?.content || '');
+                            const segments = this.getContentSegments(message || {});
+                            let result = '';
+                            let inThinking = false;
+                            for (const segment of segments) {
+                                if (segment.thinking) {
+                                    if (!inThinking) {
+                                        result += '<think>';
+                                        inThinking = true;
+                                    }
+                                } else if (inThinking) {
+                                    result += '</think>\n\n';
+                                    inThinking = false;
+                                }
+                                result += segment.text;
                             }
+                            if (inThinking) result += '</think>';
+                            resolve(result);
                         } catch {
                             reject(new Error(`Failed to parse response from ${this.name}`));
                         }
@@ -293,22 +306,18 @@ export abstract class BaseCloudProviderClient implements ILLMProvider {
                                 const parsed = JSON.parse(trimmed.slice(6));
                                 const delta = parsed.choices?.[0]?.delta;
                                 if (delta) {
-                                    if (delta.reasoning_content !== undefined && delta.reasoning_content !== null) {
+                                    for (const segment of this.getContentSegments(delta)) {
                                         let text = '';
-                                        if (!inThinking) {
-                                            text += '<think>';
-                                            inThinking = true;
-                                        }
-                                        text += delta.reasoning_content;
-                                        fullText += text;
-                                        onToken(text);
-                                    } else if (delta.content !== undefined && delta.content !== null) {
-                                        let text = '';
-                                        if (inThinking) {
+                                        if (segment.thinking) {
+                                            if (!inThinking) {
+                                                text += '<think>';
+                                                inThinking = true;
+                                            }
+                                        } else if (inThinking) {
                                             text += '</think>';
                                             inThinking = false;
                                         }
-                                        text += delta.content;
+                                        text += segment.text;
                                         fullText += text;
                                         onToken(text);
                                     }
@@ -399,22 +408,18 @@ export abstract class BaseCloudProviderClient implements ILLMProvider {
                 const toolCalls = new Map<number, NativeToolCall>();
 
                 const processDelta = (delta: any) => {
-                    if (delta.reasoning_content !== undefined && delta.reasoning_content !== null) {
+                    for (const segment of this.getContentSegments(delta)) {
                         let text = '';
-                        if (!inThinking) {
-                            text += '<think>';
-                            inThinking = true;
-                        }
-                        text += delta.reasoning_content;
-                        fullText += text;
-                        onToken(text);
-                    } else if (delta.content !== undefined && delta.content !== null) {
-                        let text = '';
-                        if (inThinking) {
+                        if (segment.thinking) {
+                            if (!inThinking) {
+                                text += '<think>';
+                                inThinking = true;
+                            }
+                        } else if (inThinking) {
                             text += '</think>';
                             inThinking = false;
                         }
-                        text += delta.content;
+                        text += segment.text;
                         fullText += text;
                         onToken(text);
                     }
@@ -482,5 +487,10 @@ export abstract class BaseCloudProviderClient implements ILLMProvider {
             req.write(payload);
             req.end();
         });
+    }
+
+    /** Normalizes Mistral's legacy and current reasoning response shapes. */
+    private getContentSegments(source: any): ReasoningSegment[] {
+        return normalizeReasoningSegments(source);
     }
 }

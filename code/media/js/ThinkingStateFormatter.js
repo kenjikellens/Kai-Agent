@@ -38,7 +38,7 @@ class ThinkingStateFormatter {
         }
 
         // 2. Mistral Reasoning models (Binary On/Off)
-        const isMistralReasoning = lowerRaw.includes('mistral-small') || lowerRaw.includes('mistral-medium') || lowerRaw.includes('codestral');
+        const isMistralReasoning = lowerRaw.includes('magistral') || lowerRaw.includes('mistral-small') || lowerRaw.includes('mistral-medium') || lowerRaw.includes('codestral');
         if (isMistralReasoning) {
             const stored = localStorage.getItem(`kai.mistralThinking.${rawModel}`);
             const isOn = stored !== 'false';

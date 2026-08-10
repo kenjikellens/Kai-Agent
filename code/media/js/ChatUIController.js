@@ -259,6 +259,10 @@ class ChatUIController {
                     statusDiv.appendChild(dropdownDiv);
                 }
             }
+        } else if (progress.progressType === 'agent_warning') {
+            const warning = progress.output || 'The agent stopped before completing the task.';
+            appState.addUiEvent({ type: 'system', content: warning });
+            this.appendMessage('system', warning);
         }
         this.scrollToBottom();
     }

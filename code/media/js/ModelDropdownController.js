@@ -242,7 +242,7 @@ class ModelDropdownController {
             displayItems.forEach(itemData => {
                 const lowerModel = itemData.rawModel.toLowerCase();
                 const isGemini = lowerModel.includes('gemini');
-                const isMistralReasoning = lowerModel.includes('mistral-small') || lowerModel.includes('mistral-medium') || lowerModel.includes('codestral');
+                const isMistralReasoning = lowerModel.includes('magistral') || lowerModel.includes('codestral') || lowerModel.includes('mistral-small') || lowerModel.includes('mistral-medium');
                 const isLMStudio = isLMStudioCategory;
                 const hasFlyout = isGemini || isMistralReasoning || isLMStudio;
                 

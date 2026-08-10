@@ -154,9 +154,12 @@ export class AgentExecutor {
         messages.push({ role: 'user', content: promptWithContext });
 
         let iteration = 0;
-        const maxIterations = 10;
+        // File analysis/editing often needs several read -> edit -> verify cycles.
+        // Keep a safety limit, but do not stop ordinary multi-file tasks at 10 calls.
+        const maxIterations = 25;
         let lastAssistantResponse = '';
         const modifiedFiles = new Set<string>();
+        let stoppedAtIterationLimit = false;
 
         while (iteration < maxIterations) {
             iteration++;
@@ -164,6 +167,7 @@ export class AgentExecutor {
 
             let response = '';
             let nativeToolCallId: string | undefined;
+            let nativeThoughtSignature: string | undefined;
             let toolCall: { name: string; args: any; query: string } | null;
 
             if (useNativeFunctionCalling && provider.chatCompletionStreamWithTools) {
@@ -182,6 +186,7 @@ export class AgentExecutor {
                 response = nativeResult.text;
                 if (nativeResult.type === 'tool_call' && nativeResult.toolCall) {
                     nativeToolCallId = nativeResult.toolCall.id;
+                    nativeThoughtSignature = nativeResult.toolCall.thoughtSignature;
                     toolCall = {
                         name: nativeResult.toolCall.name,
                         args: nativeResult.toolCall.args,
@@ -208,6 +213,13 @@ export class AgentExecutor {
 
             if (!toolCall) {
                 // No tools requested, agent is done
+                if (!response.trim()) {
+                    this.onProgress({
+                        type: 'agent_warning',
+                        output: 'The agent stopped because the model returned an empty response.'
+                    });
+                    lastAssistantResponse = 'The agent stopped because the model returned an empty response.';
+                }
                 break;
             }
 
@@ -220,6 +232,7 @@ export class AgentExecutor {
                     tool_calls: [{
                         id: nativeToolCallId,
                         type: 'function',
+                        ...(nativeThoughtSignature ? { thoughtSignature: nativeThoughtSignature } : {}),
                         function: {
                             name: toolCall.name,
                             arguments: JSON.stringify(toolCall.args)
@@ -285,10 +298,16 @@ export class AgentExecutor {
                 });
             }
             messages = this.contextManager.compressIfNeeded(messages);
+
+            if (iteration >= maxIterations) {
+                stoppedAtIterationLimit = true;
+            }
         }
 
-        if (iteration >= maxIterations) {
-            lastAssistantResponse += '\n\n*(Agent execution halted: Maximum tool execution steps reached)*';
+        if (stoppedAtIterationLimit) {
+            const warning = `The agent stopped after ${maxIterations} tool steps. The latest changes were kept, but verification may be incomplete.`;
+            this.onProgress({ type: 'agent_warning', output: warning });
+            lastAssistantResponse += `\n\n⚠ ${warning}`;
         }
 
         // Append the final assistant response to the message history

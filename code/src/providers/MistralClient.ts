@@ -15,6 +15,9 @@ export class MistralClient extends BaseCloudProviderClient {
     public readonly keyHint = 'Get free key at console.mistral.ai';
     /** Available Mistral AI model identifiers. */
     public readonly models = [
+        'mistral/magistral-small-latest',
+        'mistral/magistral-medium-latest',
+        'mistral/mistral-medium-3-5',
         'mistral/mistral-medium-3',
         'mistral/mistral-small-latest',
         'mistral/mistral-large-latest',
@@ -43,7 +46,7 @@ export class MistralClient extends BaseCloudProviderClient {
         const bareModel = this.stripProviderPrefix(model).toLowerCase();
         
         // Only attach reasoning_effort to models that support adjustable reasoning
-        const supportsReasoning = bareModel.includes('small') || bareModel.includes('medium') || bareModel.includes('codestral');
+        const supportsReasoning = bareModel.includes('magistral') || bareModel.includes('mistral-small') || bareModel.includes('mistral-medium') || bareModel.includes('codestral');
         if (supportsReasoning) {
             payload.reasoning_effort = thinking !== false ? 'high' : 'none';
         }

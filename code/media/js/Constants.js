@@ -19,7 +19,7 @@ const KAI_CONSTANTS = {
     ],
     DEFAULT_PROVIDERS_WITH_MODELS: [
         { name: 'OmniRoute Gateway', models: ['omniroute/auto'] },
-        { name: 'Mistral AI', models: ['mistral/mistral-small-latest', 'mistral/codestral-latest', 'mistral/open-mixtral-8x22b'] },
+        { name: 'Mistral AI', models: ['mistral/magistral-small-latest', 'mistral/magistral-medium-latest', 'mistral/mistral-small-latest', 'mistral/mistral-medium-3-5', 'mistral/codestral-latest', 'mistral/open-mixtral-8x22b'] },
         { name: 'Cohere', models: ['cohere/command-r-plus', 'cohere/command-r'] },
         { name: 'Cerebras', models: ['cerebras/llama-3.3-70b', 'cerebras/llama-3.1-8b'] },
         { name: 'Zhipu AI', models: ['zhipu/glm-4-flash', 'zhipu/glm-4-plus'] }

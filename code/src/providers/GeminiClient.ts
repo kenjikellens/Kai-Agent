@@ -2,6 +2,8 @@ import * as https from 'https';
 import * as vscode from 'vscode';
 import { ChatMessage, ILLMProvider, NativeToolCallResult } from './ILLMProvider';
 import { FunctionDeclaration } from '../tools/Tool';
+import { buildGeminiThinkingConfig } from './GeminiThinkingConfig';
+import { toGeminiSchema } from './GeminiSchema';
 
 /**
  * GeminiClient handles API communication directly with Google Gemini REST endpoints.
@@ -46,7 +48,7 @@ export class GeminiClient implements ILLMProvider {
         model: string,
         temperature: number = 0.7,
         signal?: any,
-        _thinking?: boolean,
+        thinking: boolean = true,
         geminiThinkingLevel: string = 'high'
     ): Promise<string> {
         return new Promise((resolve, reject) => {
@@ -71,15 +73,11 @@ export class GeminiClient implements ILLMProvider {
                 parts: [{ text: systemMsg.content }]
             } : undefined;
 
-            const level = geminiThinkingLevel || 'high';
             const requestBody: any = {
                 contents: contents,
                 generationConfig: {
                     temperature: temperature,
-                    thinkingConfig: {
-                        thinkingLevel: level,
-                        includeThoughts: level !== 'minimal'
-                    }
+                    thinkingConfig: buildGeminiThinkingConfig(modelParam, thinking, geminiThinkingLevel)
                 }
             };
 
@@ -112,11 +110,23 @@ export class GeminiClient implements ILLMProvider {
                                 if (parsed.candidates && parsed.candidates[0].content && parsed.candidates[0].content.parts) {
                                     const parts = parsed.candidates[0].content.parts;
                                     let fullText = '';
+                                    let inThinking = false;
                                     for (const part of parts) {
-                                        if (part.text) {
+                                        if (part.thought === true && part.text) {
+                                            if (!inThinking) {
+                                                fullText += '<think>';
+                                                inThinking = true;
+                                            }
+                                            fullText += part.text;
+                                        } else if (part.text) {
+                                            if (inThinking) {
+                                                fullText += '</think>';
+                                                inThinking = false;
+                                            }
                                             fullText += part.text;
                                         }
                                     }
+                                    if (inThinking) fullText += '</think>';
                                     resolve(fullText);
                                 } else {
                                     reject(new Error('Invalid response structure from Gemini API'));
@@ -125,12 +135,7 @@ export class GeminiClient implements ILLMProvider {
                                 reject(new Error('Failed to parse Gemini response JSON'));
                             }
                         } else {
-                            try {
-                                const parsed = JSON.parse(data);
-                                reject(new Error(parsed.error?.message || `Gemini returned HTTP status ${res.statusCode}`));
-                            } catch {
-                                reject(new Error(`Gemini returned HTTP status ${res.statusCode}`));
-                            }
+                            reject(this.createGeminiHttpError(res.statusCode, data));
                         }
                     });
                 });
@@ -153,7 +158,7 @@ export class GeminiClient implements ILLMProvider {
         temperature: number,
         onToken: (token: string) => void,
         signal?: any,
-        _thinking?: boolean,
+        thinking: boolean = true,
         geminiThinkingLevel: string = 'high'
     ): Promise<string> {
         return new Promise((resolve, reject) => {
@@ -178,13 +183,9 @@ export class GeminiClient implements ILLMProvider {
                 parts: [{ text: systemMsg.content }]
             } : undefined;
 
-            const level = geminiThinkingLevel || 'high';
             const generationConfig: any = {
                 temperature: temperature,
-                thinkingConfig: {
-                    thinkingLevel: level,
-                    includeThoughts: level !== 'minimal'
-                }
+                thinkingConfig: buildGeminiThinkingConfig(modelParam, thinking, geminiThinkingLevel)
             };
 
             const requestBody: any = {
@@ -216,12 +217,7 @@ export class GeminiClient implements ILLMProvider {
                         let errData = '';
                         res.on('data', (d) => errData += d);
                         res.on('end', () => {
-                            try {
-                                const parsed = JSON.parse(errData);
-                                reject(new Error(parsed.error?.message || `Gemini returned HTTP status ${res.statusCode}`));
-                            } catch {
-                                reject(new Error(`Gemini returned HTTP status ${res.statusCode}`));
-                            }
+                            reject(this.createGeminiHttpError(res.statusCode, errData));
                         });
                         return;
                     }
@@ -336,7 +332,7 @@ export class GeminiClient implements ILLMProvider {
         tools: FunctionDeclaration[],
         onToken: (token: string) => void,
         signal?: any,
-        _thinking?: boolean,
+        thinking: boolean = true,
         geminiThinkingLevel: string = 'high'
     ): Promise<NativeToolCallResult> {
         return new Promise((resolve, reject) => {
@@ -348,21 +344,17 @@ export class GeminiClient implements ILLMProvider {
 
             const modelParam = model || 'gemini-3.1-flash-lite';
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelParam}:streamGenerateContent?key=${apiKey}`;
-            const level = geminiThinkingLevel || 'high';
             const requestBody: any = {
                 contents: this.toGeminiContents(messages),
                 generationConfig: {
                     temperature,
-                    thinkingConfig: {
-                        thinkingLevel: level,
-                        includeThoughts: level !== 'minimal'
-                    }
+                    thinkingConfig: buildGeminiThinkingConfig(modelParam, thinking, geminiThinkingLevel)
                 },
                 tools: [{
                     functionDeclarations: tools.map((tool) => ({
                         name: tool.function.name,
                         description: tool.function.description,
-                        parameters: tool.function.parameters
+                        parameters: toGeminiSchema(tool.function.parameters)
                     }))
                 }],
                 toolConfig: {
@@ -393,11 +385,7 @@ export class GeminiClient implements ILLMProvider {
                         let errData = '';
                         res.on('data', (chunk) => { errData += chunk; });
                         res.on('end', () => {
-                            try {
-                                reject(new Error(JSON.parse(errData).error?.message || `Gemini returned HTTP status ${res.statusCode}`));
-                            } catch {
-                                reject(new Error(`Gemini returned HTTP status ${res.statusCode}`));
-                            }
+                            reject(this.createGeminiHttpError(res.statusCode, errData));
                         });
                         return;
                     }
@@ -405,7 +393,7 @@ export class GeminiClient implements ILLMProvider {
                     let buffer = '';
                     let fullText = '';
                     let inThinking = false;
-                    const toolCalls = new Map<string, { id: string; name: string; args: Record<string, any> }>();
+                    const toolCalls = new Map<string, { id: string; name: string; args: Record<string, any>; thoughtSignature?: string }>();
 
                     const processResponse = (parsed: any) => {
                         const parts = parsed.candidates?.[0]?.content?.parts || [];
@@ -426,7 +414,8 @@ export class GeminiClient implements ILLMProvider {
                                 toolCalls.set(id, {
                                     id,
                                     name: functionCall.name,
-                                    args: functionCall.args || {}
+                                    args: functionCall.args || {},
+                                    thoughtSignature: part.thoughtSignature || part.thought_signature || functionCall.thoughtSignature
                                 });
                             }
                         }
@@ -478,7 +467,7 @@ export class GeminiClient implements ILLMProvider {
                             reject(new Error('Gemini returned multiple tool calls; multi-tool execution is not supported yet.'));
                             return;
                         }
-                        const toolCall = toolCalls.values().next().value as { id: string; name: string; args: Record<string, any> } | undefined;
+                        const toolCall = toolCalls.values().next().value as { id: string; name: string; args: Record<string, any>; thoughtSignature?: string } | undefined;
                         resolve(toolCall ? { type: 'tool_call', text: fullText, toolCall } : { type: 'text', text: fullText });
                     });
                 });
@@ -507,7 +496,8 @@ export class GeminiClient implements ILLMProvider {
                                 id: toolCall.id,
                                 name: toolCall.function.name,
                                 args: JSON.parse(toolCall.function.arguments || '{}')
-                            }
+                            },
+                            ...(toolCall.thoughtSignature ? { thoughtSignature: toolCall.thoughtSignature } : {})
                         });
                     }
                     return { role: 'model', parts };
@@ -528,6 +518,18 @@ export class GeminiClient implements ILLMProvider {
 
                 return { role: 'user', parts: [{ text: message.content }] };
             });
+    }
+
+    private createGeminiHttpError(statusCode: number | undefined, responseBody: string): Error {
+        try {
+            const parsed = JSON.parse(responseBody);
+            const message = parsed.error?.message || parsed.message;
+            if (message) return new Error(`Gemini HTTP ${statusCode}: ${message}`);
+        } catch {
+            // Fall through to a bounded raw response for non-JSON proxy errors.
+        }
+        const detail = responseBody.trim().replace(/\s+/g, ' ').slice(0, 500);
+        return new Error(`Gemini HTTP ${statusCode}${detail ? `: ${detail}` : ''}`);
     }
 
     private getSystemInstruction(messages: ChatMessage[]): { parts: { text: string }[] } | undefined {
