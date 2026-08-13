@@ -4,6 +4,7 @@ import { LLMProviderFactory } from './providers/LLMProviderFactory';
 import { Tool, getRegisteredTools } from './tools';
 import { ContextManager, ContextMessage } from './ContextManager';
 import { EditorContextProvider, EditorContext } from './EditorContextProvider';
+import { DiagnosticsHelper } from './tools/DiagnosticsHelper';
 
 /**
  * AgentExecutor coordinates the autonomous AI agent loop.
@@ -276,7 +277,16 @@ export class AgentExecutor {
                 toolResult = `[Error executing tool ${toolCall.name}]: ${err.message || err}`;
             }
 
-            if (['write_file', 'edit_file', 'replace_file_content', 'multi_replace_file_content', 'delete_item'].includes(toolCall.name) && !toolResult.startsWith('[Error')) {
+            if (['write_file', 'edit_file', 'replace_file_content', 'multi_replace_file_content'].includes(toolCall.name) && !toolResult.startsWith('[Error')) {
+                if (targetName) {
+                    modifiedFiles.add(targetName);
+                    const isNewFile = toolCall.name === 'write_file';
+                    const diagNote = await DiagnosticsHelper.getPostEditDiagnosticsNote(targetName, this.workspacePath, isNewFile);
+                    if (diagNote) {
+                        toolResult += diagNote;
+                    }
+                }
+            } else if (toolCall.name === 'delete_item' && !toolResult.startsWith('[Error')) {
                 if (targetName) {
                     modifiedFiles.add(targetName);
                 }

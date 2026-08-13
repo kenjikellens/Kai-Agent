@@ -29,6 +29,7 @@ const path = __importStar(require("path"));
 const vscode = __importStar(require("vscode"));
 const Tool_1 = require("./Tool");
 const FileToolUtils_1 = require("./FileToolUtils");
+const FuzzyMatchHelper_1 = require("./FuzzyMatchHelper");
 /**
  * Tool for editing existing file content within the workspace using search-and-replace.
  */
@@ -57,10 +58,10 @@ class EditFileTool extends Tool_1.Tool {
         };
     }
     /**
-     * Executes the search-and-replace editing operation.
+     * Executes the search-and-replace editing operation with fuzzy recovery hints upon failure.
      * @param args Arguments containing path, search block, and replacement block.
      * @param context The current execution context containing the workspace path.
-     * @returns A status message indicating success or an error if the search block was not found.
+     * @returns A status message indicating success or an error with recovery guidance.
      */
     async execute(args, context) {
         const targetPath = (0, Tool_1.resolveSafePath)(args.path, context.workspacePath);
@@ -72,7 +73,8 @@ class EditFileTool extends Tool_1.Tool {
         const searchStr = args.search;
         const replaceStr = args.replace;
         if (!content.includes(searchStr)) {
-            return `Error: Exact search block was not found in the file: ${args.path}. Please verify the search block matches exactly.`;
+            const lines = content.split(/\r?\n/);
+            return FuzzyMatchHelper_1.FuzzyMatchHelper.formatSearchMismatchFeedback(args.path, searchStr, lines);
         }
         const updatedContent = content.replace(searchStr, replaceStr);
         await fs.promises.writeFile(targetPath, updatedContent, 'utf8');

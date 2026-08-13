@@ -29,6 +29,8 @@ const fs = __importStar(require("fs"));
 const LLMProviderFactory_1 = require("./providers/LLMProviderFactory");
 const tools_1 = require("./tools");
 const ContextManager_1 = require("./ContextManager");
+const EditorContextProvider_1 = require("./EditorContextProvider");
+const DiagnosticsHelper_1 = require("./tools/DiagnosticsHelper");
 /**
  * AgentExecutor coordinates the autonomous AI agent loop.
  * It manages polymorphic tool execution (file operations, search, terminal commands, diagnostics, AST symbols),
@@ -129,7 +131,15 @@ class AgentExecutor {
             }
         }
         if (activeFile) {
-            contextPrefix += `[Active Opened File: ${activeFile.filePath}]\n`;
+            if ('activeFile' in activeFile || 'selection' in activeFile || 'openTabs' in activeFile) {
+                const banner = EditorContextProvider_1.EditorContextProvider.formatContextBanner(activeFile);
+                if (banner) {
+                    contextPrefix += banner;
+                }
+            }
+            else if (activeFile.filePath) {
+                contextPrefix += `[Active Opened File: ${activeFile.filePath}]\n`;
+            }
         }
         if (attachedFiles && attachedFiles.length > 0) {
             for (const file of attachedFiles) {
@@ -236,7 +246,17 @@ class AgentExecutor {
             catch (err) {
                 toolResult = `[Error executing tool ${toolCall.name}]: ${err.message || err}`;
             }
-            if (['write_file', 'edit_file', 'replace_file_content', 'multi_replace_file_content', 'delete_item'].includes(toolCall.name) && !toolResult.startsWith('[Error')) {
+            if (['write_file', 'edit_file', 'replace_file_content', 'multi_replace_file_content'].includes(toolCall.name) && !toolResult.startsWith('[Error')) {
+                if (targetName) {
+                    modifiedFiles.add(targetName);
+                    const isNewFile = toolCall.name === 'write_file';
+                    const diagNote = await DiagnosticsHelper_1.DiagnosticsHelper.getPostEditDiagnosticsNote(targetName, this.workspacePath, isNewFile);
+                    if (diagNote) {
+                        toolResult += diagNote;
+                    }
+                }
+            }
+            else if (toolCall.name === 'delete_item' && !toolResult.startsWith('[Error')) {
                 if (targetName) {
                     modifiedFiles.add(targetName);
                 }

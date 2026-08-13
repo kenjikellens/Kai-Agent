@@ -31,6 +31,7 @@ const AgentExecutor_1 = require("./AgentExecutor");
 const LMStudioClient_1 = require("./LMStudioClient");
 const i18n_1 = require("./i18n");
 const SessionStore_1 = require("./SessionStore");
+const EditorContextProvider_1 = require("./EditorContextProvider");
 /**
  * SidebarProvider implements the vscode.WebviewViewProvider to govern the behavior,
  * HTML rendering, and message passing of the LM Studio Agent sidebar panel.
@@ -209,26 +210,13 @@ class SidebarProvider {
         });
         this._activeAbortController = new AbortController();
         try {
-            // Retrieve active editor file info (path only, no content)
-            const activeEditor = vscode.window.activeTextEditor;
-            let activeFile = undefined;
-            if (activeEditor) {
-                const doc = activeEditor.document;
-                if (doc.uri.scheme === 'file') {
-                    let relPath = doc.uri.fsPath;
-                    if (workspaceFolders && workspaceFolders.length > 0) {
-                        relPath = path.relative(workspaceFolders[0].uri.fsPath, relPath);
-                    }
-                    activeFile = {
-                        fileName: path.basename(doc.uri.fsPath),
-                        filePath: relPath
-                    };
-                }
-            }
+            // Retrieve rich active editor context (file, language, cursor, selection, open tabs)
+            const workspaceRoot = workspaceFolders && workspaceFolders.length > 0 ? workspaceFolders[0].uri.fsPath : undefined;
+            const editorContext = EditorContextProvider_1.EditorContextProvider.captureEditorContext(workspaceRoot);
             // Signal the webview that the agent loop has started
             this._view.webview.postMessage({ type: 'typing' });
             // Execute the agent loop with the cancellation signal
-            const runResult = await executor.run(userPrompt, chatHistoryWithoutLast, model || 'local-model', this._activeAbortController.signal, activeFile, thinking, geminiThinkingLevel, planningMode, attachedFiles);
+            const runResult = await executor.run(userPrompt, chatHistoryWithoutLast, model || 'local-model', this._activeAbortController.signal, editorContext, thinking, geminiThinkingLevel, planningMode, attachedFiles);
             // Send final completion message to the webview
             this._view.webview.postMessage({
                 type: 'reply',
