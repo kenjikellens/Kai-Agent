@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import { LLMProviderFactory } from './providers/LLMProviderFactory';
 import { Tool, getRegisteredTools } from './tools';
 import { ContextManager, ContextMessage } from './ContextManager';
+import { EditorContextProvider, EditorContext } from './EditorContextProvider';
 
 /**
  * AgentExecutor coordinates the autonomous AI agent loop.
@@ -59,7 +60,7 @@ export class AgentExecutor {
         chatHistory: { role: string; content: string }[],
         model: string = 'local-model',
         signal?: any,
-        activeFile?: { fileName: string; filePath: string },
+        activeFile?: EditorContext | { fileName: string; filePath: string },
         thinking: boolean = true,
         geminiThinkingLevel: string = 'high',
         planningMode: boolean = false,
@@ -135,7 +136,14 @@ export class AgentExecutor {
         }
 
         if (activeFile) {
-            contextPrefix += `[Active Opened File: ${activeFile.filePath}]\n`;
+            if ('activeFile' in activeFile || 'selection' in activeFile || 'openTabs' in activeFile) {
+                const banner = EditorContextProvider.formatContextBanner(activeFile as EditorContext);
+                if (banner) {
+                    contextPrefix += banner;
+                }
+            } else if ((activeFile as any).filePath) {
+                contextPrefix += `[Active Opened File: ${(activeFile as any).filePath}]\n`;
+            }
         }
 
         if (attachedFiles && attachedFiles.length > 0) {

@@ -1,3 +1,5 @@
+import { FuzzyMatchHelper } from './FuzzyMatchHelper';
+
 /**
  * ReplacementChunk interface representing a single block edit.
  */
@@ -9,7 +11,7 @@ export interface ReplacementChunk {
 }
 
 /**
- * Helper class for validating line boundaries and applying text replacements.
+ * Helper class for validating line boundaries and applying text replacements with intelligent fuzzy feedback.
  */
 export class FileReplacementHelper {
     /**
@@ -17,7 +19,7 @@ export class FileReplacementHelper {
      * @param lines Array of file lines.
      * @param chunks Array of replacement chunks.
      * @param filePath Relative or absolute path for error formatting.
-     * @returns Result string containing error details or empty string on success.
+     * @returns Result string containing actionable error details or empty string on success.
      */
     static applyChunks(lines: string[], chunks: ReplacementChunk[], filePath: string): string {
         const sortedChunks = [...chunks].sort((a, b) => b.startLine - a.startLine);
@@ -28,7 +30,12 @@ export class FileReplacementHelper {
             const endIdx = chunk.endLine - 1;
 
             if (startIdx < 0 || endIdx >= lines.length || startIdx > endIdx) {
-                return `Error in chunk ${i + 1}: Line range [${chunk.startLine}, ${chunk.endLine}] is out of bounds for file ${filePath} (total lines: ${lines.length}).`;
+                return FuzzyMatchHelper.formatMismatchFeedback(
+                    filePath,
+                    { startLine: chunk.startLine, endLine: chunk.endLine },
+                    chunk.targetContent,
+                    lines
+                );
             }
 
             const targetLinesFromFile = lines.slice(startIdx, endIdx + 1);
@@ -36,9 +43,12 @@ export class FileReplacementHelper {
             const targetContentNormalized = chunk.targetContent.replace(/\r?\n/g, '\n');
 
             if (fileBlockNormalized !== targetContentNormalized) {
-                return `Error in chunk ${i + 1} at lines ${chunk.startLine}-${chunk.endLine}: Content does not match the targetContent exactly.\n` +
-                       `Expected:\n${targetContentNormalized}\n\n` +
-                       `Found in file:\n${fileBlockNormalized}`;
+                return FuzzyMatchHelper.formatMismatchFeedback(
+                    filePath,
+                    { startLine: chunk.startLine, endLine: chunk.endLine },
+                    chunk.targetContent,
+                    lines
+                );
             }
 
             const replacementLines = chunk.replacementContent.split(/\r?\n/);

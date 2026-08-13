@@ -5,6 +5,7 @@ import { AgentExecutor } from './AgentExecutor';
 import { LMStudioClient, FREE_PROVIDERS } from './LMStudioClient';
 import { I18nManager } from './i18n';
 import { SessionStore } from './SessionStore';
+import { EditorContextProvider } from './EditorContextProvider';
 
 /**
  * SidebarProvider implements the vscode.WebviewViewProvider to govern the behavior,
@@ -235,22 +236,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         this._activeAbortController = new AbortController();
 
         try {
-            // Retrieve active editor file info (path only, no content)
-            const activeEditor = vscode.window.activeTextEditor;
-            let activeFile: { fileName: string; filePath: string } | undefined = undefined;
-            if (activeEditor) {
-                const doc = activeEditor.document;
-                if (doc.uri.scheme === 'file') {
-                    let relPath = doc.uri.fsPath;
-                    if (workspaceFolders && workspaceFolders.length > 0) {
-                        relPath = path.relative(workspaceFolders[0].uri.fsPath, relPath);
-                    }
-                    activeFile = {
-                        fileName: path.basename(doc.uri.fsPath),
-                        filePath: relPath
-                    };
-                }
-            }
+            // Retrieve rich active editor context (file, language, cursor, selection, open tabs)
+            const workspaceRoot = workspaceFolders && workspaceFolders.length > 0 ? workspaceFolders[0].uri.fsPath : undefined;
+            const editorContext = EditorContextProvider.captureEditorContext(workspaceRoot);
 
             // Signal the webview that the agent loop has started
             this._view.webview.postMessage({ type: 'typing' });
@@ -261,7 +249,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                 chatHistoryWithoutLast,
                 model || 'local-model',
                 this._activeAbortController.signal,
-                activeFile,
+                editorContext,
                 thinking,
                 geminiThinkingLevel,
                 planningMode,
