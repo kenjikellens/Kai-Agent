@@ -535,7 +535,7 @@ class ModelDropdownController {
         this.dropdownOptionsMenu.innerHTML = '';
         
         const i18n = window.KAI_I18N || {};
-        const defaultGemini = KAI_CONSTANTS.DEFAULT_GEMINI_MODELS.slice(0, 6);
+        const defaultGemini = KAI_CONSTANTS.DEFAULT_GEMINI_MODELS;
         const defaultProviders = KAI_CONSTANTS.DEFAULT_PROVIDERS_WITH_MODELS;
 
         const lmTitle = `${i18n.lmStudioHeader || 'LM Studio'} (${i18n.checkingServer || 'Checking...'})`;
