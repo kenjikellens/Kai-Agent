@@ -243,7 +243,8 @@ class ModelDropdownController {
                 const lowerModel = itemData.rawModel.toLowerCase();
                 const isGemini = lowerModel.includes('gemini');
                 const isMistralReasoning = lowerModel.includes('magistral') || lowerModel.includes('codestral') || lowerModel.includes('mistral-small') || lowerModel.includes('mistral-medium');
-                const isLMStudio = isLMStudioCategory;
+                const isMuseGlimmer = lowerModel.includes('muse') || lowerModel.includes('glimmer');
+                const isLMStudio = isLMStudioCategory && !isMuseGlimmer;
                 const hasFlyout = isGemini || isMistralReasoning || isLMStudio;
                 
                 // Model Selector Dropdown Button Item (Interactive button element)
@@ -644,6 +645,13 @@ class ModelDropdownController {
         }
 
         const lowerRaw = raw.toLowerCase();
+        if (lowerRaw.includes('muse') || lowerRaw.includes('glimmer')) {
+            return {
+                model: raw,
+                thinking: true
+            };
+        }
+
         if (lowerRaw.includes('mistral') || lowerRaw.includes('codestral') || lowerRaw.includes('pixtral')) {
             const mistralThinkingSaved = localStorage.getItem(`kai.mistralThinking.${raw}`);
             const thinking = mistralThinkingSaved !== null ? mistralThinkingSaved === 'true' : true;

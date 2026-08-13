@@ -14,6 +14,10 @@ When editing or implementing completions inside the `LMStudioClient.ts` class, a
    - Enable: `"reasoning_effort": "high"`
    - Disable: `"reasoning_effort": "none"`
 
+4. **Muse Glimmer Models (`muse/*`, `*glimmer*`)**:
+   - Reasoning format: Emits `to=self<|message|>[reasoning]<|eom|><|start|>assistant to=user<|message|>[content]`
+   - Baked-in reasoning: Cannot be disabled; no thinking toggle/flyout is shown in the UI. Output is automatically parsed into `<think>...</think>` tags via `MuseGlimmerStreamParser`.
+
 Always check the model ID dynamically and pass these parameters to avoid models ignoring the toggle.
 
 ## Build Scripts Rule

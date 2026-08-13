@@ -30,6 +30,7 @@ const HttpClient_1 = require("./HttpClient");
 const GeminiClient_1 = require("./providers/GeminiClient");
 const FreeProviderClient_1 = require("./providers/FreeProviderClient");
 Object.defineProperty(exports, "FREE_PROVIDERS", { enumerable: true, get: function () { return FreeProviderClient_1.FREE_PROVIDERS; } });
+const MuseGlimmerStreamParser_1 = require("./providers/MuseGlimmerStreamParser");
 /**
  * LMStudioClient handles communication with the locally running LM Studio HTTP API server.
  */
@@ -200,7 +201,13 @@ class LMStudioClient {
                         try {
                             const parsed = JSON.parse(data);
                             if (parsed && parsed.choices && parsed.choices[0] && parsed.choices[0].message) {
-                                resolve(parsed.choices[0].message.content || '');
+                                const rawContent = parsed.choices[0].message.content || '';
+                                if (MuseGlimmerStreamParser_1.MuseGlimmerStreamParser.isMuseGlimmerModel(model) || MuseGlimmerStreamParser_1.MuseGlimmerStreamParser.hasMuseGlimmerMarkers(rawContent)) {
+                                    resolve(MuseGlimmerStreamParser_1.MuseGlimmerStreamParser.parseCompleteResponse(rawContent, thinking));
+                                }
+                                else {
+                                    resolve(rawContent);
+                                }
                             }
                             else {
                                 reject(new Error('Invalid response structure from completion API'));
@@ -260,6 +267,12 @@ class LMStudioClient {
                 let buffer = '';
                 let fullText = '';
                 let inThinking = false;
+                const isMuseModel = MuseGlimmerStreamParser_1.MuseGlimmerStreamParser.isMuseGlimmerModel(model);
+                const museParser = new MuseGlimmerStreamParser_1.MuseGlimmerStreamParser(thinking, (token) => {
+                    fullText += token;
+                    onToken(token);
+                });
+                let isMuseStreaming = isMuseModel;
                 const processParsedChunk = (parsed) => {
                     if (parsed.choices && parsed.choices[0] && parsed.choices[0].delta) {
                         const delta = parsed.choices[0].delta;
@@ -274,14 +287,22 @@ class LMStudioClient {
                             onToken(text);
                         }
                         else if (delta.content !== undefined && delta.content !== null) {
-                            let text = '';
-                            if (inThinking) {
-                                text += '</think>';
-                                inThinking = false;
+                            if (!isMuseStreaming && delta.content.startsWith('to=self<|message|>')) {
+                                isMuseStreaming = true;
                             }
-                            text += delta.content;
-                            fullText += text;
-                            onToken(text);
+                            if (isMuseStreaming) {
+                                museParser.processChunk(delta.content);
+                            }
+                            else {
+                                let text = '';
+                                if (inThinking) {
+                                    text += '</think>';
+                                    inThinking = false;
+                                }
+                                text += delta.content;
+                                fullText += text;
+                                onToken(text);
+                            }
                         }
                     }
                 };
@@ -317,7 +338,10 @@ class LMStudioClient {
                             // ignore
                         }
                     }
-                    if (inThinking && thinking) {
+                    if (isMuseStreaming) {
+                        museParser.finish();
+                    }
+                    else if (inThinking && thinking) {
                         fullText += '</think>';
                         onToken('</think>');
                         inThinking = false;
@@ -339,7 +363,11 @@ class LMStudioClient {
     applyThinkingParameters(requestParams, model, thinking) {
         const modelLower = (model || '').toLowerCase();
         if (thinking) {
-            if (modelLower.includes('gemma')) {
+            if (modelLower.includes('muse') || modelLower.includes('glimmer')) {
+                // Muse Glimmer natively emits reasoning tokens; preserve active thinking flags
+                requestParams.thinking = true;
+            }
+            else if (modelLower.includes('gemma')) {
                 requestParams.thinking = true;
             }
             else if (modelLower.includes('qwen') || modelLower.includes('glm')) {
@@ -358,7 +386,14 @@ class LMStudioClient {
             }
         }
         else {
-            if (modelLower.includes('gemma')) {
+            if (modelLower.includes('muse') || modelLower.includes('glimmer')) {
+                // Muse Glimmer does not support parameter-level thinking disabling;
+                // output is handled and filtered by the client stream transformer.
+                requestParams.thinking = false;
+                requestParams.reasoning_effort = 'none';
+                requestParams.reasoning = 'off';
+            }
+            else if (modelLower.includes('gemma')) {
                 requestParams.thinking = false;
                 requestParams.reasoning_effort = 'none';
                 requestParams.reasoning = 'off';

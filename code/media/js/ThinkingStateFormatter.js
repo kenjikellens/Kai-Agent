@@ -52,7 +52,20 @@ class ThinkingStateFormatter {
             };
         }
 
-        // 3. LM Studio / Local / General Reasoning models (Binary On/Off)
+        // 3. Muse Glimmer (Reasoning is baked-in and cannot be toggled off)
+        const isMuseGlimmer = lowerRaw.includes('muse') || lowerRaw.includes('glimmer');
+        if (isMuseGlimmer) {
+            return {
+                isThinkingCapable: false,
+                isMultiLevel: false,
+                level: 'high',
+                isOn: true,
+                labelText: '',
+                rawModel: rawModel
+            };
+        }
+
+        // 4. LM Studio / Local / General Reasoning models (Binary On/Off)
         const isLmThinkingOn = localStorage.getItem(`kai.lmStudioThinking.${rawModel}`) === 'true' || isThinkingSuffix;
         const isLocalCategory = lowerRaw.includes('lmstudio') || lowerRaw.includes('local') || isThinkingSuffix;
         if (isLocalCategory || isThinkingSuffix) {

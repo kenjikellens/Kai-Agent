@@ -4,6 +4,7 @@ import { HttpClient } from './HttpClient';
 import { ILLMProvider } from './providers/ILLMProvider';
 import { GeminiClient } from './providers/GeminiClient';
 import { FreeProviderClient, FREE_PROVIDERS, FreeProvider } from './providers/FreeProviderClient';
+import { MuseGlimmerStreamParser } from './providers/MuseGlimmerStreamParser';
 
 // Re-export FreeProvider & FREE_PROVIDERS for backward compatibility across modules
 export { FreeProvider, FREE_PROVIDERS };
@@ -203,7 +204,12 @@ export class LMStudioClient implements ILLMProvider {
                         try {
                             const parsed = JSON.parse(data);
                             if (parsed && parsed.choices && parsed.choices[0] && parsed.choices[0].message) {
-                                resolve(parsed.choices[0].message.content || '');
+                                const rawContent = parsed.choices[0].message.content || '';
+                                if (MuseGlimmerStreamParser.isMuseGlimmerModel(model) || MuseGlimmerStreamParser.hasMuseGlimmerMarkers(rawContent)) {
+                                    resolve(MuseGlimmerStreamParser.parseCompleteResponse(rawContent, thinking));
+                                } else {
+                                    resolve(rawContent);
+                                }
                             } else {
                                 reject(new Error('Invalid response structure from completion API'));
                             }
@@ -278,6 +284,12 @@ export class LMStudioClient implements ILLMProvider {
                 let buffer = '';
                 let fullText = '';
                 let inThinking = false;
+                const isMuseModel = MuseGlimmerStreamParser.isMuseGlimmerModel(model);
+                const museParser = new MuseGlimmerStreamParser(thinking, (token: string) => {
+                    fullText += token;
+                    onToken(token);
+                });
+                let isMuseStreaming = isMuseModel;
 
                 const processParsedChunk = (parsed: any) => {
                     if (parsed.choices && parsed.choices[0] && parsed.choices[0].delta) {
@@ -292,14 +304,22 @@ export class LMStudioClient implements ILLMProvider {
                             fullText += text;
                             onToken(text);
                         } else if (delta.content !== undefined && delta.content !== null) {
-                            let text = '';
-                            if (inThinking) {
-                                text += '</think>';
-                                inThinking = false;
+                            if (!isMuseStreaming && delta.content.startsWith('to=self<|message|>')) {
+                                isMuseStreaming = true;
                             }
-                            text += delta.content;
-                            fullText += text;
-                            onToken(text);
+
+                            if (isMuseStreaming) {
+                                museParser.processChunk(delta.content);
+                            } else {
+                                let text = '';
+                                if (inThinking) {
+                                    text += '</think>';
+                                    inThinking = false;
+                                }
+                                text += delta.content;
+                                fullText += text;
+                                onToken(text);
+                            }
                         }
                     }
                 };
@@ -335,7 +355,9 @@ export class LMStudioClient implements ILLMProvider {
                             // ignore
                         }
                     }
-                    if (inThinking && thinking) {
+                    if (isMuseStreaming) {
+                        museParser.finish();
+                    } else if (inThinking && thinking) {
                         fullText += '</think>';
                         onToken('</think>');
                         inThinking = false;
@@ -360,7 +382,10 @@ export class LMStudioClient implements ILLMProvider {
         const modelLower = (model || '').toLowerCase();
 
         if (thinking) {
-            if (modelLower.includes('gemma')) {
+            if (modelLower.includes('muse') || modelLower.includes('glimmer')) {
+                // Muse Glimmer natively emits reasoning tokens; preserve active thinking flags
+                requestParams.thinking = true;
+            } else if (modelLower.includes('gemma')) {
                 requestParams.thinking = true;
             } else if (modelLower.includes('qwen') || modelLower.includes('glm')) {
                 requestParams.thinking = true;
@@ -375,7 +400,13 @@ export class LMStudioClient implements ILLMProvider {
                 requestParams.chat_template_kwargs = { enable_thinking: true };
             }
         } else {
-            if (modelLower.includes('gemma')) {
+            if (modelLower.includes('muse') || modelLower.includes('glimmer')) {
+                // Muse Glimmer does not support parameter-level thinking disabling;
+                // output is handled and filtered by the client stream transformer.
+                requestParams.thinking = false;
+                requestParams.reasoning_effort = 'none';
+                requestParams.reasoning = 'off';
+            } else if (modelLower.includes('gemma')) {
                 requestParams.thinking = false;
                 requestParams.reasoning_effort = 'none';
                 requestParams.reasoning = 'off';
