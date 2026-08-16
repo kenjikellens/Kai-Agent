@@ -5,6 +5,7 @@ import { ILLMProvider } from './providers/ILLMProvider';
 import { GeminiClient } from './providers/GeminiClient';
 import { FreeProviderClient, FREE_PROVIDERS, FreeProvider } from './providers/FreeProviderClient';
 import { MuseGlimmerStreamParser } from './providers/MuseGlimmerStreamParser';
+import { LMStudioReasoningEngine } from './providers/LMStudioReasoningEngine';
 
 // Re-export FreeProvider & FREE_PROVIDERS for backward compatibility across modules
 export { FreeProvider, FREE_PROVIDERS };
@@ -87,7 +88,8 @@ export class LMStudioClient implements ILLMProvider {
         try {
             const res = await HttpClient.getJson<{ data: any[] }>(url, {}, 1500);
             if (res && Array.isArray(res.data)) {
-                return res.data.map((m: any) => m.id);
+                const allIds = res.data.map((m: any) => m.id);
+                return LMStudioReasoningEngine.filterChatModels(allIds);
             }
             return [];
         } catch {
@@ -132,7 +134,8 @@ export class LMStudioClient implements ILLMProvider {
                 try {
                     const parsed = JSON.parse(stdout);
                     if (Array.isArray(parsed)) {
-                        resolve(parsed.map((m: any) => m.modelKey || m.identifier || m.path));
+                        const rawModels = parsed.map((m: any) => m.modelKey || m.identifier || m.path);
+                        resolve(LMStudioReasoningEngine.filterChatModels(rawModels));
                     } else {
                         resolve([]);
                     }
@@ -374,57 +377,12 @@ export class LMStudioClient implements ILLMProvider {
 
     /**
      * Dynamically applies thinking/reasoning parameters based on the target model family.
+     * Delegates to LMStudioReasoningEngine for universal model architecture support and custom user profiles.
      * @param requestParams Target HTTP payload object.
      * @param model Model ID string.
      * @param thinking Whether thinking phase is enabled.
      */
     private applyThinkingParameters(requestParams: any, model: string, thinking: boolean): void {
-        const modelLower = (model || '').toLowerCase();
-
-        if (thinking) {
-            if (modelLower.includes('muse') || modelLower.includes('glimmer')) {
-                // Muse Glimmer natively emits reasoning tokens; preserve active thinking flags
-                requestParams.thinking = true;
-            } else if (modelLower.includes('gemma')) {
-                requestParams.thinking = true;
-            } else if (modelLower.includes('qwen') || modelLower.includes('glm')) {
-                requestParams.thinking = true;
-                requestParams.enable_thinking = true;
-                requestParams.chat_template_kwargs = { enable_thinking: true };
-            } else if (modelLower.includes('mistral') || modelLower.includes('codestral')) {
-                requestParams.reasoning_effort = 'high';
-            } else {
-                requestParams.thinking = true;
-                requestParams.enable_thinking = true;
-                requestParams.reasoning_effort = 'high';
-                requestParams.chat_template_kwargs = { enable_thinking: true };
-            }
-        } else {
-            if (modelLower.includes('muse') || modelLower.includes('glimmer')) {
-                // Muse Glimmer does not support parameter-level thinking disabling;
-                // output is handled and filtered by the client stream transformer.
-                requestParams.thinking = false;
-                requestParams.reasoning_effort = 'none';
-                requestParams.reasoning = 'off';
-            } else if (modelLower.includes('gemma')) {
-                requestParams.thinking = false;
-                requestParams.reasoning_effort = 'none';
-                requestParams.reasoning = 'off';
-            } else if (modelLower.includes('qwen') || modelLower.includes('glm')) {
-                requestParams.thinking = false;
-                requestParams.enable_thinking = false;
-                requestParams.chat_template_kwargs = { enable_thinking: false };
-                requestParams.reasoning_effort = 'none';
-                requestParams.reasoning = 'off';
-            } else if (modelLower.includes('mistral') || modelLower.includes('codestral')) {
-                requestParams.reasoning_effort = 'none';
-            } else {
-                requestParams.thinking = false;
-                requestParams.enable_thinking = false;
-                requestParams.chat_template_kwargs = { enable_thinking: false };
-                requestParams.reasoning_effort = 'none';
-                requestParams.reasoning = 'off';
-            }
-        }
+        LMStudioReasoningEngine.applyThinkingParameters(requestParams, model, thinking);
     }
 }

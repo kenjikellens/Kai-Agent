@@ -31,6 +31,7 @@ const GeminiClient_1 = require("./providers/GeminiClient");
 const FreeProviderClient_1 = require("./providers/FreeProviderClient");
 Object.defineProperty(exports, "FREE_PROVIDERS", { enumerable: true, get: function () { return FreeProviderClient_1.FREE_PROVIDERS; } });
 const MuseGlimmerStreamParser_1 = require("./providers/MuseGlimmerStreamParser");
+const LMStudioReasoningEngine_1 = require("./providers/LMStudioReasoningEngine");
 /**
  * LMStudioClient handles communication with the locally running LM Studio HTTP API server.
  */
@@ -100,7 +101,8 @@ class LMStudioClient {
         try {
             const res = await HttpClient_1.HttpClient.getJson(url, {}, 1500);
             if (res && Array.isArray(res.data)) {
-                return res.data.map((m) => m.id);
+                const allIds = res.data.map((m) => m.id);
+                return LMStudioReasoningEngine_1.LMStudioReasoningEngine.filterChatModels(allIds);
             }
             return [];
         }
@@ -143,7 +145,8 @@ class LMStudioClient {
                 try {
                     const parsed = JSON.parse(stdout);
                     if (Array.isArray(parsed)) {
-                        resolve(parsed.map((m) => m.modelKey || m.identifier || m.path));
+                        const rawModels = parsed.map((m) => m.modelKey || m.identifier || m.path);
+                        resolve(LMStudioReasoningEngine_1.LMStudioReasoningEngine.filterChatModels(rawModels));
                     }
                     else {
                         resolve([]);
@@ -356,66 +359,13 @@ class LMStudioClient {
     }
     /**
      * Dynamically applies thinking/reasoning parameters based on the target model family.
+     * Delegates to LMStudioReasoningEngine for universal model architecture support and custom user profiles.
      * @param requestParams Target HTTP payload object.
      * @param model Model ID string.
      * @param thinking Whether thinking phase is enabled.
      */
     applyThinkingParameters(requestParams, model, thinking) {
-        const modelLower = (model || '').toLowerCase();
-        if (thinking) {
-            if (modelLower.includes('muse') || modelLower.includes('glimmer')) {
-                // Muse Glimmer natively emits reasoning tokens; preserve active thinking flags
-                requestParams.thinking = true;
-            }
-            else if (modelLower.includes('gemma')) {
-                requestParams.thinking = true;
-            }
-            else if (modelLower.includes('qwen') || modelLower.includes('glm')) {
-                requestParams.thinking = true;
-                requestParams.enable_thinking = true;
-                requestParams.chat_template_kwargs = { enable_thinking: true };
-            }
-            else if (modelLower.includes('mistral') || modelLower.includes('codestral')) {
-                requestParams.reasoning_effort = 'high';
-            }
-            else {
-                requestParams.thinking = true;
-                requestParams.enable_thinking = true;
-                requestParams.reasoning_effort = 'high';
-                requestParams.chat_template_kwargs = { enable_thinking: true };
-            }
-        }
-        else {
-            if (modelLower.includes('muse') || modelLower.includes('glimmer')) {
-                // Muse Glimmer does not support parameter-level thinking disabling;
-                // output is handled and filtered by the client stream transformer.
-                requestParams.thinking = false;
-                requestParams.reasoning_effort = 'none';
-                requestParams.reasoning = 'off';
-            }
-            else if (modelLower.includes('gemma')) {
-                requestParams.thinking = false;
-                requestParams.reasoning_effort = 'none';
-                requestParams.reasoning = 'off';
-            }
-            else if (modelLower.includes('qwen') || modelLower.includes('glm')) {
-                requestParams.thinking = false;
-                requestParams.enable_thinking = false;
-                requestParams.chat_template_kwargs = { enable_thinking: false };
-                requestParams.reasoning_effort = 'none';
-                requestParams.reasoning = 'off';
-            }
-            else if (modelLower.includes('mistral') || modelLower.includes('codestral')) {
-                requestParams.reasoning_effort = 'none';
-            }
-            else {
-                requestParams.thinking = false;
-                requestParams.enable_thinking = false;
-                requestParams.chat_template_kwargs = { enable_thinking: false };
-                requestParams.reasoning_effort = 'none';
-                requestParams.reasoning = 'off';
-            }
-        }
+        LMStudioReasoningEngine_1.LMStudioReasoningEngine.applyThinkingParameters(requestParams, model, thinking);
     }
 }
 exports.LMStudioClient = LMStudioClient;

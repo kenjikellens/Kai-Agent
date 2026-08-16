@@ -67,8 +67,24 @@ class ThinkingStateFormatter {
 
         // 4. LM Studio / Local / General Reasoning models (Binary On/Off)
         const isLmThinkingOn = localStorage.getItem(`kai.lmStudioThinking.${rawModel}`) === 'true' || isThinkingSuffix;
-        const isLocalCategory = lowerRaw.includes('lmstudio') || lowerRaw.includes('local') || isThinkingSuffix;
-        if (isLocalCategory || isThinkingSuffix) {
+        const isKnownLocalReasoning =
+            lowerRaw.includes('qwen') ||
+            lowerRaw.includes('qwq') ||
+            lowerRaw.includes('glm') ||
+            lowerRaw.includes('gemma') ||
+            lowerRaw.includes('mistral') ||
+            lowerRaw.includes('codestral') ||
+            lowerRaw.includes('magistral') ||
+            lowerRaw.includes('ministral') ||
+            lowerRaw.includes('deepseek') ||
+            lowerRaw.includes('r1') ||
+            lowerRaw.includes('thinking') ||
+            lowerRaw.includes('reasoning') ||
+            lowerRaw.includes('lmstudio') ||
+            lowerRaw.includes('local') ||
+            isThinkingSuffix;
+
+        if (isKnownLocalReasoning) {
             return {
                 isThinkingCapable: true,
                 isMultiLevel: false,
