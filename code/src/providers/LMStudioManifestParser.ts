@@ -95,13 +95,14 @@ export class LMStudioManifestParser {
                 };
             }
 
-            // Count LLM (chat) models
+            // Count unique LLM (chat) models by distinct displayName/identifier
             const chatModels = data.models.filter((m: any) => m.domain !== 'embedding');
+            const uniqueModels = new Set(chatModels.map((m: any) => m.displayName || m.indexedModelIdentifier));
 
             return {
                 valid: true,
                 path: filePath,
-                modelCount: chatModels.length
+                modelCount: uniqueModels.size
             };
         } catch (err: any) {
             return {
