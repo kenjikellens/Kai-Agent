@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { ModelCapabilities } from './LMStudioManifestParser';
 
 /**
  * Model reasoning profile configuration interface for custom overrides.
@@ -205,5 +206,45 @@ export class LMStudioReasoningEngine {
             requestParams.reasoning = 'off';
             requestParams.chat_template_kwargs = { enable_thinking: false };
         }
+    }
+
+    /**
+     * Applies dynamic thinking/reasoning parameters purely based on the extracted ModelCapabilities manifest.
+     * Uses the exact Jinja variable names defined in effects[].variable without hardcoding model names.
+     * @param requestParams Target HTTP payload object.
+     * @param capabilities Extracted ModelCapabilities for this model.
+     * @param thinking Whether thinking is toggled on.
+     * @param reasoningEffort Selected reasoning effort value (e.g. 'xhigh', 'medium', 'low').
+     * @returns True if manifest parameters were applied.
+     */
+    public static applyManifestParameters(
+        requestParams: any,
+        capabilities?: ModelCapabilities,
+        thinking: boolean = true,
+        reasoningEffort: string = 'xhigh'
+    ): boolean {
+        if (!capabilities || !Array.isArray(capabilities.fields) || capabilities.fields.length === 0) {
+            return false;
+        }
+
+        for (const field of capabilities.fields) {
+            if (field.type === 'boolean') {
+                requestParams[field.variable] = thinking;
+                if (field.variable === 'enable_thinking') {
+                    requestParams.chat_template_kwargs = {
+                        ...(requestParams.chat_template_kwargs || {}),
+                        enable_thinking: thinking
+                    };
+                }
+            } else if (field.type === 'select') {
+                requestParams[field.variable] = thinking ? (reasoningEffort || field.defaultValue || 'xhigh') : 'none';
+            }
+        }
+
+        if (capabilities.isReasoning) {
+            requestParams.thinking = thinking;
+        }
+
+        return true;
     }
 }
