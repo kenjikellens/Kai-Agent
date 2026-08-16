@@ -37,6 +37,7 @@
     const atMentionTriggerBtn = document.getElementById('at-mention-trigger-btn');
     const contextOptionsMenu = document.getElementById('context-options-menu');
     const planningModeOptionRow = document.getElementById('planning-mode-option-row');
+    const planningModeBtn = document.getElementById('planning-mode-btn');
 
     /**
      * Dynamically resizes the message input textarea based on content scrollHeight.
@@ -51,7 +52,30 @@
     }
 
     /**
-     * Initializes the Planning Mode switch toggle inside the @ options menu using ToggleComponent.
+     * Updates planning mode button UI states.
+     */
+    function updatePlanningModeState(enabled) {
+        appState.isPlanningModeEnabled = enabled;
+        localStorage.setItem('kai.planningMode', enabled ? 'true' : 'false');
+        if (planningModeBtn) {
+            planningModeBtn.classList.toggle('active-mode', enabled);
+        }
+        if (atMentionTriggerBtn) {
+            atMentionTriggerBtn.classList.toggle('active-mode', enabled);
+        }
+    }
+
+    if (planningModeBtn) {
+        if (appState.isPlanningModeEnabled) {
+            planningModeBtn.classList.add('active-mode');
+        }
+        planningModeBtn.addEventListener('click', () => {
+            updatePlanningModeState(!appState.isPlanningModeEnabled);
+        });
+    }
+
+    /**
+     * Initializes the Planning Mode switch toggle inside the @ options menu if present.
      */
     if (planningModeOptionRow) {
         const planningToggleEl = ToggleComponent.create({
@@ -60,17 +84,10 @@
             checked: appState.isPlanningModeEnabled,
             title: window.KAI_I18N?.planningModeDesc || 'Enforce step-by-step planning before execution',
             onChange: (checked) => {
-                appState.isPlanningModeEnabled = checked;
-                localStorage.setItem('kai.planningMode', checked ? 'true' : 'false');
-                if (atMentionTriggerBtn) {
-                    atMentionTriggerBtn.classList.toggle('active-mode', checked);
-                }
+                updatePlanningModeState(checked);
             }
         });
         planningModeOptionRow.appendChild(planningToggleEl);
-        if (atMentionTriggerBtn && appState.isPlanningModeEnabled) {
-            atMentionTriggerBtn.classList.add('active-mode');
-        }
     }
 
     let isDirty = false;

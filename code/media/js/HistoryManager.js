@@ -12,10 +12,10 @@ class HistoryManager {
         this.ipcBridge = ipcBridge;
         this.onViewSwitch = onViewSwitch;
 
-        this.historyContainer = document.getElementById('history-container');
+        this.historyContainer = document.getElementById('history-container') || document.getElementById('history-view');
         this.historyList = document.getElementById('history-list');
         this.historyBtn = document.getElementById('history-btn');
-        this.closeHistoryBtn = document.getElementById('close-history-btn');
+        this.closeHistoryBtn = document.getElementById('close-history-btn') || document.getElementById('history-back-btn');
 
         this.initEventListeners();
     }
