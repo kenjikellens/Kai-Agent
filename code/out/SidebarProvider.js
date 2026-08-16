@@ -29,6 +29,7 @@ const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
 const AgentExecutor_1 = require("./AgentExecutor");
 const LMStudioClient_1 = require("./LMStudioClient");
+const LMStudioManifestParser_1 = require("./providers/LMStudioManifestParser");
 const i18n_1 = require("./i18n");
 const SessionStore_1 = require("./SessionStore");
 const EditorContextProvider_1 = require("./EditorContextProvider");
@@ -93,6 +94,12 @@ class SidebarProvider {
                     const config = vscode.workspace.getConfiguration('kai');
                     const envUpdates = {};
                     let languageChanged = false;
+                    if (data.serverUrl !== undefined) {
+                        await config.update('serverUrl', data.serverUrl, vscode.ConfigurationTarget.Global);
+                    }
+                    if (data.lmStudioCacheDir !== undefined) {
+                        await config.update('lmStudioCacheDir', data.lmStudioCacheDir, vscode.ConfigurationTarget.Global);
+                    }
                     if (data.apiKey !== undefined) {
                         await config.update('apiKey', data.apiKey, vscode.ConfigurationTarget.Global);
                         envUpdates['GEMINI_API_KEY'] = data.apiKey;
@@ -115,6 +122,10 @@ class SidebarProvider {
                         this._view.webview.html = this._getHtmlForWebview(this._view.webview);
                     }
                     await this._handleCheckConnection();
+                    break;
+                }
+                case 'browseLMStudioFolder': {
+                    await this._handleBrowseLMStudioFolder();
                     break;
                 }
                 case 'showError': {
@@ -287,7 +298,11 @@ class SidebarProvider {
         }
         const activeModel = lmModels.length > 0 ? lmModels[0] : (geminiModels.length > 0 ? geminiModels[0] : 'local-model');
         const updatedFreeProviders = buildFreeProviders();
-        // 3. Post updated model availability
+        // 3. Validate LM Studio Cache directory and extract model capabilities
+        const lmStudioCacheDir = config.get('lmStudioCacheDir') || '';
+        const lmStudioCacheStatus = LMStudioManifestParser_1.LMStudioManifestParser.validateCache(lmStudioCacheDir);
+        const lmStudioCapabilities = LMStudioManifestParser_1.LMStudioManifestParser.parseModelCapabilities(lmStudioCacheDir);
+        // 4. Post updated model availability and manifest capabilities
         this._view.webview.postMessage({
             type: 'connectionStatus',
             connected: lmStudioConnected,
@@ -298,6 +313,9 @@ class SidebarProvider {
             freeProviders: updatedFreeProviders,
             serverUrl: serverUrl,
             apiKey: apiKey,
+            lmStudioCacheDir: lmStudioCacheDir,
+            lmStudioCacheStatus: lmStudioCacheStatus,
+            lmStudioCapabilities: lmStudioCapabilities,
             translations: translations,
             language: activeLang
         });

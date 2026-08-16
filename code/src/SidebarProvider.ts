@@ -93,6 +93,12 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                     const envUpdates: Record<string, string> = {};
                     let languageChanged = false;
 
+                    if (data.serverUrl !== undefined) {
+                        await config.update('serverUrl', data.serverUrl, vscode.ConfigurationTarget.Global);
+                    }
+                    if (data.lmStudioCacheDir !== undefined) {
+                        await config.update('lmStudioCacheDir', data.lmStudioCacheDir, vscode.ConfigurationTarget.Global);
+                    }
                     if (data.apiKey !== undefined) {
                         await config.update('apiKey', data.apiKey, vscode.ConfigurationTarget.Global);
                         envUpdates['GEMINI_API_KEY'] = data.apiKey;
@@ -116,6 +122,10 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                         this._view.webview.html = this._getHtmlForWebview(this._view.webview);
                     }
                     await this._handleCheckConnection();
+                    break;
+                }
+                case 'browseLMStudioFolder': {
+                    await this._handleBrowseLMStudioFolder();
                     break;
                 }
                 case 'showError': {
@@ -333,7 +343,12 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         const activeModel = lmModels.length > 0 ? lmModels[0] : (geminiModels.length > 0 ? geminiModels[0] : 'local-model');
         const updatedFreeProviders = buildFreeProviders();
 
-        // 3. Post updated model availability
+        // 3. Validate LM Studio Cache directory and extract model capabilities
+        const lmStudioCacheDir = config.get<string>('lmStudioCacheDir') || '';
+        const lmStudioCacheStatus = LMStudioManifestParser.validateCache(lmStudioCacheDir);
+        const lmStudioCapabilities = LMStudioManifestParser.parseModelCapabilities(lmStudioCacheDir);
+
+        // 4. Post updated model availability and manifest capabilities
         this._view.webview.postMessage({
             type: 'connectionStatus',
             connected: lmStudioConnected,
@@ -344,6 +359,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             freeProviders: updatedFreeProviders,
             serverUrl: serverUrl,
             apiKey: apiKey,
+            lmStudioCacheDir: lmStudioCacheDir,
+            lmStudioCacheStatus: lmStudioCacheStatus,
+            lmStudioCapabilities: lmStudioCapabilities,
             translations: translations,
             language: activeLang
         });
