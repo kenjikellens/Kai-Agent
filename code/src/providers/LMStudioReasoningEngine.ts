@@ -11,7 +11,7 @@ export interface LMStudioModelProfile {
 
 /**
  * LMStudioReasoningEngine manages model capability detection, thinking parameter injection,
- * and embedding model filtering for local LM Studio instances.
+ * reasoning effort configuration, and embedding model filtering for local LM Studio instances.
  */
 export class LMStudioReasoningEngine {
     /**
@@ -65,7 +65,7 @@ export class LMStudioReasoningEngine {
         if (!modelId) return false;
         const lower = modelId.toLowerCase();
 
-        // Muse Glimmer has baked-in reasoning which cannot be toggled at the parameter level
+        // Muse Glimmer has baked-in reasoning which cannot be toggled at parameter level
         if (lower.includes('muse') || lower.includes('glimmer')) {
             return false;
         }
@@ -97,10 +97,19 @@ export class LMStudioReasoningEngine {
      * @param requestParams Target HTTP payload object.
      * @param modelId Target model ID string.
      * @param thinking Whether thinking phase is enabled.
+     * @param reasoningEffort Configured reasoning effort ('xhigh', 'medium', 'low', 'none').
      */
-    public static applyThinkingParameters(requestParams: any, modelId: string, thinking: boolean): void {
+    public static applyThinkingParameters(
+        requestParams: any,
+        modelId: string,
+        thinking: boolean,
+        reasoningEffort: string = 'xhigh'
+    ): void {
         const lower = (modelId || '').toLowerCase();
         const userProfiles = LMStudioReasoningEngine.getUserProfiles();
+
+        // Map effort string (normalize 'high' to 'xhigh' or keep 'xhigh'/'medium'/'low')
+        const effortVal = reasoningEffort === 'high' ? 'xhigh' : (reasoningEffort || 'xhigh');
 
         // 1. Check for user-defined configuration override
         const customProfile = userProfiles[modelId] || userProfiles[lower];
@@ -126,11 +135,12 @@ export class LMStudioReasoningEngine {
             return;
         }
 
-        // 3. Qwen & GLM Architecture (e.g. Qwen 3.8 27B, Qwen 2.5, GLM 4.7 Flash, QwQ)
+        // 3. Qwen & GLM Architecture (e.g. Qwen 3.8 27B, Qwen 3.6, Qwen 3.5, Qwen 3 Coder, GLM 4.7 Flash, QwQ)
         if (lower.includes('qwen') || lower.includes('glm') || lower.includes('qwq')) {
             if (thinking) {
                 requestParams.thinking = true;
                 requestParams.enable_thinking = true;
+                requestParams.reasoning_effort = effortVal;
                 requestParams.chat_template_kwargs = { enable_thinking: true };
             } else {
                 requestParams.thinking = false;
@@ -145,17 +155,18 @@ export class LMStudioReasoningEngine {
         // 4. Mistral & Codestral Architecture (e.g. Magistral, Codestral, Mistral Small 3)
         if (lower.includes('mistral') || lower.includes('codestral') || lower.includes('magistral') || lower.includes('ministral')) {
             if (thinking) {
-                requestParams.reasoning_effort = 'high';
+                requestParams.reasoning_effort = effortVal;
             } else {
                 requestParams.reasoning_effort = 'none';
             }
             return;
         }
 
-        // 5. Gemma Architecture (e.g. Gemma 4 E4B, Gemma 4 31B, Gemma 4 26B, Gemma 2)
+        // 5. Gemma Architecture (e.g. Gemma 4 E4B, Gemma 4 E2B, Gemma 4 31B, Gemma 4 26B, Gemma 2)
         if (lower.includes('gemma')) {
             if (thinking) {
                 requestParams.thinking = true;
+                requestParams.reasoning_effort = effortVal;
             } else {
                 requestParams.thinking = false;
                 requestParams.reasoning_effort = 'none';
@@ -169,7 +180,7 @@ export class LMStudioReasoningEngine {
             if (thinking) {
                 requestParams.thinking = true;
                 requestParams.enable_thinking = true;
-                requestParams.reasoning_effort = 'high';
+                requestParams.reasoning_effort = effortVal;
                 requestParams.chat_template_kwargs = { enable_thinking: true };
             } else {
                 requestParams.thinking = false;
@@ -185,7 +196,7 @@ export class LMStudioReasoningEngine {
         if (thinking) {
             requestParams.thinking = true;
             requestParams.enable_thinking = true;
-            requestParams.reasoning_effort = 'high';
+            requestParams.reasoning_effort = effortVal;
             requestParams.chat_template_kwargs = { enable_thinking: true };
         } else {
             requestParams.thinking = false;

@@ -1070,6 +1070,13 @@ button:disabled {
   gap: 1px;
 }
 
+/* Divider inside Thinking Flyout menu between toggle and reasoning levels */
+.flyout-divider {
+  height: 1px;
+  background: var(--app-border-strong, #3c3c3c);
+  margin: 3px 2px;
+}
+
 .dropdown-item.model-hover-item.flyout-open {
   color: var(--app-fg);
   background: var(--app-surface-hover);

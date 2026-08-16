@@ -183,7 +183,7 @@ export class LMStudioClient implements ILLMProvider {
                 stream: false
             };
 
-            this.applyThinkingParameters(requestParams, model, thinking);
+            this.applyThinkingParameters(requestParams, model, thinking, geminiThinkingLevel);
 
             const payload = JSON.stringify(requestParams);
 
@@ -262,7 +262,7 @@ export class LMStudioClient implements ILLMProvider {
                 stream: true
             };
 
-            this.applyThinkingParameters(requestParams, model, thinking);
+            this.applyThinkingParameters(requestParams, model, thinking, geminiThinkingLevel);
 
             const payload = JSON.stringify(requestParams);
 
@@ -381,8 +381,9 @@ export class LMStudioClient implements ILLMProvider {
      * @param requestParams Target HTTP payload object.
      * @param model Model ID string.
      * @param thinking Whether thinking phase is enabled.
+     * @param reasoningEffort Configured reasoning effort ('xhigh', 'medium', 'low', 'none').
      */
-    private applyThinkingParameters(requestParams: any, model: string, thinking: boolean): void {
-        LMStudioReasoningEngine.applyThinkingParameters(requestParams, model, thinking);
+    private applyThinkingParameters(requestParams: any, model: string, thinking: boolean, reasoningEffort?: string): void {
+        LMStudioReasoningEngine.applyThinkingParameters(requestParams, model, thinking, reasoningEffort);
     }
 }

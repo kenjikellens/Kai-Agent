@@ -183,7 +183,7 @@ class LMStudioClient {
                 temperature: temperature,
                 stream: false
             };
-            this.applyThinkingParameters(requestParams, model, thinking);
+            this.applyThinkingParameters(requestParams, model, thinking, geminiThinkingLevel);
             const payload = JSON.stringify(requestParams);
             const options = {
                 hostname,
@@ -249,7 +249,7 @@ class LMStudioClient {
                 temperature: temperature,
                 stream: true
             };
-            this.applyThinkingParameters(requestParams, model, thinking);
+            this.applyThinkingParameters(requestParams, model, thinking, geminiThinkingLevel);
             const payload = JSON.stringify(requestParams);
             const options = {
                 hostname,
@@ -363,9 +363,10 @@ class LMStudioClient {
      * @param requestParams Target HTTP payload object.
      * @param model Model ID string.
      * @param thinking Whether thinking phase is enabled.
+     * @param reasoningEffort Configured reasoning effort ('xhigh', 'medium', 'low', 'none').
      */
-    applyThinkingParameters(requestParams, model, thinking) {
-        LMStudioReasoningEngine_1.LMStudioReasoningEngine.applyThinkingParameters(requestParams, model, thinking);
+    applyThinkingParameters(requestParams, model, thinking, reasoningEffort) {
+        LMStudioReasoningEngine_1.LMStudioReasoningEngine.applyThinkingParameters(requestParams, model, thinking, reasoningEffort);
     }
 }
 exports.LMStudioClient = LMStudioClient;

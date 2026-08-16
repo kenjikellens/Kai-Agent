@@ -65,8 +65,10 @@ class ThinkingStateFormatter {
             };
         }
 
-        // 4. LM Studio / Local / General Reasoning models (Binary On/Off)
+        // 4. LM Studio / Local / General Reasoning models (Dual Thinking Toggle + Reasoning Effort: xhigh, medium, low)
         const isLmThinkingOn = localStorage.getItem(`kai.lmStudioThinking.${rawModel}`) === 'true' || isThinkingSuffix;
+        const storedEffort = localStorage.getItem(`kai.lmStudioReasoningLevel.${rawModel}`) ||
+                             localStorage.getItem(`kai.lmStudioReasoningLevel.${modelId}`) || 'xhigh';
         const isKnownLocalReasoning =
             lowerRaw.includes('qwen') ||
             lowerRaw.includes('qwq') ||
@@ -85,12 +87,14 @@ class ThinkingStateFormatter {
             isThinkingSuffix;
 
         if (isKnownLocalReasoning) {
+            const effortLabels = { xhigh: 'X-High', high: 'X-High', medium: 'Medium', low: 'Low', off: 'Off' };
+            const labelText = isLmThinkingOn ? (effortLabels[storedEffort] || 'Thinking') : '';
             return {
                 isThinkingCapable: true,
-                isMultiLevel: false,
-                level: isLmThinkingOn ? 'high' : 'off',
+                isMultiLevel: true,
+                level: isLmThinkingOn ? storedEffort : 'off',
                 isOn: isLmThinkingOn,
-                labelText: isLmThinkingOn ? 'thinking' : '',
+                labelText: labelText,
                 rawModel: rawModel
             };
         }

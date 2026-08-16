@@ -136,7 +136,7 @@
         saveCurrentChat();
 
         const modelDetails = modelDropdownController.getSelectedModelDetails();
-        const geminiThinkingLevel = settingsController.getGeminiThinkingLevel(modelDetails.model);
+        const geminiThinkingLevel = modelDetails.reasoningEffort || settingsController.getGeminiThinkingLevel(modelDetails.model);
 
         const attachedFilesCopy = fileUploadController.getAttachedFiles();
         fileUploadController.clear();
