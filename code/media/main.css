@@ -2197,6 +2197,201 @@ details[open]>summary>.custom-chevron {
 
 .settings-browse-btn:hover {
   background: var(--app-surface-hover, #37373d);
+justify-content: center;
+}
+
+.html-icon {
+  color: #e44d26;
+}
+
+.css-icon {
+  color: #42a5f5;
+}
+
+.js-icon {
+  color: #f7df1e;
+}
+
+.ts-icon {
+  color: #3178c6;
+}
+
+.json-icon {
+  color: #cbcb41;
+}
+
+.md-icon {
+  color: #42a5f5;
+}
+
+.py-icon {
+  color: #3776ab;
+}
+
+.lang-icon {
+  color: #a29bfe;
+}
+
+.term-icon {
+  color: #2ecc71;
+}
+
+.db-icon {
+  color: #e67e22;
+}
+
+.config-icon {
+  color: #b2bec3;
+}
+
+.media-icon {
+  color: #fd79a8;
+}
+
+.pdf-icon {
+  color: #e74c3c;
+}
+
+.zip-icon {
+  color: #fdcb6e;
+}
+
+.lock-icon {
+  color: #e74c3c;
+}
+
+.git-icon {
+  color: #f14e32;
+}
+
+.docker-icon {
+  color: #2496ed;
+}
+
+.default-file-icon {
+  color: var(--app-muted);
+}
+
+.file-name {
+  color: var(--app-fg);
+  font-weight: 500;
+}
+
+.file-path {
+  color: var(--app-muted);
+  font-size: 0.7rem;
+}
+
+/* -----------------------------
+   Details / chevrons
+------------------------------ */
+details summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0;
+  color: var(--vscode-foreground, #cccccc);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+  outline: none;
+}
+
+details summary::-webkit-details-marker,
+details summary::marker {
+  display: none;
+  content: "";
+}
+
+details summary .custom-chevron {
+  flex-shrink: 0;
+  color: var(--app-muted);
+  transform: rotate(-90deg);
+  transition: transform 0.2s ease;
+}
+
+details[open]>summary>.custom-chevron {
+  transform: rotate(0deg);
+}
+
+/* -----------------------------
+   Scrollbars
+------------------------------ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--app-scrollbar-thumb);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--app-scrollbar-thumb-hover);
+}
+
+/* -----------------------------
+   Responsive tweaks
+------------------------------ */
+@media (max-width: 280px) {
+  .switch-container .switch-label {
+    display: none;
+  }
+}
+
+@media (max-width: 240px) {
+  .header-actions {
+    gap: 2px;
+  }
+
+  .icon-btn-header {
+    width: 22px;
+    height: 22px;
+    padding: 3px;
+  }
+
+  .icon-btn-header svg {
+    width: 13px;
+    height: 13px;
+  }
+}
+
+/* -----------------------------
+   LM Studio & Provider Settings
+------------------------------ */
+.settings-section-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--app-fg, #e0e0e0);
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--app-border-subtle, #333333);
+}
+
+.settings-browse-btn {
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--app-border-strong, #3c3c3c);
+  border-radius: var(--app-radius-sm, 4px);
+  background: var(--app-surface-strong, #2d2d2d);
+  color: var(--app-fg, #cccccc);
+  font-size: 0.72rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease;
+}
+
+.settings-browse-btn:hover {
+  background: var(--app-surface-hover, #37373d);
   color: var(--app-fg, #ffffff);
 }
 
@@ -2212,4 +2407,62 @@ details[open]>summary>.custom-chevron {
   color: var(--app-muted, #888888);
   font-size: 0.72rem;
   word-break: break-all;
+}
+
+/* -----------------------------
+   Keys Overlay Modal (.keys-container)
+------------------------------ */
+.keys-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(2px);
+  z-index: 20000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.keys-container.hidden {
+  display: none !important;
+}
+
+.keys-modal-card {
+  width: 100%;
+  max-width: 320px;
+  background: var(--app-surface-strong, #252526);
+  border: 1px solid var(--app-border-strong, #3c3c3c);
+  border-radius: var(--app-radius-md, 6px);
+  box-shadow: var(--app-flyout-shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: 80vh;
+}
+
+.keys-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--app-border-subtle, #333333);
+}
+
+.keys-modal-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--app-fg, #cccccc);
+}
+
+.keys-modal-body {
+  padding: 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }

@@ -152,8 +152,8 @@ export class LMStudioManifestParser {
                             variable = cf.effects[0].variable || '';
                         }
 
-                        // Skip fields without a mapped Jinja variable
-                        if (!variable) {
+                        // Skip fields without a mapped Jinja variable or preserveThinking
+                        if (!variable || variable === 'preserve_thinking' || variable === 'preserveThinking' || (cf.key && cf.key.includes('preserveThinking'))) {
                             continue;
                         }
 
