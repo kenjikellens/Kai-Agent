@@ -193,44 +193,45 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             return;
         }
 
-        // Retrieve the active workspace root folder path
+        // Retrieve workspace root and extension directory paths
         const workspaceFolders = vscode.workspace.workspaceFolders;
         const workspacePath = workspaceFolders && workspaceFolders.length > 0 ? workspaceFolders[0].uri.fsPath : '';
+        const extensionPath = this._extensionUri.fsPath;
 
         // Read configuration values
         const config = vscode.workspace.getConfiguration('kai');
         const serverUrl = config.get<string>('serverUrl') || 'http://localhost:1234/v1';
-        const apiKey = config.get<string>('apiKey') || '';
 
         // Initialize executor and abort controller
         this._activeAbortController = new AbortController();
-        const executor = new AgentExecutor(serverUrl, apiKey, workspacePath);
+
+        const executor = new AgentExecutor(
+            workspacePath,
+            extensionPath,
+            serverUrl,
+            0.2,
+            (event) => {
+                this._view?.webview.postMessage({
+                    type: 'toolActivity',
+                    event: event
+                });
+            }
+        );
 
         this._currentStreamingText = '';
         this._currentStreamingMessages = messages;
 
         try {
-            // Append workspace file context to user messages if available
-            const enrichedMessages = await EditorContextProvider.enrichMessagesWithContext(messages, attachedFiles);
+            const userPrompt = messages.length > 0 ? messages[messages.length - 1].content : '';
+            const history = messages.slice(0, -1);
+            const activeFile = EditorContextProvider.captureEditorContext(workspacePath);
 
-            // Execute the agent chat flow and stream back tokens and tool steps
-            const finalResponse = await executor.execute(
-                enrichedMessages,
-                (token) => {
-                    this._currentStreamingText += token;
-                    this._view?.webview.postMessage({
-                        type: 'streamToken',
-                        token: token
-                    });
-                },
-                (toolMessage) => {
-                    this._view?.webview.postMessage({
-                        type: 'toolActivity',
-                        message: toolMessage
-                    });
-                },
+            const result = await executor.run(
+                userPrompt,
+                history,
+                model || 'local-model',
                 this._activeAbortController.signal,
-                model,
+                activeFile,
                 thinking,
                 geminiThinkingLevel,
                 planningMode,
@@ -240,7 +241,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             // Signal stream completion to the webview
             this._view.webview.postMessage({
                 type: 'replyComplete',
-                text: finalResponse
+                text: result.reply,
+                modifiedFiles: result.modifiedFiles
             });
         } catch (error: any) {
             // Re-throw if error was generated from manual abort cancellation
@@ -714,10 +716,10 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                                             </button>
                                         </div>
                                         <div class="toolbar-right">
-                                            <button type="button" class="send-icon-btn" id="send-btn" title="${translations.sendMessage}">
+                                            <button type="button" class="send-icon-btn" id="send-btn" title="Send Message">
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                                             </button>
-                                            <button type="button" class="send-icon-btn hidden" id="stop-btn" title="${translations.stop}">
+                                            <button type="button" class="send-icon-btn hidden" id="stop-btn" title="Stop">
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>
                                             </button>
                                         </div>
@@ -729,8 +731,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                         <!-- View B: Chat History List -->
                         <div id="history-view" class="content-view hidden">
                             <div class="history-header">
-                                <span class="history-title">${translations.chatHistory}</span>
-                                <button id="history-back-btn" class="icon-btn-header" title="${translations.back}">
+                                <span class="history-title">${translations.previousChats || 'Chat History'}</span>
+                                <button id="history-back-btn" class="icon-btn-header" title="Back">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                                 </button>
                             </div>
@@ -741,7 +743,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                         <div id="settings-view" class="content-view hidden">
                             <div class="settings-header">
                                 <span class="settings-title">${translations.settings}</span>
-                                <button id="settings-back-btn" class="icon-btn-header" title="${translations.back}">
+                                <button id="settings-back-btn" class="icon-btn-header" title="Back">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                                 </button>
                             </div>
@@ -767,7 +769,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                                 <div class="settings-group">
                                     <div class="settings-section-title">LM Studio</div>
                                     
-                                    <label class="settings-label" for="settings-server-url">${translations.serverUrl || 'Server URL'}</label>
+                                    <label class="settings-label" for="settings-server-url">Server URL</label>
                                     <input type="text" id="settings-server-url" class="settings-input" placeholder="http://localhost:1234/v1" />
                                     <span class="settings-help">Local LM Studio API server endpoint URL.</span>
 
@@ -792,7 +794,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                             </div>
 
                             <div class="settings-footer">
-                                <button id="settings-save-btn" class="primary-btn">${translations.save || 'Save'}</button>
+                                <button id="settings-save-btn" class="primary-btn">Save</button>
                             </div>
                         </div>
                     </div>
