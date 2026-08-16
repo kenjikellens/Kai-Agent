@@ -244,7 +244,8 @@ class ModelDropdownController {
                 const isGemini = lowerModel.includes('gemini');
                 const isMistralReasoning = lowerModel.includes('magistral') || lowerModel.includes('codestral') || lowerModel.includes('mistral-small') || lowerModel.includes('mistral-medium');
                 const isMuseGlimmer = lowerModel.includes('muse') || lowerModel.includes('glimmer');
-                const isLMStudio = isLMStudioCategory && !isMuseGlimmer;
+                const thinkingState = ThinkingStateFormatter.getThinkingState(itemData.rawModel);
+                const isLMStudio = isLMStudioCategory && !isMuseGlimmer && thinkingState.isThinkingCapable;
                 const hasFlyout = isGemini || isMistralReasoning || isLMStudio;
                 
                 // Model Selector Dropdown Button Item (Interactive button element)
@@ -430,72 +431,73 @@ class ModelDropdownController {
 
                         flyoutInner.appendChild(flyoutRow);
 
-                        // 2. Divider between Toggle and Reasoning Effort Levels
-                        const divider = document.createElement('div');
-                        divider.className = 'flyout-divider';
-                        flyoutInner.appendChild(divider);
+                        // 2. Render Reasoning Effort levels ONLY for multi-level models (Qwen, GLM, Mistral, DeepSeek)
+                        if (thinkingState.isMultiLevel) {
+                            const divider = document.createElement('div');
+                            divider.className = 'flyout-divider';
+                            flyoutInner.appendChild(divider);
 
-                        // 3. Reasoning Effort Level Options (xhigh, medium, low)
-                        const levels = [
-                            { level: 'xhigh', label: 'X-High' },
-                            { level: 'medium', label: 'Medium' },
-                            { level: 'low', label: 'Low' }
-                        ];
+                            const levels = [
+                                { level: 'xhigh', label: 'X-High' },
+                                { level: 'medium', label: 'Medium' },
+                                { level: 'low', label: 'Low' }
+                            ];
 
-                        levels.forEach(lvl => {
-                            const flyoutOpt = document.createElement('button');
-                            flyoutOpt.type = 'button';
-                            const isSelected = lvl.level === currentLmReasoningLevel;
-                            flyoutOpt.className = `dropdown-item flyout-option ${isSelected ? 'selected' : ''}`;
-                            flyoutOpt.setAttribute('role', 'button');
-                            flyoutOpt.setAttribute('aria-label', `Set reasoning effort to ${lvl.label}`);
-                            
-                            ThinkingStateFormatter.renderFlyoutOptionContent(flyoutOpt, lvl.label, lvl.level);
+                            levels.forEach(lvl => {
+                                const flyoutOpt = document.createElement('button');
+                                flyoutOpt.type = 'button';
+                                const isSelected = lvl.level === currentLmReasoningLevel;
+                                flyoutOpt.className = `dropdown-item flyout-option ${isSelected ? 'selected' : ''}`;
+                                flyoutOpt.setAttribute('role', 'button');
+                                flyoutOpt.setAttribute('aria-label', `Set reasoning effort to ${lvl.label}`);
+                                
+                                ThinkingStateFormatter.renderFlyoutOptionContent(flyoutOpt, lvl.label, lvl.level);
 
-                            if (isSelected) {
-                                const checkSvg = DOMUtils.createCheckIcon('check-icon');
-                                flyoutOpt.appendChild(checkSvg);
-                            }
-                            
-                            const handleFlyoutSelect = (e) => {
-                                e.stopPropagation();
-                                localStorage.setItem(`kai.lmStudioReasoningLevel.${itemData.rawModel}`, lvl.level);
-                                localStorage.setItem('kai.lmStudioReasoningLevel', lvl.level);
-                                localStorage.setItem(`kai.lmStudioThinking.${itemData.rawModel}`, 'true');
-
-                                const checkbox = toggleEl.querySelector('input[type="checkbox"]');
-                                if (checkbox) {
-                                    checkbox.checked = true;
+                                if (isSelected) {
+                                    const checkSvg = DOMUtils.createCheckIcon('check-icon');
+                                    flyoutOpt.appendChild(checkSvg);
                                 }
+                                
+                                const handleFlyoutSelect = (e) => {
+                                    e.stopPropagation();
+                                    localStorage.setItem(`kai.lmStudioReasoningLevel.${itemData.rawModel}`, lvl.level);
+                                    localStorage.setItem('kai.lmStudioReasoningLevel', lvl.level);
+                                    localStorage.setItem(`kai.lmStudioThinking.${itemData.rawModel}`, 'true');
 
-                                this.selectedModelValue = itemData.value;
-                                localStorage.setItem('kai.selectedModel', itemData.value);
-
-                                flyoutInner.querySelectorAll('.flyout-option').forEach(opt => {
-                                    if (opt.tagName === 'BUTTON') {
-                                        opt.classList.remove('selected');
-                                        const oldCheck = opt.querySelector('.check-icon');
-                                        if (oldCheck) oldCheck.remove();
+                                    const checkbox = toggleEl.querySelector('input[type="checkbox"]');
+                                    if (checkbox) {
+                                        checkbox.checked = true;
                                     }
-                                });
-                                flyoutOpt.classList.add('selected');
-                                const checkSvg = DOMUtils.createCheckIcon('check-icon');
-                                flyoutOpt.appendChild(checkSvg);
 
-                                this.setSelectedModel(itemData.value);
+                                    this.selectedModelValue = itemData.value;
+                                    localStorage.setItem('kai.selectedModel', itemData.value);
 
-                                this.closeActiveFlyoutImmediately();
-                                if (this.dropdownOptionsMenu) {
-                                    this.dropdownOptionsMenu.classList.add('hidden');
-                                }
-                                if (this.onSelect) {
-                                    this.onSelect(itemData.value);
-                                }
-                            };
+                                    flyoutInner.querySelectorAll('.flyout-option').forEach(opt => {
+                                        if (opt.tagName === 'BUTTON') {
+                                            opt.classList.remove('selected');
+                                            const oldCheck = opt.querySelector('.check-icon');
+                                            if (oldCheck) oldCheck.remove();
+                                        }
+                                    });
+                                    flyoutOpt.classList.add('selected');
+                                    const checkSvg = DOMUtils.createCheckIcon('check-icon');
+                                    flyoutOpt.appendChild(checkSvg);
 
-                            flyoutOpt.addEventListener('click', handleFlyoutSelect);
-                            flyoutInner.appendChild(flyoutOpt);
-                        });
+                                    this.setSelectedModel(itemData.value);
+
+                                    this.closeActiveFlyoutImmediately();
+                                    if (this.dropdownOptionsMenu) {
+                                        this.dropdownOptionsMenu.classList.add('hidden');
+                                    }
+                                    if (this.onSelect) {
+                                        this.onSelect(itemData.value);
+                                    }
+                                };
+
+                                flyoutOpt.addEventListener('click', handleFlyoutSelect);
+                                flyoutInner.appendChild(flyoutOpt);
+                            });
+                        }
                     }
 
                     flyoutMenu.appendChild(flyoutInner);

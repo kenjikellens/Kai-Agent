@@ -65,28 +65,19 @@ class ThinkingStateFormatter {
             };
         }
 
-        // 4. LM Studio / Local / General Reasoning models (Dual Thinking Toggle + Reasoning Effort: xhigh, medium, low)
-        const isLmThinkingOn = localStorage.getItem(`kai.lmStudioThinking.${rawModel}`) === 'true' || isThinkingSuffix;
-        const storedEffort = localStorage.getItem(`kai.lmStudioReasoningLevel.${rawModel}`) ||
-                             localStorage.getItem(`kai.lmStudioReasoningLevel.${modelId}`) || 'xhigh';
-        const isKnownLocalReasoning =
+        // 4. LM Studio / Local models with Dual Thinking Toggle + Reasoning Effort (Qwen, GLM, Mistral, DeepSeek)
+        const isMultiLevelReasoning =
             lowerRaw.includes('qwen') ||
             lowerRaw.includes('qwq') ||
             lowerRaw.includes('glm') ||
-            lowerRaw.includes('gemma') ||
             lowerRaw.includes('mistral') ||
             lowerRaw.includes('codestral') ||
             lowerRaw.includes('magistral') ||
             lowerRaw.includes('ministral') ||
             lowerRaw.includes('deepseek') ||
-            lowerRaw.includes('r1') ||
-            lowerRaw.includes('thinking') ||
-            lowerRaw.includes('reasoning') ||
-            lowerRaw.includes('lmstudio') ||
-            lowerRaw.includes('local') ||
-            isThinkingSuffix;
+            lowerRaw.includes('r1');
 
-        if (isKnownLocalReasoning) {
+        if (isMultiLevelReasoning) {
             const effortLabels = { xhigh: 'X-High', high: 'X-High', medium: 'Medium', low: 'Low', off: 'Off' };
             const labelText = isLmThinkingOn ? (effortLabels[storedEffort] || 'Thinking') : '';
             return {
@@ -95,6 +86,24 @@ class ThinkingStateFormatter {
                 level: isLmThinkingOn ? storedEffort : 'off',
                 isOn: isLmThinkingOn,
                 labelText: labelText,
+                rawModel: rawModel
+            };
+        }
+
+        // 5. LM Studio / Local models with Binary Thinking Toggle only (e.g. Gemma 4, Gemma 2)
+        const isBinaryThinking =
+            lowerRaw.includes('gemma') ||
+            lowerRaw.includes('thinking') ||
+            lowerRaw.includes('reasoning') ||
+            isThinkingSuffix;
+
+        if (isBinaryThinking) {
+            return {
+                isThinkingCapable: true,
+                isMultiLevel: false,
+                level: isLmThinkingOn ? 'high' : 'off',
+                isOn: isLmThinkingOn,
+                labelText: isLmThinkingOn ? 'thinking' : '',
                 rawModel: rawModel
             };
         }
