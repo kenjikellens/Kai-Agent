@@ -163,4 +163,12 @@ class WebviewIPCBridge {
     browseLMStudioFolder() {
         this.postMessage({ type: 'browseLMStudioFolder' });
     }
+
+    /**
+     * Requests Extension Host to open an external URL in default browser.
+     * @param {string} url External URL string.
+     */
+    openExternalUrl(url) {
+        this.postMessage({ type: 'openExternal', url });
+    }
 }

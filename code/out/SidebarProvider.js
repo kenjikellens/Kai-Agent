@@ -156,6 +156,12 @@ class SidebarProvider {
                     await this._handleOpenFilePicker();
                     break;
                 }
+                case 'openExternal': {
+                    if (data.url) {
+                        vscode.env.openExternal(vscode.Uri.parse(data.url));
+                    }
+                    break;
+                }
             }
         });
         // Notify the webview if the agent is currently running
@@ -557,6 +563,7 @@ class SidebarProvider {
         const settingsControllerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'SettingsController.js'));
         const historyManagerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'HistoryManager.js'));
         const fileUploadControllerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'FileUploadController.js'));
+        const helpModalControllerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'HelpModalController.js'));
         const chatUIControllerUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'js', 'ChatUIController.js'));
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js'));
         const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.css'));
@@ -793,6 +800,7 @@ class SidebarProvider {
                 <script nonce="${nonce}" src="${settingsControllerUri}"></script>
                 <script nonce="${nonce}" src="${historyManagerUri}"></script>
                 <script nonce="${nonce}" src="${fileUploadControllerUri}"></script>
+                <script nonce="${nonce}" src="${helpModalControllerUri}"></script>
                 <script nonce="${nonce}" src="${chatUIControllerUri}"></script>
                 <script nonce="${nonce}" src="${scriptUri}"></script>
             </body>

@@ -2310,4 +2310,154 @@ details[open]>summary>.custom-chevron {
   word-break: break-all;
 }
 
+/* --------------------------------------------------------------------------
+   HELP MODAL DIALOG COMPONENT (.help-container, .help-modal-card)
+   Sleek overlay dialog presenting user guides, features, and keyboard shortcuts.
+   -------------------------------------------------------------------------- */
+.help-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.help-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(2px);
+}
+
+.help-modal-card {
+  position: relative;
+  z-index: 2001;
+  width: 100%;
+  max-width: 420px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--app-bg, #1e1e1e);
+  border: 1px solid var(--app-border-strong, #3c3c3c);
+  border-radius: var(--app-radius-lg, 8px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.help-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--app-border-subtle, #2d2d2d);
+  background: var(--app-surface-strong, #252526);
+}
+
+.help-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--app-fg, #cccccc);
+}
+
+.help-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0 !important;
+  border-radius: var(--app-radius-sm, 4px);
+  background: transparent;
+  color: var(--app-muted, #888888);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.help-close-btn:hover {
+  background: var(--app-surface-hover, #37373d);
+  color: var(--app-fg, #ffffff);
+}
+
+.help-modal-body {
+  padding: 14px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.help-section {
+  padding: 10px;
+  background: var(--app-surface-subtle, #252526);
+  border: 1px solid var(--app-border-subtle, #2e2e2e);
+  border-radius: var(--app-radius-md, 6px);
+}
+
+.help-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--app-accent, #007acc);
+  margin-bottom: 4px;
+}
+
+.help-section-desc {
+  font-size: 0.72rem;
+  color: var(--app-muted, #999999);
+  line-height: 1.45;
+}
+
+.help-section-desc code {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.7rem;
+  color: var(--app-fg, #e0e0e0);
+}
+
+.help-shortcuts-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.help-shortcut-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+}
+
+.help-shortcut-label {
+  color: var(--app-muted, #999999);
+}
+
+.help-kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: 0.68rem;
+  font-family: var(--vscode-editor-font-family, monospace);
+  color: var(--app-fg, #cccccc);
+  background: var(--app-surface-strong, #2d2d2d);
+  border: 1px solid var(--app-border-strong, #3c3c3c);
+  border-radius: 3px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+}
+
 

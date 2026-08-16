@@ -12,6 +12,7 @@
     // 2. Instantiate Feature and View Controllers
     const settingsController = new SettingsController(ipcBridge);
     const fileUploadController = new FileUploadController(ipcBridge, appState);
+    const helpModalController = new HelpModalController(ipcBridge);
 
     const modelDropdownController = new ModelDropdownController(formatter, (selectedModel) => {
         appState.selectedModelValue = selectedModel;
@@ -26,7 +27,8 @@
         formatter,
         ipcBridge,
         fileSummaryWidget,
-        settingsController
+        settingsController,
+        helpModalController
     );
 
     // DOM Element References for Input Orchestration

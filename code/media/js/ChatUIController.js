@@ -9,12 +9,14 @@ class ChatUIController {
      * @param {WebviewIPCBridge} ipcBridge IPC bridge instance.
      * @param {FileSummaryWidget} fileSummaryWidget File summary widget instance.
      * @param {SettingsController} settingsController Settings controller instance.
+     * @param {HelpModalController} [helpModalController] Help modal controller instance.
      */
-    constructor(formatter, ipcBridge, fileSummaryWidget, settingsController) {
+    constructor(formatter, ipcBridge, fileSummaryWidget, settingsController, helpModalController) {
         this.formatter = formatter;
         this.ipcBridge = ipcBridge;
         this.fileSummaryWidget = fileSummaryWidget;
         this.settingsController = settingsController;
+        this.helpModalController = helpModalController;
 
         this.chatContainer = document.getElementById('chat-container');
         this.messageInput = document.getElementById('message-input');
@@ -57,14 +59,18 @@ class ChatUIController {
                 // 1. Welcome Help button
                 const helpBtn = e.target.closest('#welcome-help-btn');
                 if (helpBtn) {
-                    this.showView('settings');
+                    if (this.helpModalController) {
+                        this.helpModalController.open();
+                    } else {
+                        this.showView('settings');
+                    }
                     return;
                 }
 
-                // 2. Welcome README button
+                // 2. Welcome README button (Opens GitHub repository README in default browser)
                 const readmeBtn = e.target.closest('#welcome-readme-btn');
                 if (readmeBtn) {
-                    this.ipcBridge.openFile('README.md');
+                    this.ipcBridge.openExternalUrl('https://github.com/kenjikellens/Kai-Agent#readme');
                     return;
                 }
 
