@@ -31,5 +31,20 @@ export const zh: Translations = {
     generalSettings: '常规设置',
     thinkingSettings: '思考与推理',
     apiKeysSettings: 'API 密钥与服务商',
-    thinkingDisplayStyle: '思考过程显示格式'
+    thinkingDisplayStyle: '思考过程显示格式',
+    serverUrl: '服务器地址',
+    lmStudioDirectory: 'LM Studio 目录',
+    browse: '浏览...',
+    checkingCache: '正在检查缓存...',
+    cacheLoaded: '已加载模型索引（检测到 {count} 个模型）',
+    cacheNotFound: '未找到模型索引',
+    geminiApiKey: 'Google Gemini API 密钥',
+    manageFreeProviderKeys: '管理外部服务商密钥',
+    externalProvidersHeader: '外部 AI 服务商',
+    externalProviderApiKeys: '外部服务商 API 密钥',
+    close: '关闭',
+    iconAndText: '图标 + 文本',
+    iconOnly: '仅图标',
+    textOnly: '仅文本'
 };
+

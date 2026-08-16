@@ -31,5 +31,20 @@ export const nl: Translations = {
     generalSettings: 'Algemene Instellingen',
     thinkingSettings: 'Denken & Redeneren',
     apiKeysSettings: 'API Sleutels & Providers',
-    thinkingDisplayStyle: 'Weergaveformaat denkproces'
+    thinkingDisplayStyle: 'Weergaveformaat denkproces',
+    serverUrl: 'Server URL',
+    lmStudioDirectory: 'LM Studio Map',
+    browse: 'Bladeren...',
+    checkingCache: 'Cache controleren...',
+    cacheLoaded: 'Model index geladen ({count} modellen gedetecteerd)',
+    cacheNotFound: 'Model index niet gevonden',
+    geminiApiKey: 'Google Gemini API Sleutel',
+    manageFreeProviderKeys: 'Externe Provider Sleutels Beheren',
+    externalProvidersHeader: 'Externe AI Providers',
+    externalProviderApiKeys: 'Externe Provider API Sleutels',
+    close: 'Sluiten',
+    iconAndText: 'Icoon + Tekst',
+    iconOnly: 'Alleen Icoon',
+    textOnly: 'Alleen Tekst'
 };
+

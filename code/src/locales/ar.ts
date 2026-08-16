@@ -31,5 +31,20 @@ export const ar: Translations = {
     generalSettings: 'الإعدادات العامة',
     thinkingSettings: 'التفكير والاستدلال',
     apiKeysSettings: 'مفاتيح API والمزودون',
-    thinkingDisplayStyle: 'تنسيق عرض التفكير'
+    thinkingDisplayStyle: 'تنسيق عرض التفكير',
+    serverUrl: 'عنوان URL للخادم',
+    lmStudioDirectory: 'دليل LM Studio',
+    browse: 'استعراض...',
+    checkingCache: 'جاري فحص الذاكرة المؤقتة...',
+    cacheLoaded: 'تم تحميل فهرس النماذج (تم اكتشاف {count} نماذج)',
+    cacheNotFound: 'لم يتم العثور على فهرس النماذج',
+    geminiApiKey: 'مفتاح Google Gemini API',
+    manageFreeProviderKeys: 'إدارة مفاتيح المزودين الخارجيين',
+    externalProvidersHeader: 'مزودو الذكاء الاصطناعي الخارجيون',
+    externalProviderApiKeys: 'مفاتيح API للمزودين الخارجيين',
+    close: 'إغلاق',
+    iconAndText: 'أيقونة + نص',
+    iconOnly: 'أيقونة فقط',
+    textOnly: 'نص فقط'
 };
+

@@ -31,5 +31,20 @@ export const hi: Translations = {
     generalSettings: 'सामान्य सेटिंग्स',
     thinkingSettings: 'सोच और विचारशीलता',
     apiKeysSettings: 'API कुंजियाँ और प्रदाता',
-    thinkingDisplayStyle: 'सोचने का प्रदर्शन प्रारूप'
+    thinkingDisplayStyle: 'सोचने का प्रदर्शन प्रारूप',
+    serverUrl: 'सर्वर URL',
+    lmStudioDirectory: 'LM Studio निर्देशिका',
+    browse: 'ब्राउज़ करें...',
+    checkingCache: 'कैश की जाँच की जा रही है...',
+    cacheLoaded: 'मॉडल इंडेक्स लोड हुआ ({count} मॉडल पाए गए)',
+    cacheNotFound: 'मॉडल इंडेक्स नहीं मिला',
+    geminiApiKey: 'Google Gemini API कुंजी',
+    manageFreeProviderKeys: 'बाहरी प्रदाता कुंजियाँ प्रबंधित करें',
+    externalProvidersHeader: 'बाहरी AI प्रदाता',
+    externalProviderApiKeys: 'बाहरी प्रदाता API कुंजियाँ',
+    close: 'बंद करें',
+    iconAndText: 'आइकन + टेक्स्ट',
+    iconOnly: 'केवल आइकन',
+    textOnly: 'केवल टेक्स्ट'
 };
+

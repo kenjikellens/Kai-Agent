@@ -31,5 +31,20 @@ export const fr: Translations = {
     generalSettings: 'Paramètres généraux',
     thinkingSettings: 'Réflexion & Raisonnement',
     apiKeysSettings: 'Clés API & Fournisseurs',
-    thinkingDisplayStyle: 'Format d\'affichage de la réflexion'
+    thinkingDisplayStyle: 'Format d\'affichage de la réflexion',
+    serverUrl: 'URL du serveur',
+    lmStudioDirectory: 'Répertoire LM Studio',
+    browse: 'Parcourir...',
+    checkingCache: 'Vérification du cache...',
+    cacheLoaded: 'Index des modèles chargé ({count} modèles détectés)',
+    cacheNotFound: 'Index des modèles introuvable',
+    geminiApiKey: 'Clé API Google Gemini',
+    manageFreeProviderKeys: 'Gérer les clés des fournisseurs externes',
+    externalProvidersHeader: 'Fournisseurs IA Externes',
+    externalProviderApiKeys: 'Clés API des Fournisseurs Externes',
+    close: 'Fermer',
+    iconAndText: 'Icône + Texte',
+    iconOnly: 'Icône Seule',
+    textOnly: 'Texte Seul'
 };
+

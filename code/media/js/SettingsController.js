@@ -131,9 +131,9 @@ class SettingsController {
         if (styleContainer && typeof CustomSelectComponent !== 'undefined') {
             const storedStyle = localStorage.getItem('kai.thinkingDisplayStyle') || 'both';
             const styleOptions = [
-                { value: 'both', label: 'Icon + Text' },
-                { value: 'icon', label: 'Icon Only' },
-                { value: 'text', label: 'Text Only' }
+                { value: 'both', label: i18n.iconAndText || 'Icon + Text' },
+                { value: 'icon', label: i18n.iconOnly || 'Icon Only' },
+                { value: 'text', label: i18n.textOnly || 'Text Only' }
             ];
             this.thinkingStyleComponent = new CustomSelectComponent({
                 container: styleContainer,
@@ -253,13 +253,15 @@ class SettingsController {
 
         if (message.lmStudioCacheStatus && this.cacheStatusDot && this.cacheStatusText) {
             const status = message.lmStudioCacheStatus;
+            const i18n = window.KAI_I18N || {};
             if (status.valid) {
                 this.cacheStatusDot.className = 'status-dot status-connected';
-                this.cacheStatusText.textContent = `✓ Model index geladen (${status.modelCount} modellen gedetecteerd)`;
+                const template = i18n.cacheLoaded || 'Model index loaded ({count} models detected)';
+                this.cacheStatusText.textContent = `✓ ${template.replace('{count}', status.modelCount)}`;
                 this.cacheStatusText.style.color = 'var(--app-success, #4ec9b0)';
             } else {
                 this.cacheStatusDot.className = 'status-dot status-disconnected';
-                this.cacheStatusText.textContent = `✗ ${status.error || 'Model index niet gevonden'}`;
+                this.cacheStatusText.textContent = `✗ ${status.error || i18n.cacheNotFound || 'Model index not found'}`;
                 this.cacheStatusText.style.color = 'var(--app-danger, #f44747)';
             }
         }

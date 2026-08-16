@@ -699,23 +699,23 @@ class SidebarProvider {
                                 <!-- CATEGORY 2: LM STUDIO -->
                                 <div class="settings-category" id="category-lmstudio">
                                     <button type="button" class="category-header-btn" data-category="lmstudio">
-                                        <span class="category-title">LM Studio</span>
+                                        <span class="category-title">${translations.lmStudioHeader || 'LM Studio'}</span>
                                         <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                     </button>
                                     <div class="category-content">
                                         <div class="setting-item">
-                                            <label for="settings-server-url" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">Server URL</label>
+                                            <label for="settings-server-url" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">${translations.serverUrl || 'Server URL'}</label>
                                             <input type="text" id="settings-server-url" placeholder="http://localhost:1234/v1" />
                                         </div>
                                         <div class="setting-item">
-                                            <label for="settings-lmstudio-path" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">LM Studio Directory</label>
+                                            <label for="settings-lmstudio-path" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">${translations.lmStudioDirectory || 'LM Studio Directory'}</label>
                                             <div style="display: flex; gap: 6px; align-items: center;">
                                                 <input type="text" id="settings-lmstudio-path" style="flex: 1;" placeholder="Default: ~/.lmstudio" />
-                                                <button type="button" id="browse-lmstudio-path-btn" class="settings-browse-btn">Browse...</button>
+                                                <button type="button" id="browse-lmstudio-path-btn" class="settings-browse-btn">${translations.browse || 'Browse...'}</button>
                                             </div>
                                             <div id="lmstudio-cache-status-indicator" class="cache-status-indicator">
                                                 <span id="cache-status-dot" class="status-dot status-disconnected"></span>
-                                                <span id="cache-status-text" class="cache-status-text">Checking cache...</span>
+                                                <span id="cache-status-text" class="cache-status-text">${translations.checkingCache || 'Checking cache...'}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -745,14 +745,14 @@ class SidebarProvider {
                                 <!-- CATEGORY 4: EXTERNAL AI PROVIDERS -->
                                 <div class="settings-category" id="category-apikeys">
                                     <button type="button" class="category-header-btn" data-category="apikeys">
-                                        <span class="category-title">External AI Providers</span>
+                                        <span class="category-title">${translations.externalProvidersHeader || 'External AI Providers'}</span>
                                         <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                     </button>
                                     <div class="category-content">
                                         <div class="setting-item" id="manage-keys-container">
                                             <button type="button" class="btn-primary" id="manage-keys-btn">
                                                 ${svgs.manage_keys || ''}
-                                                <span>Manage External Provider Keys</span>
+                                                <span>${translations.manageFreeProviderKeys || 'Manage External Provider Keys'}</span>
                                             </button>
                                         </div>
                                     </div>
@@ -762,12 +762,12 @@ class SidebarProvider {
                             <!-- API Keys Overlay -->
                             <div id="keys-container" class="keys-container hidden">
                                 <div class="keys-panel-header">
-                                    <span>Manage External Provider Keys</span>
-                                    <button id="close-keys-btn" class="icon-btn-header" title="Close Keys Manager">✕</button>
+                                    <span>${translations.externalProviderApiKeys || 'External Provider API Keys'}</span>
+                                    <button id="close-keys-btn" class="icon-btn-header" title="${translations.close || 'Close'}">✕</button>
                                 </div>
                                 <div class="keys-content-panel">
                                     <div class="setting-item" id="gemini-key-item">
-                                        <label for="api-key-input">Google Gemini API Key</label>
+                                        <label for="api-key-input">${translations.geminiApiKey || 'Google Gemini API Key'}</label>
                                         <input type="password" id="api-key-input" placeholder="AIzaSy...">
                                     </div>
                                     <!-- Dynamic provider key inputs rendered here -->

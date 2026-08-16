@@ -41,6 +41,20 @@ export interface Translations {
     thinkingSettings: string;
     apiKeysSettings: string;
     thinkingDisplayStyle: string;
+    serverUrl: string;
+    lmStudioDirectory: string;
+    browse: string;
+    checkingCache: string;
+    cacheLoaded: string;
+    cacheNotFound: string;
+    geminiApiKey: string;
+    manageFreeProviderKeys: string;
+    externalProvidersHeader: string;
+    externalProviderApiKeys: string;
+    close: string;
+    iconAndText: string;
+    iconOnly: string;
+    textOnly: string;
 }
 
 /**
