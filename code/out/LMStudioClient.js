@@ -32,6 +32,7 @@ const FreeProviderClient_1 = require("./providers/FreeProviderClient");
 Object.defineProperty(exports, "FREE_PROVIDERS", { enumerable: true, get: function () { return FreeProviderClient_1.FREE_PROVIDERS; } });
 const MuseGlimmerStreamParser_1 = require("./providers/MuseGlimmerStreamParser");
 const LMStudioReasoningEngine_1 = require("./providers/LMStudioReasoningEngine");
+const LMStudioManifestParser_1 = require("./providers/LMStudioManifestParser");
 /**
  * LMStudioClient handles communication with the locally running LM Studio HTTP API server.
  */
@@ -359,14 +360,22 @@ class LMStudioClient {
     }
     /**
      * Dynamically applies thinking/reasoning parameters based on the target model family.
-     * Delegates to LMStudioReasoningEngine for universal model architecture support and custom user profiles.
+     * First checks LMStudioManifestParser for 100% manifest-driven exact Jinja variables,
+     * and gracefully falls back to LMStudioReasoningEngine if manifest is unavailable.
      * @param requestParams Target HTTP payload object.
      * @param model Model ID string.
      * @param thinking Whether thinking phase is enabled.
      * @param reasoningEffort Configured reasoning effort ('xhigh', 'medium', 'low', 'none').
      */
     applyThinkingParameters(requestParams, model, thinking, reasoningEffort) {
-        LMStudioReasoningEngine_1.LMStudioReasoningEngine.applyThinkingParameters(requestParams, model, thinking, reasoningEffort);
+        const config = vscode.workspace.getConfiguration('kai');
+        const customDir = config.get('lmStudioCacheDir') || '';
+        const capabilitiesMap = LMStudioManifestParser_1.LMStudioManifestParser.parseModelCapabilities(customDir);
+        const cap = capabilitiesMap[model] || capabilitiesMap[(model || '').toLowerCase()];
+        const applied = LMStudioReasoningEngine_1.LMStudioReasoningEngine.applyManifestParameters(requestParams, cap, thinking, reasoningEffort);
+        if (!applied) {
+            LMStudioReasoningEngine_1.LMStudioReasoningEngine.applyThinkingParameters(requestParams, model, thinking, reasoningEffort);
+        }
     }
 }
 exports.LMStudioClient = LMStudioClient;

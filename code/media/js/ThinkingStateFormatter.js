@@ -1,10 +1,21 @@
 /**
  * ThinkingStateFormatter provides a clean OOP service for inspecting model reasoning states
  * and rendering thinking labels & battery SVG icons in the order requested (Text first, Icon second).
+ * Dynamically utilizes LM Studio ModelCapabilities manifest definitions.
  */
 class ThinkingStateFormatter {
+    static lmStudioCapabilities = {};
+
     /**
-     * Inspects localStorage and model ID parameters to return a unified reasoning state object.
+     * Updates the active LM Studio model capabilities map.
+     * @param {Record<string, object>} capabilities Map of model identifiers to ModelCapabilities.
+     */
+    static setLMStudioCapabilities(capabilities) {
+        ThinkingStateFormatter.lmStudioCapabilities = capabilities || {};
+    }
+
+    /**
+     * Inspects capabilities and localStorage to return a unified reasoning state object.
      * @param {string} modelId Active or raw model ID string.
      * @returns {object} Reasoning state metadata object.
      */
@@ -18,7 +29,51 @@ class ThinkingStateFormatter {
         const rawModel = isThinkingSuffix ? modelId.slice(0, -11) : modelId;
         const lowerRaw = rawModel.toLowerCase();
 
-        // 1. Gemini Multi-level models
+        // 1. Check dynamic LM Studio manifest capabilities first
+        const cap = ThinkingStateFormatter.lmStudioCapabilities[rawModel] ||
+                    ThinkingStateFormatter.lmStudioCapabilities[lowerRaw] ||
+                    ThinkingStateFormatter.lmStudioCapabilities[modelId] ||
+                    ThinkingStateFormatter.lmStudioCapabilities[lower];
+
+        if (cap) {
+            const fields = Array.isArray(cap.fields) ? cap.fields : [];
+            if (fields.length === 0) {
+                return { isThinkingCapable: false, isMultiLevel: false, level: 'off', isOn: false, labelText: '', rawModel: rawModel };
+            }
+
+            const hasSelectField = fields.some(f => f.type === 'select');
+            const hasBooleanField = fields.some(f => f.type === 'boolean');
+            const isLmThinkingOn = localStorage.getItem(`kai.lmStudioThinking.${rawModel}`) !== 'false';
+            const storedEffort = localStorage.getItem(`kai.lmStudioReasoningLevel.${rawModel}`) ||
+                                 localStorage.getItem(`kai.lmStudioReasoningLevel.${modelId}`) || 'xhigh';
+
+            const effortLabels = { xhigh: 'X-High', high: 'X-High', medium: 'Medium', low: 'Low', off: 'Off' };
+
+            if (hasSelectField) {
+                const labelText = isLmThinkingOn ? (effortLabels[storedEffort] || 'X-High') : '';
+                return {
+                    isThinkingCapable: true,
+                    isMultiLevel: true,
+                    level: isLmThinkingOn ? storedEffort : 'off',
+                    isOn: isLmThinkingOn,
+                    labelText: labelText,
+                    rawModel: rawModel
+                };
+            }
+
+            if (hasBooleanField) {
+                return {
+                    isThinkingCapable: true,
+                    isMultiLevel: false,
+                    level: isLmThinkingOn ? 'high' : 'off',
+                    isOn: isLmThinkingOn,
+                    labelText: isLmThinkingOn ? 'thinking' : '',
+                    rawModel: rawModel
+                };
+            }
+        }
+
+        // 2. Gemini Multi-level models
         if (lowerRaw.includes('gemini')) {
             const level = localStorage.getItem(`kai.geminiThinkingLevel.${modelId}`) ||
                           localStorage.getItem(`kai.geminiThinkingLevel.${rawModel}`) ||
@@ -37,7 +92,7 @@ class ThinkingStateFormatter {
             };
         }
 
-        // 2. Mistral Reasoning models (Binary On/Off)
+        // 3. Mistral Reasoning models (Binary On/Off)
         const isMistralReasoning = lowerRaw.includes('magistral') || lowerRaw.includes('mistral-small') || lowerRaw.includes('mistral-medium') || lowerRaw.includes('codestral');
         if (isMistralReasoning) {
             const stored = localStorage.getItem(`kai.mistralThinking.${rawModel}`);
@@ -52,7 +107,7 @@ class ThinkingStateFormatter {
             };
         }
 
-        // 3. Muse Glimmer (Reasoning is baked-in and cannot be toggled off)
+        // 4. Muse Glimmer (Reasoning is baked-in and cannot be toggled off)
         const isMuseGlimmer = lowerRaw.includes('muse') || lowerRaw.includes('glimmer');
         if (isMuseGlimmer) {
             return {
@@ -61,49 +116,6 @@ class ThinkingStateFormatter {
                 level: 'high',
                 isOn: true,
                 labelText: '',
-                rawModel: rawModel
-            };
-        }
-
-        // 4. LM Studio / Local models with Dual Thinking Toggle + Reasoning Effort (Qwen, GLM, Mistral, DeepSeek)
-        const isMultiLevelReasoning =
-            lowerRaw.includes('qwen') ||
-            lowerRaw.includes('qwq') ||
-            lowerRaw.includes('glm') ||
-            lowerRaw.includes('mistral') ||
-            lowerRaw.includes('codestral') ||
-            lowerRaw.includes('magistral') ||
-            lowerRaw.includes('ministral') ||
-            lowerRaw.includes('deepseek') ||
-            lowerRaw.includes('r1');
-
-        if (isMultiLevelReasoning) {
-            const effortLabels = { xhigh: 'X-High', high: 'X-High', medium: 'Medium', low: 'Low', off: 'Off' };
-            const labelText = isLmThinkingOn ? (effortLabels[storedEffort] || 'Thinking') : '';
-            return {
-                isThinkingCapable: true,
-                isMultiLevel: true,
-                level: isLmThinkingOn ? storedEffort : 'off',
-                isOn: isLmThinkingOn,
-                labelText: labelText,
-                rawModel: rawModel
-            };
-        }
-
-        // 5. LM Studio / Local models with Binary Thinking Toggle only (e.g. Gemma 4, Gemma 2)
-        const isBinaryThinking =
-            lowerRaw.includes('gemma') ||
-            lowerRaw.includes('thinking') ||
-            lowerRaw.includes('reasoning') ||
-            isThinkingSuffix;
-
-        if (isBinaryThinking) {
-            return {
-                isThinkingCapable: true,
-                isMultiLevel: false,
-                level: isLmThinkingOn ? 'high' : 'off',
-                isOn: isLmThinkingOn,
-                labelText: isLmThinkingOn ? 'thinking' : '',
                 rawModel: rawModel
             };
         }

@@ -1,6 +1,6 @@
 /**
  * SettingsController manages the settings panel UI, localStorage preferences,
- * language select, Gemini thinking level, and the provider API key overlay modal.
+ * language selection, LM Studio server & cache configuration, and provider API keys.
  */
 class SettingsController {
     /**
@@ -10,17 +10,19 @@ class SettingsController {
     constructor(ipcBridge) {
         this.ipcBridge = ipcBridge;
 
+        this.serverUrlInput = document.getElementById('settings-server-url');
+        this.lmStudioPathInput = document.getElementById('settings-lmstudio-path');
+        this.browseLMStudioBtn = document.getElementById('browse-lmstudio-path-btn');
+        this.cacheStatusDot = document.getElementById('cache-status-dot');
+        this.cacheStatusText = document.getElementById('cache-status-text');
+        this.settingsSaveBtn = document.getElementById('settings-save-btn');
+        this.providersContainer = document.getElementById('settings-providers-container');
+
         this.showThinkingToggle = document.getElementById('show-thinking-toggle');
         this.thinkingSubsettings = document.getElementById('thinking-subsettings');
         this.keepThinkingExpandedToggle = document.getElementById('keep-thinking-expanded-toggle');
         this.keepThinkingFinishedExpandedToggle = document.getElementById('keep-thinking-finished-expanded-toggle');
-        this.apiKeyInput = document.getElementById('api-key-input');
-        this.languageSelectInput = document.getElementById('language-select-input');
         this.geminiThinkingLevelInput = document.getElementById('gemini-thinking-level-input');
-        this.keysContainer = document.getElementById('keys-container');
-        this.manageKeysBtn = document.getElementById('manage-keys-btn');
-        this.closeKeysBtn = document.getElementById('close-keys-btn');
-        this.dynamicKeysList = document.getElementById('dynamic-keys-list');
 
         this.freeProviders = [...KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS];
 
@@ -93,95 +95,49 @@ class SettingsController {
 
         this.updateSubsettingsVisibility();
 
-        const langContainer = document.getElementById('language-select-container');
-        if (langContainer && typeof CustomSelectComponent !== 'undefined') {
-            const initialLang = window.KAI_LANG || 'auto';
-            const langOptions = window.KAI_SUPPORTED_LANGUAGES || [
-                { value: 'auto', label: 'Auto (VS Code)' },
-                { value: 'en', label: 'English' }
-            ];
-            this.languageSelectComponent = new CustomSelectComponent({
-                container: langContainer,
-                id: 'language-select-input',
-                options: langOptions,
-                value: initialLang,
-                onChange: (selectedLang) => {
-                    this.ipcBridge.updateSettings({
-                        language: selectedLang
-                    });
-                }
-            });
-        }
-
-        const styleContainer = document.getElementById('thinking-display-style-container');
-        if (styleContainer && typeof CustomSelectComponent !== 'undefined') {
-            const storedStyle = localStorage.getItem('kai.thinkingDisplayStyle') || 'both';
-            const styleOptions = [
-                { value: 'both', label: 'Icon + Text' },
-                { value: 'icon', label: 'Icon Only' },
-                { value: 'text', label: 'Text Only' }
-            ];
-            this.thinkingStyleComponent = new CustomSelectComponent({
-                container: styleContainer,
-                id: 'thinking-display-style-input',
-                options: styleOptions,
-                value: storedStyle,
-                onChange: (selectedStyle) => {
-                    localStorage.setItem('kai.thinkingDisplayStyle', selectedStyle);
-                    window.dispatchEvent(new CustomEvent('kaiThinkingStyleChanged', { detail: { style: selectedStyle } }));
-                }
+        const langSelect = document.getElementById('settings-language');
+        if (langSelect) {
+            langSelect.value = window.KAI_LANG || 'auto';
+            langSelect.addEventListener('change', () => {
+                this.ipcBridge.updateSettings({
+                    language: langSelect.value
+                });
             });
         }
     }
 
     /**
-     * Registers event listeners for settings controls and keys panel.
+     * Registers event listeners for settings controls and folder browse button.
      */
     initEventListeners() {
-        const categoryBtns = document.querySelectorAll('.category-header-btn');
-        categoryBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const categoryEl = btn.closest('.settings-category');
-                if (categoryEl) {
-                    categoryEl.classList.toggle('collapsed');
-                }
-            });
-        });
-
-        if (this.geminiThinkingLevelInput) {
-            this.geminiThinkingLevelInput.addEventListener('change', () => {
-                const val = this.geminiThinkingLevelInput.value;
-                localStorage.setItem('kai.geminiThinkingLevel', val);
+        if (this.browseLMStudioBtn) {
+            this.browseLMStudioBtn.addEventListener('click', () => {
+                this.ipcBridge.browseLMStudioFolder();
             });
         }
 
-        if (this.apiKeyInput) {
-            this.apiKeyInput.addEventListener('change', () => {
-                this.saveAllApiKeys();
+        if (this.settingsSaveBtn) {
+            this.settingsSaveBtn.addEventListener('click', () => {
+                this.saveAllSettings();
             });
         }
 
-        if (this.manageKeysBtn) {
-            this.manageKeysBtn.addEventListener('click', () => {
-                if (this.keysContainer) {
-                    this.keysContainer.scrollTop = 0;
-                    this.keysContainer.classList.remove('hidden');
-                    this.renderProviderKeyInputs();
-                }
+        if (this.serverUrlInput) {
+            this.serverUrlInput.addEventListener('change', () => {
+                this.saveAllSettings();
             });
         }
 
-        if (this.closeKeysBtn) {
-            this.closeKeysBtn.addEventListener('click', () => {
-                if (this.keysContainer) {
-                    this.keysContainer.classList.add('hidden');
-                }
+        if (this.lmStudioPathInput) {
+            this.lmStudioPathInput.addEventListener('change', () => {
+                this.saveAllSettings();
             });
         }
     }
 
     /**
-     * Retrieves the active Gemini reasoning level setting (high, medium, low, minimal).
+     * Retrieves the active Gemini reasoning level setting.
+     * @param {string} modelId Model ID string.
      * @returns {string} The active reasoning level string.
      */
     getGeminiThinkingLevel(modelId) {
@@ -202,13 +158,30 @@ class SettingsController {
      * @param {object} message Connection status message.
      */
     updateConnectionStatus(message) {
-        if (this.apiKeyInput && message.apiKey !== undefined) {
-            this.apiKeyInput.value = message.apiKey;
+        if (this.serverUrlInput && message.serverUrl !== undefined) {
+            this.serverUrlInput.value = message.serverUrl;
         }
+        if (this.lmStudioPathInput && message.lmStudioCacheDir !== undefined) {
+            this.lmStudioPathInput.value = message.lmStudioCacheDir;
+        }
+
+        if (message.lmStudioCacheStatus && this.cacheStatusDot && this.cacheStatusText) {
+            const status = message.lmStudioCacheStatus;
+            if (status.valid) {
+                this.cacheStatusDot.className = 'status-dot status-connected';
+                this.cacheStatusText.textContent = `✓ Model index geladen (${status.modelCount} modellen gedetecteerd)`;
+                this.cacheStatusText.style.color = 'var(--app-success, #4ec9b0)';
+            } else {
+                this.cacheStatusDot.className = 'status-dot status-disconnected';
+                this.cacheStatusText.textContent = `✗ ${status.error || 'Model index niet gevonden'}`;
+                this.cacheStatusText.style.color = 'var(--app-danger, #f44747)';
+            }
+        }
+
         if (message.freeProviders && message.freeProviders.length > 0) {
             this.freeProviders = message.freeProviders;
         }
-        this.renderProviderKeyInputs();
+        this.renderProviderKeyInputs(message.apiKey);
     }
 
     /**
@@ -225,9 +198,9 @@ class SettingsController {
     }
 
     /**
-     * Collects all provider API keys and sends an updateSettings IPC payload.
+     * Collects all settings (Server URL, LM Studio Path, API keys) and sends updateSettings IPC.
      */
-    saveAllApiKeys() {
+    saveAllSettings() {
         const providerKeys = {};
         document.querySelectorAll('.provider-api-key-input').forEach(input => {
             const configKey = input.dataset.configKey;
@@ -235,54 +208,76 @@ class SettingsController {
                 providerKeys[configKey] = input.value;
             }
         });
+
+        const geminiKeyInput = document.getElementById('provider-key-apiKey');
+        const geminiApiKey = geminiKeyInput ? geminiKeyInput.value : '';
+
         this.ipcBridge.updateSettings({
-            apiKey: this.apiKeyInput ? this.apiKeyInput.value : '',
-            providerKeys
+            serverUrl: this.serverUrlInput ? this.serverUrlInput.value : 'http://localhost:1234/v1',
+            lmStudioCacheDir: this.lmStudioPathInput ? this.lmStudioPathInput.value : '',
+            apiKey: geminiApiKey,
+            providerKeys: providerKeys
         });
     }
 
     /**
-     * Renders API key input fields for free tier providers in the keys overlay modal.
-     * @param {Array<object>|null} freeProviders Optional override list of provider config objects.
+     * Renders API key input fields for external providers in the settings panel.
+     * @param {string} geminiApiKey Active Gemini API key.
      */
-    renderProviderKeyInputs(freeProviders = null) {
-        if (!this.dynamicKeysList) return;
-        this.dynamicKeysList.innerHTML = '';
+    renderProviderKeyInputs(geminiApiKey = '') {
+        const container = this.providersContainer || document.getElementById('settings-providers-container');
+        if (!container) return;
+        container.innerHTML = '';
 
-        const providers = freeProviders || (this.freeProviders && this.freeProviders.length > 0 ? this.freeProviders : KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS);
+        // 1. Google Gemini API key
+        const geminiWrapper = document.createElement('div');
+        geminiWrapper.className = 'setting-item';
+        geminiWrapper.style.marginBottom = '8px';
+
+        const geminiLabel = document.createElement('label');
+        geminiLabel.className = 'settings-label';
+        geminiLabel.textContent = 'Google Gemini API Key';
+        geminiLabel.setAttribute('for', 'provider-key-apiKey');
+
+        const geminiInput = document.createElement('input');
+        geminiInput.type = 'password';
+        geminiInput.id = 'provider-key-apiKey';
+        geminiInput.className = 'settings-input provider-api-key-input';
+        geminiInput.dataset.configKey = 'apiKey';
+        geminiInput.placeholder = 'AIzaSy...';
+        geminiInput.value = geminiApiKey || '';
+        geminiInput.addEventListener('change', () => this.saveAllSettings());
+
+        geminiWrapper.appendChild(geminiLabel);
+        geminiWrapper.appendChild(geminiInput);
+        container.appendChild(geminiWrapper);
+
+        // 2. Free external cloud providers (Mistral, Cohere, Cerebras, Zhipu, OmniRoute)
+        const providers = this.freeProviders && this.freeProviders.length > 0 ? this.freeProviders : KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS;
 
         for (const provider of providers) {
             const wrapper = document.createElement('div');
             wrapper.className = 'setting-item';
+            wrapper.style.marginBottom = '8px';
 
             const label = document.createElement('label');
-            label.textContent = `${provider.name} API Key`;
+            label.className = 'settings-label';
+            label.textContent = `${provider.name} API Key / URL`;
             label.setAttribute('for', `provider-key-${provider.configKey}`);
 
             const input = document.createElement('input');
-            input.type = 'password';
+            input.type = provider.configKey.includes('Url') ? 'text' : 'password';
             input.id = `provider-key-${provider.configKey}`;
-            input.className = 'provider-api-key-input';
+            input.className = 'settings-input provider-api-key-input';
             input.dataset.configKey = provider.configKey;
             input.placeholder = provider.keyHint || 'Enter API key…';
             input.value = provider.apiKey || '';
 
-            input.addEventListener('change', () => {
-                this.saveAllApiKeys();
-            });
+            input.addEventListener('change', () => this.saveAllSettings());
 
             wrapper.appendChild(label);
             wrapper.appendChild(input);
-            this.dynamicKeysList.appendChild(wrapper);
-        }
-    }
-
-    /**
-     * Closes the API keys overlay modal if open.
-     */
-    hideKeysOverlay() {
-        if (this.keysContainer) {
-            this.keysContainer.classList.add('hidden');
+            container.appendChild(wrapper);
         }
     }
 }

@@ -389,115 +389,116 @@ class ModelDropdownController {
                         const isLmThinkingOn = localStorage.getItem(`kai.lmStudioThinking.${itemData.rawModel}`) !== 'false';
                         const currentLmReasoningLevel = localStorage.getItem(`kai.lmStudioReasoningLevel.${itemData.rawModel}`) ||
                                                         localStorage.getItem('kai.lmStudioReasoningLevel') || 'xhigh';
-                        
-                        // 1. Thinking Toggle Row (enableThinking: true/false)
-                        const flyoutRow = document.createElement('div');
-                        flyoutRow.className = 'dropdown-item flyout-option';
-                        flyoutRow.style.width = 'calc(100% - 4px)';
-                        flyoutRow.style.justifyContent = 'space-between';
-                        flyoutRow.style.gap = '12px';
 
-                        const leftWrapper = document.createElement('div');
-                        leftWrapper.style.display = 'inline-flex';
-                        leftWrapper.style.alignItems = 'center';
-                        leftWrapper.style.gap = '6px';
+                        const cap = ThinkingStateFormatter.lmStudioCapabilities[itemData.rawModel] ||
+                                    ThinkingStateFormatter.lmStudioCapabilities[lowerModel];
+                        const fields = (cap && Array.isArray(cap.fields)) ? cap.fields : [];
+                        let toggleEl = null;
 
-                        ThinkingStateFormatter.renderFlyoutOptionContent(leftWrapper, 'Thinking', isLmThinkingOn);
+                        fields.forEach(field => {
+                            if (field.type === 'boolean') {
+                                const flyoutRow = document.createElement('div');
+                                flyoutRow.className = 'dropdown-item flyout-option';
+                                flyoutRow.style.width = 'calc(100% - 4px)';
+                                flyoutRow.style.justifyContent = 'space-between';
+                                flyoutRow.style.gap = '12px';
 
-                        const toggleEl = ToggleComponent.create({
-                            id: `lm-thinking-toggle-${itemData.rawModel.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
-                            checked: isLmThinkingOn,
-                            title: 'Enable reasoning/thinking process for this model',
-                            onChange: (checked) => {
-                                localStorage.setItem(`kai.lmStudioThinking.${itemData.rawModel}`, checked ? 'true' : 'false');
-                                this.setSelectedModel(this.selectedModelValue);
-                                if (this.onSelect && this.selectedModelValue === itemData.value) {
-                                    this.onSelect(itemData.value);
-                                }
-                            }
-                        });
+                                const leftWrapper = document.createElement('div');
+                                leftWrapper.style.display = 'inline-flex';
+                                leftWrapper.style.alignItems = 'center';
+                                leftWrapper.style.gap = '6px';
 
-                        flyoutRow.appendChild(leftWrapper);
-                        flyoutRow.appendChild(toggleEl);
+                                ThinkingStateFormatter.renderFlyoutOptionContent(leftWrapper, field.displayName || 'Thinking', isLmThinkingOn);
 
-                        flyoutRow.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            const checkbox = toggleEl.querySelector('input[type="checkbox"]');
-                            if (checkbox && e.target !== checkbox) {
-                                checkbox.checked = !checkbox.checked;
-                                checkbox.dispatchEvent(new Event('change'));
-                            }
-                        });
-
-                        flyoutInner.appendChild(flyoutRow);
-
-                        // 2. Render Reasoning Effort levels ONLY for multi-level models (Qwen, GLM, Mistral, DeepSeek)
-                        if (thinkingState.isMultiLevel) {
-                            const divider = document.createElement('div');
-                            divider.className = 'flyout-divider';
-                            flyoutInner.appendChild(divider);
-
-                            const levels = [
-                                { level: 'xhigh', label: 'X-High' },
-                                { level: 'medium', label: 'Medium' },
-                                { level: 'low', label: 'Low' }
-                            ];
-
-                            levels.forEach(lvl => {
-                                const flyoutOpt = document.createElement('button');
-                                flyoutOpt.type = 'button';
-                                const isSelected = lvl.level === currentLmReasoningLevel;
-                                flyoutOpt.className = `dropdown-item flyout-option ${isSelected ? 'selected' : ''}`;
-                                flyoutOpt.setAttribute('role', 'button');
-                                flyoutOpt.setAttribute('aria-label', `Set reasoning effort to ${lvl.label}`);
-                                
-                                ThinkingStateFormatter.renderFlyoutOptionContent(flyoutOpt, lvl.label, lvl.level);
-
-                                if (isSelected) {
-                                    const checkSvg = DOMUtils.createCheckIcon('check-icon');
-                                    flyoutOpt.appendChild(checkSvg);
-                                }
-                                
-                                const handleFlyoutSelect = (e) => {
-                                    e.stopPropagation();
-                                    localStorage.setItem(`kai.lmStudioReasoningLevel.${itemData.rawModel}`, lvl.level);
-                                    localStorage.setItem('kai.lmStudioReasoningLevel', lvl.level);
-                                    localStorage.setItem(`kai.lmStudioThinking.${itemData.rawModel}`, 'true');
-
-                                    const checkbox = toggleEl.querySelector('input[type="checkbox"]');
-                                    if (checkbox) {
-                                        checkbox.checked = true;
-                                    }
-
-                                    this.selectedModelValue = itemData.value;
-                                    localStorage.setItem('kai.selectedModel', itemData.value);
-
-                                    flyoutInner.querySelectorAll('.flyout-option').forEach(opt => {
-                                        if (opt.tagName === 'BUTTON') {
-                                            opt.classList.remove('selected');
-                                            const oldCheck = opt.querySelector('.check-icon');
-                                            if (oldCheck) oldCheck.remove();
+                                toggleEl = ToggleComponent.create({
+                                    id: `lm-thinking-toggle-${itemData.rawModel.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
+                                    checked: isLmThinkingOn,
+                                    title: 'Enable reasoning/thinking process for this model',
+                                    onChange: (checked) => {
+                                        localStorage.setItem(`kai.lmStudioThinking.${itemData.rawModel}`, checked ? 'true' : 'false');
+                                        this.setSelectedModel(this.selectedModelValue);
+                                        if (this.onSelect && this.selectedModelValue === itemData.value) {
+                                            this.onSelect(itemData.value);
                                         }
-                                    });
-                                    flyoutOpt.classList.add('selected');
-                                    const checkSvg = DOMUtils.createCheckIcon('check-icon');
-                                    flyoutOpt.appendChild(checkSvg);
-
-                                    this.setSelectedModel(itemData.value);
-
-                                    this.closeActiveFlyoutImmediately();
-                                    if (this.dropdownOptionsMenu) {
-                                        this.dropdownOptionsMenu.classList.add('hidden');
                                     }
-                                    if (this.onSelect) {
-                                        this.onSelect(itemData.value);
-                                    }
-                                };
+                                });
 
-                                flyoutOpt.addEventListener('click', handleFlyoutSelect);
-                                flyoutInner.appendChild(flyoutOpt);
-                            });
-                        }
+                                flyoutRow.appendChild(leftWrapper);
+                                flyoutRow.appendChild(toggleEl);
+
+                                flyoutRow.addEventListener('click', (e) => {
+                                    e.stopPropagation();
+                                    const checkbox = toggleEl.querySelector('input[type="checkbox"]');
+                                    if (checkbox && e.target !== checkbox) {
+                                        checkbox.checked = !checkbox.checked;
+                                        checkbox.dispatchEvent(new Event('change'));
+                                    }
+                                });
+
+                                flyoutInner.appendChild(flyoutRow);
+                            } else if (field.type === 'select' && Array.isArray(field.options) && field.options.length > 0) {
+                                const divider = document.createElement('div');
+                                divider.className = 'flyout-divider';
+                                flyoutInner.appendChild(divider);
+
+                                field.options.forEach(opt => {
+                                    const flyoutOpt = document.createElement('button');
+                                    flyoutOpt.type = 'button';
+                                    const isSelected = opt.value === currentLmReasoningLevel;
+                                    flyoutOpt.className = `dropdown-item flyout-option ${isSelected ? 'selected' : ''}`;
+                                    flyoutOpt.setAttribute('role', 'button');
+                                    flyoutOpt.setAttribute('aria-label', `Set ${field.displayName} to ${opt.label}`);
+                                    
+                                    ThinkingStateFormatter.renderFlyoutOptionContent(flyoutOpt, opt.label, opt.value);
+
+                                    if (isSelected) {
+                                        const checkSvg = DOMUtils.createCheckIcon('check-icon');
+                                        flyoutOpt.appendChild(checkSvg);
+                                    }
+                                    
+                                    const handleFlyoutSelect = (e) => {
+                                        e.stopPropagation();
+                                        localStorage.setItem(`kai.lmStudioReasoningLevel.${itemData.rawModel}`, opt.value);
+                                        localStorage.setItem('kai.lmStudioReasoningLevel', opt.value);
+                                        localStorage.setItem(`kai.lmStudioThinking.${itemData.rawModel}`, 'true');
+
+                                        if (toggleEl) {
+                                            const checkbox = toggleEl.querySelector('input[type="checkbox"]');
+                                            if (checkbox) {
+                                                checkbox.checked = true;
+                                            }
+                                        }
+
+                                        this.selectedModelValue = itemData.value;
+                                        localStorage.setItem('kai.selectedModel', itemData.value);
+
+                                        flyoutInner.querySelectorAll('.flyout-option').forEach(optionEl => {
+                                            if (optionEl.tagName === 'BUTTON') {
+                                                optionEl.classList.remove('selected');
+                                                const oldCheck = optionEl.querySelector('.check-icon');
+                                                if (oldCheck) oldCheck.remove();
+                                            }
+                                        });
+                                        flyoutOpt.classList.add('selected');
+                                        const checkSvg = DOMUtils.createCheckIcon('check-icon');
+                                        flyoutOpt.appendChild(checkSvg);
+
+                                        this.setSelectedModel(itemData.value);
+
+                                        this.closeActiveFlyoutImmediately();
+                                        if (this.dropdownOptionsMenu) {
+                                            this.dropdownOptionsMenu.classList.add('hidden');
+                                        }
+                                        if (this.onSelect) {
+                                            this.onSelect(itemData.value);
+                                        }
+                                    };
+
+                                    flyoutOpt.addEventListener('click', handleFlyoutSelect);
+                                    flyoutInner.appendChild(flyoutOpt);
+                                });
+                            }
+                        });
                     }
 
                     flyoutMenu.appendChild(flyoutInner);
@@ -631,12 +632,17 @@ class ModelDropdownController {
     updateConnectionStatus(message) {
         if (!this.dropdownOptionsMenu) return;
 
+        if (message.lmStudioCapabilities) {
+            ThinkingStateFormatter.setLMStudioCapabilities(message.lmStudioCapabilities);
+        }
+
         /* Skip rebuild if nothing changed to prevent LM Studio Offline/Connected flicker */
         const fingerprint = JSON.stringify({
             c: message.connected,
             lm: message.lmStudioModels,
             gm: message.geminiModels,
-            ld: message.loadedModels
+            ld: message.loadedModels,
+            caps: Object.keys(message.lmStudioCapabilities || {}).length
         });
         if (this._lastFingerprint && this._lastFingerprint === fingerprint) {
             return;

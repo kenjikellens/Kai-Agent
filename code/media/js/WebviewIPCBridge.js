@@ -156,4 +156,11 @@ class WebviewIPCBridge {
     abort() {
         this.postMessage({ type: 'abort' });
     }
+
+    /**
+     * Requests Extension Host to open native folder picker for LM Studio directory.
+     */
+    browseLMStudioFolder() {
+        this.postMessage({ type: 'browseLMStudioFolder' });
+    }
 }

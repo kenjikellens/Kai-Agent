@@ -6,6 +6,7 @@ import { GeminiClient } from './providers/GeminiClient';
 import { FreeProviderClient, FREE_PROVIDERS, FreeProvider } from './providers/FreeProviderClient';
 import { MuseGlimmerStreamParser } from './providers/MuseGlimmerStreamParser';
 import { LMStudioReasoningEngine } from './providers/LMStudioReasoningEngine';
+import { LMStudioManifestParser } from './providers/LMStudioManifestParser';
 
 // Re-export FreeProvider & FREE_PROVIDERS for backward compatibility across modules
 export { FreeProvider, FREE_PROVIDERS };
@@ -377,13 +378,22 @@ export class LMStudioClient implements ILLMProvider {
 
     /**
      * Dynamically applies thinking/reasoning parameters based on the target model family.
-     * Delegates to LMStudioReasoningEngine for universal model architecture support and custom user profiles.
+     * First checks LMStudioManifestParser for 100% manifest-driven exact Jinja variables,
+     * and gracefully falls back to LMStudioReasoningEngine if manifest is unavailable.
      * @param requestParams Target HTTP payload object.
      * @param model Model ID string.
      * @param thinking Whether thinking phase is enabled.
      * @param reasoningEffort Configured reasoning effort ('xhigh', 'medium', 'low', 'none').
      */
     private applyThinkingParameters(requestParams: any, model: string, thinking: boolean, reasoningEffort?: string): void {
-        LMStudioReasoningEngine.applyThinkingParameters(requestParams, model, thinking, reasoningEffort);
+        const config = vscode.workspace.getConfiguration('kai');
+        const customDir = config.get<string>('lmStudioCacheDir') || '';
+        const capabilitiesMap = LMStudioManifestParser.parseModelCapabilities(customDir);
+        const cap = capabilitiesMap[model] || capabilitiesMap[(model || '').toLowerCase()];
+
+        const applied = LMStudioReasoningEngine.applyManifestParameters(requestParams, cap, thinking, reasoningEffort);
+        if (!applied) {
+            LMStudioReasoningEngine.applyThinkingParameters(requestParams, model, thinking, reasoningEffort);
+        }
     }
 }
