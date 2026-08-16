@@ -672,60 +672,112 @@ class SidebarProvider {
 
                         <!-- View C: Settings Configuration View -->
                         <div id="settings-view" class="content-view hidden">
-                            <div class="settings-header">
-                                <span class="settings-title">${translations.settings}</span>
+                            <div class="settings-panel-header">
+                                <span class="settings-title">${translations.settings || 'Settings'}</span>
                                 <button id="settings-back-btn" class="icon-btn-header" title="Back">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                                 </button>
                             </div>
                             
-                            <div class="settings-body">
-                                <!-- Global Language Setting -->
-                                <div class="settings-group">
-                                    <label class="settings-label" for="settings-language">${translations.language || 'Language'}</label>
-                                    <select id="settings-language" class="settings-select">
-                                        <option value="auto">Auto (System Default)</option>
-                                        <option value="en">English</option>
-                                        <option value="nl">Nederlands</option>
-                                        <option value="de">Deutsch</option>
-                                        <option value="fr">Français</option>
-                                        <option value="es">Español</option>
-                                        <option value="ja">日本語</option>
-                                        <option value="zh">中文</option>
-                                    </select>
-                                    <span class="settings-help">Select the UI display language for Kai.</span>
-                                </div>
-
-                                <!-- SECTION 1: LM STUDIO SETTINGS -->
-                                <div class="settings-group">
-                                    <div class="settings-section-title">LM Studio</div>
-                                    
-                                    <label class="settings-label" for="settings-server-url">Server URL</label>
-                                    <input type="text" id="settings-server-url" class="settings-input" placeholder="http://localhost:1234/v1" />
-                                    <span class="settings-help">Local LM Studio API server endpoint URL.</span>
-
-                                    <label class="settings-label" for="settings-lmstudio-path" style="margin-top: 10px;">LM Studio Directory</label>
-                                    <div style="display: flex; gap: 6px; align-items: center;">
-                                        <input type="text" id="settings-lmstudio-path" class="settings-input" style="flex: 1;" placeholder="Default: ~/.lmstudio" />
-                                        <button type="button" id="browse-lmstudio-path-btn" class="settings-browse-btn">Browse...</button>
-                                    </div>
-                                    <div id="lmstudio-cache-status-indicator" class="cache-status-indicator">
-                                        <span id="cache-status-dot" class="status-dot status-disconnected"></span>
-                                        <span id="cache-status-text" class="cache-status-text">Checking cache...</span>
+                            <div class="settings-content-panel">
+                                <!-- CATEGORY 1: GENERAL SETTINGS -->
+                                <div class="settings-category">
+                                    <button type="button" class="category-header-btn">
+                                        <span class="category-title">${translations.generalSettings || 'GENERAL'}</span>
+                                        <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    </button>
+                                    <div class="category-content">
+                                        <!-- Language Select -->
+                                        <div class="setting-item">
+                                            <label class="setting-label">${translations.language || 'Language'}</label>
+                                            <div id="language-select-container" class="custom-select-container"></div>
+                                        </div>
+                                        <!-- Thinking Display Style -->
+                                        <div class="setting-item">
+                                            <label class="setting-label">${translations.thinkingDisplayStyle || 'Thinking Display Style'}</label>
+                                            <div id="thinking-display-style-container" class="custom-select-container"></div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <!-- SECTION 2: EXTERNAL AI PROVIDERS (API Keys) -->
-                                <div class="settings-group">
-                                    <div class="settings-section-title">External AI Providers</div>
-                                    <div id="settings-providers-container" class="settings-providers-container">
-                                        <!-- Dynamically rendered provider API key fields -->
+                                <!-- CATEGORY 2: LM STUDIO SETTINGS -->
+                                <div class="settings-category">
+                                    <button type="button" class="category-header-btn">
+                                        <span class="category-title">LM STUDIO</span>
+                                        <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    </button>
+                                    <div class="category-content">
+                                        <div class="setting-item">
+                                            <label class="setting-label" for="settings-server-url">Server URL</label>
+                                            <input type="text" id="settings-server-url" class="settings-input" placeholder="http://localhost:1234/v1" />
+                                        </div>
+                                        <div class="setting-item">
+                                            <label class="setting-label" for="settings-lmstudio-path">LM Studio Directory</label>
+                                            <div style="display: flex; gap: 6px; align-items: center;">
+                                                <input type="text" id="settings-lmstudio-path" class="settings-input" style="flex: 1;" placeholder="Default: ~/.lmstudio" />
+                                                <button type="button" id="browse-lmstudio-path-btn" class="settings-browse-btn">Browse...</button>
+                                            </div>
+                                            <div id="lmstudio-cache-status-indicator" class="cache-status-indicator">
+                                                <span id="cache-status-dot" class="status-dot status-disconnected"></span>
+                                                <span id="cache-status-text" class="cache-status-text">Checking cache...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- CATEGORY 3: THINKING & REASONING SETTINGS -->
+                                <div class="settings-category">
+                                    <button type="button" class="category-header-btn">
+                                        <span class="category-title">${translations.thinkingSettings || 'THINKING & REASONING'}</span>
+                                        <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    </button>
+                                    <div class="category-content">
+                                        <div id="show-thinking-toggle-container" class="setting-item"></div>
+                                        <div id="thinking-subsettings" class="thinking-subsettings">
+                                            <div id="keep-thinking-expanded-container" class="setting-item"></div>
+                                            <div id="keep-thinking-finished-container" class="setting-item"></div>
+                                        </div>
+                                        <div class="setting-item">
+                                            <label class="setting-label" for="gemini-thinking-level-input">Gemini Default Thinking Level</label>
+                                            <select id="gemini-thinking-level-input" class="settings-select">
+                                                <option value="high">High</option>
+                                                <option value="medium">Medium</option>
+                                                <option value="low">Low</option>
+                                                <option value="minimal">Minimal (Off)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- CATEGORY 4: EXTERNAL AI PROVIDERS -->
+                                <div class="settings-category">
+                                    <button type="button" class="category-header-btn">
+                                        <span class="category-title">EXTERNAL AI PROVIDERS</span>
+                                        <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    </button>
+                                    <div class="category-content">
+                                        <div class="setting-item">
+                                            <label class="setting-label" for="api-key-input">Google Gemini API Key</label>
+                                            <input type="password" id="api-key-input" class="settings-input" placeholder="AIzaSy..." />
+                                        </div>
+                                        <div id="manage-keys-container" class="setting-item">
+                                            <button type="button" id="manage-keys-btn" class="settings-browse-btn" style="width: 100%; height: 28px;">Manage Free Provider Keys</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="settings-footer">
-                                <button id="settings-save-btn" class="primary-btn">Save</button>
+                        <!-- Keys Overlay Modal for External Providers -->
+                        <div id="keys-container" class="keys-container hidden">
+                            <div class="keys-modal-card">
+                                <div class="keys-modal-header">
+                                    <span class="keys-modal-title">External Provider API Keys</span>
+                                    <button type="button" id="close-keys-btn" class="icon-btn-header" title="Close">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                    </button>
+                                </div>
+                                <div id="dynamic-keys-list" class="keys-modal-body"></div>
                             </div>
                         </div>
                     </div>
