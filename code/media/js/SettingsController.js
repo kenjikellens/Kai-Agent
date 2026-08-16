@@ -204,10 +204,17 @@ class SettingsController {
 
         if (this.closeKeysBtn) {
             this.closeKeysBtn.addEventListener('click', () => {
-                if (this.keysContainer) {
-                    this.keysContainer.classList.add('hidden');
-                }
+                this.hideKeysOverlay();
             });
+        }
+    }
+
+    /**
+     * Hides the provider API keys overlay modal.
+     */
+    hideKeysOverlay() {
+        if (this.keysContainer) {
+            this.keysContainer.classList.add('hidden');
         }
     }
 

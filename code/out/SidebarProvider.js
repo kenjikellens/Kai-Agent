@@ -622,7 +622,7 @@ class SidebarProvider {
                                                 ${svgs.plus || ''}
                                             </button>
 
-                                            <!-- 
+                                             <!-- 
                                                 MODEL SELECTOR DROPDOWN:
                                                 Primary dropdown menu for selecting active AI provider/model (LM Studio, Gemini, Mistral, etc.).
                                                 Options inside are dynamically created interactive button items (.dropdown-item).
@@ -640,81 +640,77 @@ class SidebarProvider {
                                                 </div>
                                             </div>
 
-                                            <!-- PLANNING MODE TOGGLE BUTTON (Custom pill/badge) -->
-                                            <button type="button" class="plan-badge-btn" id="planning-mode-btn" title="Toggle Planning Mode (Plan before executing tasks)">
-                                                <span class="plan-badge-icon">${svgs.plan || '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>'}</span>
-                                                <span class="plan-badge-label">Plan</span>
-                                            </button>
+                                            <!--
+                                                CONTEXT & CAPABILITIES DROPDOWN ("@" BUTTON):
+                                                Dropdown containing feature toggles such as Planning Mode.
+                                            -->
+                                            <div class="custom-dropdown" id="context-options-dropdown-container">
+                                                <button type="button" class="toolbar-icon-btn" id="at-mention-trigger-btn" title="Capabilities & Mentions (@)">
+                                                    ${svgs.at || ''}
+                                                </button>
+                                                <div class="dropdown-menu hidden" id="context-options-menu">
+                                                    <div class="context-options-header">
+                                                        <span>Capabilities</span>
+                                                    </div>
+                                                    <div class="context-option-row" id="planning-mode-option-row">
+                                                        <!-- Planning Mode toggle populated dynamically via ToggleComponent -->
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="toolbar-right">
-                                            <button type="button" class="send-icon-btn" id="send-btn" title="Send Message">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                                            </button>
-                                            <button type="button" class="send-icon-btn hidden" id="stop-btn" title="Stop">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>
-                                            </button>
-                                        </div>
+                                        <button id="send-btn" title="Send message">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- View B: Chat History List -->
-                        <div id="history-view" class="content-view hidden">
-                            <div class="history-header">
-                                <span class="history-title">${translations.previousChats || 'Chat History'}</span>
-                                <button id="history-back-btn" class="icon-btn-header" title="Back">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                                </button>
+                        <!-- View B: History View -->
+                        <div id="history-container" class="content-view history-container hidden">
+                            <div class="history-panel-header">
+                                <span>${translations.previousChats}</span>
+                                <button id="close-history-btn" class="icon-btn-header" title="Close History">✕</button>
                             </div>
                             <div id="history-list" class="history-list"></div>
                         </div>
 
-                        <!-- View C: Settings Configuration View -->
-                        <div id="settings-view" class="content-view hidden">
+                        <!-- View C: Settings View -->
+                        <div id="settings-container" class="content-view settings-container hidden">
                             <div class="settings-panel-header">
-                                <span class="settings-title">${translations.settings || 'Settings'}</span>
-                                <button id="settings-back-btn" class="icon-btn-header" title="Back">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                                </button>
+                                <span>${translations.settings}</span>
+                                <button id="close-settings-btn" class="icon-btn-header" title="Close Settings">✕</button>
                             </div>
-                            
                             <div class="settings-content-panel">
                                 <!-- CATEGORY 1: GENERAL SETTINGS -->
-                                <div class="settings-category">
-                                    <button type="button" class="category-header-btn">
-                                        <span class="category-title">${translations.generalSettings || 'GENERAL'}</span>
+                                <div class="settings-category" id="category-general">
+                                    <button type="button" class="category-header-btn" data-category="general">
+                                        <span class="category-title">${translations.generalSettings || 'General Settings'}</span>
                                         <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                     </button>
                                     <div class="category-content">
-                                        <!-- Language Select -->
                                         <div class="setting-item">
-                                            <label class="setting-label">${translations.language || 'Language'}</label>
-                                            <div id="language-select-container" class="custom-select-container"></div>
-                                        </div>
-                                        <!-- Thinking Display Style -->
-                                        <div class="setting-item">
-                                            <label class="setting-label">${translations.thinkingDisplayStyle || 'Thinking Display Style'}</label>
-                                            <div id="thinking-display-style-container" class="custom-select-container"></div>
+                                            <label for="language-select-container" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">${translations.language}</label>
+                                            <div id="language-select-container"></div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- CATEGORY 2: LM STUDIO SETTINGS -->
-                                <div class="settings-category">
-                                    <button type="button" class="category-header-btn">
-                                        <span class="category-title">LM STUDIO</span>
+                                <!-- CATEGORY 2: LM STUDIO -->
+                                <div class="settings-category" id="category-lmstudio">
+                                    <button type="button" class="category-header-btn" data-category="lmstudio">
+                                        <span class="category-title">LM Studio</span>
                                         <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                     </button>
                                     <div class="category-content">
                                         <div class="setting-item">
-                                            <label class="setting-label" for="settings-server-url">Server URL</label>
-                                            <input type="text" id="settings-server-url" class="settings-input" placeholder="http://localhost:1234/v1" />
+                                            <label for="settings-server-url" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">Server URL</label>
+                                            <input type="text" id="settings-server-url" placeholder="http://localhost:1234/v1" />
                                         </div>
                                         <div class="setting-item">
-                                            <label class="setting-label" for="settings-lmstudio-path">LM Studio Directory</label>
+                                            <label for="settings-lmstudio-path" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">LM Studio Directory</label>
                                             <div style="display: flex; gap: 6px; align-items: center;">
-                                                <input type="text" id="settings-lmstudio-path" class="settings-input" style="flex: 1;" placeholder="Default: ~/.lmstudio" />
+                                                <input type="text" id="settings-lmstudio-path" style="flex: 1;" placeholder="Default: ~/.lmstudio" />
                                                 <button type="button" id="browse-lmstudio-path-btn" class="settings-browse-btn">Browse...</button>
                                             </div>
                                             <div id="lmstudio-cache-status-indicator" class="cache-status-indicator">
@@ -725,59 +721,58 @@ class SidebarProvider {
                                     </div>
                                 </div>
 
-                                <!-- CATEGORY 3: THINKING & REASONING SETTINGS -->
-                                <div class="settings-category">
-                                    <button type="button" class="category-header-btn">
-                                        <span class="category-title">${translations.thinkingSettings || 'THINKING & REASONING'}</span>
+                                <!-- CATEGORY 3: THINKING & REASONING -->
+                                <div class="settings-category" id="category-thinking">
+                                    <button type="button" class="category-header-btn" data-category="thinking">
+                                        <span class="category-title">${translations.thinkingSettings || 'Thinking & Reasoning'}</span>
                                         <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                     </button>
                                     <div class="category-content">
-                                        <div id="show-thinking-toggle-container" class="setting-item"></div>
-                                        <div id="thinking-subsettings" class="thinking-subsettings">
-                                            <div id="keep-thinking-expanded-container" class="setting-item"></div>
-                                            <div id="keep-thinking-finished-container" class="setting-item"></div>
+                                        <div class="setting-item">
+                                            <label for="thinking-display-style-container" class="setting-label">${translations.thinkingDisplayStyle}</label>
+                                            <div id="thinking-display-style-container"></div>
                                         </div>
                                         <div class="setting-item">
-                                            <label class="setting-label" for="gemini-thinking-level-input">Gemini Default Thinking Level</label>
-                                            <select id="gemini-thinking-level-input" class="settings-select">
-                                                <option value="high">High</option>
-                                                <option value="medium">Medium</option>
-                                                <option value="low">Low</option>
-                                                <option value="minimal">Minimal (Off)</option>
-                                            </select>
+                                            <div id="show-thinking-toggle-container"></div>
+                                        </div>
+                                        <div id="thinking-subsettings" class="setting-sub-panel">
+                                            <div id="keep-thinking-expanded-container"></div>
+                                            <div id="keep-thinking-finished-container"></div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- CATEGORY 4: EXTERNAL AI PROVIDERS -->
-                                <div class="settings-category">
-                                    <button type="button" class="category-header-btn">
-                                        <span class="category-title">EXTERNAL AI PROVIDERS</span>
+                                <div class="settings-category" id="category-apikeys">
+                                    <button type="button" class="category-header-btn" data-category="apikeys">
+                                        <span class="category-title">External AI Providers</span>
                                         <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                     </button>
                                     <div class="category-content">
-                                        <div class="setting-item">
-                                            <label class="setting-label" for="api-key-input">Google Gemini API Key</label>
-                                            <input type="password" id="api-key-input" class="settings-input" placeholder="AIzaSy..." />
-                                        </div>
-                                        <div id="manage-keys-container" class="setting-item">
-                                            <button type="button" id="manage-keys-btn" class="settings-browse-btn" style="width: 100%; height: 28px;">Manage Free Provider Keys</button>
+                                        <div class="setting-item" id="manage-keys-container">
+                                            <button type="button" class="btn-primary" id="manage-keys-btn">
+                                                ${svgs.manage_keys || ''}
+                                                <span>Manage External Provider Keys</span>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Keys Overlay Modal for External Providers -->
-                        <div id="keys-container" class="keys-container hidden">
-                            <div class="keys-modal-card">
-                                <div class="keys-modal-header">
-                                    <span class="keys-modal-title">External Provider API Keys</span>
-                                    <button type="button" id="close-keys-btn" class="icon-btn-header" title="Close">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                    </button>
+                            <!-- API Keys Overlay -->
+                            <div id="keys-container" class="keys-container hidden">
+                                <div class="keys-panel-header">
+                                    <span>Manage External Provider Keys</span>
+                                    <button id="close-keys-btn" class="icon-btn-header" title="Close Keys Manager">✕</button>
                                 </div>
-                                <div id="dynamic-keys-list" class="keys-modal-body"></div>
+                                <div class="keys-content-panel">
+                                    <div class="setting-item" id="gemini-key-item">
+                                        <label for="api-key-input">Google Gemini API Key</label>
+                                        <input type="password" id="api-key-input" placeholder="AIzaSy...">
+                                    </div>
+                                    <!-- Dynamic provider key inputs rendered here -->
+                                    <div id="dynamic-keys-list"></div>
+                                </div>
                             </div>
                         </div>
                     </div>

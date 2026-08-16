@@ -21,10 +21,10 @@ class ChatUIController {
         this.sendBtn = document.getElementById('send-btn');
         this.thinkingToggle = document.getElementById('thinking-toggle');
         this.chatView = document.getElementById('chat-view');
-        this.historyContainer = document.getElementById('history-container') || document.getElementById('history-view');
-        this.settingsContainer = document.getElementById('settings-container') || document.getElementById('settings-view');
+        this.historyContainer = document.getElementById('history-container');
+        this.settingsContainer = document.getElementById('settings-container');
         this.settingsBtn = document.getElementById('settings-btn');
-        this.closeSettingsBtn = document.getElementById('close-settings-btn') || document.getElementById('settings-back-btn');
+        this.closeSettingsBtn = document.getElementById('close-settings-btn');
 
         this.currentAssistantMsgElement = null;
         this.currentAssistantText = '';
