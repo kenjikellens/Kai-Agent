@@ -64,6 +64,11 @@
           "default": "http://localhost:1234/v1",
           "description": "The base URL for your LM Studio local server API."
         },
+        "kai.lmStudioCacheDir": {
+          "type": "string",
+          "default": "",
+          "description": "Custom directory path for LM Studio model cache (defaults to ~/.lmstudio)."
+        },
         "kai.apiKey": {
           "type": "string",
           "default": "",

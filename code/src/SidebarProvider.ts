@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { AgentExecutor } from './AgentExecutor';
 import { LMStudioClient, FREE_PROVIDERS } from './LMStudioClient';
+import { LMStudioManifestParser } from './providers/LMStudioManifestParser';
 import { I18nManager } from './i18n';
 import { SessionStore } from './SessionStore';
 import { EditorContextProvider } from './EditorContextProvider';
