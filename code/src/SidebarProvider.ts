@@ -35,8 +35,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
      * Called by VS Code when the webview sidebar is resolved/initialized.
      * Sets up the webview HTML content, registers event listeners, and establishes connection status.
      * @param webviewView The webview view to resolve.
-     * @param context Additional contextual information.
-     * @param token Cancellation token.
+     * @param _context Additional contextual information.
+     * @param _token Cancellation token.
      */
     public resolveWebviewView(
         webviewView: vscode.WebviewView,
@@ -175,6 +175,11 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
      * Handles the 'sendMessage' event from the webview, forwards it to LM Studio,
      * and sends the response back to the webview UI.
      * @param messages The chat history payload array.
+     * @param model Selected model identifier.
+     * @param thinking Flag indicating if thinking mode is active.
+     * @param geminiThinkingLevel Reasoning effort or gemini thinking budget.
+     * @param planningMode Whether planning mode is toggled.
+     * @param attachedFiles List of user-attached files.
      */
     private async _handleSendMessage(
         messages: { role: string; content: string }[],
@@ -190,94 +195,54 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
         // Retrieve the active workspace root folder path
         const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (!workspaceFolders || workspaceFolders.length === 0) {
-            this._view.webview.postMessage({
-                type: 'replyError',
-                message: 'No active workspace directory found. Please open a folder first.'
-            });
-            return;
-        }
-        const workspacePath = workspaceFolders[0].uri.fsPath;
+        const workspacePath = workspaceFolders && workspaceFolders.length > 0 ? workspaceFolders[0].uri.fsPath : '';
 
-        // Fetch settings from vscode configuration
+        // Read configuration values
         const config = vscode.workspace.getConfiguration('kai');
         const serverUrl = config.get<string>('serverUrl') || 'http://localhost:1234/v1';
-        const temperature = config.get<number>('temperature') || 0.7;
+        const apiKey = config.get<string>('apiKey') || '';
 
-        // Extract the user prompt (it is the content of the last user message)
-        const lastUserMsg = messages[messages.length - 1];
-        const userPrompt = lastUserMsg ? lastUserMsg.content : '';
-        
-        try {
-            fs.appendFileSync(path.join(workspacePath, 'kai_debug.log'), `[DEBUG] _handleSendMessage payload: model="${model}", prompt="${userPrompt}", totalMessages=${messages.length}, planningMode=${planningMode}, attachedFiles=${attachedFiles.length}\n`);
-        } catch {}
-        
-        // Remove last user message from conversation history and filter out UI-only messages
-        // Retain user, assistant, system, and tool result messages
-        const chatHistoryWithoutLast = messages.slice(0, -1).filter((m: any) => 
-            m.role === 'user' || m.role === 'assistant' || m.role === 'system'
-        );
-
-        this._currentStreamingMessages = messages;
-        this._currentStreamingText = '';
-
-        // Instantiate the AgentExecutor with workspace path and settings
-        const executor = new AgentExecutor(
-            workspacePath,
-            this._extensionUri.fsPath,
-            serverUrl,
-            temperature,
-            (progress) => {
-                if (progress.type === 'token') {
-                    this._currentStreamingText += progress.output || '';
-                }
-                // Relay progress updates back to the webview
-                this._view?.webview.postMessage({
-                    type: 'agentProgress',
-                    progressType: progress.type,
-                    tool: progress.tool,
-                    query: progress.query,
-                    output: progress.output,
-                    toolId: progress.toolId,
-                    fileName: progress.fileName
-                });
-            }
-        );
-
+        // Initialize executor and abort controller
         this._activeAbortController = new AbortController();
+        const executor = new AgentExecutor(serverUrl, apiKey, workspacePath);
+
+        this._currentStreamingText = '';
+        this._currentStreamingMessages = messages;
 
         try {
-            // Retrieve rich active editor context (file, language, cursor, selection, open tabs)
-            const workspaceRoot = workspaceFolders && workspaceFolders.length > 0 ? workspaceFolders[0].uri.fsPath : undefined;
-            const editorContext = EditorContextProvider.captureEditorContext(workspaceRoot);
+            // Append workspace file context to user messages if available
+            const enrichedMessages = await EditorContextProvider.enrichMessagesWithContext(messages, attachedFiles);
 
-            // Signal the webview that the agent loop has started
-            this._view.webview.postMessage({ type: 'typing' });
-
-            // Execute the agent loop with the cancellation signal
-            const runResult = await executor.run(
-                userPrompt,
-                chatHistoryWithoutLast,
-                model || 'local-model',
+            // Execute the agent chat flow and stream back tokens and tool steps
+            const finalResponse = await executor.execute(
+                enrichedMessages,
+                (token) => {
+                    this._currentStreamingText += token;
+                    this._view?.webview.postMessage({
+                        type: 'streamToken',
+                        token: token
+                    });
+                },
+                (toolMessage) => {
+                    this._view?.webview.postMessage({
+                        type: 'toolActivity',
+                        message: toolMessage
+                    });
+                },
                 this._activeAbortController.signal,
-                editorContext,
+                model,
                 thinking,
                 geminiThinkingLevel,
                 planningMode,
                 attachedFiles
             );
 
-            // Send final completion message to the webview
+            // Signal stream completion to the webview
             this._view.webview.postMessage({
-                type: 'reply',
-                content: runResult.reply,
-                fullHistory: runResult.messages,
-                modifiedFiles: runResult.modifiedFiles
+                type: 'replyComplete',
+                text: finalResponse
             });
         } catch (error: any) {
-            try {
-                fs.appendFileSync(path.join(workspacePath, 'kai_debug.log'), `[ERROR] _handleSendMessage error: ${error.message || error}\n${error.stack || ''}\n`);
-            } catch {}
             // Re-throw if error was generated from manual abort cancellation
             if (error.name === 'AbortError') {
                 return;
@@ -294,7 +259,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
     /**
      * Connects to LM Studio to verify server status and retrieve the active loaded model.
-     * Reports the model status back to the webview.
+     * Reports the model status and manifest capabilities back to the webview.
      */
     private async _handleCheckConnection() {
         if (!this._view) {
@@ -319,9 +284,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             });
         };
 
-        // 1. Send translations and API keys immediately (without connection status to avoid Offline flicker)
-
-        // 2. Perform fast async model discovery
+        // 1. Perform fast async model discovery
         const client = new LMStudioClient(serverUrl);
 
         const [lmResult, geminiResult] = await Promise.allSettled([
@@ -343,12 +306,12 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         const activeModel = lmModels.length > 0 ? lmModels[0] : (geminiModels.length > 0 ? geminiModels[0] : 'local-model');
         const updatedFreeProviders = buildFreeProviders();
 
-        // 3. Validate LM Studio Cache directory and extract model capabilities
+        // 2. Validate LM Studio Cache directory and extract model capabilities
         const lmStudioCacheDir = config.get<string>('lmStudioCacheDir') || '';
         const lmStudioCacheStatus = LMStudioManifestParser.validateCache(lmStudioCacheDir);
         const lmStudioCapabilities = LMStudioManifestParser.parseModelCapabilities(lmStudioCacheDir);
 
-        // 4. Post updated model availability and manifest capabilities
+        // 3. Post updated model availability and manifest capabilities
         this._view.webview.postMessage({
             type: 'connectionStatus',
             connected: lmStudioConnected,
@@ -590,6 +553,34 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         }
     }
 
+    /**
+     * Opens VS Code native folder picker dialog to select custom LM Studio directory path.
+     */
+    private async _handleBrowseLMStudioFolder() {
+        if (!this._view) {
+            return;
+        }
+
+        const selectedUris = await vscode.window.showOpenDialog({
+            canSelectFiles: false,
+            canSelectFolders: true,
+            canSelectMany: false,
+            openLabel: 'Select .lmstudio Folder',
+            title: 'Select LM Studio Directory'
+        });
+
+        if (selectedUris && selectedUris.length > 0) {
+            const selectedPath = selectedUris[0].fsPath;
+            const config = vscode.workspace.getConfiguration('kai');
+            await config.update('lmStudioCacheDir', selectedPath, vscode.ConfigurationTarget.Global);
+            await this._handleCheckConnection();
+        }
+    }
+
+    /**
+     * Loads SVG icons from the media/svg directory.
+     * @returns Map of icon names to SVG strings.
+     */
     private _loadSvgs(): Record<string, string> {
         const svgDir = path.join(this._extensionUri.fsPath, 'media', 'svg');
         const svgs: Record<string, string> = {};
@@ -716,123 +707,98 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                                                 </div>
                                             </div>
 
-                                            <!--
-                                                CONTEXT & CAPABILITIES DROPDOWN ("@" BUTTON):
-                                                Dropdown containing feature toggles such as Planning Mode.
-                                            -->
-                                            <div class="custom-dropdown" id="context-options-dropdown-container">
-                                                <button type="button" class="toolbar-icon-btn" id="at-mention-trigger-btn" title="Capabilities & Mentions (@)">
-                                                    ${svgs.at || ''}
-                                                </button>
-                                                <div class="dropdown-menu hidden" id="context-options-menu">
-                                                    <div class="context-options-header">
-                                                        <span>Capabilities</span>
-                                                    </div>
-                                                    <div class="context-option-row" id="planning-mode-option-row">
-                                                        <!-- Planning Mode toggle populated dynamically via ToggleComponent -->
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            <!-- PLANNING MODE TOGGLE BUTTON (Custom pill/badge) -->
+                                            <button type="button" class="plan-badge-btn" id="planning-mode-btn" title="Toggle Planning Mode (Plan before executing tasks)">
+                                                <span class="plan-badge-icon">${svgs.plan || '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>'}</span>
+                                                <span class="plan-badge-label">Plan</span>
+                                            </button>
                                         </div>
-                                        <button id="send-btn" title="Send message">
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- View B: History View -->
-                        <div id="history-container" class="content-view history-container hidden">
-                            <div class="history-panel-header">
-                                <span>${translations.previousChats}</span>
-                                <button id="close-history-btn" class="icon-btn-header" title="Close History">✕</button>
-                            </div>
-                            <div id="history-list" class="history-list"></div>
-                        </div>
-
-                        <!-- View C: Settings View -->
-                        <div id="settings-container" class="content-view settings-container hidden">
-                            <div class="settings-panel-header">
-                                <span>${translations.settings}</span>
-                                <button id="close-settings-btn" class="icon-btn-header" title="Close Settings">✕</button>
-                            </div>
-                            <div class="settings-content-panel">
-                                <!-- CATEGORY 1: GENERAL SETTINGS -->
-                                <div class="settings-category" id="category-general">
-                                    <button type="button" class="category-header-btn" data-category="general">
-                                        <span class="category-title">${translations.generalSettings || 'General Settings'}</span>
-                                        <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                                    </button>
-                                    <div class="category-content">
-                                        <div class="setting-item">
-                                            <label for="language-select-container" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">${translations.language}</label>
-                                            <div id="language-select-container"></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- CATEGORY 2: THINKING & REASONING -->
-                                <div class="settings-category" id="category-thinking">
-                                    <button type="button" class="category-header-btn" data-category="thinking">
-                                        <span class="category-title">${translations.thinkingSettings || 'Thinking & Reasoning'}</span>
-                                        <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                                    </button>
-                                    <div class="category-content">
-                                        <!-- Format setting FIRST (top-level, before show thinking toggle) -->
-                                        <div class="setting-item">
-                                            <label for="thinking-display-style-container" class="setting-label">${translations.thinkingDisplayStyle}</label>
-                                            <div id="thinking-display-style-container"></div>
-                                        </div>
-                                        <!-- Show thinking toggle SECOND -->
-                                        <div class="setting-item">
-                                            <div id="show-thinking-toggle-container"></div>
-                                        </div>
-                                        <!-- Subsettings panel -->
-                                        <div id="thinking-subsettings" class="setting-sub-panel">
-                                            <div id="keep-thinking-expanded-container"></div>
-                                            <div id="keep-thinking-finished-container"></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- CATEGORY 3: API KEYS & PROVIDERS -->
-                                <div class="settings-category" id="category-apikeys">
-                                    <button type="button" class="category-header-btn" data-category="apikeys">
-                                        <span class="category-title">${translations.apiKeysSettings || 'API Keys & Providers'}</span>
-                                        <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                                    </button>
-                                    <div class="category-content">
-                                        <div class="setting-item" id="manage-keys-container">
-                                            <button type="button" class="btn-primary" id="manage-keys-btn">
-                                                ${svgs.manage_keys || ''}
-                                                <span>${translations.manageApiKeys}</span>
+                                        <div class="toolbar-right">
+                                            <button type="button" class="send-icon-btn" id="send-btn" title="${translations.sendMessage}">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                                            </button>
+                                            <button type="button" class="send-icon-btn hidden" id="stop-btn" title="${translations.stop}">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>
                                             </button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- API Keys Overlay (Positioned inside Settings view, directly under the Settings header) -->
-                            <div id="keys-container" class="keys-container hidden">
-                                <div class="keys-panel-header">
-                                    <span>${translations.manageApiKeys}</span>
-                                    <button id="close-keys-btn" class="icon-btn-header" title="Close Keys Manager">✕</button>
+                        <!-- View B: Chat History List -->
+                        <div id="history-view" class="content-view hidden">
+                            <div class="history-header">
+                                <span class="history-title">${translations.chatHistory}</span>
+                                <button id="history-back-btn" class="icon-btn-header" title="${translations.back}">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                                </button>
+                            </div>
+                            <div id="history-list" class="history-list"></div>
+                        </div>
+
+                        <!-- View C: Settings Configuration View -->
+                        <div id="settings-view" class="content-view hidden">
+                            <div class="settings-header">
+                                <span class="settings-title">${translations.settings}</span>
+                                <button id="settings-back-btn" class="icon-btn-header" title="${translations.back}">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                                </button>
+                            </div>
+                            
+                            <div class="settings-body">
+                                <!-- Global Language Setting -->
+                                <div class="settings-group">
+                                    <label class="settings-label" for="settings-language">${translations.language || 'Language'}</label>
+                                    <select id="settings-language" class="settings-select">
+                                        <option value="auto">Auto (System Default)</option>
+                                        <option value="en">English</option>
+                                        <option value="nl">Nederlands</option>
+                                        <option value="de">Deutsch</option>
+                                        <option value="fr">Français</option>
+                                        <option value="es">Español</option>
+                                        <option value="ja">日本語</option>
+                                        <option value="zh">中文</option>
+                                    </select>
+                                    <span class="settings-help">Select the UI display language for Kai.</span>
                                 </div>
-                                <div class="keys-content-panel">
-                                    <div class="setting-item" id="gemini-key-item">
-                                        <label for="api-key-input">Google Gemini API Key</label>
-                                        <input type="password" id="api-key-input" placeholder="AIzaSy...">
+
+                                <!-- SECTION 1: LM STUDIO SETTINGS -->
+                                <div class="settings-group">
+                                    <div class="settings-section-title">LM Studio</div>
+                                    
+                                    <label class="settings-label" for="settings-server-url">${translations.serverUrl || 'Server URL'}</label>
+                                    <input type="text" id="settings-server-url" class="settings-input" placeholder="http://localhost:1234/v1" />
+                                    <span class="settings-help">Local LM Studio API server endpoint URL.</span>
+
+                                    <label class="settings-label" for="settings-lmstudio-path" style="margin-top: 10px;">LM Studio Directory</label>
+                                    <div style="display: flex; gap: 6px; align-items: center;">
+                                        <input type="text" id="settings-lmstudio-path" class="settings-input" style="flex: 1;" placeholder="Default: ~/.lmstudio" />
+                                        <button type="button" id="browse-lmstudio-path-btn" class="settings-browse-btn">Browse...</button>
                                     </div>
-                                    <!-- Dynamic provider key inputs rendered here -->
-                                    <div id="dynamic-keys-list"></div>
+                                    <div id="lmstudio-cache-status-indicator" class="cache-status-indicator">
+                                        <span id="cache-status-dot" class="status-dot status-disconnected"></span>
+                                        <span id="cache-status-text" class="cache-status-text">Checking cache...</span>
+                                    </div>
                                 </div>
+
+                                <!-- SECTION 2: EXTERNAL AI PROVIDERS (API Keys) -->
+                                <div class="settings-group">
+                                    <div class="settings-section-title">External AI Providers</div>
+                                    <div id="settings-providers-container" class="settings-providers-container">
+                                        <!-- Dynamically rendered provider API key fields -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="settings-footer">
+                                <button id="settings-save-btn" class="primary-btn">${translations.save || 'Save'}</button>
                             </div>
                         </div>
                     </div>
-                    </div>
                 </div>
 
+                <!-- Load all modular ES6 Javascript controllers -->
                 <script nonce="${nonce}" src="${constantsUri}"></script>
                 <script nonce="${nonce}" src="${domUtilsUri}"></script>
                 <script nonce="${nonce}" src="${appStateUri}"></script>
@@ -854,8 +820,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 }
 
 /**
- * Generates a random alphanumeric nonce string to secure script tags.
- * @returns A 32-character random nonce.
+ * Generates a random cryptographic nonce string for Content Security Policy scripts.
+ * @returns Nonce string.
  */
 function getNonce(): string {
     let text = '';
