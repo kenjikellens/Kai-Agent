@@ -30,6 +30,7 @@ class ChatUIController {
         this.currentAssistantText = '';
 
         this.initEventListeners();
+        this.renderWelcomeHero();
     }
 
     /**
@@ -53,7 +54,21 @@ class ChatUIController {
 
         if (this.chatContainer) {
             this.chatContainer.addEventListener('click', (e) => {
-                // 1. Open file in VS Code editor when clicking file cards
+                // 1. Welcome Help button
+                const helpBtn = e.target.closest('#welcome-help-btn');
+                if (helpBtn) {
+                    this.showView('settings');
+                    return;
+                }
+
+                // 2. Welcome README button
+                const readmeBtn = e.target.closest('#welcome-readme-btn');
+                if (readmeBtn) {
+                    this.ipcBridge.openFile('README.md');
+                    return;
+                }
+
+                // 3. Open file in VS Code editor when clicking file cards
                 const fileCard = e.target.closest('.file-card');
                 if (fileCard) {
                     const filePath = fileCard.dataset.filepath;
@@ -63,7 +78,7 @@ class ChatUIController {
                     return;
                 }
 
-                // 2. Toggle tool execution result output dropdown
+                // 4. Toggle tool execution result output dropdown
                 const toolRow = e.target.closest('.tool-status-row');
                 if (toolRow) {
                     const dropdown = toolRow.querySelector('.tool-result-dropdown');
@@ -74,7 +89,7 @@ class ChatUIController {
                     return;
                 }
 
-                // 3. Collapsible thinking block trigger
+                // 5. Collapsible thinking block trigger
                 const header = e.target.closest('.thinking-header');
                 if (header) {
                     const content = header.nextElementSibling;
@@ -97,18 +112,66 @@ class ChatUIController {
     }
 
     /**
+     * Renders centered Welcome Hero in chat container when there are no messages.
+     */
+    renderWelcomeHero() {
+        if (!this.chatContainer) return;
+        const i18n = window.KAI_I18N || {};
+        const svgs = window.KAI_SVGS || {};
+
+        const heroDiv = document.createElement('div');
+        heroDiv.className = 'welcome-hero-container';
+        heroDiv.id = 'welcome-hero';
+
+        const logoSvg = svgs['plan'] || '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>';
+
+        heroDiv.innerHTML = `
+            <div class="welcome-badge-icon">
+                ${logoSvg}
+            </div>
+            <div class="welcome-title">${i18n.welcomeTitle || 'Welcome to Kai'}</div>
+            <div class="welcome-hint">${i18n.welcomePromptHint || 'Ask a question, edit code, or attach files to begin'}</div>
+            <div class="welcome-links-row">
+                <button type="button" class="welcome-link-btn" id="welcome-help-btn">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    <span>${i18n.help || 'Help'}</span>
+                </button>
+                <button type="button" class="welcome-link-btn" id="welcome-readme-btn">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    <span>${i18n.readme || 'README'}</span>
+                </button>
+            </div>
+        `;
+
+        this.chatContainer.innerHTML = '';
+        this.chatContainer.appendChild(heroDiv);
+    }
+
+    /**
+     * Removes the welcome hero container from the chat view.
+     */
+    removeWelcomeHero() {
+        const hero = document.getElementById('welcome-hero');
+        if (hero) {
+            hero.remove();
+        }
+    }
+
+    /**
      * Appends a message bubble into the scrollable chat container.
      * @param {string} role Sender role ('user', 'assistant', 'system', or 'file-summary').
      * @param {string} text Message content string.
      */
     appendMessage(role, text) {
+        this.removeWelcomeHero();
+
         if (role === 'user') {
             if (!text || 
                 text.startsWith('[Tool Result') || 
                 text.startsWith('[Tool Execution') || 
                 text.startsWith('[Tool Error') || 
-                text.startsWith('[Execution Output') ||
-                text.startsWith('[Tool Call') ||
+                text.startsWith('[Execution Output') || 
+                text.startsWith('[Tool Call') || 
                 text.includes('[Tool Result for')) {
                 return;
             }
@@ -408,11 +471,12 @@ class ChatUIController {
     }
 
     /**
-     * Clears all content elements inside chat container.
+     * Clears all content elements inside chat container and displays Welcome Hero.
      */
     clearChatContainer() {
         if (this.chatContainer) {
             this.chatContainer.innerHTML = '';
+            this.renderWelcomeHero();
         }
     }
 

@@ -5,9 +5,18 @@ import { de } from './locales/de';
 import { fr } from './locales/fr';
 import { es } from './locales/es';
 import { zh } from './locales/zh';
-import { hi } from './locales/hi';
-import { ar } from './locales/ar';
+import { zh_tw } from './locales/zh-tw';
 import { pt } from './locales/pt';
+import { ja } from './locales/ja';
+import { ko } from './locales/ko';
+import { ru } from './locales/ru';
+import { it } from './locales/it';
+import { pl } from './locales/pl';
+import { tr } from './locales/tr';
+import { cs } from './locales/cs';
+import { hu } from './locales/hu';
+import { ar } from './locales/ar';
+import { hi } from './locales/hi';
 
 /**
  * Interface defining translation keys for UI elements and messages.
@@ -55,6 +64,10 @@ export interface Translations {
     iconAndText: string;
     iconOnly: string;
     textOnly: string;
+    welcomeTitle: string;
+    welcomePromptHint: string;
+    help: string;
+    readme: string;
 }
 
 /**
@@ -66,7 +79,7 @@ export interface LanguageOption {
 }
 
 /**
- * Dictionary registry mapping 2-letter language codes to their dedicated locale modules.
+ * Dictionary registry mapping language codes to their dedicated locale modules.
  */
 const LOCALES: Record<string, Translations> = {
     en,
@@ -75,9 +88,20 @@ const LOCALES: Record<string, Translations> = {
     fr,
     es,
     zh,
-    hi,
+    'zh-cn': zh,
+    'zh-tw': zh_tw,
+    pt,
+    'pt-br': pt,
+    ja,
+    ko,
+    ru,
+    it,
+    pl,
+    tr,
+    cs,
+    hu,
     ar,
-    pt
+    hi
 };
 
 /**
@@ -95,22 +119,34 @@ export class I18nManager {
             { value: 'de', label: 'Deutsch' },
             { value: 'fr', label: 'Français' },
             { value: 'es', label: 'Español' },
-            { value: 'zh', label: '中文 (Simplified)' },
-            { value: 'hi', label: 'हिन्दी (Hindi)' },
+            { value: 'zh', label: '中文 (简体)' },
+            { value: 'zh-tw', label: '中文 (繁體)' },
+            { value: 'pt', label: 'Português' },
+            { value: 'ja', label: '日本語 (Japanese)' },
+            { value: 'ko', label: '한국어 (Korean)' },
+            { value: 'ru', label: 'Русский (Russian)' },
+            { value: 'it', label: 'Italiano (Italian)' },
+            { value: 'pl', label: 'Polski (Polish)' },
+            { value: 'tr', label: 'Türkçe (Turkish)' },
+            { value: 'cs', label: 'Čeština (Czech)' },
+            { value: 'hu', label: 'Magyar (Hungarian)' },
             { value: 'ar', label: 'العربية (Arabic)' },
-            { value: 'pt', label: 'Português' }
+            { value: 'hi', label: 'हिन्दी (Hindi)' }
         ];
     }
 
     /**
-     * Resolves the active 2-letter language code based on setting or VS Code environment.
+     * Resolves the active language code based on setting or VS Code environment.
      */
     public static getActiveLanguage(): string {
         const config = vscode.workspace.getConfiguration('kai');
         const setting = config.get<string>('language') || 'auto';
         if (setting === 'auto') {
-            const vscodeLang = vscode.env.language ? vscode.env.language.toLowerCase().slice(0, 2) : 'en';
-            return LOCALES[vscodeLang] ? vscodeLang : 'en';
+            const vscodeLang = vscode.env.language ? vscode.env.language.toLowerCase() : 'en';
+            if (LOCALES[vscodeLang]) return vscodeLang;
+            const baseLang = vscodeLang.slice(0, 2);
+            if (LOCALES[baseLang]) return baseLang;
+            return 'en';
         }
         return LOCALES[setting] ? setting : 'en';
     }
@@ -123,3 +159,4 @@ export class I18nManager {
         return LOCALES[lang] || LOCALES.en;
     }
 }
+

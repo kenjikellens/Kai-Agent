@@ -732,6 +732,39 @@ button:disabled {
   flex: 1 1 auto;
 }
 
+/* Right alignment group for capabilities dropdown (@) and send/stop button */
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Send & stop generation button */
+#send-btn,
+#stop-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0 !important;
+  border-radius: var(--app-radius-md);
+  background: var(--app-accent, #007acc);
+  color: var(--vscode-button-foreground, #ffffff);
+  cursor: pointer;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease;
+}
+
+#send-btn:hover,
+#stop-btn:hover {
+  opacity: 0.9;
+}
+
 /* Compact icon buttons for file upload (+) and capabilities (@) */
 .toolbar-icon-btn {
   display: inline-flex;
@@ -793,6 +826,80 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   padding: 4px 0;
+}
+
+/* -----------------------------
+   Centered Welcome Hero (Empty State)
+------------------------------ */
+.welcome-hero-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 24px 16px;
+  box-sizing: border-box;
+  text-align: center;
+  user-select: none;
+}
+
+.welcome-badge-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--app-radius-lg, 8px);
+  background: rgba(0, 122, 204, 0.12);
+  border: 1px solid rgba(0, 122, 204, 0.25);
+  color: var(--app-accent, #007acc);
+  margin-bottom: 12px;
+}
+
+.welcome-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--app-fg, #cccccc);
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+
+.welcome-hint {
+  font-size: 0.78rem;
+  color: var(--app-muted, #888888);
+  max-width: 280px;
+  line-height: 1.4;
+  margin-bottom: 16px;
+}
+
+.welcome-links-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.welcome-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: var(--app-radius-md, 6px);
+  background: var(--app-surface-strong, #252526);
+  border: 1px solid var(--app-border, #3c3c3c);
+  color: var(--app-muted, #999999);
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.welcome-link-btn:hover {
+  background: var(--app-surface-hover, #2d2d2d);
+  color: var(--app-fg, #ffffff);
+  border-color: var(--app-border-strong, #555555);
 }
 
 /* ==========================================================================

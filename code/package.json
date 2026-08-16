@@ -117,7 +117,20 @@
             "nl",
             "de",
             "fr",
-            "es"
+            "es",
+            "zh",
+            "zh-tw",
+            "pt",
+            "ja",
+            "ko",
+            "ru",
+            "it",
+            "pl",
+            "tr",
+            "cs",
+            "hu",
+            "ar",
+            "hi"
           ],
           "default": "auto",
           "description": "Language for Kai Agent UI and response messages."
@@ -128,7 +141,8 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "i18n:sync": "node scripts/sync_locales.js"
   },
   "devDependencies": {
     "@types/node": "^16.18.0",
