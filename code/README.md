@@ -36,11 +36,11 @@ You can customize the extension via your standard VS Code settings editor (`Ctrl
 ## Installation & Setup
 
 1. Make sure **LM Studio** is open, its **Local Server** is enabled, and a model is loaded.
-2. Build the project:
-   - Run `code/node_modules/.bin/tsc -p code/tsconfig.json` to compile TypeScript.
-3. Run the installer:
-   - Double-click `install.bat` in the project root to copy compiled code to your local extensions directory (`%USERPROFILE%/.vscode/extensions/`).
-4. Restart or reload your IDE (`Ctrl+Shift+P` -> `Developer: Reload Window`).
+2. **First-time Install**:
+   - Double-click `install.bat` in the project root to compile, package as VSIX, and register in VS Code / IDE.
+3. **Subsequent Code Updates (Fast Sync in ~1s)**:
+   - Double-click `update.bat` in the project root to quickly recompile TypeScript and sync updated files directly to your extensions folder.
+4. Reload your IDE window (`Ctrl+Shift+P` -> `Developer: Reload Window`).
 
 ---
 
