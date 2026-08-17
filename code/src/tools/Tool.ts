@@ -6,6 +6,8 @@ import * as path from 'path';
 export interface ToolContext {
     /** The absolute path of the workspace. */
     workspacePath: string;
+    /** The absolute path to the extension's root directory. */
+    extensionPath?: string;
 }
 
 /**

@@ -445,7 +445,11 @@ class AgentExecutor {
                     }
                 }
                 if (type && typeof type === 'string') {
-                    const matchedTool = this.tools.find(t => t.name.toLowerCase() === type.toLowerCase());
+                    // Normalize common alias names
+                    const normalizedType = type.toLowerCase() === 'full-web-search' || type.toLowerCase() === 'websearch'
+                        ? 'web_search'
+                        : type.toLowerCase();
+                    const matchedTool = this.tools.find(t => t.name.toLowerCase() === normalizedType);
                     if (matchedTool) {
                         const args = { ...parsed };
                         delete args.type;
@@ -485,7 +489,10 @@ class AgentExecutor {
         if (!matchedTool) {
             throw new Error(`Unknown tool: ${tool}`);
         }
-        let result = await matchedTool.execute(args, { workspacePath: this.workspacePath });
+        let result = await matchedTool.execute(args, {
+            workspacePath: this.workspacePath,
+            extensionPath: this.extensionPath
+        });
         const absoluteMaxBytes = 10000;
         if (Buffer.byteLength(result, 'utf8') > absoluteMaxBytes) {
             result = this.truncateToolOutput(result, absoluteMaxBytes);
@@ -509,6 +516,9 @@ class AgentExecutor {
      * Extracts the target file basename or command name for compact UI representation.
      */
     getToolTarget(tool, args) {
+        if (tool === 'web_search') {
+            return args.query ? `"${args.query}"` : '';
+        }
         if (tool === 'run_command') {
             return args.command || '';
         }

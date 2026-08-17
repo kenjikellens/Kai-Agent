@@ -27,7 +27,9 @@ const get_diagnostics_1 = require("./get_diagnostics");
 const symbol_search_1 = require("./symbol_search");
 const fetch_url_1 = require("./fetch_url");
 const delete_item_1 = require("./delete_item");
+const web_search_1 = require("./web_search");
 __exportStar(require("./Tool"), exports);
+__exportStar(require("./McpProcessBridge"), exports);
 __exportStar(require("./read_file"), exports);
 __exportStar(require("./write_file"), exports);
 __exportStar(require("./edit_file"), exports);
@@ -40,6 +42,7 @@ __exportStar(require("./get_diagnostics"), exports);
 __exportStar(require("./symbol_search"), exports);
 __exportStar(require("./fetch_url"), exports);
 __exportStar(require("./delete_item"), exports);
+__exportStar(require("./web_search"), exports);
 /**
  * Returns a list of all instanced tools available for execution.
  * @returns An array of Tool instances.
@@ -57,7 +60,8 @@ function getRegisteredTools() {
         new get_diagnostics_1.GetDiagnosticsTool(),
         new symbol_search_1.SymbolSearchTool(),
         new fetch_url_1.FetchUrlTool(),
-        new delete_item_1.DeleteItemTool()
+        new delete_item_1.DeleteItemTool(),
+        new web_search_1.WebSearchTool()
     ];
 }
 exports.getRegisteredTools = getRegisteredTools;

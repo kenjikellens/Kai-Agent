@@ -109,6 +109,11 @@
           "default": 0.7,
           "description": "Temperature parameter for chat completions (0.0 to 2.0)."
         },
+        "kai.webSearchMcpPath": {
+          "type": "string",
+          "default": "",
+          "description": "Optional custom path to the Web Search MCP server index.js (relative to workspace or absolute). If empty, auto-detects bundled web-search-mcp."
+        },
         "kai.language": {
           "type": "string",
           "enum": [

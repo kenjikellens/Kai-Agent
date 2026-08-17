@@ -91,6 +91,11 @@ Output exactly one tool call per turn wrapped in `<|tool_call|>` tags matching o
 {"type": "fetch_url", "url": "https://example.com/docs"}
 <|tool_call|>
 
+**Search Web (MCP Real-Time Web Search & Content Extraction):**
+<|tool_call|>
+{"type": "web_search", "query": "Playwright latest release notes", "limit": 5}
+<|tool_call|>
+
 **Delete File or Directory:**
 <|tool_call|>
 {"type": "delete_item", "path": "src/temp.ts"}
