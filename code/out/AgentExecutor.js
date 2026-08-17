@@ -335,10 +335,15 @@ class AgentExecutor {
         }
         return `You are a powerful, autonomous local AI Developer Agent operating directly within the user's workspace directory. You have full access to view, list, search, and edit the workspace using tools.`;
     }
-    /** Removes text-protocol instructions when providers receive native tool schemas separately. */
+    /**
+     * Removes text-protocol instructions when providers receive native tool schemas separately.
+     * @param prompt The base system prompt string.
+     * @returns Cleaned system prompt for native function calling.
+     */
     getNativeFunctionCallingPrompt(prompt) {
         return prompt
-            .replace('Execute actions by outputting exactly ONE tool call enclosed inside `<|tool_call|>` tags per turn.', 'Execute actions using the provided native function tools. Make at most one function call per turn.')
+            .replace('output a concise explanation followed by exactly ONE tool call enclosed inside `<|tool_call|>` tags per turn.', 'execute actions using the provided native function tools. Make at most one function call per turn.')
+            .replace('Execute actions by outputting exactly ONE tool call enclosed inside `<|tool_call|>` tags per turn.', 'execute actions using the provided native function tools. Make at most one function call per turn.')
             .replace(/\n## RESPONSE FORMAT[\s\S]*?\n## CORE OPERATIONAL RULES/, '\n## CORE OPERATIONAL RULES')
             .replace(/\n## ACTION SCHEMAS[\s\S]*?\n## JSON ESCAPING RULES/, '\n## JSON ESCAPING RULES');
     }
