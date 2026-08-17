@@ -39,31 +39,129 @@ export interface CacheValidationResult {
  */
 export class LMStudioManifestParser {
     /**
-     * Resolves the default LM Studio home directory (~/.lmstudio).
-     * @returns Absolute path to ~/.lmstudio directory.
+     * Returns an ordered list of candidate directory paths where LM Studio may store cache and configuration.
+     * @param customDir Optional custom directory specified by the user.
+     * @returns Array of candidate absolute directory paths.
      */
-    public static resolveDefaultCachePath(): string {
-        return path.join(os.homedir(), '.lmstudio');
+    public static getCandidateCachePaths(customDir?: string): string[] {
+        const candidates: string[] = [];
+        if (customDir && customDir.trim().length > 0) {
+            candidates.push(customDir.trim());
+        }
+
+        const homeDir = os.homedir();
+        // Modern LM Studio 0.3+ directory on Windows & Linux
+        candidates.push(path.join(homeDir, '.cache', 'lm-studio'));
+        // Legacy / macOS LM Studio directory
+        candidates.push(path.join(homeDir, '.lmstudio'));
+
+        // Windows LocalAppData / AppData locations
+        if (process.env.LOCALAPPDATA) {
+            candidates.push(path.join(process.env.LOCALAPPDATA, 'LM Studio'));
+            candidates.push(path.join(process.env.LOCALAPPDATA, 'lm-studio'));
+        }
+        if (process.env.APPDATA) {
+            candidates.push(path.join(process.env.APPDATA, 'LM Studio'));
+        }
+
+        return candidates;
     }
 
     /**
-     * Resolves the full path to the model-index-cache.json file.
+     * Resolves the active LM Studio home directory by checking candidates in priority order.
+     * @param customDir Optional custom base directory.
+     * @returns Absolute path to the resolved LM Studio directory.
+     */
+    public static resolveDefaultCachePath(customDir?: string): string {
+        const candidates = LMStudioManifestParser.getCandidateCachePaths(customDir);
+        for (const candidate of candidates) {
+            try {
+                if (fs.existsSync(candidate)) {
+                    const cacheFileDirect = candidate.endsWith('model-index-cache.json')
+                        ? candidate
+                        : (candidate.endsWith('.internal')
+                            ? path.join(candidate, 'model-index-cache.json')
+                            : path.join(candidate, '.internal', 'model-index-cache.json'));
+                    if (fs.existsSync(cacheFileDirect)) {
+                        return candidate;
+                    }
+                }
+            } catch {
+                // continue to next candidate
+            }
+        }
+
+        for (const candidate of candidates) {
+            try {
+                if (fs.existsSync(candidate)) {
+                    return candidate;
+                }
+            } catch {
+                // continue
+            }
+        }
+
+        return candidates[0] || path.join(os.homedir(), '.cache', 'lm-studio');
+    }
+
+    /**
+     * Resolves the full path to the model-index-cache.json file across known candidate paths.
      * @param cacheDir Optional custom base directory path.
      * @returns Absolute path to model-index-cache.json.
      */
     public static resolveIndexCacheFilePath(cacheDir?: string): string {
-        const baseDir = (cacheDir && cacheDir.trim().length > 0)
-            ? cacheDir.trim()
-            : LMStudioManifestParser.resolveDefaultCachePath();
-        
-        // If user directly selected the .internal directory or the json file itself
-        if (baseDir.endsWith('model-index-cache.json')) {
-            return baseDir;
+        if (cacheDir && cacheDir.trim().length > 0) {
+            const trimmed = cacheDir.trim();
+            if (trimmed.endsWith('model-index-cache.json')) {
+                return trimmed;
+            }
+            if (trimmed.endsWith('.internal')) {
+                return path.join(trimmed, 'model-index-cache.json');
+            }
+            return path.join(trimmed, '.internal', 'model-index-cache.json');
         }
-        if (baseDir.endsWith('.internal')) {
-            return path.join(baseDir, 'model-index-cache.json');
+
+        const candidates = LMStudioManifestParser.getCandidateCachePaths();
+        for (const candidate of candidates) {
+            try {
+                const targetPath = candidate.endsWith('model-index-cache.json')
+                    ? candidate
+                    : (candidate.endsWith('.internal')
+                        ? path.join(candidate, 'model-index-cache.json')
+                        : path.join(candidate, '.internal', 'model-index-cache.json'));
+                if (fs.existsSync(targetPath)) {
+                    return targetPath;
+                }
+            } catch {
+                // continue searching
+            }
         }
-        return path.join(baseDir, '.internal', 'model-index-cache.json');
+
+        const defaultDir = LMStudioManifestParser.resolveDefaultCachePath();
+        return path.join(defaultDir, '.internal', 'model-index-cache.json');
+    }
+
+    /**
+     * Resolves the full path to the LM Studio CLI executable (lms.exe or lms).
+     * @param customDir Optional custom cache directory path.
+     * @returns Executable path or default 'lms' command name.
+     */
+    public static resolveLmsExecutablePath(customDir?: string): string {
+        const exeName = process.platform === 'win32' ? 'lms.exe' : 'lms';
+        const candidates = LMStudioManifestParser.getCandidateCachePaths(customDir);
+
+        for (const candidate of candidates) {
+            try {
+                const binPath = path.join(candidate, 'bin', exeName);
+                if (fs.existsSync(binPath)) {
+                    return binPath;
+                }
+            } catch {
+                // continue
+            }
+        }
+
+        return 'lms';
     }
 
     /**

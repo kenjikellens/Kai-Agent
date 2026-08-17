@@ -793,7 +793,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                                         <div class="setting-item">
                                             <label for="settings-lmstudio-path" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">${translations.lmStudioDirectory || 'LM Studio Directory'}</label>
                                             <div style="display: flex; gap: 6px; align-items: center;">
-                                                <input type="text" id="settings-lmstudio-path" style="flex: 1;" placeholder="Default: ~/.lmstudio" />
+                                                <input type="text" id="settings-lmstudio-path" style="flex: 1;" placeholder="Auto-detected (~/.cache/lm-studio, ~/.lmstudio)" />
                                                 <button type="button" id="browse-lmstudio-path-btn" class="settings-browse-btn">${translations.browse || 'Browse...'}</button>
                                             </div>
                                             <div id="lmstudio-cache-status-indicator" class="cache-status-indicator">

@@ -113,19 +113,12 @@ export class LMStudioClient implements ILLMProvider {
     private async getLocalLoadedModels(): Promise<string[]> {
         return new Promise((resolve) => {
             const { exec } = require('child_process');
-            const os = require('os');
-            const path = require('path');
-            const fs = require('fs');
-            
-            let command = 'lms ps --json';
-            try {
-                const explicitPath = path.join(os.homedir(), '.lmstudio', 'bin', 'lms.exe');
-                if (process.platform === 'win32' && fs.existsSync(explicitPath)) {
-                    command = `"${explicitPath}" ps --json`;
-                }
-            } catch {
-                // ignore
-            }
+            const config = vscode.workspace.getConfiguration('kai');
+            const customDir = config.get<string>('lmStudioCacheDir') || '';
+            const lmsPath = LMStudioManifestParser.resolveLmsExecutablePath(customDir);
+            const command = (lmsPath.includes(' ') || lmsPath.includes('\\') || lmsPath.includes('/'))
+                ? `"${lmsPath}" ps --json`
+                : `${lmsPath} ps --json`;
 
             exec(command, { timeout: 1500 }, (error: any, stdout: string) => {
                 if (error) {

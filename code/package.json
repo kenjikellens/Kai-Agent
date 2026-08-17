@@ -67,7 +67,7 @@
         "kai.lmStudioCacheDir": {
           "type": "string",
           "default": "",
-          "description": "Custom directory path for LM Studio model cache (defaults to ~/.lmstudio)."
+          "description": "Custom directory path for LM Studio model cache (auto-detects ~/.cache/lm-studio or ~/.lmstudio when empty)."
         },
         "kai.apiKey": {
           "type": "string",
