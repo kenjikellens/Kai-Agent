@@ -221,7 +221,11 @@ class ChatUIController {
      * @param {AppState} appState Active state instance.
      */
     handleAgentProgress(progress, appState) {
-        if (progress.progressType === 'token') {
+        if (progress.progressType === 'status_update') {
+            const statusText = progress.text || progress.output || 'Processing...';
+            this.updateActivityStatus(statusText);
+        } else if (progress.progressType === 'token') {
+            this.removeActivityStatus();
             this.currentAssistantText += progress.output;
             appState.updateOrAddAssistantUiEvent(this.currentAssistantText);
             
@@ -257,7 +261,7 @@ class ChatUIController {
                 
                 if (formatted.trim()) {
                     if (!this.currentAssistantMsgElement) {
-                        this.removeTypingIndicator();
+                        this.removeActivityStatus();
                         this.currentAssistantMsgElement = document.createElement('div');
                         this.currentAssistantMsgElement.className = 'message assistant-message';
                         const contentDiv = document.createElement('div');
@@ -280,6 +284,7 @@ class ChatUIController {
                 }
             }
         } else if (progress.progressType === 'tool_start') {
+            this.removeActivityStatus();
             appState.finalizeAssistantUiEvent();
             if (this.currentAssistantMsgElement) {
                 const contentEl = this.currentAssistantMsgElement.querySelector('.message-content');
@@ -408,37 +413,50 @@ class ChatUIController {
     }
 
     /**
-     * Appends pulsing typing indicator element into chat container.
+     * Appends dynamic activity status card (spinner + status text) into chat container.
+     * @param {string} [statusText='Processing...'] Initial status message.
      */
-    showTypingIndicator() {
-        this.removeTypingIndicator();
+    showActivityStatus(statusText = 'Processing...') {
+        this.removeActivityStatus();
 
-        const indicatorDiv = document.createElement('div');
-        indicatorDiv.id = 'typing-indicator-container';
-        indicatorDiv.className = 'message assistant-message';
-
-        const contentsDiv = document.createElement('div');
-        contentsDiv.className = 'typing-indicator';
-        contentsDiv.innerHTML = `
-            <div class="typing-dot"></div>
-            <div class="typing-dot"></div>
-            <div class="typing-dot"></div>
+        const statusDiv = document.createElement('div');
+        statusDiv.id = 'activity-status-container';
+        statusDiv.className = 'activity-status-card';
+        statusDiv.innerHTML = `
+            <span class="thinking-spinner"></span>
+            <span class="activity-status-text">${this.formatter.escapeHtml(statusText)}</span>
         `;
 
-        indicatorDiv.appendChild(contentsDiv);
         if (this.chatContainer) {
-            this.chatContainer.appendChild(indicatorDiv);
+            this.chatContainer.appendChild(statusDiv);
             this.scrollToBottom();
         }
     }
 
     /**
-     * Removes active typing indicator element.
+     * Updates the text inside the active activity status card.
+     * @param {string} statusText New status message.
      */
-    removeTypingIndicator() {
-        const indicator = document.getElementById('typing-indicator-container');
-        if (indicator) {
-            indicator.remove();
+    updateActivityStatus(statusText) {
+        if (!statusText) return;
+        const statusEl = document.getElementById('activity-status-container');
+        if (statusEl) {
+            const textEl = statusEl.querySelector('.activity-status-text');
+            if (textEl) {
+                textEl.textContent = statusText;
+            }
+        } else {
+            this.showActivityStatus(statusText);
+        }
+    }
+
+    /**
+     * Removes active activity status element.
+     */
+    removeActivityStatus() {
+        const statusEl = document.getElementById('activity-status-container');
+        if (statusEl) {
+            statusEl.remove();
         }
     }
 
@@ -468,11 +486,11 @@ class ChatUIController {
             if (isLoading) {
                 this.sendBtn.innerHTML = window.KAI_SVGS['stop'] || '';
                 this.sendBtn.title = 'Stop generation';
-                this.showTypingIndicator();
+                this.showActivityStatus('Processing...');
             } else {
                 this.sendBtn.innerHTML = window.KAI_SVGS['send'] || '';
                 this.sendBtn.title = 'Send message';
-                this.removeTypingIndicator();
+                this.removeActivityStatus();
             }
         }
     }

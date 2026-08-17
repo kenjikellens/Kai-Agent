@@ -201,6 +201,7 @@ class SidebarProvider {
             this._view?.webview.postMessage({
                 type: 'agentProgress',
                 progressType: event.type,
+                text: event.text || event.output,
                 tool: event.tool,
                 query: event.query,
                 output: event.output,

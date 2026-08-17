@@ -16,7 +16,7 @@ export class AgentExecutor {
     private extensionPath: string;
     private serverUrl: string;
     private temperature: number;
-    private onProgress: (event: { type: string; tool?: string; query?: string; output?: string; toolId?: string; fileName?: string }) => void;
+    private onProgress: (event: { type: string; text?: string; tool?: string; query?: string; output?: string; toolId?: string; fileName?: string }) => void;
     private tools: Tool[];
     private contextManager: ContextManager;
 
@@ -33,7 +33,7 @@ export class AgentExecutor {
         extensionPath: string,
         serverUrl: string,
         temperature: number,
-        onProgress: (event: { type: string; tool?: string; query?: string; output?: string; toolId?: string; fileName?: string }) => void
+        onProgress: (event: { type: string; text?: string; tool?: string; query?: string; output?: string; toolId?: string; fileName?: string }) => void
     ) {
         this.workspacePath = workspacePath;
         this.extensionPath = extensionPath;
@@ -170,9 +170,24 @@ export class AgentExecutor {
         const modifiedFiles = new Set<string>();
         let stoppedAtIterationLimit = false;
 
+        const isLocalLM = !model.toLowerCase().startsWith('gemini') && !model.toLowerCase().startsWith('omniroute');
+        if (isLocalLM && typeof (provider as any).getLoadedModels === 'function') {
+            this.onProgress({ type: 'status_update', text: 'Processing...' });
+            try {
+                const loaded = await (provider as any).getLoadedModels();
+                if (loaded && !loaded.some((m: string) => m.toLowerCase().includes(model.toLowerCase()) || model.toLowerCase().includes(m.toLowerCase()))) {
+                    this.onProgress({ type: 'status_update', text: 'Loading model into RAM...' });
+                }
+            } catch {
+                this.onProgress({ type: 'status_update', text: 'Processing...' });
+            }
+        } else {
+            this.onProgress({ type: 'status_update', text: 'Processing...' });
+        }
+
         while (iteration < maxIterations) {
             iteration++;
-            this.onProgress({ type: 'thinking', output: `Step ${iteration}: Consulting model...` });
+            this.onProgress({ type: 'status_update', text: 'Processing...' });
 
             let response = '';
             let nativeToolCallId: string | undefined;

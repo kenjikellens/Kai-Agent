@@ -161,9 +161,25 @@ class AgentExecutor {
         let lastAssistantResponse = '';
         const modifiedFiles = new Set();
         let stoppedAtIterationLimit = false;
+        const isLocalLM = !model.toLowerCase().startsWith('gemini') && !model.toLowerCase().startsWith('omniroute');
+        if (isLocalLM && typeof provider.getLoadedModels === 'function') {
+            this.onProgress({ type: 'status_update', text: 'Processing...' });
+            try {
+                const loaded = await provider.getLoadedModels();
+                if (loaded && !loaded.some((m) => m.toLowerCase().includes(model.toLowerCase()) || model.toLowerCase().includes(m.toLowerCase()))) {
+                    this.onProgress({ type: 'status_update', text: 'Loading model into RAM...' });
+                }
+            }
+            catch {
+                this.onProgress({ type: 'status_update', text: 'Processing...' });
+            }
+        }
+        else {
+            this.onProgress({ type: 'status_update', text: 'Processing...' });
+        }
         while (iteration < maxIterations) {
             iteration++;
-            this.onProgress({ type: 'thinking', output: `Step ${iteration}: Consulting model...` });
+            this.onProgress({ type: 'status_update', text: 'Processing...' });
             let response = '';
             let nativeToolCallId;
             let nativeThoughtSignature;

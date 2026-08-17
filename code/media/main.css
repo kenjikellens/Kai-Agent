@@ -1589,6 +1589,29 @@ button:disabled {
   animation: spin-loader 1s linear infinite;
 }
 
+/* Dynamic activity status card (e.g. Processing..., Loading model into RAM...) */
+.activity-status-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+  padding: 4px 8px;
+  color: var(--app-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  user-select: none;
+}
+
+.activity-status-card .thinking-spinner {
+  margin-right: 2px;
+}
+
+.activity-status-text {
+  color: var(--app-muted);
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
 @keyframes spin-loader {
   to {
     transform: rotate(360deg);

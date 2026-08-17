@@ -326,6 +326,7 @@
 
     ipcBridge.on('replyError', (message) => {
         chatUIController.setUiLoading(false, appState);
+        chatUIController.removeActivityStatus();
         chatUIController.appendMessage('system', `Error: ${message.message}`);
         saveCurrentChat();
         chatUIController.currentAssistantMsgElement = null;
