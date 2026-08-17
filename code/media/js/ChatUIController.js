@@ -164,6 +164,14 @@ class ChatUIController {
     }
 
     /**
+     * Resets the active assistant streaming DOM element reference and accumulated text buffer.
+     */
+    resetAssistantStream() {
+        this.currentAssistantMsgElement = null;
+        this.currentAssistantText = '';
+    }
+
+    /**
      * Appends a message bubble into the scrollable chat container.
      * @param {string} role Sender role ('user', 'assistant', 'system', or 'file-summary').
      * @param {string} text Message content string.
@@ -172,6 +180,7 @@ class ChatUIController {
         this.removeWelcomeHero();
 
         if (role === 'user') {
+            this.resetAssistantStream();
             if (!text || 
                 text.startsWith('[Tool Result') || 
                 text.startsWith('[Tool Execution') || 
@@ -256,11 +265,13 @@ class ChatUIController {
                     this.scrollToBottom();
                 }
             } else {
-                const isThinkingChecked = this.thinkingToggle ? this.thinkingToggle.checked : true;
+                const isThinkingChecked = (this.settingsController && this.settingsController.showThinkingToggle) 
+                    ? this.settingsController.showThinkingToggle.checked 
+                    : (localStorage.getItem('kai.showThinking') !== 'false');
                 const formatted = this.formatter.formatMarkdown(this.currentAssistantText, forceThinkingCollapsed, isThinkingChecked);
                 
                 if (formatted.trim()) {
-                    if (!this.currentAssistantMsgElement) {
+                    if (!this.currentAssistantMsgElement || (this.chatContainer && !this.chatContainer.contains(this.currentAssistantMsgElement))) {
                         this.removeActivityStatus();
                         this.currentAssistantMsgElement = document.createElement('div');
                         this.currentAssistantMsgElement.className = 'message assistant-message';
@@ -292,8 +303,7 @@ class ChatUIController {
                     this.currentAssistantMsgElement.remove();
                 }
             }
-            this.currentAssistantMsgElement = null;
-            this.currentAssistantText = '';
+            this.resetAssistantStream();
             
             appState.addUiEvent({
                 type: 'tool',
@@ -499,6 +509,7 @@ class ChatUIController {
      * Clears all content elements inside chat container and displays Welcome Hero.
      */
     clearChatContainer() {
+        this.resetAssistantStream();
         if (this.chatContainer) {
             this.chatContainer.innerHTML = '';
             this.renderWelcomeHero();
@@ -512,6 +523,7 @@ class ChatUIController {
      */
     renderUiEvents(uiEvents, messages) {
         this.clearChatContainer();
+        this.resetAssistantStream();
 
         if (uiEvents && uiEvents.length > 0) {
             uiEvents.forEach(evt => {

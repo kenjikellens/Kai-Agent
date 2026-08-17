@@ -23,7 +23,8 @@ if %ERRORLEVEL% neq 0 (
 echo [2/2] Syncing updated files to extensions directories...
 
 :: VS Code
-if exist "%DEST_VSCODE%" (
+if exist "%USERPROFILE%\.vscode\extensions" (
+    if not exist "%DEST_VSCODE%" mkdir "%DEST_VSCODE%"
     copy /Y "code\package.json" "%DEST_VSCODE%\package.json" >nul
     copy /Y "code\README.md" "%DEST_VSCODE%\README.md" >nul
     copy /Y "code\system_prompt.md" "%DEST_VSCODE%\system_prompt.md" >nul
@@ -33,7 +34,8 @@ if exist "%DEST_VSCODE%" (
 )
 
 :: Antigravity
-if exist "%DEST_ANTIGRAVITY%" (
+if exist "%USERPROFILE%\.antigravity\extensions" (
+    if not exist "%DEST_ANTIGRAVITY%" mkdir "%DEST_ANTIGRAVITY%"
     copy /Y "code\package.json" "%DEST_ANTIGRAVITY%\package.json" >nul
     copy /Y "code\README.md" "%DEST_ANTIGRAVITY%\README.md" >nul
     copy /Y "code\system_prompt.md" "%DEST_ANTIGRAVITY%\system_prompt.md" >nul
@@ -43,7 +45,8 @@ if exist "%DEST_ANTIGRAVITY%" (
 )
 
 :: Antigravity IDE
-if exist "%DEST_ANTIGRAVITY_IDE%" (
+if exist "%USERPROFILE%\.antigravity-ide\extensions" (
+    if not exist "%DEST_ANTIGRAVITY_IDE%" mkdir "%DEST_ANTIGRAVITY_IDE%"
     copy /Y "code\package.json" "%DEST_ANTIGRAVITY_IDE%\package.json" >nul
     copy /Y "code\README.md" "%DEST_ANTIGRAVITY_IDE%\README.md" >nul
     copy /Y "code\system_prompt.md" "%DEST_ANTIGRAVITY_IDE%\system_prompt.md" >nul

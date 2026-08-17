@@ -107,6 +107,7 @@
         if (appState.isWaitingForResponse) {
             ipcBridge.abort();
             chatUIController.setUiLoading(false, appState);
+            chatUIController.resetAssistantStream();
             chatUIController.appendMessage('system', 'Generation stopped.');
             return;
         }
@@ -115,6 +116,8 @@
         if (!text && !appState.selectedCodeContext) {
             return;
         }
+
+        chatUIController.resetAssistantStream();
 
         let userPrompt = '';
         if (appState.selectedCodeContext) {
@@ -159,6 +162,7 @@
      */
     function loadChatSession(chat) {
         if (!chat) return;
+        chatUIController.resetAssistantStream();
         appState.loadSession(chat);
 
         chatUIController.renderUiEvents(appState.uiEvents, appState.messages);
@@ -194,6 +198,7 @@
             }
             appState.resetChat();
             chatUIController.clearChatContainer();
+            chatUIController.resetAssistantStream();
             chatUIController.setUiLoading(false, appState);
             chatUIController.showView('chat');
         });
@@ -268,10 +273,13 @@
 
     ipcBridge.on('typing', () => {
         chatUIController.setUiLoading(true, appState);
-        chatUIController.currentAssistantMsgElement = null;
-        chatUIController.currentAssistantText = '';
+        chatUIController.resetAssistantStream();
     });
 
+    /**
+     * Handles final assistant completion replies, updates UI bubble and persists chat history.
+     * @param {object} message Reply payload from extension host.
+     */
     const handleReply = (message) => {
         chatUIController.setUiLoading(false, appState);
         appState.finalizeAssistantUiEvent();
@@ -285,7 +293,9 @@
         }
 
         const replyContent = message.content !== undefined ? message.content : (message.text || '');
-        const isThinkingChecked = thinkingToggle ? thinkingToggle.checked : true;
+        const isThinkingChecked = (settingsController && settingsController.showThinkingToggle) 
+            ? settingsController.showThinkingToggle.checked 
+            : (localStorage.getItem('kai.showThinking') !== 'false');
         const formatted = formatter.formatMarkdown(replyContent, forceThinkingCollapsed, isThinkingChecked);
 
         if (chatUIController.currentAssistantMsgElement) {
@@ -317,8 +327,7 @@
         }
 
         saveCurrentChat();
-        chatUIController.currentAssistantMsgElement = null;
-        chatUIController.currentAssistantText = '';
+        chatUIController.resetAssistantStream();
     };
 
     ipcBridge.on('reply', handleReply);
@@ -329,8 +338,7 @@
         chatUIController.removeActivityStatus();
         chatUIController.appendMessage('system', `Error: ${message.message}`);
         saveCurrentChat();
-        chatUIController.currentAssistantMsgElement = null;
-        chatUIController.currentAssistantText = '';
+        chatUIController.resetAssistantStream();
     });
 
     ipcBridge.on('chatHistory', (message) => {
