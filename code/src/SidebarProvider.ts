@@ -218,8 +218,13 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
             0.2,
             (event) => {
                 this._view?.webview.postMessage({
-                    type: 'toolActivity',
-                    event: event
+                    type: 'agentProgress',
+                    progressType: event.type,
+                    tool: event.tool,
+                    query: event.query,
+                    output: event.output,
+                    toolId: event.toolId,
+                    fileName: event.fileName
                 });
             }
         );
@@ -246,8 +251,8 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
             // Signal stream completion to the webview
             this._view.webview.postMessage({
-                type: 'replyComplete',
-                text: result.reply,
+                type: 'reply',
+                content: result.reply,
                 modifiedFiles: result.modifiedFiles
             });
         } catch (error: any) {

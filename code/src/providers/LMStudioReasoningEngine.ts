@@ -138,72 +138,60 @@ export class LMStudioReasoningEngine {
 
         // 3. Qwen & GLM Architecture (e.g. Qwen 3.8 27B, Qwen 3.6, Qwen 3.5, Qwen 3 Coder, GLM 4.7 Flash, QwQ)
         if (lower.includes('qwen') || lower.includes('glm') || lower.includes('qwq')) {
+            requestParams.reasoning_effort = effortVal;
             if (thinking) {
                 requestParams.thinking = true;
                 requestParams.enable_thinking = true;
-                requestParams.reasoning_effort = effortVal;
                 requestParams.chat_template_kwargs = { enable_thinking: true };
             } else {
                 requestParams.thinking = false;
                 requestParams.enable_thinking = false;
                 requestParams.chat_template_kwargs = { enable_thinking: false };
-                requestParams.reasoning_effort = 'none';
-                requestParams.reasoning = 'off';
             }
             return;
         }
 
         // 4. Mistral & Codestral Architecture (e.g. Magistral, Codestral, Mistral Small 3)
         if (lower.includes('mistral') || lower.includes('codestral') || lower.includes('magistral') || lower.includes('ministral')) {
-            if (thinking) {
-                requestParams.reasoning_effort = effortVal;
-            } else {
-                requestParams.reasoning_effort = 'none';
-            }
+            requestParams.reasoning_effort = effortVal;
             return;
         }
 
         // 5. Gemma Architecture (e.g. Gemma 4 E4B, Gemma 4 E2B, Gemma 4 31B, Gemma 4 26B, Gemma 2)
         if (lower.includes('gemma')) {
+            requestParams.reasoning_effort = effortVal;
             if (thinking) {
                 requestParams.thinking = true;
-                requestParams.reasoning_effort = effortVal;
             } else {
                 requestParams.thinking = false;
-                requestParams.reasoning_effort = 'none';
-                requestParams.reasoning = 'off';
             }
             return;
         }
 
         // 6. DeepSeek-R1 and General Thinking Models (e.g. DeepSeek-R1 Distill)
         if (lower.includes('deepseek') || lower.includes('r1') || lower.includes('thinking') || lower.includes('reasoning')) {
+            requestParams.reasoning_effort = effortVal;
             if (thinking) {
                 requestParams.thinking = true;
                 requestParams.enable_thinking = true;
-                requestParams.reasoning_effort = effortVal;
                 requestParams.chat_template_kwargs = { enable_thinking: true };
             } else {
                 requestParams.thinking = false;
                 requestParams.enable_thinking = false;
-                requestParams.reasoning_effort = 'none';
-                requestParams.reasoning = 'off';
                 requestParams.chat_template_kwargs = { enable_thinking: false };
             }
             return;
         }
 
         // 7. Generic Fallback for unspecified local models
+        requestParams.reasoning_effort = effortVal;
         if (thinking) {
             requestParams.thinking = true;
             requestParams.enable_thinking = true;
-            requestParams.reasoning_effort = effortVal;
             requestParams.chat_template_kwargs = { enable_thinking: true };
         } else {
             requestParams.thinking = false;
             requestParams.enable_thinking = false;
-            requestParams.reasoning_effort = 'none';
-            requestParams.reasoning = 'off';
             requestParams.chat_template_kwargs = { enable_thinking: false };
         }
     }

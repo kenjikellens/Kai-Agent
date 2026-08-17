@@ -257,6 +257,7 @@ class ChatUIController {
                 
                 if (formatted.trim()) {
                     if (!this.currentAssistantMsgElement) {
+                        this.removeTypingIndicator();
                         this.currentAssistantMsgElement = document.createElement('div');
                         this.currentAssistantMsgElement.className = 'message assistant-message';
                         const contentDiv = document.createElement('div');

@@ -392,7 +392,29 @@ class ModelDropdownController {
 
                         const cap = ThinkingStateFormatter.lmStudioCapabilities[itemData.rawModel] ||
                                     ThinkingStateFormatter.lmStudioCapabilities[lowerModel];
-                        const fields = (cap && Array.isArray(cap.fields)) ? cap.fields : [];
+                        let fields = (cap && Array.isArray(cap.fields) && cap.fields.length > 0) ? cap.fields : [];
+
+                        // Fallback default fields for Qwen, GLM, Gemma, DeepSeek when no manifest is available
+                        if (fields.length === 0 && (lowerModel.includes('qwen') || lowerModel.includes('qwq') || lowerModel.includes('glm') || lowerModel.includes('gemma') || lowerModel.includes('deepseek') || lowerModel.includes('r1'))) {
+                            fields = [
+                                {
+                                    displayName: 'Thinking',
+                                    type: 'boolean',
+                                    variable: 'enable_thinking'
+                                },
+                                {
+                                    displayName: 'Reasoning Effort',
+                                    type: 'select',
+                                    variable: 'reasoning_effort',
+                                    options: [
+                                        { label: 'X-High', value: 'xhigh' },
+                                        { label: 'Medium', value: 'medium' },
+                                        { label: 'Low', value: 'low' }
+                                    ]
+                                }
+                            ];
+                        }
+
                         let toggleEl = null;
 
                         fields.forEach(field => {
@@ -408,12 +430,12 @@ class ModelDropdownController {
                                 leftWrapper.style.alignItems = 'center';
                                 leftWrapper.style.gap = '6px';
 
-                                ThinkingStateFormatter.renderFlyoutOptionContent(leftWrapper, field.displayName || 'Thinking', isLmThinkingOn);
+                                ThinkingStateFormatter.renderFlyoutOptionContent(leftWrapper, 'Thinking', isLmThinkingOn);
 
                                 toggleEl = ToggleComponent.create({
                                     id: `lm-thinking-toggle-${itemData.rawModel.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
                                     checked: isLmThinkingOn,
-                                    title: 'Enable reasoning/thinking process for this model',
+                                    title: 'Enable thinking process for this model',
                                     onChange: (checked) => {
                                         localStorage.setItem(`kai.lmStudioThinking.${itemData.rawModel}`, checked ? 'true' : 'false');
                                         this.setSelectedModel(this.selectedModelValue);
@@ -441,7 +463,10 @@ class ModelDropdownController {
                                 divider.className = 'flyout-divider';
                                 flyoutInner.appendChild(divider);
 
-                                field.options.forEach(opt => {
+                                // Filter out off/none if present in options
+                                const cleanOptions = field.options.filter(o => o.value !== 'off' && o.value !== 'none');
+
+                                cleanOptions.forEach(opt => {
                                     const flyoutOpt = document.createElement('button');
                                     flyoutOpt.type = 'button';
                                     const isSelected = opt.value === currentLmReasoningLevel;
@@ -460,14 +485,6 @@ class ModelDropdownController {
                                         e.stopPropagation();
                                         localStorage.setItem(`kai.lmStudioReasoningLevel.${itemData.rawModel}`, opt.value);
                                         localStorage.setItem('kai.lmStudioReasoningLevel', opt.value);
-                                        localStorage.setItem(`kai.lmStudioThinking.${itemData.rawModel}`, 'true');
-
-                                        if (toggleEl) {
-                                            const checkbox = toggleEl.querySelector('input[type="checkbox"]');
-                                            if (checkbox) {
-                                                checkbox.checked = true;
-                                            }
-                                        }
 
                                         this.selectedModelValue = itemData.value;
                                         localStorage.setItem('kai.selectedModel', itemData.value);
@@ -723,10 +740,21 @@ class ModelDropdownController {
         }
 
         const lowerRaw = raw.toLowerCase();
+        if (lowerRaw.includes('gemini')) {
+            const geminiLevel = localStorage.getItem(`kai.geminiThinkingLevel.${raw}`) ||
+                                localStorage.getItem('kai.geminiThinkingLevel') || 'high';
+            return {
+                model: raw,
+                thinking: geminiLevel !== 'minimal' && geminiLevel !== 'off',
+                reasoningEffort: geminiLevel
+            };
+        }
+
         if (lowerRaw.includes('muse') || lowerRaw.includes('glimmer')) {
             return {
                 model: raw,
-                thinking: true
+                thinking: true,
+                reasoningEffort: 'xhigh'
             };
         }
 
@@ -735,7 +763,8 @@ class ModelDropdownController {
             const thinking = mistralThinkingSaved !== null ? mistralThinkingSaved === 'true' : true;
             return {
                 model: raw,
-                thinking: thinking
+                thinking: thinking,
+                reasoningEffort: 'xhigh'
             };
         }
 

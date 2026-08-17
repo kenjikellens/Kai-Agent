@@ -254,10 +254,17 @@
 
 
 
-    ipcBridge.on('agentProgress', (message) => {
-        chatUIController.handleAgentProgress(message, appState);
+    const handleAgentProgress = (message) => {
+        const payload = message.event || message;
+        if (payload.type && !payload.progressType) {
+            payload.progressType = payload.type;
+        }
+        chatUIController.handleAgentProgress(payload, appState);
         markDirty();
-    });
+    };
+
+    ipcBridge.on('agentProgress', handleAgentProgress);
+    ipcBridge.on('toolActivity', handleAgentProgress);
 
     ipcBridge.on('typing', () => {
         chatUIController.setUiLoading(true, appState);
@@ -265,7 +272,7 @@
         chatUIController.currentAssistantText = '';
     });
 
-    ipcBridge.on('reply', (message) => {
+    const handleReply = (message) => {
         chatUIController.setUiLoading(false, appState);
         appState.finalizeAssistantUiEvent();
 
@@ -277,8 +284,9 @@
             }
         }
 
+        const replyContent = message.content !== undefined ? message.content : (message.text || '');
         const isThinkingChecked = thinkingToggle ? thinkingToggle.checked : true;
-        const formatted = formatter.formatMarkdown(message.content, forceThinkingCollapsed, isThinkingChecked);
+        const formatted = formatter.formatMarkdown(replyContent, forceThinkingCollapsed, isThinkingChecked);
 
         if (chatUIController.currentAssistantMsgElement) {
             if (formatted.trim()) {
@@ -287,19 +295,19 @@
                 chatUIController.currentAssistantMsgElement.remove();
             }
         } else if (formatted.trim()) {
-            chatUIController.appendMessage('assistant', message.content);
+            chatUIController.appendMessage('assistant', replyContent);
         }
 
         if (message.fullHistory) {
             appState.messages = message.fullHistory;
         } else {
-            appState.addMessage({ role: 'assistant', content: message.content });
+            appState.addMessage({ role: 'assistant', content: replyContent });
         }
 
         // If assistant content was not already streamed into uiEvents, add it now
         const lastEvt = appState.uiEvents[appState.uiEvents.length - 1];
-        if (message.content && (!lastEvt || lastEvt.type !== 'assistant')) {
-            appState.addUiEvent({ type: 'assistant', content: message.content });
+        if (replyContent && (!lastEvt || lastEvt.type !== 'assistant')) {
+            appState.addUiEvent({ type: 'assistant', content: replyContent });
         }
 
         if (message.modifiedFiles && message.modifiedFiles.length > 0) {
@@ -311,7 +319,10 @@
         saveCurrentChat();
         chatUIController.currentAssistantMsgElement = null;
         chatUIController.currentAssistantText = '';
-    });
+    };
+
+    ipcBridge.on('reply', handleReply);
+    ipcBridge.on('replyComplete', handleReply);
 
     ipcBridge.on('replyError', (message) => {
         chatUIController.setUiLoading(false, appState);

@@ -199,8 +199,13 @@ class SidebarProvider {
         this._activeAbortController = new AbortController();
         const executor = new AgentExecutor_1.AgentExecutor(workspacePath, extensionPath, serverUrl, 0.2, (event) => {
             this._view?.webview.postMessage({
-                type: 'toolActivity',
-                event: event
+                type: 'agentProgress',
+                progressType: event.type,
+                tool: event.tool,
+                query: event.query,
+                output: event.output,
+                toolId: event.toolId,
+                fileName: event.fileName
             });
         });
         this._currentStreamingText = '';
@@ -212,8 +217,8 @@ class SidebarProvider {
             const result = await executor.run(userPrompt, history, model || 'local-model', this._activeAbortController.signal, activeFile, thinking, geminiThinkingLevel, planningMode, attachedFiles);
             // Signal stream completion to the webview
             this._view.webview.postMessage({
-                type: 'replyComplete',
-                text: result.reply,
+                type: 'reply',
+                content: result.reply,
                 modifiedFiles: result.modifiedFiles
             });
         }
