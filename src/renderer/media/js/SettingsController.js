@@ -116,7 +116,7 @@ class SettingsController {
         // 4. Language Custom Select Dropdown (All 18 languages)
         const langContainer = document.getElementById('language-select-container');
         if (langContainer && typeof CustomSelectComponent !== 'undefined') {
-            const initialLang = window.KAI_LANG || 'auto';
+            const initialLang = localStorage.getItem('kai.language') || window.KAI_LANG || 'auto';
             const langOptions = window.KAI_SUPPORTED_LANGUAGES || [
                 { value: 'auto', label: 'Auto (System)' },
                 { value: 'en', label: 'English' },
@@ -128,6 +128,23 @@ class SettingsController {
                 options: langOptions,
                 value: initialLang,
                 onChange: (selectedLang) => {
+                    localStorage.setItem('kai.language', selectedLang);
+                    window.KAI_LANG = selectedLang;
+
+                    const allLocales = window.KAI_ALL_LOCALES || {};
+                    let targetDict = allLocales[selectedLang];
+                    if (!targetDict && selectedLang === 'auto') {
+                        const sys = (navigator.language || 'en').slice(0, 2).toLowerCase();
+                        targetDict = allLocales[sys] || allLocales.en;
+                    }
+                    if (!targetDict && allLocales) {
+                        targetDict = allLocales.en || {};
+                    }
+
+                    if (targetDict && typeof window.applyAllTranslations === 'function') {
+                        window.applyAllTranslations(targetDict);
+                    }
+
                     this.ipcBridge.updateSettings({
                         language: selectedLang
                     });

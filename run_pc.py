@@ -148,6 +148,28 @@ def write_sessions(data: dict) -> None:
         json.dump(data, f, indent=2)
 
 
+def load_all_locales() -> dict:
+    """Reads all compiled translations from media/js/AllLocales.js."""
+    locales_file = RENDERER_DIR / "media" / "js" / "AllLocales.js"
+    if locales_file.exists():
+        try:
+            txt = locales_file.read_text(encoding="utf-8")
+            start = txt.find("{")
+            end = txt.rfind("}") + 1
+            if start != -1 and end != -1:
+                return json.loads(txt[start:end])
+        except Exception:
+            pass
+    return {}
+
+
+def get_translations_for_lang(lang: str) -> dict:
+    all_locales = load_all_locales()
+    if not lang or lang == "auto":
+        lang = "en"
+    return all_locales.get(lang) or all_locales.get("en", {})
+
+
 class KaiLiveRequestHandler(http.server.SimpleHTTPRequestHandler):
     """
     HTTP Request Handler that serves renderer static files and handles /api/ipc endpoints.
@@ -185,6 +207,55 @@ class KaiLiveRequestHandler(http.server.SimpleHTTPRequestHandler):
         else:
             self.send_error(404, "Endpoint not found")
 
+    def build_connection_status(self) -> dict:
+        config = get_config()
+        server_url = config.get("serverUrl", "http://localhost:1234/v1")
+        connected, models = query_lmstudio_models(server_url)
+        loaded_models = query_loaded_models()
+        active_model = loaded_models[0] if loaded_models else (models[0] if models else "local-model")
+        svgs = load_svgs()
+        workspace_path = str(APP_DIR)
+        active_lang = config.get("language", "auto")
+        translations = get_translations_for_lang(active_lang)
+
+        free_providers = [
+            {
+                "name": p["name"],
+                "configKey": p["configKey"],
+                "keyHint": p["keyHint"],
+                "models": p["models"],
+                "apiKey": config.get(p["configKey"], "")
+            }
+            for p in DEFAULT_PROVIDERS
+        ]
+
+        return {
+            "type": "connectionStatus",
+            "connected": connected,
+            "model": active_model,
+            "lmStudioModels": models,
+            "geminiModels": [
+                "gemini-3.7-flash",
+                "gemini-3.6-flash",
+                "gemini-3.5-flash",
+                "gemini-3.5-flash-lite",
+                "gemini-3-flash-preview",
+                "gemini-3.1-pro-preview",
+                "gemini-3.1-flash-lite"
+            ],
+            "loadedModels": loaded_models,
+            "freeProviders": free_providers,
+            "serverUrl": server_url,
+            "apiKey": config.get("apiKey", ""),
+            "lmStudioCacheDir": config.get("lmStudioCacheDir", ""),
+            "lmStudioCacheStatus": {"valid": True},
+            "workspacePath": workspace_path,
+            "workspaceName": Path(workspace_path).name,
+            "language": active_lang,
+            "translations": translations,
+            "svgs": svgs
+        }
+
     def handle_ipc_message(self, msg: dict) -> dict:
         """Dispatches live IPC commands."""
         msg_type = msg.get("type")
@@ -192,49 +263,17 @@ class KaiLiveRequestHandler(http.server.SimpleHTTPRequestHandler):
         server_url = config.get("serverUrl", "http://localhost:1234/v1")
 
         if msg_type == "checkConnection":
-            connected, models = query_lmstudio_models(server_url)
-            loaded_models = query_loaded_models()
-            active_model = loaded_models[0] if loaded_models else (models[0] if models else "local-model")
-            svgs = load_svgs()
-            workspace_path = str(APP_DIR)
+            return self.build_connection_status()
 
-            # Build full list of free cloud providers
-            free_providers = [
-                {
-                    "name": p["name"],
-                    "configKey": p["configKey"],
-                    "keyHint": p["keyHint"],
-                    "models": p["models"],
-                    "apiKey": config.get(p["configKey"], "")
-                }
-                for p in DEFAULT_PROVIDERS
-            ]
-
-            return {
-                "type": "connectionStatus",
-                "connected": connected,
-                "model": active_model,
-                "lmStudioModels": models,
-                "geminiModels": [
-                    "gemini-3.7-flash",
-                    "gemini-3.6-flash",
-                    "gemini-3.5-flash",
-                    "gemini-3.5-flash-lite",
-                    "gemini-3-flash-preview",
-                    "gemini-3.1-pro-preview",
-                    "gemini-3.1-flash-lite"
-                ],
-                "loadedModels": loaded_models,
-                "freeProviders": free_providers,
-                "serverUrl": server_url,
-                "apiKey": config.get("apiKey", ""),
-                "lmStudioCacheDir": config.get("lmStudioCacheDir", ""),
-                "lmStudioCacheStatus": {"valid": True},
-                "workspacePath": workspace_path,
-                "workspaceName": Path(workspace_path).name,
-                "language": config.get("language", "auto"),
-                "svgs": svgs
-            }
+        elif msg_type == "updateSettings":
+            cfg = get_config()
+            for k, v in msg.items():
+                if k != "type" and v is not None:
+                    cfg[k] = v
+            CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                json.dump(cfg, f, indent=2)
+            return self.build_connection_status()
 
         elif msg_type == "loadChatHistory":
             sessions = read_sessions()

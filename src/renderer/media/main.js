@@ -252,6 +252,65 @@
         });
     }
 
+    /**
+     * Globally translates all DOM text, titles, placeholders, and controller widgets.
+     * @param {object} translations Translation key-value map.
+     */
+    window.applyAllTranslations = function(translations) {
+        if (!translations) return;
+        window.KAI_I18N = translations;
+
+        // 1. All data-i18n text nodes
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (translations[key]) {
+                el.textContent = translations[key];
+            }
+        });
+
+        // 2. All data-i18n-title attributes
+        document.querySelectorAll('[data-i18n-title]').forEach(el => {
+            const key = el.getAttribute('data-i18n-title');
+            if (translations[key]) {
+                el.setAttribute('title', translations[key]);
+            }
+        });
+
+        // 3. Message input placeholder
+        const msgInput = document.getElementById('message-input');
+        if (msgInput && translations.messagePlaceholder) {
+            msgInput.placeholder = translations.messagePlaceholder;
+        }
+
+        // 4. Thinking toggle label
+        const thinkingLabel = document.getElementById('thinking-toggle-label');
+        if (thinkingLabel && translations.thinkingToggle) {
+            thinkingLabel.textContent = translations.thinkingToggle;
+        }
+
+        // 5. Settings controller
+        if (settingsController && typeof settingsController.applyTranslations === 'function') {
+            settingsController.applyTranslations(translations);
+        }
+    };
+
+    // Apply startup translation immediately
+    try {
+        const savedLang = localStorage.getItem('kai.language') || window.KAI_LANG || 'auto';
+        const allLocales = window.KAI_ALL_LOCALES || {};
+        let startupDict = allLocales[savedLang];
+        if (!startupDict && savedLang === 'auto') {
+            const sys = (navigator.language || 'en').slice(0, 2).toLowerCase();
+            startupDict = allLocales[sys] || allLocales.en;
+        }
+        if (!startupDict && allLocales) {
+            startupDict = allLocales.en;
+        }
+        if (startupDict) {
+            window.applyAllTranslations(startupDict);
+        }
+    } catch (e) {}
+
     // Register Incoming IPC Message Handlers
     ipcBridge.on('initialState', (message) => {
         if (message.isRunning) {
@@ -274,36 +333,8 @@
 
     ipcBridge.on('connectionStatus', (message) => {
         if (message.translations) {
-            window.KAI_I18N = message.translations;
-
-            // 1. All data-i18n text nodes
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if (message.translations[key]) {
-                    el.textContent = message.translations[key];
-                }
-            });
-
-            // 2. All data-i18n-title attributes
-            document.querySelectorAll('[data-i18n-title]').forEach(el => {
-                const key = el.getAttribute('data-i18n-title');
-                if (message.translations[key]) {
-                    el.setAttribute('title', message.translations[key]);
-                }
-            });
-
-            // 3. Message input placeholder
-            if (messageInput && message.translations.messagePlaceholder) {
-                messageInput.placeholder = message.translations.messagePlaceholder;
-            }
-
-            // 4. Thinking toggle label
-            const thinkingLabel = document.getElementById('thinking-toggle-label');
-            if (thinkingLabel && message.translations.thinkingToggle) {
-                thinkingLabel.textContent = message.translations.thinkingToggle;
-            }
+            window.applyAllTranslations(message.translations);
         }
-        
         settingsController.updateConnectionStatus(message);
         modelDropdownController.updateConnectionStatus(message);
     });
