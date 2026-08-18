@@ -569,39 +569,13 @@
         if (message.translations) {
             window.applyAllTranslations(message.translations);
         }
-        const hasWs = Boolean(message.workspacePath);
-        appState.hasActiveWorkspace = hasWs;
-
-        const wsNameEl = document.getElementById('active-workspace-name');
-        if (wsNameEl) {
-            wsNameEl.textContent = message.workspaceName || (hasWs ? message.workspacePath.split(/[\\/]/).pop() : 'Select Workspace...');
-        }
-        if (workspaceBadgeBtn) {
-            workspaceBadgeBtn.title = hasWs ? `Active Workspace: ${message.workspacePath} (Click to change)` : 'Click to Select Workspace Directory';
-        }
-
-        const topWsText = document.getElementById('top-workspace-path');
-        if (topWsText) {
-            topWsText.textContent = hasWs ? message.workspacePath : 'No Workspace Selected';
-        }
-        const topWsBtn = document.getElementById('top-workspace-btn');
-        if (topWsBtn) {
-            topWsBtn.title = hasWs ? `Active Workspace: ${message.workspacePath} (Click to change)` : 'Click to Select Workspace Folder';
-        }
-
-        if (modeOptAgent) {
-            modeOptAgent.disabled = !hasWs;
-            modeOptAgent.classList.toggle('disabled', !hasWs);
-            modeOptAgent.title = hasWs ? 'Autonomous code edits and terminal execution' : 'Select a workspace folder first to use Agent Mode';
-        }
-        if (modeOptPlanning) {
-            modeOptPlanning.disabled = !hasWs;
-            modeOptPlanning.classList.toggle('disabled', !hasWs);
-            modeOptPlanning.title = hasWs ? 'Structured plan-first protocol before code edits' : 'Select a workspace folder first to use Plan Mode';
-        }
-
-        if (!hasWs && appState.activeMode !== 'chat') {
-            setActiveMode('chat');
+        
+        // If the user selected a new workspace folder via the picker, message.workspacePath has it
+        if (message.workspacePath && message.workspacePath !== appState.workspacePath) {
+            updateWorkspaceUi(message.workspacePath);
+            saveCurrentChat();
+        } else {
+            updateWorkspaceUi(appState.workspacePath || '');
         }
 
         settingsController.updateConnectionStatus(message);
