@@ -54,6 +54,27 @@
         });
     }
 
+    // Workspace Selector Click Handler
+    const workspaceBadgeBtn = document.getElementById('workspace-badge-btn');
+    if (workspaceBadgeBtn) {
+        workspaceBadgeBtn.addEventListener('click', () => {
+            ipcBridge.browseWorkspaceFolder();
+        });
+    }
+
+    // New Chat Click Handler
+    if (newChatBtn) {
+        newChatBtn.addEventListener('click', () => {
+            appState.resetChat();
+            chatUIController.clearChatContainer();
+            chatUIController.showView('chat');
+            saveCurrentChat();
+            if (messageInput) {
+                messageInput.focus();
+            }
+        });
+    }
+
     /**
      * Dynamically resizes the message input textarea based on content scrollHeight.
      */

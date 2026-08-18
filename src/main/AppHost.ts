@@ -108,6 +108,10 @@ export class AppHost {
                 await this.handleBrowseWorkspaceFolder();
                 break;
             }
+            case 'openFilePicker': {
+                await this.handleOpenFilePicker();
+                break;
+            }
             case 'saveChat': {
                 await this.sessionStore.saveChat(data.chat);
                 break;

@@ -266,6 +266,59 @@ class KaiLiveRequestHandler(http.server.SimpleHTTPRequestHandler):
                 write_sessions(sessions)
             return {"type": "saveChatResult", "success": True}
 
+        elif msg_type == "openFilePicker":
+            files = []
+            try:
+                import tkinter as tk
+                from tkinter import filedialog
+                root = tk.Tk()
+                root.withdraw()
+                root.attributes("-topmost", True)
+                file_paths = filedialog.askopenfilenames(
+                    title="Attach Files",
+                    filetypes=[
+                        ("All Supported Files", "*.js;*.ts;*.jsx;*.tsx;*.py;*.html;*.css;*.json;*.md;*.txt;*.csv;*.png;*.jpg;*.jpeg;*.webp"),
+                        ("All Files", "*.*")
+                    ]
+                )
+                root.destroy()
+                for fp in file_paths:
+                    p = Path(fp)
+                    if p.exists() and p.stat().st_size <= 2 * 1024 * 1024:
+                        try:
+                            content = p.read_text(encoding="utf-8", errors="replace")
+                        except Exception:
+                            content = ""
+                        files.append({
+                            "fileName": p.name,
+                            "filePath": str(p),
+                            "relativePath": p.name,
+                            "content": content
+                        })
+            except Exception:
+                pass
+            return {"type": "filesSelected", "files": files}
+
+        elif msg_type == "browseWorkspaceFolder":
+            try:
+                import tkinter as tk
+                from tkinter import filedialog
+                root = tk.Tk()
+                root.withdraw()
+                root.attributes("-topmost", True)
+                folder_path = filedialog.askdirectory(title="Select Workspace Folder")
+                root.destroy()
+                if folder_path:
+                    p = Path(folder_path)
+                    return {
+                        "type": "connectionStatus",
+                        "workspacePath": str(p),
+                        "workspaceName": p.name
+                    }
+            except Exception:
+                pass
+            return {"type": "ack"}
+
         elif msg_type == "sendMessage":
             messages = msg.get("messages", [])
             model = msg.get("model", "local-model")
