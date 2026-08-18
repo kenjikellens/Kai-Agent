@@ -95,14 +95,30 @@
                             <div class="toolbar-right">
                                 <!-- Context & Capabilities Dropdown ("@" Button) -->
                                 <div class="custom-dropdown" id="context-options-dropdown-container">
-                                    <button type="button" class="toolbar-icon-btn" id="at-mention-trigger-btn" title="Capabilities & Mentions (@)">
+                                    <button type="button" class="toolbar-icon-btn" id="at-mention-trigger-btn" title="Select mode (@)">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"></path></svg>
                                     </button>
                                     <div class="dropdown-menu hidden" id="context-options-menu">
                                         <div class="context-options-header">
-                                            <span>Capabilities</span>
+                                            <span>Select Mode</span>
                                         </div>
-                                        <div class="context-option-row" id="planning-mode-option-row"></div>
+                                        <div class="context-mode-selector" id="context-mode-selector">
+                                            <button type="button" class="context-mode-item active" data-mode="chat" id="mode-opt-chat" title="Safe Q&amp;A, math, web and code analysis">
+                                                <svg class="mode-item-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                                <span class="mode-item-title">Chat</span>
+                                                <svg class="mode-check-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                            </button>
+                                            <button type="button" class="context-mode-item disabled" data-mode="agent" id="mode-opt-agent" title="Select a workspace folder first to use Agent Mode" disabled>
+                                                <svg class="mode-item-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                                                <span class="mode-item-title">Agent</span>
+                                                <svg class="mode-check-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                            </button>
+                                            <button type="button" class="context-mode-item disabled" data-mode="planning" id="mode-opt-planning" title="Select a workspace folder first to use Plan Mode" disabled>
+                                                <svg class="mode-item-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                                                <span class="mode-item-title">Plan</span>
+                                                <svg class="mode-check-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                                 <button id="send-btn" title="Send message">

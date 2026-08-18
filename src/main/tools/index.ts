@@ -12,6 +12,7 @@ import { SymbolSearchTool } from './symbol_search';
 import { FetchUrlTool } from './fetch_url';
 import { DeleteItemTool } from './delete_item';
 import { WebSearchTool } from './web_search';
+import { UtilityToolsTool } from './utility_tools';
 
 export * from './Tool';
 export * from './McpProcessBridge';
@@ -28,12 +29,43 @@ export * from './symbol_search';
 export * from './fetch_url';
 export * from './delete_item';
 export * from './web_search';
+export * from './utility_tools';
 
 /**
- * Returns a list of all instanced tools available for execution.
- * @returns An array of Tool instances.
+ * Returns an array of available tools filtered by active mode and workspace context.
+ * @param mode The active mode ('chat' | 'agent' | 'planning').
+ * @param hasWorkspace Whether a workspace directory is currently selected.
+ * @returns Array of Tool instances.
  */
-export function getRegisteredTools(): Tool[] {
+export function getRegisteredTools(mode: 'chat' | 'agent' | 'planning' = 'agent', hasWorkspace: boolean = true): Tool[] {
+    const utilityTool = new UtilityToolsTool();
+    const fetchUrlTool = new FetchUrlTool();
+    const webSearchTool = new WebSearchTool();
+
+    // 1. Chat Mode WITHOUT Workspace: only utilities and web access
+    if (mode === 'chat' && !hasWorkspace) {
+        return [
+            utilityTool,
+            fetchUrlTool,
+            webSearchTool
+        ];
+    }
+
+    // 2. Chat Mode WITH Workspace: read-only workspace inspection + utilities + web
+    if (mode === 'chat' && hasWorkspace) {
+        return [
+            new ReadFileTool(),
+            new ListDirTool(),
+            new GrepSearchTool(),
+            new GetDiagnosticsTool(),
+            new SymbolSearchTool(),
+            utilityTool,
+            fetchUrlTool,
+            webSearchTool
+        ];
+    }
+
+    // 3. Agent & Planning Modes (Full Workspace Developer Tools)
     return [
         new ReadFileTool(),
         new WriteFileTool(),
@@ -47,6 +79,7 @@ export function getRegisteredTools(): Tool[] {
         new SymbolSearchTool(),
         new FetchUrlTool(),
         new DeleteItemTool(),
-        new WebSearchTool()
+        new WebSearchTool(),
+        utilityTool
     ];
 }

@@ -31,16 +31,154 @@
         helpModalController
     );
 
+    // Wire Retry Callback (Retries from clicked assistant message)
+    chatUIController.onRetry = (assistantMsgElement) => {
+        if (appState.isWaitingForResponse) return;
+
+        // Truncate messages and uiEvents: remove the assistant reply and re-send the prompt
+        // Find all message elements in chat container to determine position
+        const allMessageNodes = Array.from(chatUIController.chatContainer.children).filter(el => 
+            el.classList.contains('user-message-row') || 
+            el.classList.contains('message') || 
+            el.classList.contains('tool-status-row') ||
+            el.classList.contains('file-summary-card')
+        );
+        const targetIndex = allMessageNodes.indexOf(assistantMsgElement);
+
+        if (targetIndex !== -1) {
+            // Remove DOM nodes from targetIndex onward
+            const nodesToRemove = allMessageNodes.slice(targetIndex);
+            nodesToRemove.forEach(node => node.remove());
+        } else {
+            assistantMsgElement.remove();
+        }
+
+        // If the last message in appState is an assistant message, remove it
+        while (appState.messages.length > 0 && appState.messages[appState.messages.length - 1].role !== 'user') {
+            appState.messages.pop();
+        }
+        while (appState.uiEvents.length > 0 && appState.uiEvents[appState.uiEvents.length - 1].type !== 'user') {
+            appState.uiEvents.pop();
+        }
+
+        // If we have messages left and the last is user, re-send it
+        if (appState.messages.length > 0) {
+            chatUIController.resetAssistantStream();
+            chatUIController.setUiLoading(true, appState);
+            saveCurrentChat();
+
+            const modelDetails = modelDropdownController.getSelectedModelDetails();
+            const geminiThinkingLevel = modelDetails.reasoningEffort || settingsController.getGeminiThinkingLevel(modelDetails.model);
+            const attachedFilesCopy = fileUploadController.getAttachedFiles();
+
+            ipcBridge.sendUserPrompt(
+                appState.messages,
+                modelDetails.model,
+                modelDetails.thinking,
+                geminiThinkingLevel,
+                appState.activeMode === 'planning',
+                attachedFilesCopy,
+                appState.currentChatId,
+                appState.activeMode
+            );
+        }
+    };
+
+    // Wire Edit Prompt Callback (Executes edited prompt from inline chat bubble)
+    chatUIController.onEditPrompt = (userMessageRowElement, editedText) => {
+        if (appState.isWaitingForResponse) return;
+        if (!editedText || !editedText.trim()) return;
+
+        const textToSend = editedText.trim();
+
+        // Find index of this user message among rows
+        const allMessageNodes = Array.from(chatUIController.chatContainer.children).filter(el => 
+            el.classList.contains('user-message-row') || 
+            el.classList.contains('message') || 
+            el.classList.contains('tool-status-row') ||
+            el.classList.contains('file-summary-card')
+        );
+        const targetIndex = allMessageNodes.indexOf(userMessageRowElement);
+
+        if (targetIndex !== -1) {
+            // Count how many user messages came before this one
+            const precedingUserNodes = allMessageNodes.slice(0, targetIndex).filter(el => el.classList.contains('user-message-row'));
+            const userMsgIndexInHistory = precedingUserNodes.length;
+
+            // Find index in appState.messages for that n-th user message
+            let count = 0;
+            let cutIndexMessages = appState.messages.length;
+            for (let i = 0; i < appState.messages.length; i++) {
+                if (appState.messages[i].role === 'user') {
+                    if (count === userMsgIndexInHistory) {
+                        cutIndexMessages = i;
+                        break;
+                    }
+                    count++;
+                }
+            }
+
+            // Find index in appState.uiEvents for that n-th user event
+            let uiCount = 0;
+            let cutIndexUi = appState.uiEvents.length;
+            for (let i = 0; i < appState.uiEvents.length; i++) {
+                if (appState.uiEvents[i].type === 'user') {
+                    if (uiCount === userMsgIndexInHistory) {
+                        cutIndexUi = i;
+                        break;
+                    }
+                    uiCount++;
+                }
+            }
+
+            // Truncate state to before this prompt
+            appState.messages = appState.messages.slice(0, cutIndexMessages);
+            appState.uiEvents = appState.uiEvents.slice(0, cutIndexUi);
+
+            // Remove DOM nodes from this user row onward
+            const nodesToRemove = allMessageNodes.slice(targetIndex);
+            nodesToRemove.forEach(node => node.remove());
+        }
+
+        // Add the new edited prompt to state & UI
+        appState.addMessage({ role: 'user', content: textToSend });
+        appState.addUiEvent({ type: 'user', text: textToSend });
+        chatUIController.appendMessage('user', textToSend);
+
+        chatUIController.resetAssistantStream();
+        chatUIController.setUiLoading(true, appState);
+        saveCurrentChat();
+
+        const modelDetails = modelDropdownController.getSelectedModelDetails();
+        const geminiThinkingLevel = modelDetails.reasoningEffort || settingsController.getGeminiThinkingLevel(modelDetails.model);
+        const attachedFilesCopy = fileUploadController.getAttachedFiles();
+        fileUploadController.clear();
+
+        ipcBridge.sendUserPrompt(
+            appState.messages,
+            modelDetails.model,
+            modelDetails.thinking,
+            geminiThinkingLevel,
+            appState.activeMode === 'planning',
+            attachedFilesCopy,
+            appState.currentChatId,
+            appState.activeMode
+        );
+    };
+
     // DOM Element References for Input Orchestration
     const messageInput = document.getElementById('message-input');
     const sendBtn = document.getElementById('send-btn');
     const newChatBtn = document.getElementById('new-chat-btn');
-    const attachFileBtn = document.getElementById('attach-file-btn');
     const atMentionTriggerBtn = document.getElementById('at-mention-trigger-btn');
     const contextOptionsMenu = document.getElementById('context-options-menu');
-    const planningModeOptionRow = document.getElementById('planning-mode-option-row');
+    const contextModeSelector = document.getElementById('context-mode-selector');
+    const modeOptChat = document.getElementById('mode-opt-chat');
+    const modeOptAgent = document.getElementById('mode-opt-agent');
+    const modeOptPlanning = document.getElementById('mode-opt-planning');
     const sidebar = document.getElementById('app-sidebar');
     const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+    const workspaceBadgeBtn = document.getElementById('workspace-badge-btn');
 
     // Sidebar Collapse / Expand Toggle
     if (sidebar && sidebarToggleBtn) {
@@ -55,7 +193,6 @@
     }
 
     // Workspace Selector Click Handler
-    const workspaceBadgeBtn = document.getElementById('workspace-badge-btn');
     if (workspaceBadgeBtn) {
         workspaceBadgeBtn.addEventListener('click', () => {
             ipcBridge.browseWorkspaceFolder();
@@ -109,26 +246,54 @@
     }
 
     /**
-     * Initializes the Planning Mode switch toggle inside the @ options menu using ToggleComponent.
+     * Updates active mode UI selection and input placeholder accordingly.
+     * @param {'chat'|'agent'|'planning'} mode New active mode.
      */
-    if (planningModeOptionRow) {
-        const planningToggleEl = ToggleComponent.create({
-            id: 'planning-mode-toggle-switch',
-            label: window.KAI_I18N?.planningMode || 'Planning Mode',
-            checked: appState.isPlanningModeEnabled,
-            title: window.KAI_I18N?.planningModeDesc || 'Enforce step-by-step planning before execution',
-            onChange: (checked) => {
-                appState.isPlanningModeEnabled = checked;
-                localStorage.setItem('kai.planningMode', checked ? 'true' : 'false');
-                if (atMentionTriggerBtn) {
-                    atMentionTriggerBtn.classList.toggle('active-mode', checked);
-                }
+    function setActiveMode(mode) {
+        if (!appState.hasActiveWorkspace && mode !== 'chat') {
+            mode = 'chat';
+        }
+        appState.activeMode = mode;
+        localStorage.setItem('kai.activeMode', mode);
+
+        if (contextModeSelector) {
+            contextModeSelector.querySelectorAll('.context-mode-item').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === mode);
+            });
+        }
+
+        if (atMentionTriggerBtn) {
+            atMentionTriggerBtn.classList.toggle('active-mode', mode !== 'chat');
+            const modeLabels = { chat: 'Chat Mode', agent: 'Agent Mode', planning: 'Plan Mode' };
+            atMentionTriggerBtn.title = `Mode: ${modeLabels[mode] || 'Chat'} (@)`;
+        }
+
+        if (messageInput) {
+            if (mode === 'chat') {
+                messageInput.placeholder = 'Ask Kai anything, calculate, convert, or search the web...';
+            } else if (mode === 'agent') {
+                messageInput.placeholder = 'Ask Kai to edit code, execute tasks, or run commands...';
+            } else if (mode === 'planning') {
+                messageInput.placeholder = 'Describe a project task to generate an implementation plan...';
+            }
+        }
+    }
+
+    // Set initial active mode on startup
+    setActiveMode(appState.activeMode || 'chat');
+
+    // Context Mode Selector Items Click Handlers
+    if (contextModeSelector) {
+        contextModeSelector.addEventListener('click', (e) => {
+            const item = e.target.closest('.context-mode-item');
+            if (item && item.dataset.mode) {
+                const targetMode = item.dataset.mode;
+                if (!appState.hasActiveWorkspace && targetMode !== 'chat') return;
+                setActiveMode(targetMode);
+                if (contextOptionsMenu) contextOptionsMenu.classList.add('hidden');
+                saveCurrentChat();
             }
         });
-        planningModeOptionRow.appendChild(planningToggleEl);
-        if (atMentionTriggerBtn && appState.isPlanningModeEnabled) {
-            atMentionTriggerBtn.classList.add('active-mode');
-        }
     }
 
     let isDirty = false;
@@ -208,9 +373,10 @@
             modelDetails.model,
             modelDetails.thinking,
             geminiThinkingLevel,
-            appState.isPlanningModeEnabled,
+            appState.activeMode === 'planning',
             attachedFilesCopy,
-            appState.currentChatId
+            appState.currentChatId,
+            appState.activeMode
         );
     }
 
@@ -223,6 +389,7 @@
         chatUIController.resetAssistantStream();
         appState.loadSession(chat);
 
+        setActiveMode(appState.activeMode || 'chat');
         chatUIController.renderUiEvents(appState.uiEvents, appState.messages);
         modelDropdownController.setSelectedModel(appState.selectedModelValue);
         historyManager.setActiveChatId(chat.id);
@@ -345,6 +512,24 @@
         if (message.translations) {
             window.applyAllTranslations(message.translations);
         }
+        const hasWs = Boolean(message.workspacePath);
+        appState.hasActiveWorkspace = hasWs;
+
+        if (modeOptAgent) {
+            modeOptAgent.disabled = !hasWs;
+            modeOptAgent.classList.toggle('disabled', !hasWs);
+            modeOptAgent.title = hasWs ? 'Autonomous code edits and terminal execution' : 'Select a workspace folder first to use Agent Mode';
+        }
+        if (modeOptPlanning) {
+            modeOptPlanning.disabled = !hasWs;
+            modeOptPlanning.classList.toggle('disabled', !hasWs);
+            modeOptPlanning.title = hasWs ? 'Structured plan-first protocol before code edits' : 'Select a workspace folder first to use Plan Mode';
+        }
+
+        if (!hasWs && appState.activeMode !== 'chat') {
+            setActiveMode('chat');
+        }
+
         settingsController.updateConnectionStatus(message);
         modelDropdownController.updateConnectionStatus(message);
     });
@@ -401,14 +586,21 @@
             : (localStorage.getItem('kai.showThinking') !== 'false');
         const formatted = formatter.formatMarkdown(replyContent, forceThinkingCollapsed, isThinkingChecked);
 
+        const currentMode = message.mode || appState.activeMode || 'chat';
+
         if (chatUIController.currentAssistantMsgElement) {
             if (formatted.trim()) {
+                chatUIController.currentAssistantMsgElement.dataset.rawContent = replyContent;
+                chatUIController.currentAssistantMsgElement.dataset.mode = currentMode;
                 chatUIController.currentAssistantMsgElement.querySelector('.message-content').innerHTML = formatted;
+                if (!chatUIController.currentAssistantMsgElement.querySelector('.message-actions')) {
+                    chatUIController.currentAssistantMsgElement.appendChild(chatUIController.createAssistantActionBar(currentMode));
+                }
             } else {
                 chatUIController.currentAssistantMsgElement.remove();
             }
         } else if (formatted.trim()) {
-            chatUIController.appendMessage('assistant', replyContent);
+            chatUIController.appendMessage('assistant', replyContent, currentMode);
         }
 
         if (message.fullHistory) {
@@ -443,13 +635,16 @@
         chatUIController.resetAssistantStream();
     });
 
+    ipcBridge.on('loadChat', (message) => {
+        loadChatSession(message.chat);
+    });
+
     ipcBridge.on('chatHistory', (message) => {
         historyManager.renderHistoryList(message.chats, appState.isWaitingForResponse);
     });
 
-    ipcBridge.on('loadChat', (message) => {
-        loadChatSession(message.chat);
-    });
+    // Request initial chat history load after listeners are registered
+    ipcBridge.loadChatHistory();
 
     // Start periodic server connection health checks
     ipcBridge.checkConnection();

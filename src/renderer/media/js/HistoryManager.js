@@ -17,6 +17,18 @@ class HistoryManager {
         this.historyList = document.getElementById('history-list');
         this.cachedChats = [];
 
+        // Instant render from localStorage cache on boot if available
+        try {
+            const localSaved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
+            if (localSaved.length > 0) {
+                this.renderHistoryList(localSaved.map(c => ({
+                    id: c.id,
+                    title: c.title || 'New Chat',
+                    timestamp: c.timestamp || Date.now()
+                })));
+            }
+        } catch (e) {}
+
         // Request initial history load on startup
         this.ipcBridge.loadChatHistory();
     }

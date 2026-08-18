@@ -221,6 +221,7 @@ export class AppHost {
             const userPrompt = messages.length > 0 ? messages[messages.length - 1].content : '';
             const history = messages.slice(0, -1);
 
+            const mode = message.mode || (message.planningMode ? 'planning' : 'agent');
             const result = await executor.run(
                 userPrompt,
                 history,
@@ -230,13 +231,16 @@ export class AppHost {
                 thinking,
                 geminiThinkingLevel,
                 planningMode,
-                attachedFiles
+                attachedFiles,
+                16000,
+                mode
             );
 
             this.postMessage({
                 type: 'reply',
                 content: result.reply,
-                modifiedFiles: result.modifiedFiles
+                modifiedFiles: result.modifiedFiles,
+                mode: mode
             });
         } catch (error: any) {
             if (error.name === 'AbortError') {

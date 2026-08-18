@@ -31,6 +31,10 @@ class ChatUIController {
         this.currentAssistantMsgElement = null;
         this.currentAssistantText = '';
 
+        // Callbacks for retry and edit prompt
+        this.onRetry = null;
+        this.onEditPrompt = null;
+
         this.initEventListeners();
         this.renderWelcomeHero();
     }
@@ -112,8 +116,218 @@ class ChatUIController {
                             }
                         }
                     }
+                    return;
+                }
+
+                // 6. Copy code snippet button
+                const copyBtn = e.target.closest('.copy-code-btn');
+                if (copyBtn) {
+                    const wrapper = copyBtn.closest('.code-block-wrapper');
+                    const codeEl = wrapper ? wrapper.querySelector('pre code') : null;
+                    if (codeEl) {
+                        const textToCopy = codeEl.textContent || '';
+                        navigator.clipboard.writeText(textToCopy).then(() => {
+                            const originalHTML = copyBtn.innerHTML;
+                            copyBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+                            copyBtn.classList.add('copied');
+                            setTimeout(() => {
+                                copyBtn.innerHTML = originalHTML;
+                                copyBtn.classList.remove('copied');
+                            }, 1600);
+                        });
+                    }
+                    return;
+                }
+
+                // 7. Download code snippet file button
+                const downloadBtn = e.target.closest('.download-code-btn');
+                if (downloadBtn) {
+                    const wrapper = downloadBtn.closest('.code-block-wrapper');
+                    const codeEl = wrapper ? wrapper.querySelector('pre code') : null;
+                    if (codeEl) {
+                        const textToDownload = codeEl.textContent || '';
+                        const lang = (downloadBtn.dataset.lang || 'txt').toLowerCase();
+                        const extMap = {
+                            python: 'py', py: 'py', javascript: 'js', js: 'js', typescript: 'ts', ts: 'ts',
+                            html: 'html', css: 'css', json: 'json', csharp: 'cs', cs: 'cs', cpp: 'cpp', c: 'c',
+                            java: 'java', rust: 'rs', rs: 'rs', go: 'go', sql: 'sql', sh: 'sh', bash: 'sh',
+                            powershell: 'ps1', ps1: 'ps1', yaml: 'yml', yml: 'yml', markdown: 'md', md: 'md',
+                            xml: 'xml', php: 'php', ruby: 'rb', rb: 'rb'
+                        };
+                        const ext = extMap[lang] || 'txt';
+                        const blob = new Blob([textToDownload], { type: 'text/plain;charset=utf-8' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `snippet_${Date.now()}.${ext}`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    }
+                    return;
+                }
+
+                // 8. Copy full response button on assistant message
+                const copyRespBtn = e.target.closest('.copy-response-btn');
+                if (copyRespBtn) {
+                    const assistantMsg = copyRespBtn.closest('.assistant-message');
+                    if (assistantMsg) {
+                        const contentEl = assistantMsg.querySelector('.message-content');
+                        if (contentEl) {
+                            const rawText = assistantMsg.dataset.rawContent || contentEl.innerText || '';
+                            navigator.clipboard.writeText(rawText).then(() => {
+                                const originalHTML = copyRespBtn.innerHTML;
+                                copyRespBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+                                copyRespBtn.classList.add('copied');
+                                setTimeout(() => {
+                                    copyRespBtn.innerHTML = originalHTML;
+                                    copyRespBtn.classList.remove('copied');
+                                }, 1600);
+                            });
+                        }
+                    }
+                    return;
+                }
+
+                // 9. Retry / Redo button on assistant message
+                const retryBtn = e.target.closest('.retry-btn');
+                if (retryBtn) {
+                    const assistantMsg = retryBtn.closest('.assistant-message');
+                    if (assistantMsg && typeof this.onRetry === 'function') {
+                        this.onRetry(assistantMsg);
+                    }
+                    return;
+                }
+
+                // 10. Edit prompt button next to user message (opens inline editor inside chat bubble)
+                const editPromptBtn = e.target.closest('.edit-prompt-btn');
+                if (editPromptBtn) {
+                    const userRow = editPromptBtn.closest('.user-message-row');
+                    if (userRow) {
+                        this.openInlineEditor(userRow);
+                    }
+                    return;
+                }
+
+                // 11. Cancel button inside inline prompt editor
+                const cancelBtn = e.target.closest('.inline-cancel-btn');
+                if (cancelBtn) {
+                    const userRow = cancelBtn.closest('.user-message-row');
+                    if (userRow) {
+                        this.closeInlineEditor(userRow);
+                    }
+                    return;
+                }
+
+                // 12. Send button inside inline prompt editor
+                const inlineSendBtn = e.target.closest('.inline-send-btn');
+                if (inlineSendBtn) {
+                    const userRow = inlineSendBtn.closest('.user-message-row');
+                    if (userRow) {
+                        this.submitInlineEditor(userRow);
+                    }
+                    return;
                 }
             });
+        }
+    }
+
+    /**
+     * Opens an inline editor inside the specified user message row bubble.
+     * @param {HTMLElement} userRow The .user-message-row container.
+     */
+    openInlineEditor(userRow) {
+        if (!userRow || userRow.classList.contains('is-editing')) return;
+
+        // Close any other open inline editors first
+        if (this.chatContainer) {
+            this.chatContainer.querySelectorAll('.user-message-row.is-editing').forEach(row => {
+                this.closeInlineEditor(row);
+            });
+        }
+
+        const rawPrompt = userRow.dataset.rawPrompt || (userRow.querySelector('.message-content') ? userRow.querySelector('.message-content').innerText.trim() : '');
+        userRow.classList.add('is-editing');
+
+        const messageBubble = userRow.querySelector('.message.user-message');
+        const editBtn = userRow.querySelector('.edit-prompt-btn');
+        if (messageBubble) messageBubble.classList.add('hidden');
+        if (editBtn) editBtn.classList.add('hidden');
+
+        const sendSvg = window.KAI_SVGS['send'] || '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>';
+        const cancelSvg = window.KAI_SVGS['cancel'] || '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+
+        const editorDiv = document.createElement('div');
+        editorDiv.className = 'inline-prompt-editor';
+        editorDiv.innerHTML = `
+            <textarea class="inline-prompt-textarea" rows="2">${this.formatter.escapeHtml(rawPrompt)}</textarea>
+            <div class="inline-editor-actions">
+                <button type="button" class="inline-action-btn inline-cancel-btn" title="Cancel">
+                    ${cancelSvg}
+                </button>
+                <button type="button" class="inline-action-btn inline-send-btn" title="Send">
+                    ${sendSvg}
+                </button>
+            </div>
+        `;
+
+        const textarea = editorDiv.querySelector('.inline-prompt-textarea');
+        const autoResize = () => {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+        };
+
+        textarea.addEventListener('input', autoResize);
+        textarea.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.submitInlineEditor(userRow);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                this.closeInlineEditor(userRow);
+            }
+        });
+
+        userRow.appendChild(editorDiv);
+        autoResize();
+        textarea.focus();
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    }
+
+    /**
+     * Cancels inline editing and restores normal message bubble view.
+     * @param {HTMLElement} userRow The .user-message-row container.
+     */
+    closeInlineEditor(userRow) {
+        if (!userRow) return;
+        const editor = userRow.querySelector('.inline-prompt-editor');
+        if (editor) editor.remove();
+
+        const messageBubble = userRow.querySelector('.message.user-message');
+        const editBtn = userRow.querySelector('.edit-prompt-btn');
+        if (messageBubble) messageBubble.classList.remove('hidden');
+        if (editBtn) editBtn.classList.remove('hidden');
+
+        userRow.classList.remove('is-editing');
+    }
+
+    /**
+     * Submits the edited prompt from inside the inline editor.
+     * @param {HTMLElement} userRow The .user-message-row container.
+     */
+    submitInlineEditor(userRow) {
+        if (!userRow) return;
+        const textarea = userRow.querySelector('.inline-prompt-textarea');
+        const newText = textarea ? textarea.value.trim() : '';
+
+        if (!newText) {
+            this.closeInlineEditor(userRow);
+            return;
+        }
+
+        if (typeof this.onEditPrompt === 'function') {
+            this.onEditPrompt(userRow, newText);
         }
     }
 
@@ -172,11 +386,42 @@ class ChatUIController {
     }
 
     /**
+     * Creates an action toolbar containing Copy Response, Retry buttons, and a subtle mode badge for assistant messages.
+     * @param {string} [mode] The mode under which the reply was generated ('chat' | 'agent' | 'planning').
+     * @returns {HTMLElement} The actions toolbar element.
+     */
+    createAssistantActionBar(mode) {
+        const bar = document.createElement('div');
+        bar.className = 'message-actions';
+
+        const copySvg = window.KAI_SVGS['copy_response'] || '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+        const retrySvg = window.KAI_SVGS['retry'] || '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>';
+
+        let badgeHtml = '';
+        if (mode) {
+            const modeLabel = mode === 'planning' ? 'Plan' : (mode.charAt(0).toUpperCase() + mode.slice(1));
+            badgeHtml = `<span class="message-mode-badge mode-badge-${mode}">${modeLabel}</span>`;
+        }
+
+        bar.innerHTML = `
+            <button type="button" class="msg-action-btn copy-response-btn" title="Copy response">
+                ${copySvg}
+            </button>
+            <button type="button" class="msg-action-btn retry-btn" title="Retry">
+                ${retrySvg}
+            </button>
+            ${badgeHtml}
+        `;
+        return bar;
+    }
+
+    /**
      * Appends a message bubble into the scrollable chat container.
      * @param {string} role Sender role ('user', 'assistant', 'system', or 'file-summary').
      * @param {string} text Message content string.
+     * @param {string} [mode] Active mode for assistant messages.
      */
-    appendMessage(role, text) {
+    appendMessage(role, text, mode) {
         this.removeWelcomeHero();
 
         if (role === 'user') {
@@ -210,13 +455,52 @@ class ChatUIController {
         const formatted = this.formatter.formatMarkdown(text);
         if (!formatted.trim()) return;
 
+        if (role === 'user') {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'user-message-row';
+            rowDiv.dataset.rawPrompt = text;
+
+            const editSvg = window.KAI_SVGS['edit_prompt'] || '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>';
+
+            const editBtn = document.createElement('button');
+            editBtn.type = 'button';
+            editBtn.className = 'edit-prompt-btn';
+            editBtn.title = 'Edit prompt';
+            editBtn.innerHTML = editSvg;
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message user-message';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.innerHTML = formatted;
+            messageDiv.appendChild(contentDiv);
+
+            rowDiv.appendChild(editBtn);
+            rowDiv.appendChild(messageDiv);
+
+            if (this.chatContainer) {
+                this.chatContainer.appendChild(rowDiv);
+                this.scrollToBottom();
+            }
+            return;
+        }
+
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${role}-message`;
+        if (role === 'assistant') {
+            messageDiv.dataset.rawContent = text;
+            if (mode) messageDiv.dataset.mode = mode;
+        }
 
         const contentDiv = document.createElement('div');
         contentDiv.className = 'message-content';
         contentDiv.innerHTML = formatted;
         messageDiv.appendChild(contentDiv);
+
+        if (role === 'assistant') {
+            messageDiv.appendChild(this.createAssistantActionBar(mode));
+        }
 
         if (this.chatContainer) {
             this.chatContainer.appendChild(messageDiv);
@@ -282,7 +566,14 @@ class ChatUIController {
                             this.chatContainer.appendChild(this.currentAssistantMsgElement);
                         }
                     }
+                    this.currentAssistantMsgElement.dataset.rawContent = this.currentAssistantText;
                     this.currentAssistantMsgElement.querySelector('.message-content').innerHTML = formatted;
+
+                    // Ensure action bar is removed while actively streaming
+                    const existingActions = this.currentAssistantMsgElement.querySelector('.message-actions');
+                    if (existingActions) {
+                        existingActions.remove();
+                    }
 
                     const thinkingContentEl = this.currentAssistantMsgElement.querySelector('.thinking-content');
                     if (thinkingContentEl && !this.currentAssistantText.includes('</think>')) {
@@ -530,7 +821,7 @@ class ChatUIController {
                 if (evt.type === 'user') {
                     this.appendMessage('user', evt.text);
                 } else if (evt.type === 'assistant') {
-                    this.appendMessage('assistant', evt.content);
+                    this.appendMessage('assistant', evt.content, evt.mode);
                 } else if (evt.type === 'file-summary') {
                     this.appendMessage('file-summary', JSON.stringify(evt.files));
                 } else if (evt.type === 'tool') {
@@ -552,7 +843,7 @@ class ChatUIController {
         } else if (messages && messages.length > 0) {
             messages.forEach(msg => {
                 if (msg.role === 'user' || msg.role === 'assistant' || msg.role === 'file-summary') {
-                    this.appendMessage(msg.role, msg.content);
+                    this.appendMessage(msg.role, msg.content, msg.mode);
                 }
             });
         }

@@ -57,25 +57,33 @@ export class AgentExecutor {
         geminiThinkingLevel: string = 'high',
         planningMode: boolean = false,
         attachedFiles?: any[],
-        maxContextTokens: number = 16000
+        maxContextTokens: number = 16000,
+        mode: 'chat' | 'agent' | 'planning' = 'agent'
     ): Promise<{ reply: string; messages: { role: string; content: string }[]; modifiedFiles: string[] }> {
         let messages: ContextMessage[] = [...chatHistory];
         this.contextManager = new ContextManager(maxContextTokens);
+
+        // Dynamically instantiate registered tools matching the active mode and workspace state
+        const hasWorkspace = Boolean(this.workspacePath && fs.existsSync(this.workspacePath));
+        const effectiveMode = planningMode ? 'planning' : mode;
+        this.tools = getRegisteredTools(effectiveMode, hasWorkspace);
+
         const provider = LLMProviderFactory.getProvider(model, this.serverUrl);
         const useNativeFunctionCalling = Boolean(
             provider.supportsNativeFunctionCalling?.() && provider.chatCompletionStreamWithTools
         );
 
+        const systemContent = this.getSystemPrompt(effectiveMode, hasWorkspace, useNativeFunctionCalling);
         const existingSystemIndex = messages.findIndex((m) => m.role === 'system');
         if (existingSystemIndex !== -1) {
             messages[existingSystemIndex] = {
                 role: 'system',
-                content: this.getSystemPrompt(useNativeFunctionCalling)
+                content: systemContent
             };
         } else {
             messages.unshift({
                 role: 'system',
-                content: this.getSystemPrompt(useNativeFunctionCalling)
+                content: systemContent
             });
         }
 
@@ -330,10 +338,28 @@ export class AgentExecutor {
     }
 
     /**
-     * Constructs the system prompt by loading system_prompt.md.
+     * Constructs the system prompt by loading the appropriate mode-specific markdown file.
+     * @param mode Active execution mode ('chat' | 'agent' | 'planning').
+     * @param hasWorkspace Whether a workspace folder is open.
+     * @param nativeFunctionCalling Whether the provider handles native function schemas.
      */
-    private getSystemPrompt(nativeFunctionCalling: boolean = false): string {
+    private getSystemPrompt(
+        mode: 'chat' | 'agent' | 'planning' = 'agent',
+        hasWorkspace: boolean = true,
+        nativeFunctionCalling: boolean = false
+    ): string {
+        let fileName = 'system_prompt_agent.md';
+        if (mode === 'chat') {
+            fileName = hasWorkspace ? 'system_prompt_chat_workspace.md' : 'system_prompt_chat.md';
+        } else if (mode === 'planning') {
+            fileName = 'system_prompt_planning.md';
+        }
+
         const candidatePaths = [
+            path.join(__dirname, fileName),
+            path.join(this.extensionPath, fileName),
+            path.join(process.cwd(), fileName),
+            // Fallback candidate paths
             path.join(__dirname, 'system_prompt.md'),
             path.join(this.extensionPath, 'system_prompt.md'),
             path.join(process.cwd(), 'system_prompt.md')
