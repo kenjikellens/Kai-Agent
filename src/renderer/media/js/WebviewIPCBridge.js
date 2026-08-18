@@ -283,6 +283,7 @@ class WebviewIPCBridge {
                     const decoder = new TextDecoder();
                     let fullText = '';
                     let buffer = '';
+                    let isThinking = false;
 
                     while (true) {
                         const { done, value } = await reader.read();
@@ -299,18 +300,57 @@ class WebviewIPCBridge {
                                 try {
                                     const json = JSON.parse(trimmed.slice(6));
                                     const delta = json.choices?.[0]?.delta;
-                                    const chunk = delta?.content || delta?.reasoning_content || delta?.text || '';
-                                    if (chunk) {
-                                        fullText += chunk;
+                                    if (!delta) continue;
+
+                                    const reasoningChunk = delta.reasoning_content || delta.reasoning;
+                                    const contentChunk = delta.content || delta.text;
+
+                                    if (reasoningChunk) {
+                                        if (!isThinking) {
+                                            isThinking = true;
+                                            fullText += '<think>';
+                                            emit({
+                                                type: 'agentProgress',
+                                                progressType: 'token',
+                                                output: '<think>'
+                                            });
+                                        }
+                                        fullText += reasoningChunk;
                                         emit({
                                             type: 'agentProgress',
-                                            progressType: 'stream',
-                                            text: chunk
+                                            progressType: 'token',
+                                            output: reasoningChunk
+                                        });
+                                    } else if (contentChunk) {
+                                        if (isThinking) {
+                                            isThinking = false;
+                                            fullText += '</think>';
+                                            emit({
+                                                type: 'agentProgress',
+                                                progressType: 'token',
+                                                output: '</think>'
+                                            });
+                                        }
+                                        fullText += contentChunk;
+                                        emit({
+                                            type: 'agentProgress',
+                                            progressType: 'token',
+                                            output: contentChunk
                                         });
                                     }
                                 } catch (e) {}
                             }
                         }
+                    }
+
+                    if (isThinking) {
+                        isThinking = false;
+                        fullText += '</think>';
+                        emit({
+                            type: 'agentProgress',
+                            progressType: 'token',
+                            output: '</think>'
+                        });
                     }
 
                     emit({

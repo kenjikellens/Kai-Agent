@@ -494,11 +494,11 @@ class ChatUIController {
         if (this.sendBtn) {
             this.sendBtn.disabled = false;
             if (isLoading) {
-                this.sendBtn.innerHTML = window.KAI_SVGS['stop'] || '';
+                this.sendBtn.innerHTML = window.KAI_SVGS['stop'] || '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"></rect></svg>';
                 this.sendBtn.title = 'Stop generation';
                 this.showActivityStatus('Processing...');
             } else {
-                this.sendBtn.innerHTML = window.KAI_SVGS['send'] || '';
+                this.sendBtn.innerHTML = window.KAI_SVGS['send'] || '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>';
                 this.sendBtn.title = 'Send message';
                 this.removeActivityStatus();
             }
