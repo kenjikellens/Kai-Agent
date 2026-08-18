@@ -257,7 +257,20 @@ class WebviewIPCBridge {
                 } catch (e) {}
                 break;
             }
+            case 'abort': {
+                if (this._activeAbortController) {
+                    this._activeAbortController.abort();
+                    this._activeAbortController = null;
+                }
+                break;
+            }
             case 'sendMessage': {
+                if (this._activeAbortController) {
+                    this._activeAbortController.abort();
+                }
+                const abortController = new AbortController();
+                this._activeAbortController = abortController;
+
                 const rawMessages = message.messages || [];
                 const model = message.model || 'local-model';
                 const serverUrl = localStorage.getItem('kai.serverUrl') || 'http://127.0.0.1:1234/v1';
@@ -371,10 +384,13 @@ class WebviewIPCBridge {
                             }
                         }
 
+                        if (abortController.signal.aborted) break;
+
                         const response = await fetch(cleanUrl, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
+                            body: JSON.stringify(payload),
+                            signal: abortController.signal
                         });
 
                         if (!response.ok) {
@@ -390,6 +406,7 @@ class WebviewIPCBridge {
                         const allowThinkingUI = !!message.thinking;
 
                         while (true) {
+                            if (abortController.signal.aborted) break;
                             const { done, value } = await reader.read();
                             if (done) break;
                             buffer += decoder.decode(value, { stream: true });
@@ -397,6 +414,7 @@ class WebviewIPCBridge {
                             buffer = lines.pop() || '';
 
                             for (const line of lines) {
+                                if (abortController.signal.aborted) break;
                                 const trimmed = line.trim();
                                 if (!trimmed || trimmed.startsWith(':')) continue;
                                 if (trimmed === 'data: [DONE]') break;
@@ -439,6 +457,10 @@ class WebviewIPCBridge {
                             }
                         }
 
+                        if (abortController.signal.aborted) {
+                            break;
+                        }
+
                         if (isThinking) {
                             fullText += '</think>';
                             emit({ type: 'agentProgress', progressType: 'token', output: '</think>' });
@@ -449,7 +471,7 @@ class WebviewIPCBridge {
                         // Parse tool call from the streamed response
                         const toolCall = this._parseToolCall(fullText);
 
-                        if (!toolCall) {
+                        if (!toolCall || abortController.signal.aborted) {
                             // No tool call found — this is the final reply
                             break;
                         }
@@ -471,9 +493,15 @@ class WebviewIPCBridge {
 
                         let toolResult = '';
                         try {
-                            toolResult = await this._executeBrowserTool(toolCall.name, toolCall.args);
+                            if (!abortController.signal.aborted) {
+                                toolResult = await this._executeBrowserTool(toolCall.name, toolCall.args);
+                            }
                         } catch (toolErr) {
                             toolResult = `[Error executing tool ${toolCall.name}]: ${toolErr.message || toolErr}`;
+                        }
+
+                        if (abortController.signal.aborted) {
+                            break;
                         }
 
                         const isError = toolResult.startsWith('[Error');
@@ -492,6 +520,10 @@ class WebviewIPCBridge {
                             role: 'user',
                             content: `[Tool Result for ${toolCall.name}]:\n${toolResult}`
                         });
+                    }
+
+                    if (abortController.signal.aborted) {
+                        return;
                     }
 
                     // Emit the final reply
