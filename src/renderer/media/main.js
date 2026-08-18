@@ -65,10 +65,19 @@
     // New Chat Click Handler
     if (newChatBtn) {
         newChatBtn.addEventListener('click', () => {
+            if (appState.isWaitingForResponse) {
+                ipcBridge.abort();
+            }
+            if (appState.messages.length > 0) {
+                saveCurrentChat();
+            }
             appState.resetChat();
+            historyManager.setActiveChatId(null);
             chatUIController.clearChatContainer();
+            chatUIController.resetAssistantStream();
+            chatUIController.setUiLoading(false, appState);
             chatUIController.showView('chat');
-            saveCurrentChat();
+            ipcBridge.loadChatHistory();
             if (messageInput) {
                 messageInput.focus();
             }
@@ -228,19 +237,7 @@
         });
     }
 
-    if (newChatBtn) {
-        newChatBtn.addEventListener('click', () => {
-            if (appState.isWaitingForResponse) {
-                ipcBridge.abort();
-            }
-            appState.resetChat();
-            historyManager.setActiveChatId(null);
-            chatUIController.clearChatContainer();
-            chatUIController.resetAssistantStream();
-            chatUIController.setUiLoading(false, appState);
-            chatUIController.showView('chat');
-        });
-    }
+
 
     if (messageInput) {
         messageInput.addEventListener('input', adjustInputHeight);

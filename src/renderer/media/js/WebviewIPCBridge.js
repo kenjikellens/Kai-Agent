@@ -198,14 +198,21 @@ class WebviewIPCBridge {
             }
             case 'saveChat': {
                 try {
-                    const saved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
-                    const idx = saved.findIndex(c => c.id === message.chat.id);
-                    if (idx !== -1) {
-                        saved[idx] = message.chat;
-                    } else {
-                        saved.unshift(message.chat);
+                    const chat = message.chat;
+                    if (chat && (chat.messages?.length > 0 || chat.uiEvents?.length > 0)) {
+                        const saved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
+                        const idx = saved.findIndex(c => c.id === chat.id);
+                        if (idx !== -1) {
+                            saved[idx] = chat;
+                        } else {
+                            saved.unshift(chat);
+                        }
+                        localStorage.setItem('kai.savedChats', JSON.stringify(saved));
+                        emit({
+                            type: 'chatHistory',
+                            chats: saved.map(c => ({ id: c.id, title: c.title || 'New Chat', timestamp: c.timestamp || Date.now() }))
+                        });
                     }
-                    localStorage.setItem('kai.savedChats', JSON.stringify(saved));
                 } catch (e) {}
                 break;
             }
@@ -358,6 +365,52 @@ class WebviewIPCBridge {
                         content: fullText,
                         modifiedFiles: []
                     });
+
+                    // Trigger Background AI Chat Title Generation (Zero-Thinking, Non-Streaming)
+                    const firstUserMsg = messages.find(m => m.role === 'user');
+                    if (firstUserMsg && firstUserMsg.content) {
+                        (async () => {
+                            try {
+                                const titlePrompt = `Summarize this user request into a concise 3 to 5 word title for a chat sidebar. Respond with ONLY the title words. No quotes, no thinking, no markdown, no punctuation:\n\n${firstUserMsg.content.slice(0, 300)}`;
+                                const titleRes = await fetch(cleanUrl, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        model: model,
+                                        messages: [{ role: 'user', content: titlePrompt }],
+                                        stream: false,
+                                        max_tokens: 20,
+                                        temperature: 0.3,
+                                        thinking: false,
+                                        enable_thinking: false,
+                                        chat_template_kwargs: { enable_thinking: false }
+                                    })
+                                });
+                                if (titleRes.ok) {
+                                    const titleData = await titleRes.json();
+                                    let rawTitle = (titleData.choices?.[0]?.message?.content || '').trim();
+                                    rawTitle = rawTitle.replace(/<think>[\s\S]*?<\/think>/gi, '')
+                                                       .replace(/["'`*_#\n\r]/g, ' ')
+                                                       .replace(/\s+/g, ' ')
+                                                       .trim();
+                                    if (rawTitle && rawTitle.length > 0 && rawTitle.length < 50) {
+                                        const savedChats = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
+                                        if (savedChats.length > 0) {
+                                            // The active chat is the top chat
+                                            if (!savedChats[0].title || savedChats[0].title === 'New Chat' || savedChats[0].title.startsWith('Ask')) {
+                                                savedChats[0].title = rawTitle;
+                                                localStorage.setItem('kai.savedChats', JSON.stringify(savedChats));
+                                                emit({
+                                                    type: 'chatHistory',
+                                                    chats: savedChats.map(c => ({ id: c.id, title: c.title || 'New Chat', timestamp: c.timestamp || Date.now() }))
+                                                });
+                                            }
+                                        }
+                                    }
+                                }
+                            } catch (e) {}
+                        })();
+                    }
                 } catch (err) {
                     emit({
                         type: 'replyError',

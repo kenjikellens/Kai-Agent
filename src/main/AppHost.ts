@@ -115,7 +115,14 @@ export class AppHost {
                 break;
             }
             case 'saveChat': {
-                await this.sessionStore.saveChat(data.chat);
+                if (data.chat && (data.chat.messages?.length > 0 || data.chat.uiEvents?.length > 0)) {
+                    await this.sessionStore.saveChat(data.chat);
+                    const chatsList = this.sessionStore.getHistoryList();
+                    this.postMessage({
+                        type: 'chatHistory',
+                        chats: chatsList
+                    });
+                }
                 break;
             }
             case 'loadChatHistory': {
