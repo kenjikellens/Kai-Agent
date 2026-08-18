@@ -18,7 +18,7 @@ class WebviewIPCBridge {
     }
 
     /**
-     * Posts a message object to the host process or live HTTP server.
+     * Posts a message object to the host process or handles client-side preview.
      * @param {object} message Message payload.
      */
     postMessage(message) {
@@ -27,18 +27,149 @@ class WebviewIPCBridge {
         } else if (this.vscode) {
             this.vscode.postMessage(message);
         } else {
-            fetch('/api/ipc', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(message)
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data && data.type && this.listeners.has(data.type)) {
-                    this.listeners.get(data.type).forEach(cb => cb(data));
+            this._handleClientSideIPC(message);
+        }
+    }
+
+    /**
+     * Handles IPC messages locally in pure JavaScript when running in browser preview.
+     * @param {object} message Message payload.
+     * @private
+     */
+    async _handleClientSideIPC(message) {
+        if (!message || !message.type) return;
+
+        const emit = (data) => {
+            if (data && data.type && this.listeners.has(data.type)) {
+                this.listeners.get(data.type).forEach(cb => cb(data));
+            }
+        };
+
+        switch (message.type) {
+            case 'checkConnection': {
+                const apiKey = localStorage.getItem('kai.geminiApiKey') || localStorage.getItem('kai.apiKey') || '';
+                const serverUrl = localStorage.getItem('kai.serverUrl') || 'http://localhost:1234/v1';
+
+                let lmConnected = false;
+                let lmModels = [];
+                try {
+                    const res = await fetch(`${serverUrl}/models`, { method: 'GET' });
+                    if (res.ok) {
+                        const json = await res.json();
+                        lmModels = (json.data || []).map(m => m.id).filter(Boolean);
+                        lmConnected = lmModels.length > 0;
+                    }
+                } catch (e) {}
+
+                const defaultGemini = (typeof KAI_CONSTANTS !== 'undefined' && KAI_CONSTANTS.DEFAULT_GEMINI_MODELS) || [
+                    'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite',
+                    'gemini-3-flash-preview', 'gemini-3.1-pro-preview', 'gemini-3.1-flash-lite'
+                ];
+
+                const defaultProviders = (typeof KAI_CONSTANTS !== 'undefined' && KAI_CONSTANTS.DEFAULT_PROVIDERS_WITH_MODELS) || [];
+                const freeProviders = (typeof KAI_CONSTANTS !== 'undefined' && KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS) || [];
+
+                const freeProvidersConfig = freeProviders.map(p => {
+                    const savedKey = localStorage.getItem(`kai.${p.configKey}`) || '';
+                    const matchedGroup = defaultProviders.find(dp => dp.name.includes(p.name));
+                    const models = matchedGroup ? matchedGroup.models : [];
+                    return {
+                        name: p.name,
+                        configKey: p.configKey,
+                        keyHint: p.keyHint,
+                        models: models,
+                        apiKey: savedKey,
+                        connected: !!savedKey.trim()
+                    };
+                });
+
+                const isGeminiConnected = !!apiKey.trim();
+                const loadedModels = lmConnected ? lmModels : (isGeminiConnected ? defaultGemini : []);
+                const activeModel = lmConnected && lmModels.length > 0
+                    ? lmModels[0]
+                    : (isGeminiConnected ? defaultGemini[0] : 'local-model');
+
+                emit({
+                    type: 'connectionStatus',
+                    connected: lmConnected,
+                    geminiConnected: isGeminiConnected,
+                    model: activeModel,
+                    lmStudioModels: lmModels,
+                    geminiModels: defaultGemini,
+                    loadedModels: loadedModels,
+                    freeProviders: freeProvidersConfig,
+                    serverUrl: serverUrl,
+                    apiKey: apiKey,
+                    lmStudioCacheDir: localStorage.getItem('kai.lmStudioCacheDir') || '',
+                    lmStudioCacheStatus: { valid: false, error: 'Browser Preview Mode' },
+                    lmStudioCapabilities: {},
+                    workspacePath: 'Browser Preview',
+                    workspaceName: 'Browser Preview'
+                });
+                break;
+            }
+            case 'updateSettings': {
+                if (message.serverUrl !== undefined) localStorage.setItem('kai.serverUrl', message.serverUrl);
+                if (message.apiKey !== undefined) {
+                    localStorage.setItem('kai.apiKey', message.apiKey);
+                    localStorage.setItem('kai.geminiApiKey', message.apiKey);
                 }
-            })
-            .catch(() => {});
+                if (message.lmStudioCacheDir !== undefined) localStorage.setItem('kai.lmStudioCacheDir', message.lmStudioCacheDir);
+                if (Array.isArray(message.freeProviders)) {
+                    message.freeProviders.forEach(p => {
+                        if (p.configKey && p.apiKey !== undefined) {
+                            localStorage.setItem(`kai.${p.configKey}`, p.apiKey);
+                        }
+                    });
+                }
+                await this._handleClientSideIPC({ type: 'checkConnection' });
+                break;
+            }
+            case 'saveChat': {
+                try {
+                    const saved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
+                    const idx = saved.findIndex(c => c.id === message.chat.id);
+                    if (idx !== -1) {
+                        saved[idx] = message.chat;
+                    } else {
+                        saved.unshift(message.chat);
+                    }
+                    localStorage.setItem('kai.savedChats', JSON.stringify(saved));
+                } catch (e) {}
+                break;
+            }
+            case 'loadChatHistory': {
+                try {
+                    const saved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
+                    emit({
+                        type: 'chatHistory',
+                        chats: saved.map(c => ({ id: c.id, title: c.title || 'New Chat', timestamp: c.timestamp || Date.now() }))
+                    });
+                } catch (e) {
+                    emit({ type: 'chatHistory', chats: [] });
+                }
+                break;
+            }
+            case 'loadChat': {
+                try {
+                    const saved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
+                    const found = saved.find(c => c.id === message.chatId);
+                    if (found) emit({ type: 'loadChat', chat: found });
+                } catch (e) {}
+                break;
+            }
+            case 'deleteChat': {
+                try {
+                    let saved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
+                    saved = saved.filter(c => c.id !== message.chatId);
+                    localStorage.setItem('kai.savedChats', JSON.stringify(saved));
+                    emit({
+                        type: 'chatHistory',
+                        chats: saved.map(c => ({ id: c.id, title: c.title || 'New Chat', timestamp: c.timestamp || Date.now() }))
+                    });
+                } catch (e) {}
+                break;
+            }
         }
     }
 
