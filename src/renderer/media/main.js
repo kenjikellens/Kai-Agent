@@ -207,6 +207,48 @@
     }
 
     /**
+     * Updates all workspace UI elements across sidebar, top bar, and mode selectors.
+     * @param {string} workspacePath Absolute path to workspace folder or empty string.
+     */
+    function updateWorkspaceUi(workspacePath) {
+        const hasWs = Boolean(workspacePath);
+        appState.workspacePath = workspacePath || '';
+        appState.hasActiveWorkspace = hasWs;
+
+        const wsNameEl = document.getElementById('active-workspace-name');
+        if (wsNameEl) {
+            wsNameEl.textContent = hasWs ? workspacePath.split(/[\\/]/).pop() : 'Workspace...';
+        }
+        if (workspaceBadgeBtn) {
+            workspaceBadgeBtn.title = hasWs ? `Active Workspace: ${workspacePath} (Click to change)` : 'Select Workspace Folder';
+        }
+
+        const topWsText = document.getElementById('top-workspace-path');
+        if (topWsText) {
+            topWsText.textContent = hasWs ? workspacePath : 'No Workspace Selected';
+        }
+        const topWsBtn = document.getElementById('top-workspace-btn');
+        if (topWsBtn) {
+            topWsBtn.title = hasWs ? `Active Workspace: ${workspacePath} (Click to change)` : 'Click to Select Workspace Folder';
+        }
+
+        if (modeOptAgent) {
+            modeOptAgent.disabled = !hasWs;
+            modeOptAgent.classList.toggle('disabled', !hasWs);
+            modeOptAgent.title = hasWs ? 'Autonomous code edits and terminal execution' : 'Select a workspace folder first to use Agent Mode';
+        }
+        if (modeOptPlanning) {
+            modeOptPlanning.disabled = !hasWs;
+            modeOptPlanning.classList.toggle('disabled', !hasWs);
+            modeOptPlanning.title = hasWs ? 'Structured plan-first protocol before code edits' : 'Select a workspace folder first to use Plan Mode';
+        }
+
+        if (!hasWs && appState.activeMode !== 'chat') {
+            setActiveMode('chat');
+        }
+    }
+
+    /**
      * Resets active session and UI for a brand new chat.
      */
     function createNewChat() {
@@ -214,6 +256,7 @@
             ipcBridge.abort();
         }
         appState.resetChat();
+        updateWorkspaceUi('');
         historyManager.setActiveChatId(null);
         chatUIController.clearChatContainer();
         chatUIController.resetAssistantStream();
@@ -402,6 +445,7 @@
         chatUIController.resetAssistantStream();
         appState.loadSession(chat);
 
+        updateWorkspaceUi(appState.workspacePath || '');
         setActiveMode(appState.activeMode || 'chat');
         chatUIController.renderUiEvents(appState.uiEvents, appState.messages);
         modelDropdownController.setSelectedModel(appState.selectedModelValue);
