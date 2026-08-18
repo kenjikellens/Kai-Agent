@@ -148,6 +148,14 @@ class WebviewIPCBridge {
                     ? (loadedModels.length > 0 ? loadedModels[0] : lmModels[0])
                     : (isGeminiConnected ? defaultGemini[0] : 'local-model');
 
+                let lmStudioCapabilities = {};
+                try {
+                    const capRes = await fetch('/api/capabilities');
+                    if (capRes.ok) {
+                        lmStudioCapabilities = await capRes.json();
+                    }
+                } catch (e) {}
+
                 emit({
                     type: 'connectionStatus',
                     connected: lmConnected,
@@ -165,7 +173,7 @@ class WebviewIPCBridge {
                         modelCount: lmModels.length,
                         error: lmConnected ? '' : 'LM Studio server offline'
                     },
-                    lmStudioCapabilities: {},
+                    lmStudioCapabilities: lmStudioCapabilities,
                     workspacePath: 'Browser Preview',
                     workspaceName: 'Browser Preview'
                 });

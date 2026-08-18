@@ -259,7 +259,7 @@ class ModelDropdownController {
                     item.classList.add('selected');
                 }
                 item.dataset.value = itemData.value;
-                const isLoaded = isModelConnectedFn ? isModelConnectedFn(itemData.rawModel) : false;
+                const isLoaded = isModelConnectedFn ? isModelConnectedFn(itemData.rawModel) : true;
                 const dotClass = isLoaded ? 'status-connected' : 'status-disconnected';
                 
                 const statusDotSpan = document.createElement('span');
@@ -394,8 +394,8 @@ class ModelDropdownController {
                                     ThinkingStateFormatter.lmStudioCapabilities[lowerModel];
                         let fields = (cap && Array.isArray(cap.fields) && cap.fields.length > 0) ? cap.fields : [];
 
-                        // Fallback default fields for Qwen, GLM, Gemma, Bonsai, DeepSeek when no manifest is available
-                        if (fields.length === 0 && (lowerModel.includes('qwen') || lowerModel.includes('qwq') || lowerModel.includes('glm') || lowerModel.includes('gemma') || lowerModel.includes('bonsai') || lowerModel.includes('deepseek') || lowerModel.includes('r1'))) {
+                        // Fallback default fields for Qwen, GLM, Gemma, DeepSeek when no manifest is available
+                        if (fields.length === 0 && (lowerModel.includes('qwen') || lowerModel.includes('qwq') || lowerModel.includes('glm') || lowerModel.includes('gemma') || lowerModel.includes('deepseek') || lowerModel.includes('r1'))) {
                             fields = [
                                 {
                                     displayName: 'Thinking',
@@ -631,43 +631,15 @@ class ModelDropdownController {
 
         const lmTitle = `${i18n.lmStudioHeader || 'LM Studio'} (${i18n.checkingServer || 'Checking...'})`;
         const geminiTitle = 'Gemini';
-        const defaultDisconnected = (m) => this.checkIsModelConnected(m);
 
         const showGeminiExpanded = this.selectedModelValue && this.selectedModelValue.toLowerCase().startsWith('gemini');
-        this.createAccordionGroup(lmTitle, [], !showGeminiExpanded, defaultDisconnected, true);
-        this.createAccordionGroup(geminiTitle, defaultGemini, showGeminiExpanded, defaultDisconnected);
+        this.createAccordionGroup(lmTitle, [], !showGeminiExpanded, null, true);
+        this.createAccordionGroup(geminiTitle, defaultGemini, showGeminiExpanded);
 
         defaultProviders.forEach(p => {
             const isExpanded = this.selectedModelValue && p.models.includes(this.selectedModelValue);
-            this.createAccordionGroup(p.name, p.models, isExpanded, defaultDisconnected);
+            this.createAccordionGroup(p.name, p.models, isExpanded);
         });
-
-        if (this.statusDot) {
-            const isConn = this.checkIsModelConnected(this.selectedModelValue);
-            this.statusDot.className = isConn ? 'status-dot status-connected' : 'status-dot status-disconnected';
-        }
-    }
-
-    /**
-     * Checks if a model ID is currently connected based on last received status.
-     * @param {string} modelId Model ID string.
-     * @returns {boolean} True if connected, false otherwise.
-     */
-    checkIsModelConnected(modelId) {
-        if (!modelId || !this.lastConnectionMessage) return false;
-        const msg = this.lastConnectionMessage;
-        const bare = modelId.endsWith(' (thinking)') ? modelId.slice(0, -11) : modelId;
-        const lowerM = bare.toLowerCase();
-        if (lowerM.startsWith('gemini')) {
-            return msg.geminiConnected !== undefined ? Boolean(msg.geminiConnected) : Boolean(msg.apiKey && msg.apiKey.trim() !== '');
-        }
-        const freeProviders = msg.freeProviders || [];
-        for (const provider of freeProviders) {
-            if (provider.models && provider.models.includes(bare)) {
-                return provider.connected !== undefined ? Boolean(provider.connected) : Boolean(provider.apiKey && provider.apiKey.trim() !== '');
-            }
-        }
-        return Boolean(msg.connected && msg.loadedModels && msg.loadedModels.includes(bare));
     }
 
     /**
@@ -676,7 +648,6 @@ class ModelDropdownController {
      */
     updateConnectionStatus(message) {
         if (!this.dropdownOptionsMenu) return;
-        this.lastConnectionMessage = message;
 
         if (message.lmStudioCapabilities) {
             ThinkingStateFormatter.setLMStudioCapabilities(message.lmStudioCapabilities);
@@ -685,11 +656,9 @@ class ModelDropdownController {
         /* Skip rebuild if nothing changed to prevent LM Studio Offline/Connected flicker */
         const fingerprint = JSON.stringify({
             c: message.connected,
-            gc: message.geminiConnected,
             lm: message.lmStudioModels,
             gm: message.geminiModels,
             ld: message.loadedModels,
-            fp: (message.freeProviders || []).map(p => ({ k: p.configKey, c: p.connected, a: !!p.apiKey })),
             caps: Object.keys(message.lmStudioCapabilities || {}).length
         });
         if (this._lastFingerprint && this._lastFingerprint === fingerprint) {
@@ -697,7 +666,21 @@ class ModelDropdownController {
         }
         this._lastFingerprint = fingerprint;
 
-        const isModelConnected = (m) => this.checkIsModelConnected(m);
+        const isModelConnected = (m) => {
+            if (!m) return false;
+            const bare = m.endsWith(' (thinking)') ? m.slice(0, -11) : m;
+            const lowerM = bare.toLowerCase();
+            if (lowerM.startsWith('gemini')) {
+                return !!message.apiKey;
+            }
+            const freeProviders = message.freeProviders || [];
+            for (const provider of freeProviders) {
+                if (provider.models.includes(bare)) {
+                    return !!provider.apiKey;
+                }
+            }
+            return message.connected && message.loadedModels && message.loadedModels.includes(bare);
+        };
 
         const lmStudioModels = message.lmStudioModels || [];
         this.lmStudioRawModels = lmStudioModels;
@@ -817,11 +800,6 @@ class ModelDropdownController {
             container: this.selectedModelText,
             formatter: this.formatter
         });
-
-        if (this.statusDot) {
-            const isConn = this.checkIsModelConnected(modelId);
-            this.statusDot.className = isConn ? 'status-dot status-connected' : 'status-dot status-disconnected';
-        }
 
         if (this.dropdownOptionsMenu) {
             const items = this.dropdownOptionsMenu.querySelectorAll('.dropdown-item');
