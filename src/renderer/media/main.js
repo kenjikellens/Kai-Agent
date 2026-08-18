@@ -1,6 +1,6 @@
 /**
- * Client-side entry script for Kai Agent Chat Webview.
- * Instantiates and orchestrates ES6 OOP modules.
+ * Client-side entry script for Kai Agent Chat Webview (Standalone App).
+ * Instantiates and orchestrates ES6 OOP modules with collapsible Left Sidebar.
  */
 (function () {
     // 1. Instantiate Core State and Utility Modules
@@ -39,6 +39,20 @@
     const atMentionTriggerBtn = document.getElementById('at-mention-trigger-btn');
     const contextOptionsMenu = document.getElementById('context-options-menu');
     const planningModeOptionRow = document.getElementById('planning-mode-option-row');
+    const sidebar = document.getElementById('app-sidebar');
+    const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+
+    // Sidebar Collapse / Expand Toggle
+    if (sidebar && sidebarToggleBtn) {
+        const isCollapsed = localStorage.getItem('kai.sidebarCollapsed') === 'true';
+        if (isCollapsed) {
+            sidebar.classList.add('collapsed');
+        }
+        sidebarToggleBtn.addEventListener('click', () => {
+            const collapsed = sidebar.classList.toggle('collapsed');
+            localStorage.setItem('kai.sidebarCollapsed', collapsed ? 'true' : 'false');
+        });
+    }
 
     /**
      * Dynamically resizes the message input textarea based on content scrollHeight.
@@ -46,7 +60,7 @@
     function adjustInputHeight() {
         if (!messageInput) return;
         messageInput.style.height = 'auto';
-        const MAX_HEIGHT = 180;
+        const MAX_HEIGHT = 200;
         const newHeight = Math.min(messageInput.scrollHeight, MAX_HEIGHT);
         messageInput.style.height = `${newHeight}px`;
         messageInput.style.overflowY = messageInput.scrollHeight > MAX_HEIGHT ? 'auto' : 'hidden';
@@ -85,11 +99,12 @@
     }
 
     /**
-     * Persists current active chat session to workspace state.
+     * Persists current active chat session to storage.
      */
     function saveCurrentChat() {
         const details = modelDropdownController.getSelectedModelDetails();
         ipcBridge.saveChat(appState.toChatPayload(details.thinking));
+        historyManager.setActiveChatId(appState.currentChatId);
         isDirty = false;
     }
 
@@ -167,6 +182,7 @@
 
         chatUIController.renderUiEvents(appState.uiEvents, appState.messages);
         modelDropdownController.setSelectedModel(appState.selectedModelValue);
+        historyManager.setActiveChatId(chat.id);
 
         chatUIController.setUiLoading(false, appState);
         chatUIController.showView('chat');
@@ -197,6 +213,7 @@
                 ipcBridge.abort();
             }
             appState.resetChat();
+            historyManager.setActiveChatId(null);
             chatUIController.clearChatContainer();
             chatUIController.resetAssistantStream();
             chatUIController.setUiLoading(false, appState);
@@ -237,9 +254,29 @@
     ipcBridge.on('connectionStatus', (message) => {
         if (message.translations) {
             window.KAI_I18N = message.translations;
+
+            // 1. All data-i18n text nodes
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (message.translations[key]) {
+                    el.textContent = message.translations[key];
+                }
+            });
+
+            // 2. All data-i18n-title attributes
+            document.querySelectorAll('[data-i18n-title]').forEach(el => {
+                const key = el.getAttribute('data-i18n-title');
+                if (message.translations[key]) {
+                    el.setAttribute('title', message.translations[key]);
+                }
+            });
+
+            // 3. Message input placeholder
             if (messageInput && message.translations.messagePlaceholder) {
                 messageInput.placeholder = message.translations.messagePlaceholder;
             }
+
+            // 4. Thinking toggle label
             const thinkingLabel = document.getElementById('thinking-toggle-label');
             if (thinkingLabel && message.translations.thinkingToggle) {
                 thinkingLabel.textContent = message.translations.thinkingToggle;
@@ -256,8 +293,6 @@
             messageInput.focus();
         }
     });
-
-
 
     const handleAgentProgress = (message) => {
         const payload = message.event || message;
@@ -278,7 +313,7 @@
 
     /**
      * Handles final assistant completion replies, updates UI bubble and persists chat history.
-     * @param {object} message Reply payload from extension host.
+     * @param {object} message Reply payload from host.
      */
     const handleReply = (message) => {
         chatUIController.setUiLoading(false, appState);
@@ -314,7 +349,6 @@
             appState.addMessage({ role: 'assistant', content: replyContent });
         }
 
-        // If assistant content was not already streamed into uiEvents, add it now
         const lastEvt = appState.uiEvents[appState.uiEvents.length - 1];
         if (replyContent && (!lastEvt || lastEvt.type !== 'assistant')) {
             appState.addUiEvent({ type: 'assistant', content: replyContent });

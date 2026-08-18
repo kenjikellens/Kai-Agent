@@ -284,6 +284,7 @@ export class AppHost {
         const lmStudioCacheDir = config.lmStudioCacheDir || '';
         const lmStudioCacheStatus = LMStudioManifestParser.validateCache(lmStudioCacheDir);
         const lmStudioCapabilities = LMStudioManifestParser.parseModelCapabilities(lmStudioCacheDir);
+        const svgs = this._loadSvgs();
 
         this.postMessage({
             type: 'connectionStatus',
@@ -301,7 +302,8 @@ export class AppHost {
             translations: translations,
             language: activeLang,
             workspacePath: workspacePath,
-            workspaceName: path.basename(workspacePath) || workspacePath
+            workspaceName: path.basename(workspacePath) || workspacePath,
+            svgs: svgs
         });
 
         const envSync: Record<string, string> = { 'GEMINI_API_KEY': apiKey };
@@ -424,5 +426,38 @@ export class AppHost {
         } catch {
             // ignore
         }
+    }
+
+    /**
+     * Loads SVG icons dynamically from the renderer/media/svg directory on disk.
+     * @returns Map of icon names to SVG markup strings.
+     */
+    private _loadSvgs(): Record<string, string> {
+        const candidates = [
+            path.resolve(__dirname, '../../src/renderer/media/svg'),
+            path.resolve(__dirname, '../renderer/media/svg'),
+            path.resolve(process.cwd(), 'src/renderer/media/svg')
+        ];
+
+        const svgs: Record<string, string> = {};
+        for (const svgDir of candidates) {
+            try {
+                if (fs.existsSync(svgDir)) {
+                    const files = fs.readdirSync(svgDir);
+                    for (const file of files) {
+                        if (file.endsWith('.svg')) {
+                            const name = path.basename(file, '.svg');
+                            svgs[name] = fs.readFileSync(path.join(svgDir, file), 'utf8').trim();
+                        }
+                    }
+                    if (Object.keys(svgs).length > 0) {
+                        return svgs;
+                    }
+                }
+            } catch (e) {
+                console.error('Error loading SVGs in AppHost:', e);
+            }
+        }
+        return svgs;
     }
 }

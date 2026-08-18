@@ -1,42 +1,38 @@
 /**
- * HistoryManager manages rendering the chat history list overlay,
- * single-line item layouts, history item click events, and session deletion.
+ * HistoryManager manages rendering the persistent chat history list in the Left Sidebar,
+ * active item highlights, click navigation, and session deletion.
  */
 class HistoryManager {
     /**
-     * Initializes history DOM references and button click handlers.
+     * Initializes history DOM references and listeners.
      * @param {WebviewIPCBridge} ipcBridge IPC bridge instance.
      * @param {Function} onViewSwitch Callback to switch active content view.
      */
     constructor(ipcBridge, onViewSwitch) {
         this.ipcBridge = ipcBridge;
         this.onViewSwitch = onViewSwitch;
+        this.activeChatId = null;
 
-        this.historyContainer = document.getElementById('history-container');
         this.historyList = document.getElementById('history-list');
-        this.historyBtn = document.getElementById('history-btn');
-        this.closeHistoryBtn = document.getElementById('close-history-btn');
+        this.cachedChats = [];
 
-        this.initEventListeners();
+        // Request initial history load on startup
+        this.ipcBridge.loadChatHistory();
     }
 
     /**
-     * Registers top bar history button and close button click events.
+     * Sets the active chat ID and updates row highlight in sidebar.
+     * @param {string} chatId Unique chat identifier.
      */
-    initEventListeners() {
-        if (this.historyBtn) {
-            this.historyBtn.addEventListener('click', () => {
-                this.ipcBridge.loadChatHistory();
-                if (this.onViewSwitch) {
-                    this.onViewSwitch('history');
-                }
-            });
-        }
-
-        if (this.closeHistoryBtn) {
-            this.closeHistoryBtn.addEventListener('click', () => {
-                if (this.onViewSwitch) {
-                    this.onViewSwitch('chat');
+    setActiveChatId(chatId) {
+        this.activeChatId = chatId;
+        if (this.historyList) {
+            const rows = this.historyList.querySelectorAll('.history-item');
+            rows.forEach(row => {
+                if (row.dataset.chatId === chatId) {
+                    row.classList.add('active');
+                } else {
+                    row.classList.remove('active');
                 }
             });
         }
@@ -59,11 +55,12 @@ class HistoryManager {
     }
 
     /**
-     * Renders the list of previous chat sessions in the history overlay panel using a single-line layout.
+     * Renders the list of previous chat sessions in the Left Sidebar.
      * @param {Array<object>} chats List of saved chat session records.
      * @param {boolean} isWaitingForResponse Active generation status.
      */
     renderHistoryList(chats, isWaitingForResponse) {
+        this.cachedChats = chats || [];
         if (!this.historyList) return;
         this.historyList.innerHTML = '';
 
@@ -71,16 +68,20 @@ class HistoryManager {
             const i18n = window.KAI_I18N || {};
             const emptyDiv = document.createElement('div');
             emptyDiv.className = 'history-empty-state';
-            emptyDiv.textContent = i18n.noPreviousChats || 'No previous chats found.';
+            emptyDiv.textContent = i18n.noPreviousChats || 'No previous chats';
             this.historyList.appendChild(emptyDiv);
             return;
         }
 
-        const chatSvg = `<svg class="history-item-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>`;
+        const chatSvg = `<svg class="history-item-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>`;
 
         chats.forEach(chat => {
             const item = document.createElement('div');
             item.className = 'history-item';
+            if (chat.id === this.activeChatId) {
+                item.classList.add('active');
+            }
+            item.dataset.chatId = chat.id;
             item.title = chat.title || 'New Chat';
             
             const content = document.createElement('div');
@@ -116,6 +117,7 @@ class HistoryManager {
                 if (isWaitingForResponse) {
                     this.ipcBridge.abort();
                 }
+                this.setActiveChatId(chat.id);
                 this.ipcBridge.loadChat(chat.id);
                 if (this.onViewSwitch) {
                     this.onViewSwitch('chat');

@@ -560,11 +560,11 @@ class ChatUIController {
     }
 
     /**
-     * Swaps active content view in the main sidebar container.
+     * Swaps active content view in the main area (Chat, History, or Settings).
      * @param {'chat'|'history'|'settings'} viewName Target view name.
      */
     showView(viewName) {
-        if (this.settingsController) {
+        if (this.settingsController && typeof this.settingsController.hideKeysOverlay === 'function') {
             this.settingsController.hideKeysOverlay();
         }
         if (viewName === 'chat') {

@@ -1,7 +1,7 @@
 /**
- * SettingsController manages the settings panel UI, localStorage preferences,
- * custom select dropdowns, category collapse states, LM Studio server & cache configuration,
- * and external provider API keys with overlay modal.
+ * SettingsController manages the clean settings panel UI, localStorage preferences,
+ * custom select dropdowns, LM Studio server & cache configuration,
+ * external provider API keys, and dynamic multi-language localization.
  */
 class SettingsController {
     /**
@@ -17,17 +17,14 @@ class SettingsController {
         this.cacheStatusDot = document.getElementById('cache-status-dot');
         this.cacheStatusText = document.getElementById('cache-status-text');
 
-        this.showThinkingToggle = document.getElementById('show-thinking-toggle');
-        this.thinkingSubsettings = document.getElementById('thinking-subsettings');
-        this.keepThinkingExpandedToggle = document.getElementById('keep-thinking-expanded-toggle');
-        this.keepThinkingFinishedExpandedToggle = document.getElementById('keep-thinking-finished-expanded-toggle');
+        this.showThinkingToggle = null;
+        this.keepThinkingExpandedToggle = null;
+        this.keepThinkingFinishedExpandedToggle = null;
         this.geminiThinkingLevelInput = document.getElementById('gemini-thinking-level-input');
-        this.apiKeyInput = document.getElementById('api-key-input');
+        this.geminiKeyInput = document.getElementById('settings-gemini-key');
 
-        this.keysContainer = document.getElementById('keys-container');
-        this.manageKeysBtn = document.getElementById('manage-keys-btn');
-        this.closeKeysBtn = document.getElementById('close-keys-btn');
-        this.dynamicKeysList = document.getElementById('dynamic-keys-list');
+        this.closeSettingsBtn = document.getElementById('close-settings-btn');
+        this.freeProvidersKeysList = document.getElementById('free-providers-keys-list');
 
         this.freeProviders = [...KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS];
 
@@ -41,16 +38,22 @@ class SettingsController {
     initSettings() {
         const i18n = window.KAI_I18N || {};
 
-        // 1. Show thinking process toggle
-        const showContainer = document.getElementById('show-thinking-toggle-container');
-        if (showContainer) {
-            showContainer.innerHTML = '';
+        // 1. Show thinking process row
+        const showRow = document.getElementById('show-thinking-setting-row');
+        if (showRow) {
+            showRow.innerHTML = `
+                <div class="setting-info">
+                    <span class="setting-label" data-i18n="showThinking">${i18n.showThinking || 'Verbose (Show thinking process)'}</span>
+                </div>
+                <div class="setting-control" id="show-thinking-toggle-container"></div>
+            `;
+            const showContainer = document.getElementById('show-thinking-toggle-container');
             const stored = localStorage.getItem('kai.showThinking');
             const isChecked = stored === null ? true : stored === 'true';
             const el = ToggleComponent.create({
                 id: 'show-thinking-toggle',
                 checked: isChecked,
-                label: i18n.showThinking || 'Show thinking process',
+                label: '',
                 onChange: (checked) => {
                     localStorage.setItem('kai.showThinking', checked);
                     this.updateSubsettingsVisibility();
@@ -60,16 +63,22 @@ class SettingsController {
             this.showThinkingToggle = el.querySelector('input[type="checkbox"]');
         }
 
-        // 2. Keep thinking expanded while generating
-        const keepContainer = document.getElementById('keep-thinking-expanded-container');
-        if (keepContainer) {
-            keepContainer.innerHTML = '';
+        // 2. Keep thinking expanded while generating row
+        const keepRow = document.getElementById('keep-thinking-generating-setting-row');
+        if (keepRow) {
+            keepRow.innerHTML = `
+                <div class="setting-info">
+                    <span class="setting-label" data-i18n="keepThinkingGenerating">${i18n.keepThinkingGenerating || 'Keep thinking expanded while generating'}</span>
+                </div>
+                <div class="setting-control" id="keep-thinking-expanded-container"></div>
+            `;
+            const keepContainer = document.getElementById('keep-thinking-expanded-container');
             const stored = localStorage.getItem('kai.keepThinkingExpanded');
             const isChecked = stored === null ? true : stored === 'true';
             const el = ToggleComponent.create({
                 id: 'keep-thinking-expanded-toggle',
                 checked: isChecked,
-                label: i18n.keepThinkingGenerating || 'Keep thinking expanded while generating',
+                label: '',
                 onChange: (checked) => {
                     localStorage.setItem('kai.keepThinkingExpanded', checked);
                 }
@@ -78,16 +87,22 @@ class SettingsController {
             this.keepThinkingExpandedToggle = el.querySelector('input[type="checkbox"]');
         }
 
-        // 3. Keep thinking expanded after reasoning
-        const finishedContainer = document.getElementById('keep-thinking-finished-container');
-        if (finishedContainer) {
-            finishedContainer.innerHTML = '';
+        // 3. Keep thinking expanded after reasoning row
+        const finishedRow = document.getElementById('keep-thinking-finished-setting-row');
+        if (finishedRow) {
+            finishedRow.innerHTML = `
+                <div class="setting-info">
+                    <span class="setting-label" data-i18n="keepThinkingFinished">${i18n.keepThinkingFinished || 'Keep thinking expanded after reasoning is done'}</span>
+                </div>
+                <div class="setting-control" id="keep-thinking-finished-container"></div>
+            `;
+            const finishedContainer = document.getElementById('keep-thinking-finished-container');
             const stored = localStorage.getItem('kai.keepThinkingFinishedExpanded');
             const isChecked = stored === null ? false : stored === 'true';
             const el = ToggleComponent.create({
                 id: 'keep-thinking-finished-expanded-toggle',
                 checked: isChecked,
-                label: i18n.keepThinkingFinished || 'Keep thinking expanded after reasoning',
+                label: '',
                 onChange: (checked) => {
                     localStorage.setItem('kai.keepThinkingFinishedExpanded', checked);
                 }
@@ -96,20 +111,14 @@ class SettingsController {
             this.keepThinkingFinishedExpandedToggle = el.querySelector('input[type="checkbox"]');
         }
 
-        // 4. Gemini Default Thinking Level
-        if (this.geminiThinkingLevelInput) {
-            const storedLevel = localStorage.getItem('kai.geminiThinkingLevel');
-            this.geminiThinkingLevelInput.value = storedLevel || 'high';
-        }
-
         this.updateSubsettingsVisibility();
 
-        // 5. Language Custom Select Dropdown
+        // 4. Language Custom Select Dropdown (All 18 languages)
         const langContainer = document.getElementById('language-select-container');
         if (langContainer && typeof CustomSelectComponent !== 'undefined') {
             const initialLang = window.KAI_LANG || 'auto';
             const langOptions = window.KAI_SUPPORTED_LANGUAGES || [
-                { value: 'auto', label: 'Auto (System Default)' },
+                { value: 'auto', label: 'Auto (System)' },
                 { value: 'en', label: 'English' },
                 { value: 'nl', label: 'Nederlands' }
             ];
@@ -126,8 +135,33 @@ class SettingsController {
             });
         }
 
+        // 5. UI Scale Custom Select Dropdown (Scales text, buttons, icons, modals)
+        const uiScaleContainer = document.getElementById('ui-scale-select-container');
+        if (uiScaleContainer && typeof CustomSelectComponent !== 'undefined') {
+            const storedScale = localStorage.getItem('kai.uiScale') || '1.0';
+            const scaleOptions = [
+                { value: '0.8', label: '80% (Compact)' },
+                { value: '0.9', label: '90%' },
+                { value: '1.0', label: '100% (Default)' },
+                { value: '1.1', label: '110%' },
+                { value: '1.2', label: '120% (Comfortable)' },
+                { value: '1.3', label: '130% (Large)' },
+                { value: '1.4', label: '140% (Extra Large)' }
+            ];
+            this.uiScaleComponent = new CustomSelectComponent({
+                container: uiScaleContainer,
+                id: 'ui-scale-select-input',
+                options: scaleOptions,
+                value: storedScale,
+                onChange: (selectedScale) => {
+                    localStorage.setItem('kai.uiScale', selectedScale);
+                    document.documentElement.style.zoom = selectedScale;
+                }
+            });
+        }
+
         // 6. Thinking Display Style Custom Select Dropdown (Icon + Text / Icon Only / Text Only)
-        const styleContainer = document.getElementById('thinking-display-style-container');
+        const styleContainer = document.getElementById('thinking-style-select-container');
         if (styleContainer && typeof CustomSelectComponent !== 'undefined') {
             const storedStyle = localStorage.getItem('kai.thinkingDisplayStyle') || 'both';
             const styleOptions = [
@@ -149,20 +183,9 @@ class SettingsController {
     }
 
     /**
-     * Registers event listeners for settings controls, categories, and keys overlay.
+     * Registers event listeners for settings controls.
      */
     initEventListeners() {
-        // Collapsible category accordion headers
-        const categoryBtns = document.querySelectorAll('.category-header-btn');
-        categoryBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const categoryEl = btn.closest('.settings-category');
-                if (categoryEl) {
-                    categoryEl.classList.toggle('collapsed');
-                }
-            });
-        });
-
         if (this.browseLMStudioBtn) {
             this.browseLMStudioBtn.addEventListener('click', () => {
                 this.ipcBridge.browseLMStudioFolder();
@@ -181,41 +204,50 @@ class SettingsController {
             });
         }
 
-        if (this.geminiThinkingLevelInput) {
-            this.geminiThinkingLevelInput.addEventListener('change', () => {
-                localStorage.setItem('kai.geminiThinkingLevel', this.geminiThinkingLevelInput.value);
-            });
-        }
-
-        if (this.apiKeyInput) {
-            this.apiKeyInput.addEventListener('change', () => {
+        if (this.geminiKeyInput) {
+            this.geminiKeyInput.addEventListener('change', () => {
                 this.saveAllSettings();
             });
         }
 
-        if (this.manageKeysBtn) {
-            this.manageKeysBtn.addEventListener('click', () => {
-                if (this.keysContainer) {
-                    this.keysContainer.classList.remove('hidden');
-                    this.renderProviderKeyInputs();
+        // Toggle password reveal buttons
+        document.querySelectorAll('.toggle-password-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetId = btn.getAttribute('data-target');
+                const targetInput = document.getElementById(targetId);
+                if (targetInput) {
+                    const isPassword = targetInput.type === 'password';
+                    targetInput.type = isPassword ? 'text' : 'password';
+                    btn.textContent = isPassword ? '🔒' : '👁';
                 }
             });
-        }
-
-        if (this.closeKeysBtn) {
-            this.closeKeysBtn.addEventListener('click', () => {
-                this.hideKeysOverlay();
-            });
-        }
+        });
     }
 
     /**
-     * Hides the provider API keys overlay modal.
+     * Dynamically updates localized strings across all data-i18n nodes in Settings.
+     * @param {object} translations Map of translation keys to translated strings.
      */
-    hideKeysOverlay() {
-        if (this.keysContainer) {
-            this.keysContainer.classList.add('hidden');
-        }
+    applyTranslations(translations) {
+        if (!translations) return;
+        const i18nNodes = document.querySelectorAll('[data-i18n]');
+        i18nNodes.forEach(node => {
+            const key = node.getAttribute('data-i18n');
+            if (translations[key]) {
+                node.textContent = translations[key];
+            }
+        });
+    }
+
+    /**
+     * Toggles visibility of dependent thinking subsettings based on main toggle state.
+     */
+    updateSubsettingsVisibility() {
+        const isShow = this.showThinkingToggle ? this.showThinkingToggle.checked : true;
+        const genRow = document.getElementById('keep-thinking-generating-setting-row');
+        const finRow = document.getElementById('keep-thinking-finished-setting-row');
+        if (genRow) genRow.style.display = isShow ? 'flex' : 'none';
+        if (finRow) finRow.style.display = isShow ? 'flex' : 'none';
     }
 
     /**
@@ -230,25 +262,26 @@ class SettingsController {
         }
         const globalSaved = localStorage.getItem('kai.geminiThinkingLevel');
         if (globalSaved) return globalSaved;
-        if (this.geminiThinkingLevelInput) {
-            return this.geminiThinkingLevelInput.value || 'high';
-        }
         return 'high';
     }
 
     /**
-     * Updates settings state and renders API key inputs when connection status arrives from extension host.
+     * Updates settings state and renders API key inputs when connection status arrives.
      * @param {object} message Connection status message.
      */
     updateConnectionStatus(message) {
+        if (message.translations) {
+            this.applyTranslations(message.translations);
+        }
+
         if (this.serverUrlInput && message.serverUrl !== undefined) {
             this.serverUrlInput.value = message.serverUrl;
         }
         if (this.lmStudioPathInput && message.lmStudioCacheDir !== undefined) {
             this.lmStudioPathInput.value = message.lmStudioCacheDir;
         }
-        if (this.apiKeyInput && message.apiKey !== undefined) {
-            this.apiKeyInput.value = message.apiKey;
+        if (this.geminiKeyInput && message.apiKey !== undefined) {
+            this.geminiKeyInput.value = message.apiKey;
         }
 
         if (message.lmStudioCacheStatus && this.cacheStatusDot && this.cacheStatusText) {
@@ -273,69 +306,82 @@ class SettingsController {
     }
 
     /**
-     * Toggles visibility of thinking subsettings based on showThinkingToggle state.
-     */
-    updateSubsettingsVisibility() {
-        if (this.thinkingSubsettings && this.showThinkingToggle) {
-            if (this.showThinkingToggle.checked) {
-                this.thinkingSubsettings.classList.remove('hidden');
-            } else {
-                this.thinkingSubsettings.classList.add('hidden');
-            }
-        }
-    }
-
-    /**
-     * Collects all settings (Server URL, LM Studio Path, API keys) and sends updateSettings IPC.
-     */
-    saveAllSettings() {
-        const providerKeys = {};
-        document.querySelectorAll('.provider-api-key-input').forEach(input => {
-            const configKey = input.dataset.configKey;
-            if (configKey) {
-                providerKeys[configKey] = input.value;
-            }
-        });
-
-        this.ipcBridge.updateSettings({
-            serverUrl: this.serverUrlInput ? this.serverUrlInput.value : 'http://localhost:1234/v1',
-            lmStudioCacheDir: this.lmStudioPathInput ? this.lmStudioPathInput.value : '',
-            apiKey: this.apiKeyInput ? this.apiKeyInput.value : '',
-            providerKeys: providerKeys
-        });
-    }
-
-    /**
-     * Renders API key input fields for external providers inside the keys modal overlay.
+     * Dynamically renders input fields for all free cloud providers matching standard row design.
      */
     renderProviderKeyInputs() {
-        if (!this.dynamicKeysList) return;
-        this.dynamicKeysList.innerHTML = '';
+        if (!this.freeProvidersKeysList) return;
+        this.freeProvidersKeysList.innerHTML = '';
 
-        const providers = this.freeProviders && this.freeProviders.length > 0 ? this.freeProviders : KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS;
+        this.freeProviders.forEach((provider) => {
+            const row = document.createElement('div');
+            row.className = 'provider-key-row setting-row';
 
-        for (const provider of providers) {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'setting-item';
+            const info = document.createElement('div');
+            info.className = 'setting-info';
 
-            const label = document.createElement('label');
-            label.className = 'setting-label';
-            label.textContent = `${provider.name} API Key / URL`;
-            label.setAttribute('for', `provider-key-${provider.configKey}`);
+            const name = document.createElement('span');
+            name.className = 'setting-label';
+            name.textContent = provider.name;
+            info.appendChild(name);
+
+            const control = document.createElement('div');
+            control.className = 'provider-key-control setting-control';
+
+            const passWrapper = document.createElement('div');
+            passWrapper.className = 'password-input-wrapper';
+
+            const inputId = `provider-key-${provider.id || provider.name.toLowerCase().replace(/\\s+/g, '-')}`;
 
             const input = document.createElement('input');
-            input.type = provider.configKey.includes('Url') ? 'text' : 'password';
-            input.id = `provider-key-${provider.configKey}`;
-            input.className = 'settings-input provider-api-key-input';
-            input.dataset.configKey = provider.configKey;
-            input.placeholder = provider.keyHint || 'Enter API key…';
+            input.id = inputId;
+            input.type = 'password';
+            input.className = 'setting-input-text';
+            input.placeholder = `${provider.name} API Key`;
             input.value = provider.apiKey || '';
 
-            input.addEventListener('change', () => this.saveAllSettings());
+            const toggleBtn = document.createElement('button');
+            toggleBtn.type = 'button';
+            toggleBtn.className = 'toggle-password-btn';
+            toggleBtn.textContent = '👁';
+            toggleBtn.title = 'Show/Hide';
+            toggleBtn.addEventListener('click', () => {
+                const isPassword = input.type === 'password';
+                input.type = isPassword ? 'text' : 'password';
+                toggleBtn.textContent = isPassword ? '🔒' : '👁';
+            });
 
-            wrapper.appendChild(label);
-            wrapper.appendChild(input);
-            this.dynamicKeysList.appendChild(wrapper);
-        }
+            input.addEventListener('change', () => {
+                provider.apiKey = input.value.trim();
+                this.saveAllSettings();
+            });
+
+            passWrapper.appendChild(input);
+            passWrapper.appendChild(toggleBtn);
+            control.appendChild(passWrapper);
+
+            row.appendChild(info);
+            row.appendChild(control);
+            this.freeProvidersKeysList.appendChild(row);
+        });
+    }
+
+    /**
+     * Hides keys overlay if open.
+     */
+    hideKeysOverlay() {
+        // No-op in flat section layout
+    }
+
+    /**
+     * Persists all current settings values to host.
+     */
+    saveAllSettings() {
+        const payload = {
+            serverUrl: this.serverUrlInput ? this.serverUrlInput.value.trim() : undefined,
+            lmStudioCacheDir: this.lmStudioPathInput ? this.lmStudioPathInput.value.trim() : undefined,
+            apiKey: this.geminiKeyInput ? this.geminiKeyInput.value.trim() : undefined,
+            freeProviders: this.freeProviders
+        };
+        this.ipcBridge.updateSettings(payload);
     }
 }
