@@ -241,6 +241,91 @@ class WebviewIPCBridge {
                 } catch (e) {}
                 break;
             }
+            case 'sendMessage': {
+                const messages = message.messages || [];
+                const model = message.model || 'local-model';
+                const serverUrl = localStorage.getItem('kai.serverUrl') || 'http://127.0.0.1:1234/v1';
+
+                emit({
+                    type: 'agentProgress',
+                    progressType: 'start',
+                    text: 'Contacting model...'
+                });
+
+                try {
+                    const cleanUrl = serverUrl.replace(/\/$/, '') + '/chat/completions';
+                    const payload = {
+                        model: model,
+                        messages: messages.map(m => ({ role: m.role, content: m.content })),
+                        stream: true
+                    };
+
+                    if (message.thinking) {
+                        payload.thinking = true;
+                        payload.enable_thinking = true;
+                        payload.chat_template_kwargs = { enable_thinking: true };
+                        if (message.geminiThinkingLevel) {
+                            payload.reasoning_effort = message.geminiThinkingLevel;
+                        }
+                    }
+
+                    const response = await fetch(cleanUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`LM Studio returned ${response.status}: ${response.statusText}`);
+                    }
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let fullText = '';
+                    let buffer = '';
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop() || '';
+
+                        for (const line of lines) {
+                            const trimmed = line.trim();
+                            if (!trimmed || trimmed.startsWith(':')) continue;
+                            if (trimmed === 'data: [DONE]') break;
+                            if (trimmed.startsWith('data: ')) {
+                                try {
+                                    const json = JSON.parse(trimmed.slice(6));
+                                    const delta = json.choices?.[0]?.delta;
+                                    const chunk = delta?.content || delta?.reasoning_content || delta?.text || '';
+                                    if (chunk) {
+                                        fullText += chunk;
+                                        emit({
+                                            type: 'agentProgress',
+                                            progressType: 'stream',
+                                            text: chunk
+                                        });
+                                    }
+                                } catch (e) {}
+                            }
+                        }
+                    }
+
+                    emit({
+                        type: 'reply',
+                        content: fullText,
+                        modifiedFiles: []
+                    });
+                } catch (err) {
+                    emit({
+                        type: 'replyError',
+                        message: `Fout bij verzenden: ${err.message}`
+                    });
+                }
+                break;
+            }
         }
     }
 
