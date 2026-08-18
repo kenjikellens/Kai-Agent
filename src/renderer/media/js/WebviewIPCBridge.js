@@ -662,31 +662,39 @@ class WebviewIPCBridge {
         }
     }
     _parseToolCall(text) {
-        // Strategy 1: Explicit <|tool_call|> or <tool_call> tags
-        const explicitTagRegex = /<\|?tool_call\|?>\s*([\s\S]*?)\s*(?:<\|?\/tool_call\|?>|<\|?tool_call\|?>|$)/i;
+        if (!text) return null;
+
+        // Strategy 1: Explicit <|tool_call|>, <tool_call>, or custom execution tags like <execute_plan>, <tool>, <action>
+        const explicitTagRegex = /<\|?(?:tool_call|tool|execute_plan|action)\|?>\s*([\s\S]*?)\s*(?:<\|?\/(?:tool_call|tool|execute_plan|action)\|?>|<\|?(?:tool_call|tool|execute_plan|action)\|?>|$)/i;
         const explicitMatch = explicitTagRegex.exec(text);
-        if (explicitMatch) {
+        if (explicitMatch && explicitMatch[1]) {
             const parsed = this._parseJsonToolCall(explicitMatch[1]);
             if (parsed) return parsed;
+            // Also try extracting embedded JSON within the tag block
+            const innerJson = this._extractJsonBlock(explicitMatch[1]);
+            if (innerJson) {
+                const innerParsed = this._parseJsonToolCall(innerJson);
+                if (innerParsed) return innerParsed;
+            }
         }
 
-        // Strategy 2: Loose tag wrapper with optional call: prefix
-        const tagRegex = /(?:<\|?tool_call\|?>)?\s*(?:call:\w+)?\s*(\{[\s\S]*?\})\s*(?:<\|?tool_call\|?>)?/i;
-        const tagMatch = tagRegex.exec(text);
-        if (tagMatch) {
-            const parsed = this._parseJsonToolCall(tagMatch[1]);
-            if (parsed) return parsed;
-        }
-
-        // Strategy 3: ```json fenced code block
-        const jsonBlockRegex = /```json\s*([\s\S]*?)\s*(?:```|$)/i;
+        // Strategy 2: ```json fenced code block
+        const jsonBlockRegex = /```(?:json)?\s*([\s\S]*?)\s*(?:```|$)/i;
         const jsonMatch = jsonBlockRegex.exec(text);
-        if (jsonMatch) {
+        if (jsonMatch && jsonMatch[1]) {
             const parsed = this._parseJsonToolCall(jsonMatch[1]);
             if (parsed) return parsed;
         }
 
-        // Strategy 4: Brace-counted JSON extraction
+        // Strategy 3: Loose tag wrapper with optional call: prefix
+        const tagRegex = /(?:<\|?[a-z_-]+\|?>)?\s*(?:call:\w+)?\s*(\{[\s\S]*?\})\s*(?:<\|?[a-z_-]+\|?>)?/i;
+        const tagMatch = tagRegex.exec(text);
+        if (tagMatch && tagMatch[1]) {
+            const parsed = this._parseJsonToolCall(tagMatch[1]);
+            if (parsed) return parsed;
+        }
+
+        // Strategy 4: Full brace-counted JSON extraction anywhere in text
         const braceJson = this._extractJsonBlock(text);
         if (braceJson) {
             const parsed = this._parseJsonToolCall(braceJson);
