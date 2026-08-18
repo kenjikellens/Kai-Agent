@@ -123,11 +123,45 @@ def query_loaded_models() -> list:
         res = subprocess.run(["lms", "ps", "--json"], capture_output=True, text=True, timeout=2)
         if res.returncode == 0 and res.stdout.strip():
             parsed = json.loads(res.stdout)
-            if isinstance(parsed, list):
-                return [m.get("modelKey") or m.get("identifier") or m.get("path") for m in parsed if m]
+            models = parsed.get("models", []) if isinstance(parsed, dict) else parsed
+            if isinstance(models, list):
+                return [m.get("identifier") or m.get("path") for m in models if m.get("identifier") or m.get("path")]
     except Exception:
         pass
     return []
+
+
+def parse_lmstudio_capabilities(custom_dir: str = "") -> dict:
+    """Parses model capability definitions from LM Studio manifest cache directories."""
+    candidates = []
+    if custom_dir and custom_dir.strip():
+        candidates.append(Path(custom_dir.strip()))
+    home = Path.home()
+    candidates.append(home / ".cache" / "lm-studio")
+    candidates.append(home / ".lmstudio")
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    if local_app_data:
+        candidates.append(Path(local_app_data) / "LM Studio")
+        candidates.append(Path(local_app_data) / "lm-studio")
+    app_data = os.environ.get("APPDATA")
+    if app_data:
+        candidates.append(Path(app_data) / "LM Studio")
+
+    capabilities = {}
+    for base in candidates:
+        if not base.exists():
+            continue
+        models_dir = base / "models" if (base / "models").exists() else base
+        for manifest_file in models_dir.glob("**/manifest.json"):
+            try:
+                with open(manifest_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    model_id = data.get("modelId") or data.get("name") or manifest_file.parent.name
+                    if model_id:
+                        capabilities[model_id] = data
+            except Exception:
+                pass
+    return capabilities
 
 
 def read_sessions() -> dict:
@@ -249,6 +283,7 @@ class KaiLiveRequestHandler(http.server.SimpleHTTPRequestHandler):
             "apiKey": config.get("apiKey", ""),
             "lmStudioCacheDir": config.get("lmStudioCacheDir", ""),
             "lmStudioCacheStatus": {"valid": True},
+            "lmStudioCapabilities": parse_lmstudio_capabilities(config.get("lmStudioCacheDir", "")),
             "workspacePath": workspace_path,
             "workspaceName": Path(workspace_path).name,
             "language": active_lang,
