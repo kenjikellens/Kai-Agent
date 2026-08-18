@@ -156,24 +156,6 @@ class WebviewIPCBridge {
                     }
                 } catch (e) {}
 
-                emit({
-                    type: 'connectionStatus',
-                    connected: lmConnected,
-                    geminiConnected: isGeminiConnected,
-                    model: activeModel,
-                    lmStudioModels: lmModels,
-                    geminiModels: defaultGemini,
-                    loadedModels: loadedModels,
-                    freeProviders: freeProvidersConfig,
-                    serverUrl: serverUrl,
-                    apiKey: apiKey,
-                    lmStudioCacheDir: localStorage.getItem('kai.lmStudioCacheDir') || '',
-                    lmStudioCacheStatus: {
-                        valid: lmConnected,
-                        modelCount: lmModels.length,
-                        error: lmConnected ? '' : 'LM Studio server offline'
-                    },
-                    lmStudioCapabilities: lmStudioCapabilities,
                 const savedWs = localStorage.getItem('kai.workspacePath') || '';
                 emit({
                     type: 'connectionStatus',
