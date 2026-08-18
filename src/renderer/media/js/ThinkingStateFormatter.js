@@ -47,11 +47,20 @@ class ThinkingStateFormatter {
                 const effortLabels = { xhigh: 'X-High', high: 'X-High', medium: 'Medium', low: 'Low' };
                 const effortKey = (storedEffort in effortLabels) ? storedEffort : 'xhigh';
 
-                if (hasSelectField || hasBooleanField) {
+                if (hasSelectField) {
                     return {
                         isThinkingCapable: true,
-                        isMultiLevel: hasSelectField,
+                        isMultiLevel: true,
                         level: effortKey,
+                        isOn: isLmThinkingOn,
+                        labelText: isLmThinkingOn ? 'thinking' : '',
+                        rawModel: rawModel
+                    };
+                } else if (hasBooleanField) {
+                    return {
+                        isThinkingCapable: true,
+                        isMultiLevel: false,
+                        level: isLmThinkingOn ? 'high' : 'off',
                         isOn: isLmThinkingOn,
                         labelText: isLmThinkingOn ? 'thinking' : '',
                         rawModel: rawModel
@@ -79,10 +88,11 @@ class ThinkingStateFormatter {
             };
         }
 
-        // 3. Qwen, GLM, Gemma, DeepSeek, and other reasoning local models (Fallback when no manifest)
-        const isReasoningLocal = lowerRaw.includes('qwen') || lowerRaw.includes('qwq') || lowerRaw.includes('glm') ||
-                                 lowerRaw.includes('gemma') || lowerRaw.includes('deepseek') || lowerRaw.includes('r1');
-        if (isReasoningLocal) {
+        // 3. Fallback when no manifest is available: Only specific reasoning models with multi-level effort (like QwQ, Qwen 3.8)
+        const isMultiLevelLocal = lowerRaw.includes('qwq') || lowerRaw.includes('qwen-3.8') || lowerRaw.includes('qwen3.8') || lowerRaw.includes('deepseek-r1') || lowerRaw.includes('r1');
+        const isBinaryThinkingLocal = lowerRaw.includes('qwen') || lowerRaw.includes('glm');
+
+        if (isMultiLevelLocal) {
             const isLmThinkingOn = localStorage.getItem(`kai.lmStudioThinking.${rawModel}`) !== 'false';
             const storedEffort = localStorage.getItem(`kai.lmStudioReasoningLevel.${rawModel}`) ||
                                  localStorage.getItem(`kai.lmStudioReasoningLevel.${modelId}`) || 'xhigh';
@@ -93,6 +103,16 @@ class ThinkingStateFormatter {
                 isThinkingCapable: true,
                 isMultiLevel: true,
                 level: effortKey,
+                isOn: isLmThinkingOn,
+                labelText: isLmThinkingOn ? 'thinking' : '',
+                rawModel: rawModel
+            };
+        } else if (isBinaryThinkingLocal) {
+            const isLmThinkingOn = localStorage.getItem(`kai.lmStudioThinking.${rawModel}`) !== 'false';
+            return {
+                isThinkingCapable: true,
+                isMultiLevel: false,
+                level: isLmThinkingOn ? 'high' : 'off',
                 isOn: isLmThinkingOn,
                 labelText: isLmThinkingOn ? 'thinking' : '',
                 rawModel: rawModel

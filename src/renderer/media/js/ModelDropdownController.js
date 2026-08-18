@@ -394,25 +394,38 @@ class ModelDropdownController {
                                     ThinkingStateFormatter.lmStudioCapabilities[lowerModel];
                         let fields = (cap && Array.isArray(cap.fields) && cap.fields.length > 0) ? cap.fields : [];
 
-                        // Fallback default fields for Qwen, GLM, Gemma, DeepSeek when no manifest is available
-                        if (fields.length === 0 && (lowerModel.includes('qwen') || lowerModel.includes('qwq') || lowerModel.includes('glm') || lowerModel.includes('gemma') || lowerModel.includes('deepseek') || lowerModel.includes('r1'))) {
-                            fields = [
-                                {
-                                    displayName: 'Thinking',
-                                    type: 'boolean',
-                                    variable: 'enable_thinking'
-                                },
-                                {
-                                    displayName: 'Reasoning Effort',
-                                    type: 'select',
-                                    variable: 'reasoning_effort',
-                                    options: [
-                                        { label: 'X-High', value: 'xhigh' },
-                                        { label: 'Medium', value: 'medium' },
-                                        { label: 'Low', value: 'low' }
-                                    ]
-                                }
-                            ];
+                        // Fallback default fields: only models with reasoning effort (Qwen 3.8, QwQ, R1) get select fields, other thinking models get only boolean toggle
+                        if (fields.length === 0) {
+                            const isMultiLevel = lowerModel.includes('qwq') || lowerModel.includes('qwen-3.8') || lowerModel.includes('qwen3.8') || lowerModel.includes('deepseek-r1') || lowerModel.includes('r1');
+                            const isBinaryThinking = lowerModel.includes('qwen') || lowerModel.includes('glm');
+
+                            if (isMultiLevel) {
+                                fields = [
+                                    {
+                                        displayName: 'Thinking',
+                                        type: 'boolean',
+                                        variable: 'enable_thinking'
+                                    },
+                                    {
+                                        displayName: 'Reasoning Effort',
+                                        type: 'select',
+                                        variable: 'reasoning_effort',
+                                        options: [
+                                            { label: 'X-High', value: 'xhigh' },
+                                            { label: 'Medium', value: 'medium' },
+                                            { label: 'Low', value: 'low' }
+                                        ]
+                                    }
+                                ];
+                            } else if (isBinaryThinking) {
+                                fields = [
+                                    {
+                                        displayName: 'Thinking',
+                                        type: 'boolean',
+                                        variable: 'enable_thinking'
+                                    }
+                                ];
+                            }
                         }
 
                         let toggleEl = null;
