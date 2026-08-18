@@ -357,7 +357,7 @@ class ModelDropdownController {
                         leftWrapper.style.alignItems = 'center';
                         leftWrapper.style.gap = '6px';
 
-                        ThinkingStateFormatter.renderFlyoutOptionContent(leftWrapper, 'Thinking', isMistralThinkingOn);
+                        ThinkingStateFormatter.renderFlyoutOptionContent(leftWrapper, 'thinking', isMistralThinkingOn);
 
                         const toggleEl = ToggleComponent.create({
                             id: `mistral-thinking-toggle-${itemData.rawModel.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
@@ -394,11 +394,11 @@ class ModelDropdownController {
                                     ThinkingStateFormatter.lmStudioCapabilities[lowerModel];
                         let fields = (cap && Array.isArray(cap.fields) && cap.fields.length > 0) ? cap.fields : [];
 
-                        // Fallback default fields for Qwen, GLM, Gemma, DeepSeek when no manifest is available
-                        if (fields.length === 0 && (lowerModel.includes('qwen') || lowerModel.includes('qwq') || lowerModel.includes('glm') || lowerModel.includes('gemma') || lowerModel.includes('deepseek') || lowerModel.includes('r1'))) {
+                        // Fallback default fields ONLY for Qwen when no manifest is available
+                        if (fields.length === 0 && (lowerModel.includes('qwen') || lowerModel.includes('qwq'))) {
                             fields = [
                                 {
-                                    displayName: 'Thinking',
+                                    displayName: 'thinking',
                                     type: 'boolean',
                                     variable: 'enable_thinking'
                                 },
@@ -407,9 +407,9 @@ class ModelDropdownController {
                                     type: 'select',
                                     variable: 'reasoning_effort',
                                     options: [
-                                        { label: 'X-High', value: 'xhigh' },
-                                        { label: 'Medium', value: 'medium' },
-                                        { label: 'Low', value: 'low' }
+                                        { label: 'xhigh', value: 'xhigh' },
+                                        { label: 'medium', value: 'medium' },
+                                        { label: 'low', value: 'low' }
                                     ]
                                 }
                             ];
@@ -430,7 +430,7 @@ class ModelDropdownController {
                                 leftWrapper.style.alignItems = 'center';
                                 leftWrapper.style.gap = '6px';
 
-                                ThinkingStateFormatter.renderFlyoutOptionContent(leftWrapper, 'Thinking', isLmThinkingOn);
+                                ThinkingStateFormatter.renderFlyoutOptionContent(leftWrapper, 'thinking', isLmThinkingOn);
 
                                 toggleEl = ToggleComponent.create({
                                     id: `lm-thinking-toggle-${itemData.rawModel.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
@@ -472,9 +472,10 @@ class ModelDropdownController {
                                     const isSelected = opt.value === currentLmReasoningLevel;
                                     flyoutOpt.className = `dropdown-item flyout-option ${isSelected ? 'selected' : ''}`;
                                     flyoutOpt.setAttribute('role', 'button');
-                                    flyoutOpt.setAttribute('aria-label', `Set ${field.displayName} to ${opt.label}`);
+                                    const optLabel = (opt.value ? opt.value : opt.label).toLowerCase();
+                                    flyoutOpt.setAttribute('aria-label', `Set ${field.displayName} to ${optLabel}`);
                                     
-                                    ThinkingStateFormatter.renderFlyoutOptionContent(flyoutOpt, opt.label, opt.value);
+                                    ThinkingStateFormatter.renderFlyoutOptionContent(flyoutOpt, optLabel, opt.value);
 
                                     if (isSelected) {
                                         const checkSvg = DOMUtils.createCheckIcon('check-icon');

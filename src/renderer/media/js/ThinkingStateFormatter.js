@@ -44,7 +44,7 @@ class ThinkingStateFormatter {
                 const storedEffort = localStorage.getItem(`kai.lmStudioReasoningLevel.${rawModel}`) ||
                     localStorage.getItem(`kai.lmStudioReasoningLevel.${modelId}`) || 'xhigh';
 
-                const effortLabels = { xhigh: 'X-High', high: 'X-High', medium: 'Medium', low: 'Low' };
+                const effortLabels = { xhigh: 'xhigh', high: 'xhigh', medium: 'medium', low: 'low' };
                 const effortKey = (storedEffort in effortLabels) ? storedEffort : 'xhigh';
 
                 if (hasSelectField || hasBooleanField) {
@@ -79,14 +79,13 @@ class ThinkingStateFormatter {
             };
         }
 
-        // 3. Qwen, GLM, Gemma, DeepSeek, and other reasoning local models (Fallback when no manifest)
-        const isReasoningLocal = lowerRaw.includes('qwen') || lowerRaw.includes('qwq') || lowerRaw.includes('glm') ||
-            lowerRaw.includes('gemma') || lowerRaw.includes('deepseek') || lowerRaw.includes('r1');
-        if (isReasoningLocal) {
+        // 3. Qwen Multi-level reasoning effort (Fallback when no manifest)
+        const isQwenReasoning = lowerRaw.includes('qwen') || lowerRaw.includes('qwq');
+        if (isQwenReasoning) {
             const isLmThinkingOn = localStorage.getItem(`kai.lmStudioThinking.${rawModel}`) !== 'false';
             const storedEffort = localStorage.getItem(`kai.lmStudioReasoningLevel.${rawModel}`) ||
                 localStorage.getItem(`kai.lmStudioReasoningLevel.${modelId}`) || 'xhigh';
-            const effortLabels = { xhigh: 'X-High', high: 'X-High', medium: 'Medium', low: 'Low' };
+            const effortLabels = { xhigh: 'xhigh', high: 'xhigh', medium: 'medium', low: 'low' };
             const effortKey = (storedEffort in effortLabels) ? storedEffort : 'xhigh';
 
             return {
@@ -109,7 +108,7 @@ class ThinkingStateFormatter {
                 isMultiLevel: false,
                 level: isOn ? 'high' : 'minimal',
                 isOn: isOn,
-                labelText: isOn ? 'Thinking' : '',
+                labelText: isOn ? 'thinking' : '',
                 rawModel: rawModel
             };
         }

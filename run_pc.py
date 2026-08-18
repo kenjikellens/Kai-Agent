@@ -40,7 +40,8 @@ def get_lmstudio_capabilities():
                         field_type = "select" if cf.get("type") == "select" else "boolean"
                         opts = []
                         if field_type == "select":
-                            opts = [{"label": o.get("label", ""), "value": o.get("value", "")} for o in cf.get("options", [])]
+                            # Retain exact value names ('xhigh', 'medium', 'low') for display labels
+                            opts = [{"label": o.get("value", o.get("label", "")), "value": o.get("value", "")} for o in cf.get("options", [])]
                         fields.append({
                             "displayName": cf.get("displayName", var),
                             "type": field_type,
@@ -60,9 +61,21 @@ def get_lmstudio_capabilities():
                         m.get("defaultIdentifier"),
                         m.get("originalIndexedModelIdentifier"),
                         m.get("altIndexedModelIdentifier"),
+                        m.get("displayName"),
                     ]
-                    if model_id and "@" in model_id:
-                        aliases.append(model_id.split("@")[0])
+                    if model_id:
+                        aliases.append(model_id)
+                        if "@" in model_id:
+                            no_at = model_id.split("@")[0]
+                            aliases.append(no_at)
+                            aliases.append(no_at.split("/")[-1])
+                        if "/" in model_id:
+                            aliases.append(model_id.split("/")[-1])
+                    disp = m.get("displayName")
+                    if disp:
+                        aliases.append(disp.lower().replace(" ", "-"))
+                        aliases.append(disp.lower().replace(" ", "."))
+                    
                     for a in filter(None, aliases):
                         caps[a] = cap_obj
                         caps[a.lower()] = cap_obj
