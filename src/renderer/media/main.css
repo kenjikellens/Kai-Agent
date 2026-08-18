@@ -1313,6 +1313,7 @@ button:disabled {
   gap: 6px;
   padding: 0 10px;
   border: 0 !important;
+  outline: none;
   border-radius: var(--app-radius-md);
   background: var(--app-surface-strong);
   color: var(--app-muted);
@@ -1320,13 +1321,14 @@ button:disabled {
   text-align: left;
   cursor: pointer;
   user-select: none;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .dropdown-trigger:hover,
 .dropdown-trigger:focus {
   background: var(--app-surface-hover);
   color: var(--app-fg);
+  box-shadow: 0 0 0 1px var(--app-surface-hover);
 }
 
 /* Outer container clipping text behind the component */
