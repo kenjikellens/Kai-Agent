@@ -197,7 +197,8 @@
             modelDetails.thinking,
             geminiThinkingLevel,
             appState.isPlanningModeEnabled,
-            attachedFilesCopy
+            attachedFilesCopy,
+            appState.currentChatId
         );
     }
 
@@ -354,6 +355,12 @@
 
     ipcBridge.on('agentProgress', handleAgentProgress);
     ipcBridge.on('toolActivity', handleAgentProgress);
+
+    ipcBridge.on('chatTitleUpdated', (message) => {
+        if (message && message.title) {
+            appState.currentChatTitle = message.title;
+        }
+    });
 
     ipcBridge.on('typing', () => {
         chatUIController.setUiLoading(true, appState);

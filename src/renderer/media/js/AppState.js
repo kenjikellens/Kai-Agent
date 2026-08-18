@@ -7,6 +7,7 @@ class AppState {
      */
     constructor() {
         this.currentChatId = this.generateChatId();
+        this.currentChatTitle = '';
         this.messages = [];
         this.uiEvents = [];
         this.attachedFiles = [];
@@ -30,6 +31,7 @@ class AppState {
      */
     resetChat() {
         this.currentChatId = this.generateChatId();
+        this.currentChatTitle = '';
         this.messages = [];
         this.uiEvents = [];
         this.attachedFiles = [];
@@ -84,6 +86,7 @@ class AppState {
     loadSession(chat) {
         if (!chat) return;
         this.currentChatId = chat.id;
+        this.currentChatTitle = chat.title || '';
         this.messages = chat.messages || [];
         this.uiEvents = chat.uiEvents || [];
         if (chat.model) {
@@ -98,6 +101,9 @@ class AppState {
      * @returns {string} Session title.
      */
     getChatTitle() {
+        if (this.currentChatTitle) {
+            return this.currentChatTitle;
+        }
         const firstUserMsg = this.messages.find(m => m.role === 'user');
         let title = 'New Chat';
         if (firstUserMsg) {
@@ -121,7 +127,7 @@ class AppState {
     toChatPayload(isThinkingChecked) {
         return {
             id: this.currentChatId,
-            title: this.getChatTitle(),
+            title: this.currentChatTitle || this.getChatTitle(),
             messages: this.messages,
             uiEvents: this.uiEvents,
             model: this.selectedModelValue,

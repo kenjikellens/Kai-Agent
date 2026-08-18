@@ -367,11 +367,12 @@ class WebviewIPCBridge {
                     });
 
                     // Trigger Background AI Chat Title Generation (Zero-Thinking, Non-Streaming)
+                    const targetChatId = message.chatId;
                     const firstUserMsg = messages.find(m => m.role === 'user');
                     if (firstUserMsg && firstUserMsg.content) {
                         (async () => {
                             try {
-                                const titlePrompt = `Summarize this user request into a concise 3 to 5 word title for a chat sidebar. Respond with ONLY the title words. No quotes, no thinking, no markdown, no punctuation:\n\n${firstUserMsg.content.slice(0, 300)}`;
+                                const titlePrompt = `Summarize the following user request into a concise 3 to 5 word topic title for a chat sidebar. Answer with ONLY the title words, no quotes, no formatting, no thinking:\n\n${firstUserMsg.content.slice(0, 300)}`;
                                 const titleRes = await fetch(cleanUrl, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
@@ -379,32 +380,40 @@ class WebviewIPCBridge {
                                         model: model,
                                         messages: [{ role: 'user', content: titlePrompt }],
                                         stream: false,
-                                        max_tokens: 20,
-                                        temperature: 0.3,
-                                        thinking: false,
-                                        enable_thinking: false,
+                                        max_tokens: 300,
+                                        temperature: 0.2,
                                         chat_template_kwargs: { enable_thinking: false }
                                     })
                                 });
                                 if (titleRes.ok) {
                                     const titleData = await titleRes.json();
-                                    let rawTitle = (titleData.choices?.[0]?.message?.content || '').trim();
-                                    rawTitle = rawTitle.replace(/<think>[\s\S]*?<\/think>/gi, '')
-                                                       .replace(/["'`*_#\n\r]/g, ' ')
+                                    const choice = titleData.choices?.[0]?.message;
+                                    let raw = (choice?.content || choice?.reasoning_content || '').trim();
+                                    // Strip any <think>...</think> blocks
+                                    raw = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+                                    // Extract the final line if multiple lines exist
+                                    const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+                                    let rawTitle = lines.length > 0 ? lines[lines.length - 1] : raw;
+                                    // Remove "Title:" prefixes, quotes, markdown characters
+                                    rawTitle = rawTitle.replace(/^(title|topic)\s*:\s*/i, '')
+                                                       .replace(/["'`*_#]/g, ' ')
                                                        .replace(/\s+/g, ' ')
                                                        .trim();
-                                    if (rawTitle && rawTitle.length > 0 && rawTitle.length < 50) {
+                                    if (rawTitle && rawTitle.length > 0 && rawTitle.length < 60) {
                                         const savedChats = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
-                                        if (savedChats.length > 0) {
-                                            // The active chat is the top chat
-                                            if (!savedChats[0].title || savedChats[0].title === 'New Chat' || savedChats[0].title.startsWith('Ask')) {
-                                                savedChats[0].title = rawTitle;
-                                                localStorage.setItem('kai.savedChats', JSON.stringify(savedChats));
-                                                emit({
-                                                    type: 'chatHistory',
-                                                    chats: savedChats.map(c => ({ id: c.id, title: c.title || 'New Chat', timestamp: c.timestamp || Date.now() }))
-                                                });
-                                            }
+                                        const foundChat = (targetChatId ? savedChats.find(c => c.id === targetChatId) : null) || savedChats[0];
+                                        if (foundChat) {
+                                            foundChat.title = rawTitle;
+                                            localStorage.setItem('kai.savedChats', JSON.stringify(savedChats));
+                                            emit({
+                                                type: 'chatHistory',
+                                                chats: savedChats.map(c => ({ id: c.id, title: c.title || 'New Chat', timestamp: c.timestamp || Date.now() }))
+                                            });
+                                            emit({
+                                                type: 'chatTitleUpdated',
+                                                chatId: foundChat.id,
+                                                title: rawTitle
+                                            });
                                         }
                                     }
                                 }
@@ -477,7 +486,7 @@ class WebviewIPCBridge {
      * @param {boolean} planningMode Whether planning mode is toggled on.
      * @param {Array} attachedFiles Array of attached file objects.
      */
-    sendUserPrompt(messages, model, thinking, geminiThinkingLevel = 'high', planningMode = false, attachedFiles = []) {
+    sendUserPrompt(messages, model, thinking, geminiThinkingLevel = 'high', planningMode = false, attachedFiles = [], chatId = null) {
         this.postMessage({
             type: 'sendMessage',
             messages,
@@ -485,7 +494,8 @@ class WebviewIPCBridge {
             thinking,
             geminiThinkingLevel,
             planningMode,
-            attachedFiles
+            attachedFiles,
+            chatId
         });
     }
 

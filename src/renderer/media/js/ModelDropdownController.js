@@ -724,6 +724,7 @@ class ModelDropdownController {
         }
 
         this.updateGeminiThinkingVisibility();
+        this.setSelectedModel(this.selectedModelValue);
     }
 
     /**

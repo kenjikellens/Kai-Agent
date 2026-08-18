@@ -53,7 +53,7 @@ class ThinkingStateFormatter {
                         isMultiLevel: hasSelectField,
                         level: effortKey,
                         isOn: isLmThinkingOn,
-                        labelText: isLmThinkingOn ? 'thinking' : '',
+                        labelText: isLmThinkingOn ? (hasSelectField ? effortKey : 'thinking') : '',
                         rawModel: rawModel
                     };
                 }
@@ -65,8 +65,8 @@ class ThinkingStateFormatter {
             const level = localStorage.getItem(`kai.geminiThinkingLevel.${modelId}`) ||
                 localStorage.getItem(`kai.geminiThinkingLevel.${rawModel}`) ||
                 localStorage.getItem('kai.geminiThinkingLevel') || 'high';
-            const levelLabels = { high: 'High', medium: 'Medium', low: 'Low', minimal: 'Off' };
-            const labelText = levelLabels[level] || 'High';
+            const levelLabels = { high: 'high', medium: 'medium', low: 'low', minimal: 'off' };
+            const labelText = levelLabels[level] || 'high';
             const isOn = level !== 'minimal' && level !== 'off';
 
             return {
@@ -74,7 +74,7 @@ class ThinkingStateFormatter {
                 isMultiLevel: true,
                 level: level,
                 isOn: isOn,
-                labelText: labelText,
+                labelText: isOn ? labelText : '',
                 rawModel: rawModel
             };
         }
@@ -93,7 +93,7 @@ class ThinkingStateFormatter {
                 isMultiLevel: true,
                 level: effortKey,
                 isOn: isLmThinkingOn,
-                labelText: isLmThinkingOn ? 'thinking' : '',
+                labelText: isLmThinkingOn ? effortKey : '',
                 rawModel: rawModel
             };
         }
