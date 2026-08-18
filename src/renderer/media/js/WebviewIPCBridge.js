@@ -262,7 +262,7 @@ class WebviewIPCBridge {
                 const model = message.model || 'local-model';
                 const serverUrl = localStorage.getItem('kai.serverUrl') || 'http://127.0.0.1:1234/v1';
                 const activeMode = message.mode || 'chat';
-                const savedWs = localStorage.getItem('kai.workspacePath') || '';
+                const savedWs = message.workspacePath || '';
                 const hasWs = !!savedWs;
 
                 // Load appropriate system prompt for browser preview
@@ -1065,7 +1065,7 @@ class WebviewIPCBridge {
      * @param {boolean} planningMode Whether planning mode is toggled on.
      * @param {Array} attachedFiles Array of attached file objects.
      */
-    sendUserPrompt(messages, model, thinking, geminiThinkingLevel = 'high', planningMode = false, attachedFiles = [], chatId = null, mode = 'agent') {
+    sendUserPrompt(messages, model, thinking, geminiThinkingLevel = 'high', planningMode = false, attachedFiles = [], chatId = null, mode = 'agent', workspacePath = '') {
         this.postMessage({
             type: 'sendMessage',
             messages,
@@ -1075,7 +1075,8 @@ class WebviewIPCBridge {
             planningMode,
             attachedFiles,
             chatId,
-            mode
+            mode,
+            workspacePath
         });
     }
 

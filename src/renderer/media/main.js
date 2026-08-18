@@ -79,7 +79,8 @@
                 appState.activeMode === 'planning',
                 attachedFilesCopy,
                 appState.currentChatId,
-                appState.activeMode
+                appState.activeMode,
+                appState.workspacePath || ''
             );
         }
     };
@@ -103,39 +104,43 @@
         if (targetIndex !== -1) {
             // Count how many user messages came before this one
             const precedingUserNodes = allMessageNodes.slice(0, targetIndex).filter(el => el.classList.contains('user-message-row'));
-            const userMsgIndexInHistory = precedingUserNodes.length;
+            const userIndex = precedingUserNodes.length;
 
-            // Find index in appState.messages for that n-th user message
-            let count = 0;
-            let cutIndexMessages = appState.messages.length;
+            // Find the userIndex-th user message in appState.messages
+            let userMsgCount = 0;
+            let msgCutoffIndex = -1;
             for (let i = 0; i < appState.messages.length; i++) {
                 if (appState.messages[i].role === 'user') {
-                    if (count === userMsgIndexInHistory) {
-                        cutIndexMessages = i;
+                    if (userMsgCount === userIndex) {
+                        msgCutoffIndex = i;
                         break;
                     }
-                    count++;
+                    userMsgCount++;
                 }
             }
 
-            // Find index in appState.uiEvents for that n-th user event
-            let uiCount = 0;
-            let cutIndexUi = appState.uiEvents.length;
+            if (msgCutoffIndex !== -1) {
+                appState.messages = appState.messages.slice(0, msgCutoffIndex);
+            }
+
+            // Find matching cutoff in appState.uiEvents
+            let uiUserCount = 0;
+            let uiCutoffIndex = -1;
             for (let i = 0; i < appState.uiEvents.length; i++) {
                 if (appState.uiEvents[i].type === 'user') {
-                    if (uiCount === userMsgIndexInHistory) {
-                        cutIndexUi = i;
+                    if (uiUserCount === userIndex) {
+                        uiCutoffIndex = i;
                         break;
                     }
-                    uiCount++;
+                    uiUserCount++;
                 }
             }
 
-            // Truncate state to before this prompt
-            appState.messages = appState.messages.slice(0, cutIndexMessages);
-            appState.uiEvents = appState.uiEvents.slice(0, cutIndexUi);
+            if (uiCutoffIndex !== -1) {
+                appState.uiEvents = appState.uiEvents.slice(0, uiCutoffIndex);
+            }
 
-            // Remove DOM nodes from this user row onward
+            // Remove DOM nodes from targetIndex onward
             const nodesToRemove = allMessageNodes.slice(targetIndex);
             nodesToRemove.forEach(node => node.remove());
         }
@@ -162,7 +167,8 @@
             appState.activeMode === 'planning',
             attachedFilesCopy,
             appState.currentChatId,
-            appState.activeMode
+            appState.activeMode,
+            appState.workspacePath || ''
         );
     };
 
@@ -432,7 +438,8 @@
             appState.activeMode === 'planning',
             attachedFilesCopy,
             appState.currentChatId,
-            appState.activeMode
+            appState.activeMode,
+            appState.workspacePath || ''
         );
     }
 

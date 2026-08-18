@@ -381,13 +381,57 @@ body {
   flex-shrink: 0;
 }
 
+/* Action row holding workspace folder button + new chat button */
+.sidebar-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.sidebar-actions-row .workspace-badge {
+  flex: 1;
+  min-width: 0;
+}
+
+.new-chat-btn-compact {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  border-radius: var(--app-radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--app-muted);
+  cursor: pointer;
+  border: 0 !important;
+  background: transparent;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.new-chat-btn-compact:hover {
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
+}
+
 .history-item-delete-btn {
   opacity: 0;
-  padding: 4px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0;
   border-radius: 4px;
   color: var(--app-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
   flex-shrink: 0;
-  transition: opacity 0.15s ease, color 0.15s ease;
+  transition: opacity 0.15s ease, color 0.15s ease, background-color 0.15s ease;
 }
 
 .history-item:hover .history-item-delete-btn {
