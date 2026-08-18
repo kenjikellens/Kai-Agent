@@ -994,7 +994,7 @@ button:disabled {
   width: 100%;
   max-width: 820px;
   margin: 0 auto;
-  padding: 10px 14px;
+  padding: 8px 14px;
   background: var(--app-input-bg);
   border: 1px solid var(--app-border-strong);
   border-radius: 16px;
@@ -1055,16 +1055,17 @@ button:disabled {
 /* Auto-expanding prompt input textarea with max height limit */
 #message-input {
   width: 100%;
-  min-height: 38px;
+  min-height: 24px;
   max-height: 200px;
-  padding: 4px 2px 6px 2px;
+  padding: 2px 2px;
+  margin-bottom: 8px;
   border: 0;
   resize: none;
   overflow-y: hidden;
   background: transparent;
   color: var(--vscode-input-foreground, var(--app-fg));
   font-size: 0.95rem;
-  line-height: 1.5;
+  line-height: 1.4;
   transition: height 0.1s ease-out;
   scrollbar-width: thin;
 }
@@ -1079,7 +1080,6 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-top: 8px;
   margin-left: -14px;
   margin-right: -14px;
   padding-top: 8px;
