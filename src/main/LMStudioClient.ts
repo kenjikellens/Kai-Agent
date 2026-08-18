@@ -41,14 +41,22 @@ export class LMStudioClient implements ILLMProvider {
      */
     private parseServerUrl(): { hostname: string; port: number; pathPrefix: string } {
         try {
-            const parsed = new URL(this.serverUrl);
+            let url = (this.serverUrl || 'http://localhost:1234/v1').trim();
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'http://' + url;
+            }
+            const parsed = new URL(url);
+            let pathPrefix = parsed.pathname.replace(/\/$/, '');
+            if (!pathPrefix) {
+                pathPrefix = '/v1';
+            }
             return {
-                hostname: parsed.hostname || 'localhost',
-                port: parsed.port ? parseInt(parsed.port, 10) : 80,
-                pathPrefix: parsed.pathname.replace(/\/$/, '')
+                hostname: parsed.hostname || '127.0.0.1',
+                port: parsed.port ? parseInt(parsed.port, 10) : 1234,
+                pathPrefix: pathPrefix
             };
         } catch {
-            return { hostname: 'localhost', port: 1234, pathPrefix: '/v1' };
+            return { hostname: '127.0.0.1', port: 1234, pathPrefix: '/v1' };
         }
     }
 
@@ -80,30 +88,48 @@ export class LMStudioClient implements ILLMProvider {
     }
 
     /**
-     * Fetches local LM Studio models via HTTP GET /models.
+     * Fetches local LM Studio models via HTTP GET /models with IPv4 and path fallbacks.
      */
     public async getLMStudioModels(): Promise<string[]> {
         const { hostname, port, pathPrefix } = this.parseServerUrl();
-        const url = `http://${hostname}:${port}${pathPrefix}/models`;
-        try {
-            const res = await HttpClient.getJson<{ data: any[] }>(url, {}, 1500);
-            if (res && Array.isArray(res.data)) {
-                const allIds = res.data.map((m: any) => m.id);
-                return LMStudioReasoningEngine.filterChatModels(allIds);
-            }
-            return [];
-        } catch {
-            return [];
+        const urlsToTry = [
+            `http://${hostname}:${port}${pathPrefix}/models`,
+            `http://${hostname === 'localhost' ? '127.0.0.1' : 'localhost'}:${port}${pathPrefix}/models`,
+            `http://${hostname}:${port}/v1/models`,
+            `http://${hostname}:${port}/models`
+        ];
+
+        const uniqueUrls = Array.from(new Set(urlsToTry));
+
+        for (const url of uniqueUrls) {
+            try {
+                const res = await HttpClient.getJson<{ data: any[] }>(url, {}, 1500);
+                if (res && Array.isArray(res.data) && res.data.length > 0) {
+                    const allIds = res.data.map((m: any) => m.id || m.name).filter(Boolean);
+                    const filtered = LMStudioReasoningEngine.filterChatModels(allIds);
+                    if (filtered.length > 0) {
+                        return filtered;
+                    }
+                }
+            } catch {}
         }
+        return [];
     }
 
     /**
-     * Fetches models currently loaded in LM Studio or Gemini.
+     * Fetches models currently loaded in LM Studio or Gemini with fallback to discovered models.
      */
     public async getLoadedModels(): Promise<string[]> {
         const localLoaded = await this.getLocalLoadedModels().catch(() => []);
+        if (localLoaded.length > 0) {
+            return localLoaded;
+        }
+        const lmModels = await this.getLMStudioModels().catch(() => []);
+        if (lmModels.length > 0) {
+            return lmModels;
+        }
         const geminiModels = await this.geminiClient.getModels().catch(() => []);
-        return [...localLoaded, ...geminiModels];
+        return geminiModels;
     }
 
     /**

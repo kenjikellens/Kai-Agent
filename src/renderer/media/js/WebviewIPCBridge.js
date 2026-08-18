@@ -52,14 +52,33 @@ class WebviewIPCBridge {
 
                 let lmConnected = false;
                 let lmModels = [];
-                try {
-                    const res = await fetch(`${serverUrl}/models`, { method: 'GET' });
-                    if (res.ok) {
-                        const json = await res.json();
-                        lmModels = (json.data || []).map(m => m.id).filter(Boolean);
-                        lmConnected = lmModels.length > 0;
-                    }
-                } catch (e) {}
+                const rawUrl = (serverUrl || 'http://localhost:1234/v1').trim().replace(/\/$/, '');
+                const urlCandidates = [
+                    `${rawUrl}/models`,
+                    `${rawUrl}/v1/models`,
+                    `${rawUrl.replace('localhost', '127.0.0.1')}/models`,
+                    `${rawUrl.replace('localhost', '127.0.0.1')}/v1/models`,
+                    'http://127.0.0.1:1234/v1/models',
+                    'http://localhost:1234/v1/models'
+                ];
+                const uniqueCandidates = Array.from(new Set(urlCandidates));
+
+                for (const testUrl of uniqueCandidates) {
+                    try {
+                        const controller = new AbortController();
+                        const timer = setTimeout(() => controller.abort(), 1500);
+                        const res = await fetch(testUrl, { method: 'GET', signal: controller.signal });
+                        clearTimeout(timer);
+                        if (res.ok) {
+                            const json = await res.json();
+                            if (json && Array.isArray(json.data) && json.data.length > 0) {
+                                lmModels = json.data.map(m => m.id || m.name).filter(Boolean);
+                                lmConnected = lmModels.length > 0;
+                                if (lmConnected) break;
+                            }
+                        }
+                    } catch (e) {}
+                }
 
                 const defaultGemini = (typeof KAI_CONSTANTS !== 'undefined' && KAI_CONSTANTS.DEFAULT_GEMINI_MODELS) || [
                     'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite',
