@@ -197,6 +197,29 @@ class SettingsController {
                 }
             });
         }
+
+        // 7. Thinking Process Max Height Custom Select Dropdown (60px, 100px, 140px, 180px, 220px)
+        const maxHeightContainer = document.getElementById('thinking-max-height-select-container');
+        if (maxHeightContainer && typeof CustomSelectComponent !== 'undefined') {
+            const storedHeight = localStorage.getItem('kai.thinkingMaxHeight') || '140px';
+            const heightOptions = [
+                { value: '60px', label: '60px (Compact)' },
+                { value: '100px', label: '100px' },
+                { value: '140px', label: '140px (Default)' },
+                { value: '180px', label: '180px' },
+                { value: '220px', label: '220px (Large)' }
+            ];
+            this.thinkingMaxHeightComponent = new CustomSelectComponent({
+                container: maxHeightContainer,
+                id: 'thinking-max-height-input',
+                options: heightOptions,
+                value: storedHeight,
+                onChange: (selectedHeight) => {
+                    localStorage.setItem('kai.thinkingMaxHeight', selectedHeight);
+                    document.documentElement.style.setProperty('--app-thinking-max-height', selectedHeight);
+                }
+            });
+        }
     }
 
     /**

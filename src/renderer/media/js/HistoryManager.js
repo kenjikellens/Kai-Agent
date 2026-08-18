@@ -11,6 +11,7 @@ class HistoryManager {
     constructor(ipcBridge, onViewSwitch) {
         this.ipcBridge = ipcBridge;
         this.onViewSwitch = onViewSwitch;
+        this.onDeleteActiveChat = null;
         this.activeChatId = null;
 
         this.historyList = document.getElementById('history-list');
@@ -18,6 +19,14 @@ class HistoryManager {
 
         // Request initial history load on startup
         this.ipcBridge.loadChatHistory();
+    }
+
+    /**
+     * Registers a callback triggered when the currently opened active chat is deleted.
+     * @param {Function} callback Function receiving deleted chatId.
+     */
+    setOnDeleteActiveChat(callback) {
+        this.onDeleteActiveChat = callback;
     }
 
     /**
@@ -110,7 +119,11 @@ class HistoryManager {
             
             deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                const wasActive = (this.activeChatId === chat.id);
                 this.ipcBridge.deleteChat(chat.id);
+                if (wasActive && typeof this.onDeleteActiveChat === 'function') {
+                    this.onDeleteActiveChat(chat.id);
+                }
             });
             
             item.addEventListener('click', () => {

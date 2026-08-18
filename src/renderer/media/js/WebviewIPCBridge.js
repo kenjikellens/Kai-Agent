@@ -267,12 +267,44 @@ class WebviewIPCBridge {
                         stream: true
                     };
 
+                    const effortVal = message.geminiThinkingLevel || 'xhigh';
+                    const caps = (typeof ThinkingStateFormatter !== 'undefined' && ThinkingStateFormatter._capabilities)
+                        ? (ThinkingStateFormatter._capabilities[model] || ThinkingStateFormatter._capabilities[model.toLowerCase()])
+                        : null;
+
                     if (message.thinking) {
                         payload.thinking = true;
                         payload.enable_thinking = true;
+                        payload.reasoning_effort = effortVal;
                         payload.chat_template_kwargs = { enable_thinking: true };
-                        if (message.geminiThinkingLevel) {
-                            payload.reasoning_effort = message.geminiThinkingLevel;
+
+                        if (caps && Array.isArray(caps.fields)) {
+                            for (const field of caps.fields) {
+                                if (field.type === 'boolean') {
+                                    payload[field.variable] = true;
+                                    payload.chat_template_kwargs[field.variable] = true;
+                                } else if (field.type === 'select') {
+                                    payload[field.variable] = effortVal;
+                                    payload.chat_template_kwargs[field.variable] = effortVal;
+                                }
+                            }
+                        }
+                    } else {
+                        payload.thinking = false;
+                        payload.enable_thinking = false;
+                        payload.reasoning_effort = 'none';
+                        payload.chat_template_kwargs = { enable_thinking: false };
+
+                        if (caps && Array.isArray(caps.fields)) {
+                            for (const field of caps.fields) {
+                                if (field.type === 'boolean') {
+                                    payload[field.variable] = false;
+                                    payload.chat_template_kwargs[field.variable] = false;
+                                } else if (field.type === 'select') {
+                                    payload[field.variable] = 'none';
+                                    payload.chat_template_kwargs[field.variable] = 'none';
+                                }
+                            }
                         }
                     }
 
@@ -291,6 +323,7 @@ class WebviewIPCBridge {
                     let fullText = '';
                     let buffer = '';
                     let isThinking = false;
+                    const allowThinkingUI = !!message.thinking;
 
                     while (true) {
                         const { done, value } = await reader.read();
@@ -312,7 +345,7 @@ class WebviewIPCBridge {
                                     const reasoningChunk = delta.reasoning_content || delta.reasoning;
                                     const contentChunk = delta.content || delta.text;
 
-                                    if (reasoningChunk) {
+                                    if (reasoningChunk && allowThinkingUI) {
                                         if (!isThinking) {
                                             isThinking = true;
                                             fullText += '<think>';
@@ -328,22 +361,25 @@ class WebviewIPCBridge {
                                             progressType: 'token',
                                             output: reasoningChunk
                                         });
-                                    } else if (contentChunk) {
-                                        if (isThinking) {
-                                            isThinking = false;
-                                            fullText += '</think>';
+                                    } else {
+                                        const textToAdd = contentChunk || (!allowThinkingUI ? reasoningChunk : '');
+                                        if (textToAdd) {
+                                            if (isThinking) {
+                                                isThinking = false;
+                                                fullText += '</think>';
+                                                emit({
+                                                    type: 'agentProgress',
+                                                    progressType: 'token',
+                                                    output: '</think>'
+                                                });
+                                            }
+                                            fullText += textToAdd;
                                             emit({
                                                 type: 'agentProgress',
                                                 progressType: 'token',
-                                                output: '</think>'
+                                                output: textToAdd
                                             });
                                         }
-                                        fullText += contentChunk;
-                                        emit({
-                                            type: 'agentProgress',
-                                            progressType: 'token',
-                                            output: contentChunk
-                                        });
                                     }
                                 } catch (e) {}
                             }
@@ -366,24 +402,42 @@ class WebviewIPCBridge {
                         modifiedFiles: []
                     });
 
-                    // Trigger Background AI Chat Title Generation (Zero-Thinking, Non-Streaming)
+                    // Trigger Background AI Chat Title Generation ONLY on the very first user message
                     const targetChatId = message.chatId;
-                    const firstUserMsg = messages.find(m => m.role === 'user');
-                    if (firstUserMsg && firstUserMsg.content) {
+                    const userMessages = messages.filter(m => m.role === 'user');
+                    const firstUserMsg = userMessages[0];
+                    if (userMessages.length === 1 && firstUserMsg && firstUserMsg.content) {
                         (async () => {
                             try {
                                 const titlePrompt = `Summarize the following user request into a concise 3 to 5 word topic title for a chat sidebar. Answer with ONLY the title words, no quotes, no formatting, no thinking:\n\n${firstUserMsg.content.slice(0, 300)}`;
+                                const titlePayload = {
+                                    model: model,
+                                    messages: [{ role: 'user', content: titlePrompt }],
+                                    stream: false,
+                                    max_tokens: 300,
+                                    temperature: 0.2,
+                                    thinking: false,
+                                    enable_thinking: false,
+                                    reasoning_effort: 'none',
+                                    chat_template_kwargs: { enable_thinking: false }
+                                };
+
+                                if (caps && Array.isArray(caps.fields)) {
+                                    for (const field of caps.fields) {
+                                        if (field.type === 'boolean') {
+                                            titlePayload[field.variable] = false;
+                                            titlePayload.chat_template_kwargs[field.variable] = false;
+                                        } else if (field.type === 'select') {
+                                            titlePayload[field.variable] = 'none';
+                                            titlePayload.chat_template_kwargs[field.variable] = 'none';
+                                        }
+                                    }
+                                }
+
                                 const titleRes = await fetch(cleanUrl, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        model: model,
-                                        messages: [{ role: 'user', content: titlePrompt }],
-                                        stream: false,
-                                        max_tokens: 300,
-                                        temperature: 0.2,
-                                        chat_template_kwargs: { enable_thinking: false }
-                                    })
+                                    body: JSON.stringify(titlePayload)
                                 });
                                 if (titleRes.ok) {
                                     const titleData = await titleRes.json();

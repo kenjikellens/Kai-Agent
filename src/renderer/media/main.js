@@ -62,27 +62,39 @@
         });
     }
 
+    /**
+     * Resets active session and UI for a brand new chat.
+     */
+    function createNewChat() {
+        if (appState.isWaitingForResponse) {
+            ipcBridge.abort();
+        }
+        appState.resetChat();
+        historyManager.setActiveChatId(null);
+        chatUIController.clearChatContainer();
+        chatUIController.resetAssistantStream();
+        chatUIController.setUiLoading(false, appState);
+        chatUIController.showView('chat');
+        ipcBridge.loadChatHistory();
+        if (messageInput) {
+            messageInput.focus();
+        }
+    }
+
     // New Chat Click Handler
     if (newChatBtn) {
         newChatBtn.addEventListener('click', () => {
-            if (appState.isWaitingForResponse) {
-                ipcBridge.abort();
-            }
             if (appState.messages.length > 0) {
                 saveCurrentChat();
             }
-            appState.resetChat();
-            historyManager.setActiveChatId(null);
-            chatUIController.clearChatContainer();
-            chatUIController.resetAssistantStream();
-            chatUIController.setUiLoading(false, appState);
-            chatUIController.showView('chat');
-            ipcBridge.loadChatHistory();
-            if (messageInput) {
-                messageInput.focus();
-            }
+            createNewChat();
         });
     }
+
+    // When user deletes the currently open chat from sidebar, reset to a clean new chat
+    historyManager.setOnDeleteActiveChat(() => {
+        createNewChat();
+    });
 
     /**
      * Dynamically resizes the message input textarea based on content scrollHeight.

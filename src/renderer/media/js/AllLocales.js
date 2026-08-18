@@ -45,7 +45,8 @@ window.KAI_ALL_LOCALES = {
     "welcomeTitle": "مرحباً بك في Kai",
     "welcomePromptHint": "اطرح سؤالاً أو حرر التعليمات البرمجية أو أرفق ملفات للبدء",
     "help": "مساعدة",
-    "readme": "README"
+    "readme": "README",
+    "thinkingMaxHeight": "أقصى ارتفاع لعملية التفكير"
   },
   "cs": {
     "newChat": "Nový chat",
@@ -93,7 +94,8 @@ window.KAI_ALL_LOCALES = {
     "welcomeTitle": "Vítejte v Kai",
     "welcomePromptHint": "Položte otázku, upravte kód nebo připojte soubory a začněte",
     "help": "Nápověda",
-    "readme": "README"
+    "readme": "README",
+    "thinkingMaxHeight": "Maximální výška procesu myšlení"
   },
   "de": {
     "newChat": "Neuer Chat",
@@ -141,7 +143,8 @@ window.KAI_ALL_LOCALES = {
     "welcomeTitle": "Willkommen bei Kai",
     "welcomePromptHint": "Stellen Sie eine Frage, bearbeiten Sie Code oder fügen Sie Dateien an, um zu beginnen",
     "help": "Hilfe",
-    "readme": "README"
+    "readme": "README",
+    "thinkingMaxHeight": "Maximale Höhe des Denkprozesses"
   },
   "en": {
     "newChat": "New Chat",
@@ -189,7 +192,8 @@ window.KAI_ALL_LOCALES = {
     "welcomeTitle": "Welcome to Kai",
     "welcomePromptHint": "Ask a question, edit code, or attach files to begin",
     "help": "Help",
-    "readme": "README"
+    "readme": "README",
+    "thinkingMaxHeight": "Thinking Process Max Height"
   },
   "es": {
     "newChat": "Nuevo Chat",
@@ -237,7 +241,8 @@ window.KAI_ALL_LOCALES = {
     "welcomeTitle": "Bienvenido a Kai",
     "welcomePromptHint": "Haga una pregunta, edite código o adjunte archivos para comenzar",
     "help": "Ayuda",
-    "readme": "README"
+    "readme": "README",
+    "thinkingMaxHeight": "Altura máxima del proceso de pensamiento"
   },
   "fr": {
     "newChat": "Nouvelle Discussion",
@@ -285,7 +290,8 @@ window.KAI_ALL_LOCALES = {
     "welcomeTitle": "Bienvenue sur Kai",
     "welcomePromptHint": "Posez une question, modifiez du code ou joignez des fichiers pour commencer",
     "help": "Aide",
-    "readme": "README"
+    "readme": "README",
+    "thinkingMaxHeight": "Hauteur maximale du processus de réflexion"
   },
   "hi": {
     "newChat": "नया चैट",
@@ -333,7 +339,8 @@ window.KAI_ALL_LOCALES = {
     "welcomeTitle": "Kai में आपका स्वागत है",
     "welcomePromptHint": "शुरू करने के लिए कोई प्रश्न पूछें, कोड संपादित करें या फ़ाइलें संलग्न करें",
     "help": "मदद",
-    "readme": "README"
+    "readme": "README",
+    "thinkingMaxHeight": "सोचने की प्रक्रिया की अधिकतम ऊंचाई"
   },
   "hu": {
     "newChat": "Új csevegés",
@@ -381,7 +388,8 @@ window.KAI_ALL_LOCALES = {
     "welcomeTitle": "Üdvözli a Kai",
     "welcomePromptHint": "Tegyen fel egy kérdést, szerkesszen kódot vagy csatoljon fájlokat a kezdéshez",
     "help": "Súgó",
-    "readme": "README"
+    "readme": "README",
+    "thinkingMaxHeight": "Gondolkodási folyamat maximális magassága"
   },
   "it": {
     "newChat": "Nuova Chat",
@@ -429,7 +437,8 @@ window.KAI_ALL_LOCALES = {
     "welcomeTitle": "Benvenuto in Kai",
     "welcomePromptHint": "Fai una domanda, modifica il codice o allega file per iniziare",
     "help": "Aiuto",
-    "readme": "README"
+    "readme": "README",
+    "thinkingMaxHeight": "Altezza massima del processo di pensiero"
   },
   "ja": {
     "newChat": "新規チャット",
@@ -477,7 +486,8 @@ window.KAI_ALL_LOCALES = {
     "welcomeTitle": "Kai へようこそ",
     "welcomePromptHint": "質問を入力、コードを編集、またはファイルを添付して開始してください",
     "help": "ヘルプ",
-    "readme": "README"
+    "readme": "README",
+    "thinkingMaxHeight": "思考プロセスの最大高さ"
   },
   "ko": {
     "newChat": "새 채팅",
@@ -525,7 +535,8 @@ window.KAI_ALL_LOCALES = {
     "welcomeTitle": "Kai에 오신 것을 환영합니다",
     "welcomePromptHint": "질문하기, 코드 수정 또는 파일을 첨부하여 시작하세요",
     "help": "도움말",
-    "readme": "README"
+    "readme": "README",
+    "thinkingMaxHeight": "사고 과정 최대 높이"
   },
   "nl": {
     "newChat": "Nieuwe Chat",
@@ -573,7 +584,8 @@ window.KAI_ALL_LOCALES = {
     "welcomeTitle": "Welkom bij Kai",
     "welcomePromptHint": "Stel een vraag, bewerk code of voeg bestanden toe om te beginnen",
     "help": "Help",
-    "readme": "README"
+    "readme": "README",
+    "thinkingMaxHeight": "Maximale hoogte thinking proces"
   },
   "pl": {
     "newChat": "Nowy czat",
@@ -621,7 +633,8 @@ window.KAI_ALL_LOCALES = {
     "welcomeTitle": "Witaj w Kai",
     "welcomePromptHint": "Zadaj pytanie, edytuj kod lub dołącz pliki, aby rozpocząć",
     "help": "Pomoc",
-    "readme": "README"
+    "readme": "README",
+    "thinkingMaxHeight": "Maksymalna wysokość procesu myślenia"
   },
   "pt": {
     "newChat": "Novo Chat",
@@ -669,7 +682,8 @@ window.KAI_ALL_LOCALES = {
     "welcomeTitle": "Bem-vindo ao Kai",
     "welcomePromptHint": "Faça uma pergunta, edite o código ou anexe arquivos para começar",
     "help": "Ajuda",
-    "readme": "README"
+    "readme": "README",
+    "thinkingMaxHeight": "Altura máxima do processo de pensamento"
   },
   "ru": {
     "newChat": "Новый чат",
@@ -717,7 +731,8 @@ window.KAI_ALL_LOCALES = {
     "welcomeTitle": "Добро пожаловать в Kai",
     "welcomePromptHint": "Задайте вопрос, измените код или прикрепите файлы для начала",
     "help": "Справка",
-    "readme": "README"
+    "readme": "README",
+    "thinkingMaxHeight": "Максимальная высота процесса мышления"
   },
   "tr": {
     "newChat": "Yeni Sohbet",
@@ -765,7 +780,8 @@ window.KAI_ALL_LOCALES = {
     "welcomeTitle": "Kai'ye Hoş Geldiniz",
     "welcomePromptHint": "Başlamak için bir soru sorun, kod düzenleyin veya dosya ekleyin",
     "help": "Yardım",
-    "readme": "README"
+    "readme": "README",
+    "thinkingMaxHeight": "Düşünme Süreci Maksimum Yüksekliği"
   },
   "zh_tw": {
     "newChat": "建立新對話",
@@ -813,7 +829,8 @@ window.KAI_ALL_LOCALES = {
     "welcomeTitle": "歡迎使用 Kai",
     "welcomePromptHint": "提出問題、編輯程式碼或附加檔案以開始",
     "help": "說明",
-    "readme": "README"
+    "readme": "README",
+    "thinkingMaxHeight": "Thinking Process Max Height"
   },
   "zh": {
     "newChat": "新建对话",
@@ -861,6 +878,7 @@ window.KAI_ALL_LOCALES = {
     "welcomeTitle": "欢迎使用 Kai",
     "welcomePromptHint": "提出问题、编辑代码或附加文件以开始",
     "help": "帮助",
-    "readme": "README"
+    "readme": "README",
+    "thinkingMaxHeight": "思考过程最大高度"
   }
 };

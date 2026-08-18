@@ -1743,7 +1743,7 @@ button:disabled {
 }
 
 .thinking-content {
-  max-height: 78px;
+  max-height: var(--app-thinking-max-height, 140px);
   overflow-y: auto;
   white-space: pre-wrap;
   color: var(--app-muted);

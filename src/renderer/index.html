@@ -146,7 +146,31 @@
                             </div>
                         </div>
 
-                        <!-- Section 2: Local AI (LM Studio) -->
+                        <!-- Section 2: Reasoning & Thinking -->
+                        <div class="settings-section" id="category-thinking">
+                            <div class="settings-section-header">
+                                <span class="settings-section-title" data-i18n="thinkingSettings">Thinking & Reasoning</span>
+                            </div>
+                            <div class="settings-section-body">
+                                <div class="setting-row" id="show-thinking-setting-row"></div>
+                                <div class="setting-row" id="keep-thinking-generating-setting-row"></div>
+                                <div class="setting-row" id="keep-thinking-finished-setting-row"></div>
+                                <div class="setting-row">
+                                    <div class="setting-info">
+                                        <span class="setting-label" data-i18n="thinkingDisplayStyle">Thinking Display Format</span>
+                                    </div>
+                                    <div class="setting-control" id="thinking-style-select-container"></div>
+                                </div>
+                                <div class="setting-row">
+                                    <div class="setting-info">
+                                        <span class="setting-label" data-i18n="thinkingMaxHeight">Thinking Process Max Height</span>
+                                    </div>
+                                    <div class="setting-control" id="thinking-max-height-select-container"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 3: Local AI (LM Studio) -->
                         <div class="settings-section" id="category-lmstudio">
                             <div class="settings-section-header">
                                 <span class="settings-section-title" data-i18n="lmStudioHeader">LM Studio</span>
@@ -178,7 +202,7 @@
                             </div>
                         </div>
 
-                        <!-- Section 3: Cloud AI & API Keys -->
+                        <!-- Section 4: Cloud AI & API Keys -->
                         <div class="settings-section" id="category-apikeys">
                             <div class="settings-section-header">
                                 <span class="settings-section-title" data-i18n="apiKeysSettings">API Keys & Providers</span>
@@ -198,24 +222,6 @@
                                 <div id="free-providers-keys-list" class="free-providers-keys-list"></div>
                             </div>
                         </div>
-
-                        <!-- Section 4: Reasoning & Thinking -->
-                        <div class="settings-section" id="category-thinking">
-                            <div class="settings-section-header">
-                                <span class="settings-section-title" data-i18n="thinkingSettings">Thinking & Reasoning</span>
-                            </div>
-                            <div class="settings-section-body">
-                                <div class="setting-row" id="show-thinking-setting-row"></div>
-                                <div class="setting-row" id="keep-thinking-generating-setting-row"></div>
-                                <div class="setting-row" id="keep-thinking-finished-setting-row"></div>
-                                <div class="setting-row">
-                                    <div class="setting-info">
-                                        <span class="setting-label" data-i18n="thinkingDisplayStyle">Thinking Display Format</span>
-                                    </div>
-                                    <div class="setting-control" id="thinking-style-select-container"></div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -228,6 +234,8 @@
         try {
             const savedScale = localStorage.getItem('kai.uiScale') || '1.0';
             document.documentElement.style.zoom = savedScale;
+            const savedThinkingHeight = localStorage.getItem('kai.thinkingMaxHeight') || '140px';
+            document.documentElement.style.setProperty('--app-thinking-max-height', savedThinkingHeight);
         } catch (e) {}
 
         window.KAI_SVGS = window.KAI_SVGS || {};
@@ -269,23 +277,23 @@
     </script>
 
     <!-- Load Modular Client Scripts -->
-    <script src="media/js/AllLocales.js?v=16"></script>
-    <script src="media/js/Constants.js?v=16"></script>
-    <script src="media/js/DOMUtils.js?v=16"></script>
-    <script src="media/js/AppState.js?v=16"></script>
-    <script src="media/js/MarkdownFormatter.js?v=16"></script>
-    <script src="media/js/WebviewIPCBridge.js?v=16"></script>
-    <script src="media/js/FileSummaryWidget.js?v=16"></script>
-    <script src="media/js/ToggleComponent.js?v=16"></script>
-    <script src="media/js/CustomSelectComponent.js?v=16"></script>
-    <script src="media/js/ThinkingStateFormatter.js?v=16"></script>
-    <script src="media/js/ModelDropdownController.js?v=16"></script>
-    <script src="media/js/SettingsController.js?v=16"></script>
-    <script src="media/js/HistoryManager.js?v=16"></script>
-    <script src="media/js/FileUploadController.js?v=16"></script>
-    <script src="media/js/HelpModalController.js?v=16"></script>
-    <script src="media/js/ChatUIController.js?v=16"></script>
-    <script src="media/main.js?v=16"></script>
+    <script src="media/js/AllLocales.js"></script>
+    <script src="media/js/Constants.js"></script>
+    <script src="media/js/DOMUtils.js"></script>
+    <script src="media/js/AppState.js"></script>
+    <script src="media/js/MarkdownFormatter.js"></script>
+    <script src="media/js/WebviewIPCBridge.js"></script>
+    <script src="media/js/FileSummaryWidget.js"></script>
+    <script src="media/js/ToggleComponent.js"></script>
+    <script src="media/js/CustomSelectComponent.js"></script>
+    <script src="media/js/ThinkingStateFormatter.js"></script>
+    <script src="media/js/ModelDropdownController.js"></script>
+    <script src="media/js/SettingsController.js"></script>
+    <script src="media/js/HistoryManager.js"></script>
+    <script src="media/js/FileUploadController.js"></script>
+    <script src="media/js/HelpModalController.js"></script>
+    <script src="media/js/ChatUIController.js"></script>
+    <script src="media/main.js"></script>
 
     <!-- Dynamic Connection Status Handler -->
     <script>
