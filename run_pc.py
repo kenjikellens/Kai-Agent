@@ -103,7 +103,7 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self):
-        """Serves static files and LM Studio capabilities API."""
+        """Serves static files, system prompts and LM Studio capabilities API."""
         if self.path.startswith("/api/capabilities"):
             caps = get_lmstudio_capabilities()
             self.send_response(200)
@@ -111,6 +111,18 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps(caps).encode("utf-8"))
             return
+
+        # Serve system prompt markdown files located in APP_DIR
+        clean_path = self.path.lstrip("/")
+        if clean_path.startswith("system_prompt") and clean_path.endswith(".md"):
+            prompt_file = APP_DIR / clean_path
+            if prompt_file.exists():
+                self.send_response(200)
+                self.send_header("Content-Type", "text/markdown; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(prompt_file.read_bytes())
+                return
+
         super().do_GET()
 
     def do_POST(self):

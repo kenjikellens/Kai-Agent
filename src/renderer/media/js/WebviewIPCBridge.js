@@ -174,8 +174,27 @@ class WebviewIPCBridge {
                         error: lmConnected ? '' : 'LM Studio server offline'
                     },
                     lmStudioCapabilities: lmStudioCapabilities,
-                    workspacePath: 'Browser Preview',
-                    workspaceName: 'Browser Preview'
+                const savedWs = localStorage.getItem('kai.workspacePath') || '';
+                emit({
+                    type: 'connectionStatus',
+                    connected: lmConnected,
+                    geminiConnected: isGeminiConnected,
+                    model: activeModel,
+                    lmStudioModels: lmModels,
+                    geminiModels: defaultGemini,
+                    loadedModels: loadedModels,
+                    freeProviders: freeProvidersConfig,
+                    serverUrl: serverUrl,
+                    apiKey: apiKey,
+                    lmStudioCacheDir: localStorage.getItem('kai.lmStudioCacheDir') || '',
+                    lmStudioCacheStatus: {
+                        valid: lmConnected,
+                        modelCount: lmModels.length,
+                        error: lmConnected ? '' : 'LM Studio server offline'
+                    },
+                    lmStudioCapabilities: lmStudioCapabilities,
+                    workspacePath: savedWs,
+                    workspaceName: savedWs ? savedWs.split(/[\\/]/).pop() : ''
                 });
                 break;
             }
@@ -249,9 +268,37 @@ class WebviewIPCBridge {
                 break;
             }
             case 'sendMessage': {
-                const messages = message.messages || [];
+                const rawMessages = message.messages || [];
                 const model = message.model || 'local-model';
                 const serverUrl = localStorage.getItem('kai.serverUrl') || 'http://127.0.0.1:1234/v1';
+                const activeMode = message.mode || 'chat';
+                const savedWs = localStorage.getItem('kai.workspacePath') || '';
+                const hasWs = !!savedWs;
+
+                // Load appropriate system prompt for browser preview
+                let systemPrompt = `You are Kai, a friendly, intelligent, and versatile AI assistant with web access and utility tools. Respond in the user's language.`;
+                try {
+                    let promptFile = 'system_prompt_chat.md';
+                    if (activeMode === 'chat') {
+                        promptFile = hasWs ? 'system_prompt_chat_workspace.md' : 'system_prompt_chat.md';
+                    } else if (activeMode === 'planning') {
+                        promptFile = 'system_prompt_planning.md';
+                    } else if (activeMode === 'agent') {
+                        promptFile = 'system_prompt_agent.md';
+                    }
+                    const promptRes = await fetch(`/${promptFile}`);
+                    if (promptRes.ok) {
+                        systemPrompt = await promptRes.text();
+                    }
+                } catch (e) {}
+
+                const messagesToSend = [...rawMessages];
+                const sysIdx = messagesToSend.findIndex(m => m.role === 'system');
+                if (sysIdx !== -1) {
+                    messagesToSend[sysIdx] = { role: 'system', content: systemPrompt };
+                } else {
+                    messagesToSend.unshift({ role: 'system', content: systemPrompt });
+                }
 
                 emit({
                     type: 'agentProgress',
@@ -263,7 +310,7 @@ class WebviewIPCBridge {
                     const cleanUrl = serverUrl.replace(/\/$/, '') + '/chat/completions';
                     const payload = {
                         model: model,
-                        messages: messages.map(m => ({ role: m.role, content: m.content })),
+                        messages: messagesToSend.map(m => ({ role: m.role, content: m.content })),
                         stream: true
                     };
 
