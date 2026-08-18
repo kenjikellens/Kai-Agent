@@ -207,7 +207,7 @@ class MarkdownFormatter {
             const blockHtml = `<div class="code-block-wrapper"><div class="code-block-header"><span class="code-lang-label">${this.escapeHtml(languageLabel)}</span><div class="code-block-actions"><button type="button" class="copy-code-btn" title="Copy code" aria-label="Copy code">${copyIconSvg}</button><button type="button" class="download-code-btn" title="Download snippet" aria-label="Download snippet" data-lang="${this.escapeHtml(languageLabel)}">${downloadIconSvg}</button></div></div><pre><code class="language-${this.escapeHtml(languageLabel)}">${highlighted}</code></pre></div>`;
             const idx = codeBlocks.length;
             codeBlocks.push(blockHtml);
-            return `\n\n___CODE_BLOCK_${idx}___\n\n`;
+            return `\n___CODE_BLOCK_${idx}___\n`;
         });
 
         // Streaming unclosed code blocks at end
@@ -217,7 +217,7 @@ class MarkdownFormatter {
             const blockHtml = `<div class="code-block-wrapper"><div class="code-block-header"><span class="code-lang-label">${this.escapeHtml(languageLabel)}</span><div class="code-block-actions"><button type="button" class="copy-code-btn" title="Copy code" aria-label="Copy code">${copyIconSvg}</button><button type="button" class="download-code-btn" title="Download snippet" aria-label="Download snippet" data-lang="${this.escapeHtml(languageLabel)}">${downloadIconSvg}</button></div></div><pre><code class="language-${this.escapeHtml(languageLabel)}">${highlighted}</code></pre></div>`;
             const idx = codeBlocks.length;
             codeBlocks.push(blockHtml);
-            return `\n\n___CODE_BLOCK_${idx}___\n\n`;
+            return `\n___CODE_BLOCK_${idx}___\n`;
         });
 
         // 2. Extract inline code into isolated placeholders

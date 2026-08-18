@@ -435,7 +435,12 @@ class WebviewIPCBridge {
                                                     emit({ type: 'agentProgress', progressType: 'token', output: '</think>' });
                                                 }
                                                 fullText += textToAdd;
-                                                emit({ type: 'agentProgress', progressType: 'token', output: textToAdd });
+
+                                                // Check if a tool call was initiated (e.g. <tool_call>, <|tool_call|>, ```json {)
+                                                const toolTagMatch = /<\|?tool_call\|?>|```json\s*\{/i.exec(fullText);
+                                                if (!toolTagMatch) {
+                                                    emit({ type: 'agentProgress', progressType: 'token', output: textToAdd });
+                                                }
                                             }
                                         }
                                     } catch (e) {}
@@ -458,7 +463,7 @@ class WebviewIPCBridge {
                             break;
                         }
 
-                        // Tool call detected — execute it
+                        // Tool call detected — emit tool_start BEFORE starting execution
                         messagesToSend.push({ role: 'assistant', content: fullText });
 
                         const toolId = `tool-${Date.now()}-${iteration}`;
