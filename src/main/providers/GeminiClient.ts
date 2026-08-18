@@ -42,6 +42,34 @@ export class GeminiClient implements ILLMProvider {
     }
 
     /**
+     * Validates if the given Gemini API key is valid via a lightweight ping.
+     * @param apiKey Optional explicit API key to test.
+     * @returns Promise resolving to true if valid, false otherwise.
+     */
+    public async validateApiKey(apiKey?: string): Promise<boolean> {
+        const key = apiKey || this.apiKey;
+        if (!key || key.trim() === '') {
+            return false;
+        }
+
+        return new Promise<boolean>((resolve) => {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key.trim())}`;
+            try {
+                const req = https.get(url, { timeout: 2500 }, (res) => {
+                    resolve(Boolean(res.statusCode && res.statusCode >= 200 && res.statusCode < 300));
+                });
+                req.on('error', () => resolve(false));
+                req.on('timeout', () => {
+                    req.destroy();
+                    resolve(false);
+                });
+            } catch {
+                resolve(false);
+            }
+        });
+    }
+
+    /**
      * Executes non-streaming chat completion with Gemini API.
      */
     public async chatCompletion(

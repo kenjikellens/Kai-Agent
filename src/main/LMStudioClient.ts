@@ -147,6 +147,25 @@ export class LMStudioClient implements ILLMProvider {
     }
 
     /**
+     * Validates if Gemini API key is valid.
+     * @param apiKey Optional explicit API key.
+     * @returns Promise resolving to boolean validity.
+     */
+    public async validateGemini(apiKey?: string): Promise<boolean> {
+        return this.geminiClient.validateApiKey(apiKey);
+    }
+
+    /**
+     * Validates if a free provider API key is working.
+     * @param configKey Provider configuration key.
+     * @param apiKey Optional explicit API key.
+     * @returns Promise resolving to boolean validity.
+     */
+    public async validateFreeProvider(configKey: string, apiKey?: string): Promise<boolean> {
+        return this.freeProviderClient.validateProvider(configKey, apiKey);
+    }
+
+    /**
      * Sends non-streaming chat completion to local LM Studio server.
      */
     public async chatCompletion(

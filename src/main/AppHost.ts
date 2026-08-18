@@ -76,7 +76,6 @@ export class AppHost {
                 break;
             }
             case 'updateSettings': {
-                const envUpdates: Record<string, string> = {};
                 const updates: any = {};
 
                 if (data.serverUrl !== undefined) updates.serverUrl = data.serverUrl;
@@ -89,6 +88,13 @@ export class AppHost {
                 if (data.providerKeys && typeof data.providerKeys === 'object') {
                     for (const [configKey, keyValue] of Object.entries(data.providerKeys)) {
                         updates[configKey] = keyValue;
+                    }
+                }
+                if (Array.isArray(data.freeProviders)) {
+                    for (const p of data.freeProviders) {
+                        if (p.configKey && p.apiKey !== undefined) {
+                            updates[p.configKey] = p.apiKey;
+                        }
                     }
                 }
 
@@ -240,12 +246,12 @@ export class AppHost {
     }
 
     /**
-     * Checks LLM server and Gemini connectivity.
+     * Checks LLM server, Gemini, and cloud provider connectivity in parallel.
      */
     public async handleCheckConnection(): Promise<void> {
         const config = this.configManager.getConfig();
         const serverUrl = config.serverUrl || 'http://localhost:1234/v1';
-        const apiKey = config.apiKey || '';
+        const apiKey = (config.apiKey || '').trim();
         const translations = I18nManager.getTranslations();
         const activeLang = I18nManager.getActiveLanguage();
         const workspacePath = this.workspaceManager.getWorkspacePath();
@@ -256,30 +262,45 @@ export class AppHost {
                 configKey: p.configKey,
                 keyHint: p.keyHint,
                 models: p.models,
-                apiKey: (config as any)[p.configKey] || ''
+                apiKey: ((config as any)[p.configKey] || '').trim(),
+                connected: false
             }));
         };
 
-        const client = new LMStudioClient(serverUrl);
+        const client = new LMStudioClient(serverUrl, apiKey);
+        const rawFreeProviders = buildFreeProviders();
 
-        const [lmResult, geminiResult] = await Promise.allSettled([
+        // Perform fast concurrent validation across local server, Gemini, and cloud providers
+        const [lmResult, geminiValidationResult, ...freeValidationResults] = await Promise.allSettled([
             client.getLMStudioModels(),
-            client.getGeminiModels(apiKey)
+            apiKey ? client.validateGemini(apiKey) : Promise.resolve(false),
+            ...rawFreeProviders.map(p => p.apiKey ? client.validateFreeProvider(p.configKey, p.apiKey) : Promise.resolve(false))
         ]);
 
         const lmModels = lmResult.status === 'fulfilled' ? lmResult.value : [];
         const lmStudioConnected = lmResult.status === 'fulfilled' && lmModels.length > 0;
-        const geminiModels = geminiResult.status === 'fulfilled' ? geminiResult.value : [];
+        const isGeminiValid = geminiValidationResult.status === 'fulfilled' ? Boolean(geminiValidationResult.value) : false;
+        const geminiModels = await client.getGeminiModels();
+
+        const updatedFreeProviders = rawFreeProviders.map((p, idx) => {
+            const valRes = freeValidationResults[idx];
+            const isConnected = valRes && valRes.status === 'fulfilled' ? Boolean(valRes.value) : false;
+            return {
+                ...p,
+                connected: isConnected
+            };
+        });
 
         let loadedModels: string[] = [];
         if (lmStudioConnected) {
             loadedModels = await client.getLoadedModels().catch(() => []);
-        } else {
+        } else if (isGeminiValid) {
             loadedModels = [...geminiModels];
         }
 
-        const activeModel = lmModels.length > 0 ? lmModels[0] : (geminiModels.length > 0 ? geminiModels[0] : 'local-model');
-        const updatedFreeProviders = buildFreeProviders();
+        const activeModel = lmModels.length > 0
+            ? lmModels[0]
+            : (isGeminiValid && geminiModels.length > 0 ? geminiModels[0] : 'local-model');
 
         const lmStudioCacheDir = config.lmStudioCacheDir || '';
         const lmStudioCacheStatus = LMStudioManifestParser.validateCache(lmStudioCacheDir);
@@ -289,6 +310,7 @@ export class AppHost {
         this.postMessage({
             type: 'connectionStatus',
             connected: lmStudioConnected,
+            geminiConnected: isGeminiValid,
             model: activeModel,
             lmStudioModels: lmModels,
             geminiModels: geminiModels,

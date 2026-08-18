@@ -102,6 +102,48 @@ export abstract class BaseCloudProviderClient implements ILLMProvider {
     }
 
     /**
+     * Validates if this provider's API key is configured and valid.
+     * @param apiKey Optional explicit API key to test.
+     * @returns Promise resolving to true if key is valid, false otherwise.
+     */
+    public async validateApiKey(apiKey?: string): Promise<boolean> {
+        const key = apiKey !== undefined ? apiKey : this.getProviderApiKey();
+        if (!key || key.trim() === '') {
+            return false;
+        }
+
+        const baseUrl = this.getProviderBaseUrl();
+        return new Promise<boolean>((resolve) => {
+            try {
+                const parsedUrl = new URL(`${baseUrl}/models`);
+                const clientModule = parsedUrl.protocol === 'https:' ? https : http;
+                const options: http.RequestOptions = {
+                    hostname: parsedUrl.hostname,
+                    port: parsedUrl.port ? parseInt(parsedUrl.port, 10) : (parsedUrl.protocol === 'https:' ? 443 : 80),
+                    path: parsedUrl.pathname + parsedUrl.search,
+                    method: 'GET',
+                    timeout: 2500,
+                    headers: {
+                        'Authorization': `Bearer ${key.trim()}`
+                    }
+                };
+
+                const req = clientModule.request(options, (res) => {
+                    resolve(Boolean(res.statusCode && res.statusCode >= 200 && res.statusCode < 300));
+                });
+                req.on('error', () => resolve(false));
+                req.on('timeout', () => {
+                    req.destroy();
+                    resolve(false);
+                });
+                req.end();
+            } catch {
+                resolve(false);
+            }
+        });
+    }
+
+    /**
      * Prepares request payload object before JSON serialization.
      * @param model Bare or full model identifier.
      * @param messages Chat messages array.

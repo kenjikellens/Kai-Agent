@@ -97,6 +97,18 @@ export class FreeProviderClient implements ILLMProvider {
     }
 
     /**
+     * Validates if a specific provider's API key is working.
+     * @param configKey Provider configuration key name.
+     * @param apiKey Optional explicit API key.
+     * @returns Promise resolving to true if valid, false otherwise.
+     */
+    public async validateProvider(configKey: string, apiKey?: string): Promise<boolean> {
+        const client = PROVIDER_CLIENTS.find(c => c.configKey === configKey);
+        if (!client) return false;
+        return client.validateApiKey(apiKey);
+    }
+
+    /**
      * Executes non-streaming chat completion by delegating to the target provider strategy.
      */
     public async chatCompletion(
