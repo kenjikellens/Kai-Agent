@@ -286,13 +286,19 @@
     if (contextModeSelector) {
         contextModeSelector.addEventListener('click', (e) => {
             const item = e.target.closest('.context-mode-item');
-            if (item && item.dataset.mode) {
-                const targetMode = item.dataset.mode;
-                if (!appState.hasActiveWorkspace && targetMode !== 'chat') return;
-                setActiveMode(targetMode);
-                if (contextOptionsMenu) contextOptionsMenu.classList.add('hidden');
-                saveCurrentChat();
+            if (!item || !item.dataset.mode) return;
+
+            const targetMode = item.dataset.mode;
+            // Block selection completely if item is disabled or no active workspace is open
+            if (item.disabled || item.classList.contains('disabled') || (!appState.hasActiveWorkspace && targetMode !== 'chat')) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
             }
+
+            setActiveMode(targetMode);
+            if (contextOptionsMenu) contextOptionsMenu.classList.add('hidden');
+            saveCurrentChat();
         });
     }
 

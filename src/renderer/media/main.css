@@ -1516,6 +1516,12 @@ button:disabled {
   background: transparent !important;
 }
 
+.context-mode-item:disabled *,
+.context-mode-item.disabled * {
+  cursor: not-allowed !important;
+  pointer-events: none;
+}
+
 .context-mode-item:disabled:hover,
 .context-mode-item.disabled:hover {
   background: transparent !important;
