@@ -192,6 +192,13 @@
         });
     }
 
+    const topWorkspaceBtn = document.getElementById('top-workspace-btn');
+    if (topWorkspaceBtn) {
+        topWorkspaceBtn.addEventListener('click', () => {
+            ipcBridge.browseWorkspaceFolder();
+        });
+    }
+
     // Workspace Selector Click Handler
     if (workspaceBadgeBtn) {
         workspaceBadgeBtn.addEventListener('click', () => {
@@ -520,6 +527,23 @@
         }
         const hasWs = Boolean(message.workspacePath);
         appState.hasActiveWorkspace = hasWs;
+
+        const wsNameEl = document.getElementById('active-workspace-name');
+        if (wsNameEl) {
+            wsNameEl.textContent = message.workspaceName || (hasWs ? message.workspacePath.split(/[\\/]/).pop() : 'Select Workspace...');
+        }
+        if (workspaceBadgeBtn) {
+            workspaceBadgeBtn.title = hasWs ? `Active Workspace: ${message.workspacePath} (Click to change)` : 'Click to Select Workspace Directory';
+        }
+
+        const topWsText = document.getElementById('top-workspace-path');
+        if (topWsText) {
+            topWsText.textContent = hasWs ? message.workspacePath : 'No Workspace Selected';
+        }
+        const topWsBtn = document.getElementById('top-workspace-btn');
+        if (topWsBtn) {
+            topWsBtn.title = hasWs ? `Active Workspace: ${message.workspacePath} (Click to change)` : 'Click to Select Workspace Folder';
+        }
 
         if (modeOptAgent) {
             modeOptAgent.disabled = !hasWs;

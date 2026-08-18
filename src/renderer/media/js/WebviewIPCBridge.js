@@ -197,6 +197,14 @@ class WebviewIPCBridge {
                 await this._handleClientSideIPC({ type: 'checkConnection' });
                 break;
             }
+            case 'openFilePicker': {
+                await this._openBrowserFilePicker();
+                break;
+            }
+            case 'browseWorkspaceFolder': {
+                await this._openBrowserFolderPicker();
+                break;
+            }
             case 'saveChat': {
                 try {
                     const chat = message.chat;
@@ -274,7 +282,35 @@ class WebviewIPCBridge {
                     }
                 } catch (e) {}
 
+                // Load workspace structure if available (mirrors AgentExecutor.ts)
+                let workspacePrefix = '';
+                if (hasWs && rawMessages.length <= 1) {
+                    try {
+                        const wsRes = await fetch('/api/tools/execute', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ tool: 'get_workspace_structure', workspacePath: savedWs })
+                        });
+                        if (wsRes.ok) {
+                            const wsData = await wsRes.json();
+                            if (wsData.result) {
+                                workspacePrefix = wsData.result + '\n';
+                            }
+                        }
+                    } catch (e) {}
+                }
+
                 const messagesToSend = [...rawMessages];
+                if (workspacePrefix && messagesToSend.length > 0) {
+                    const firstMsg = messagesToSend[0];
+                    if (firstMsg.role === 'user') {
+                        messagesToSend[0] = {
+                            role: 'user',
+                            content: workspacePrefix + firstMsg.content
+                        };
+                    }
+                }
+
                 const sysIdx = messagesToSend.findIndex(m => m.role === 'system');
                 if (sysIdx !== -1) {
                     messagesToSend[sysIdx] = { role: 'system', content: systemPrompt };
@@ -555,6 +591,48 @@ class WebviewIPCBridge {
      * @param {string} text Full LLM response text.
      * @returns {{ name: string, args: object, query: string } | null} Parsed tool call or null.
      */
+    _openBrowserFilePicker() {
+        return new Promise((resolve) => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.multiple = true;
+            input.accept = '.js,.ts,.jsx,.tsx,.py,.html,.css,.json,.md,.txt,.csv,.java,.c,.cpp,.rs,.go,.php,.rb,.sql,.sh,.yaml,.yml,.xml,.env,.toml,.png,.jpg,.jpeg,.webp,.gif';
+            input.addEventListener('change', async () => {
+                const files = [];
+                for (const file of Array.from(input.files || [])) {
+                    if (file.size > 2 * 1024 * 1024) continue;
+                    try {
+                        const content = await file.text();
+                        files.push({ fileName: file.name, filePath: file.name, relativePath: file.name, content });
+                    } catch (error) {}
+                }
+                if (files.length > 0) this._emitClientSide({ type: 'filesSelected', files });
+                resolve();
+            }, { once: true });
+            input.click();
+        });
+    }
+
+    async _openBrowserFolderPicker() {
+        try {
+            const res = await fetch('/api/workspace/pick', { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                if (!data.canceled && data.workspacePath) {
+                    localStorage.setItem('kai.workspacePath', data.workspacePath);
+                    await this._handleClientSideIPC({ type: 'checkConnection' });
+                }
+            }
+        } catch (e) {
+            console.error('Error selecting workspace folder:', e);
+        }
+    }
+
+    _emitClientSide(message) {
+        if (message && message.type && this.listeners.has(message.type)) {
+            this.listeners.get(message.type).forEach(cb => cb(message));
+        }
+    }
     _parseToolCall(text) {
         // Strategy 1: Explicit <|tool_call|> or <tool_call> tags
         const explicitTagRegex = /<\|?tool_call\|?>\s*([\s\S]*?)\s*(?:<\|?\/tool_call\|?>|<\|?tool_call\|?>|$)/i;
@@ -630,8 +708,13 @@ class WebviewIPCBridge {
      * @returns {{ name: string, args: object, query: string } | null} Parsed tool call or null.
      */
     _parseJsonToolCall(jsonStr) {
-        // List of tools executable in browser preview
-        const supportedTools = ['utility_tools', 'web_search', 'fetch_url', 'get_time', 'calculate', 'text_stats', 'unit_converter', 'uuid_random'];
+        // List of all recognized tools
+        const supportedTools = [
+            'utility_tools', 'web_search', 'search_web', 'fetch_url', 'get_time', 'calculate',
+            'text_stats', 'unit_converter', 'uuid_random', 'read_file', 'write_file', 'edit_file',
+            'replace_file_content', 'multi_replace_file_content', 'list_dir', 'grep_search',
+            'symbol_search', 'get_diagnostics', 'run_command', 'delete_item'
+        ];
 
         try {
             const parsed = JSON.parse(jsonStr.trim());
@@ -642,28 +725,45 @@ class WebviewIPCBridge {
             // Normalize common aliases
             if (type) {
                 const normalized = type.toLowerCase();
-                if (normalized === 'full-web-search' || normalized === 'websearch') {
+                if (normalized === 'full-web-search' || normalized === 'websearch' || normalized === 'search_web') {
                     type = 'web_search';
                 } else {
                     type = normalized;
                 }
             }
 
+            // Fallback inference if type is not explicit
+            if (!type) {
+                if (parsed.expression) type = 'calculate';
+                else if (parsed.from_unit && parsed.to_unit) type = 'unit_converter';
+                else if (parsed.query && !parsed.command) type = 'web_search';
+                else if (parsed.url) type = 'fetch_url';
+                else if (parsed.path && parsed.content !== undefined) type = 'write_file';
+                else if (parsed.path && parsed.content === undefined) type = 'read_file';
+                else if (parsed.command) type = 'run_command';
+            }
+
             if (type && supportedTools.includes(type)) {
                 const args = { ...parsed };
                 delete args.type;
-                delete args.action;
                 delete args.tool;
                 delete args.name;
                 delete args.function;
 
-                let query = `Executing ${type}`;
-                if (args.query) query = `${type}: ${args.query}`;
-                else if (args.url) query = `${type}: ${args.url}`;
-                else if (args.expression) query = `${type}: ${args.expression}`;
-                else if (args.action) query = `${type}: ${args.action}`;
+                // For utility_tools, extract sub-action if available
+                let effectiveTool = type;
+                if (type === 'utility_tools' && args.action) {
+                    effectiveTool = args.action;
+                }
 
-                return { name: type, args, query };
+                let query = `Executing ${effectiveTool}`;
+                if (args.query) query = `${effectiveTool}: ${args.query}`;
+                else if (args.url) query = `${effectiveTool}: ${args.url}`;
+                else if (args.expression) query = `${effectiveTool}: ${args.expression}`;
+                else if (args.action) query = `${effectiveTool}: ${args.action}`;
+                else if (args.path) query = `${effectiveTool}: ${args.path}`;
+
+                return { name: effectiveTool, args, query };
             }
         } catch (e) {}
         return null;
@@ -676,14 +776,20 @@ class WebviewIPCBridge {
      * @returns {string} Human-readable target name.
      */
     _getToolTarget(tool, args) {
-        if (tool === 'web_search') return args.query ? `"${args.query}"` : '';
+        if (!args) return '';
+        if (tool === 'web_search' || tool === 'search_web') return args.query ? `"${args.query}"` : '';
         if (tool === 'fetch_url') return args.url || '';
         if (tool === 'utility_tools') return args.action || '';
         if (tool === 'get_time') return 'current time';
         if (tool === 'calculate') return args.expression || '';
         if (tool === 'text_stats') return 'text analysis';
         if (tool === 'unit_converter') return `${args.value || ''} ${args.from_unit || ''} → ${args.to_unit || ''}`;
-        if (tool === 'uuid_random') return 'generate';
+        if (tool === 'uuid_random') return args.type || 'uuid';
+        if (tool === 'read_file' || tool === 'write_file' || tool === 'edit_file' || tool === 'replace_file_content' || tool === 'multi_replace_file_content' || tool === 'list_dir' || tool === 'delete_item') {
+            return args.path ? (args.path.split(/[\\/]/).pop() || args.path) : '';
+        }
+        if (tool === 'run_command') return args.command || '';
+        if (tool === 'grep_search') return args.query ? `"${args.query}"` : '';
         return '';
     }
 
@@ -714,6 +820,14 @@ class WebviewIPCBridge {
             }
         }
 
+        // Workspace and File System tools (proxied to run_pc.py)
+        if ([
+            'list_dir', 'read_file', 'write_file', 'replace_file_content',
+            'multi_replace_file_content', 'grep_search', 'run_command', 'delete_item'
+        ].includes(name)) {
+            return this._toolExecuteWorkspaceTool(name, args);
+        }
+
         // Direct tool name matches
         switch (name) {
             case 'get_time':
@@ -727,12 +841,40 @@ class WebviewIPCBridge {
             case 'uuid_random':
                 return this._toolUuidRandom(args.type || 'uuid');
             case 'web_search':
+            case 'search_web':
                 return this._toolWebSearch(args.query || '', args.limit || 5);
             case 'fetch_url':
                 return this._toolFetchUrl(args.url || '');
             default:
                 return `[Error]: Tool "${name}" is not available in browser preview mode.`;
         }
+    }
+
+    /**
+     * Executes a workspace filesystem/command tool via the /api/tools/execute backend endpoint.
+     * @param {string} tool Tool identifier.
+     * @param {object} args Arguments payload.
+     * @returns {Promise<string>} Tool execution result string.
+     */
+    async _toolExecuteWorkspaceTool(tool, args) {
+        const savedWs = localStorage.getItem('kai.workspacePath') || '';
+        try {
+            const res = await fetch('/api/tools/execute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tool: tool,
+                    args: args,
+                    workspacePath: savedWs
+                })
+            });
+            if (!res.ok) throw new Error(`Proxy error ${res.status}`);
+            const data = await res.json();
+            return data.result || JSON.stringify(data, null, 2);
+        } catch (e) {
+            return `[Error executing ${tool}]: ${e.message}`;
+        }
+    }
     }
 
     /** Returns the current date, time, timezone, and UNIX timestamp. */

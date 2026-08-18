@@ -65,6 +65,16 @@
         <main class="app-main-content">
             <!-- View A: Active Chat View (Default) -->
             <div id="chat-view" class="content-view">
+                <!-- Centered Top Workspace Path Bar (Header) -->
+                <div class="top-workspace-bar-container">
+                    <button type="button" class="top-workspace-bar" id="top-workspace-btn" title="Click to Change Workspace Directory">
+                        <svg class="top-workspace-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <span class="top-workspace-text" id="top-workspace-path">No Workspace Selected</span>
+                    </button>
+                </div>
+
                 <!-- Chat Output Area (Centered column) -->
                 <div id="chat-container" class="chat-container"></div>
 
@@ -328,6 +338,10 @@
                 if (msg.workspacePath) {
                     const wsBtn = document.getElementById('workspace-badge-btn');
                     if (wsBtn) wsBtn.title = `Active Workspace: ${msg.workspacePath} (Click to change)`;
+                    const topWsText = document.getElementById('top-workspace-path');
+                    if (topWsText) topWsText.textContent = msg.workspacePath;
+                    const topWsBtn = document.getElementById('top-workspace-btn');
+                    if (topWsBtn) topWsBtn.title = `Active Workspace: ${msg.workspacePath} (Click to change)`;
                 }
             }
         };

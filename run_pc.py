@@ -130,6 +130,14 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
         content_length = int(self.headers.get("Content-Length", 0))
         raw_body = self.rfile.read(content_length) if content_length > 0 else b""
 
+        if self.path.startswith("/api/workspace/pick"):
+            self._handle_workspace_pick()
+            return
+
+        if self.path.startswith("/api/tools/execute"):
+            self._handle_tool_execute(raw_body)
+            return
+
         if self.path.startswith("/api/tools/web_search"):
             self._handle_web_search(raw_body)
             return
@@ -143,6 +151,256 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
         self.send_header("Content-Type", "application/json")
         self.end_headers()
         self.wfile.write(b'{"status":"ok"}')
+
+    def _handle_tool_execute(self, raw_body):
+        """Executes local workspace tools (list_dir, read_file, write_file, replace_file_content, grep_search, run_command, delete_item)."""
+        try:
+            body = json.loads(raw_body) if raw_body else {}
+        except Exception:
+            body = {}
+
+        tool_name = body.get("tool", "")
+        args = body.get("args", {})
+        workspace_path = body.get("workspacePath", "")
+
+        def _resolve_safe_path(rel_path):
+            if not workspace_path:
+                raise ValueError("No workspace folder selected.")
+            full = os.path.normpath(os.path.join(workspace_path, rel_path or "."))
+            # Ensure path does not escape workspace directory
+            if not (full == workspace_path or full.startswith(workspace_path + os.sep)):
+                raise ValueError(f"Path traversal denied: '{rel_path}' is outside workspace root.")
+            return full
+
+        try:
+            if tool_name == "get_workspace_structure":
+                if not workspace_path or not os.path.isdir(workspace_path):
+                    self._json_response(200, {"result": ""})
+                    return
+                entries = sorted(os.listdir(workspace_path))
+                folders = []
+                files = []
+                for e in entries:
+                    if e in (".git", "node_modules", ".vscode", "__pycache__", ".kai"):
+                        continue
+                    full = os.path.join(workspace_path, e)
+                    if os.path.isdir(full):
+                        folders.append(e + "/")
+                    elif os.path.isfile(full):
+                        files.append(e)
+                res = "[Workspace Root Structure]\n"
+                if folders:
+                    res += f"Folders: {', '.join(folders)}\n"
+                if files:
+                    res += f"Files: {', '.join(files)}\n"
+                self._json_response(200, {"result": res})
+                return
+
+            if tool_name == "list_dir":
+                rel = args.get("path", ".") or "."
+                target = _resolve_safe_path(rel)
+                if not os.path.exists(target):
+                    self._json_response(200, {"result": f"Directory does not exist: {rel}"})
+                    return
+                if not os.path.isdir(target):
+                    self._json_response(200, {"result": f"Path is not a directory: {rel}"})
+                    return
+                entries = sorted(os.listdir(target))
+                if not entries:
+                    self._json_response(200, {"result": "Directory is empty."})
+                    return
+                lines = []
+                for e in entries:
+                    if e in (".git", "node_modules"):
+                        continue
+                    full = os.path.join(target, e)
+                    prefix = "[DIR]" if os.path.isdir(full) else "[FILE]"
+                    lines.append(f"{prefix} {e}")
+                self._json_response(200, {"result": "\n".join(lines)})
+                return
+
+            if tool_name == "read_file":
+                rel = args.get("path", "")
+                if not rel:
+                    self._json_response(200, {"result": "Error: Missing required parameter 'path'."})
+                    return
+                target = _resolve_safe_path(rel)
+                if not os.path.exists(target) or not os.path.isfile(target):
+                    self._json_response(200, {"result": f"File does not exist: {rel}"})
+                    return
+                with open(target, "r", encoding="utf-8", errors="replace") as f:
+                    content = f.read()
+                lines = content.splitlines()
+                numbered = "\n".join(f"{idx + 1}: {line}" for idx, line in enumerate(lines))
+                # Truncate if very long
+                if len(numbered) > 8000:
+                    numbered = numbered[:8000] + "\n... [truncated]"
+                self._json_response(200, {"result": numbered})
+                return
+
+            if tool_name == "write_file":
+                rel = args.get("path", "")
+                content = args.get("content", "")
+                if not rel:
+                    self._json_response(200, {"result": "Error: Missing required parameter 'path'."})
+                    return
+                target = _resolve_safe_path(rel)
+                os.makedirs(os.path.dirname(target), exist_ok=True)
+                with open(target, "w", encoding="utf-8") as f:
+                    f.write(content)
+                self._json_response(200, {"result": f"Successfully wrote {len(content)} characters to file: {rel}"})
+                return
+
+            if tool_name in ("replace_file_content", "multi_replace_file_content"):
+                rel = args.get("path", "")
+                target = _resolve_safe_path(rel)
+                if not os.path.exists(target):
+                    self._json_response(200, {"result": f"File does not exist: {rel}"})
+                    return
+                with open(target, "r", encoding="utf-8", errors="replace") as f:
+                    original = f.read()
+                
+                target_content = args.get("targetContent", "")
+                replacement = args.get("replacementContent", "")
+                
+                if target_content in original:
+                    updated = original.replace(target_content, replacement, 1)
+                    with open(target, "w", encoding="utf-8") as f:
+                        f.write(updated)
+                    self._json_response(200, {"result": f"Successfully updated file: {rel}"})
+                else:
+                    self._json_response(200, {"result": f"[Error]: Target content could not be found in file: {rel}"})
+                return
+
+            if tool_name == "grep_search":
+                query = args.get("query", "")
+                rel = args.get("path", ".") or "."
+                if not query:
+                    self._json_response(200, {"result": "Error: Missing 'query' parameter."})
+                    return
+                search_dir = _resolve_safe_path(rel)
+                matches = []
+                query_lower = query.lower()
+                ignore_dirs = {".git", "node_modules", "dist", "out", ".vscode", "__pycache__"}
+                bin_exts = {".png", ".jpg", ".jpeg", ".ico", ".exe", ".pdf", ".zip", ".tar", ".gz", ".woff", ".woff2", ".ttf"}
+
+                for root, dirs, files in os.walk(search_dir):
+                    dirs[:] = [d for d in dirs if d not in ignore_dirs]
+                    for file in files:
+                        if os.path.splitext(file)[1].lower() in bin_exts:
+                            continue
+                        fpath = os.path.join(root, file)
+                        try:
+                            with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+                                lines = f.readlines()
+                            file_matched = False
+                            for idx, l in enumerate(lines):
+                                if query_lower in l.lower():
+                                    if not file_matched:
+                                        rel_fpath = os.path.relpath(fpath, workspace_path)
+                                        matches.append(f"\nFile: {rel_fpath}")
+                                        file_matched = True
+                                    matches.append(f"Line {idx + 1}: {l.strip()}")
+                        except Exception:
+                            pass
+
+                if not matches:
+                    self._json_response(200, {"result": f"No matches found for query: '{query}'"})
+                else:
+                    out = "\n".join(matches)
+                    if len(out) > 6000:
+                        out = out[:6000] + "\n... [truncated]"
+                    self._json_response(200, {"result": out})
+                return
+
+            if tool_name == "run_command":
+                cmd = args.get("command", "")
+                if not cmd:
+                    self._json_response(200, {"result": "Error: Missing 'command' parameter."})
+                    return
+                import subprocess
+                cwd = workspace_path if (workspace_path and os.path.isdir(workspace_path)) else str(APP_DIR)
+                res = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True, timeout=30)
+                output = ""
+                if res.stdout:
+                    output += f"[Stdout]:\n{res.stdout}\n"
+                if res.stderr:
+                    output += f"[Stderr]:\n{res.stderr}\n"
+                if res.returncode != 0:
+                    output += f"[Exit Code]: {res.returncode}\n"
+                if not output.strip():
+                    output = "Command executed successfully (empty output)."
+                self._json_response(200, {"result": output})
+                return
+
+            if tool_name == "delete_item":
+                paths = args.get("paths") or [args.get("path")]
+                paths = [p for p in paths if p]
+                deleted = []
+                errors = []
+                import shutil
+                for p in paths:
+                    try:
+                        target = _resolve_safe_path(p)
+                        if target == workspace_path:
+                            errors.append(f"Cannot delete workspace root: {p}")
+                            continue
+                        if os.path.isdir(target):
+                            shutil.rmtree(target)
+                            deleted.append(p)
+                        elif os.path.isfile(target):
+                            os.remove(target)
+                            deleted.append(p)
+                        else:
+                            errors.append(f"Item does not exist: {p}")
+                    except Exception as e:
+                        errors.append(f"Failed to delete '{p}': {e}")
+                res_lines = []
+                if deleted:
+                    res_lines.append(f"Successfully deleted: {', '.join(deleted)}")
+                if errors:
+                    res_lines.append(f"Errors:\n" + "\n".join(errors))
+                self._json_response(200, {"result": "\n".join(res_lines)})
+                return
+
+            self._json_response(400, {"result": f"[Error]: Unknown tool '{tool_name}'"})
+
+        except Exception as e:
+            self._json_response(500, {"result": f"[Error executing {tool_name}]: {str(e)}"})
+
+    def _handle_workspace_pick(self):
+        """Opens native OS folder picker dialog to select absolute workspace path."""
+        import threading
+        result = {"path": "", "name": "", "canceled": False, "error": None}
+
+        def _ask():
+            try:
+                import tkinter
+                import tkinter.filedialog
+                root = tkinter.Tk()
+                root.withdraw()
+                root.wm_attributes('-topmost', 1)
+                folder_path = tkinter.filedialog.askdirectory(title="Select Workspace Folder")
+                root.destroy()
+                if folder_path:
+                    norm_path = os.path.normpath(folder_path)
+                    result["path"] = norm_path
+                    result["name"] = os.path.basename(norm_path)
+                else:
+                    result["canceled"] = True
+            except Exception as e:
+                result["error"] = str(e)
+
+        thread = threading.Thread(target=_ask)
+        thread.start()
+        thread.join(timeout=60)
+
+        if result["error"]:
+            self._json_response(500, {"error": result["error"]})
+        elif result["path"]:
+            self._json_response(200, {"workspacePath": result["path"], "workspaceName": result["name"]})
+        else:
+            self._json_response(200, {"workspacePath": "", "workspaceName": "", "canceled": True})
 
     def _handle_web_search(self, raw_body):
         """Proxies a web search query via the bundled web-search-mcp server (Playwright-based)."""

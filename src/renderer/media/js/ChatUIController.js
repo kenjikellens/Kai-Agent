@@ -651,7 +651,8 @@ class ChatUIController {
      * @returns {string} Status header HTML string.
      */
     getToolDescription(tool, targetName, state) {
-        const iconSvg = window.KAI_SVGS[tool] || window.KAI_SVGS['default_tool'] || '';
+        const svgs = window.KAI_SVGS || (typeof KAI_CONSTANTS !== 'undefined' ? KAI_CONSTANTS.DEFAULT_SVGS : {}) || {};
+        const iconSvg = svgs[tool] || svgs['default_tool'] || '';
         let verb = '';
         
         switch (tool) {
@@ -671,6 +672,7 @@ class ChatUIController {
                 break;
             case 'grep_search':
             case 'search_web':
+            case 'web_search':
                 verb = state === 'start' ? 'searching' : (state === 'success' ? 'searched' : 'failed searching');
                 break;
             case 'symbol_search':
@@ -690,9 +692,6 @@ class ChatUIController {
                 break;
             case 'utility_tools':
                 verb = state === 'start' ? 'running utility' : (state === 'success' ? 'completed utility' : 'failed utility');
-                break;
-            case 'web_search':
-                verb = state === 'start' ? 'searching' : (state === 'success' ? 'searched' : 'failed searching');
                 break;
             case 'get_time':
                 verb = state === 'start' ? 'checking time' : (state === 'success' ? 'checked time' : 'failed time check');
@@ -714,10 +713,10 @@ class ChatUIController {
         }
 
         const prefixSvg = state === 'start' 
-            ? (window.KAI_SVGS['spinner'] || '') 
+            ? (svgs['spinner'] || '<span class="thinking-spinner"></span>') 
             : (state === 'success' 
-                ? (window.KAI_SVGS['success'] || '') 
-                : (window.KAI_SVGS['error'] || ''));
+                ? (svgs['success'] || '') 
+                : (svgs['error'] || ''));
         
         let target = targetName || '';
         if (tool === 'run_command' && target.length > 40) {
@@ -727,7 +726,7 @@ class ChatUIController {
         return `
             <div class="tool-call-header">
                 <div class="tool-call-title">
-                    ${prefixSvg}${iconSvg} ${verb} <code>${this.formatter.escapeHtml(target)}</code>
+                    ${prefixSvg}${iconSvg} ${verb} ${target ? `<code>${this.formatter.escapeHtml(target)}</code>` : ''}
                 </div>
                 <i class="codicon codicon-chevron-right tool-chevron"></i>
             </div>
