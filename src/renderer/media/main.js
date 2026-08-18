@@ -274,14 +274,20 @@
         }
     }
 
-    // New Chat Click Handler
+    // New Chat Click Handlers
+    const newChatIconBtn = document.getElementById('new-chat-icon-btn');
+    const handleNewChatClick = () => {
+        if (appState.messages.length > 0) {
+            saveCurrentChat();
+        }
+        createNewChat();
+    };
+
     if (newChatBtn) {
-        newChatBtn.addEventListener('click', () => {
-            if (appState.messages.length > 0) {
-                saveCurrentChat();
-            }
-            createNewChat();
-        });
+        newChatBtn.addEventListener('click', handleNewChatClick);
+    }
+    if (newChatIconBtn) {
+        newChatIconBtn.addEventListener('click', handleNewChatClick);
     }
 
     // When user deletes the currently open chat from sidebar, reset to a clean new chat

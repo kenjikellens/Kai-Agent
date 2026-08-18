@@ -212,12 +212,19 @@ body {
   flex-shrink: 0;
 }
 
-/* Sidebar Toggle Row (Top-left aligned toggle icon) */
+/* Sidebar Toggle Row (Top header row with sidebar toggle, folder button, and + button) */
 .sidebar-toggle-row {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   padding: 2px 2px 4px 2px;
+  gap: 6px;
+}
+
+.sidebar-header-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* Sidebar Toggle Icon Button (at the very top) */

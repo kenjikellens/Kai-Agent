@@ -15,7 +15,7 @@
         <aside class="app-sidebar" id="app-sidebar">
             <!-- Sidebar Top Header Controls -->
             <div class="sidebar-top">
-                <!-- Collapse / Expand Sidebar Toggle Button (HELEMAAL vanboven) -->
+                <!-- Collapse / Expand Sidebar Toggle Button -->
                 <div class="sidebar-toggle-row">
                     <button type="button" class="sidebar-icon-btn" id="sidebar-toggle-btn" title="Toggle Sidebar">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -25,24 +25,14 @@
                     </button>
                 </div>
 
-                <!-- Action Row: Folder Selection (Left) + New Chat Button (Right) -->
-                <div class="sidebar-actions-row">
-                    <!-- Active Workspace Directory Selector Button -->
-                    <button type="button" class="sidebar-action-btn workspace-badge" id="workspace-badge-btn" title="Select Workspace Folder">
-                        <svg class="sidebar-btn-icon workspace-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                        </svg>
-                        <span class="workspace-name btn-label" id="active-workspace-name">Workspace...</span>
-                    </button>
-
-                    <!-- New Chat Button -->
-                    <button type="button" class="sidebar-icon-btn new-chat-btn-compact" id="new-chat-btn" title="New Chat" data-i18n-title="newChat">
-                        <svg class="sidebar-btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                    </button>
-                </div>
+                <!-- Original New Chat Button -->
+                <button type="button" class="sidebar-action-btn" id="new-chat-btn" title="New Chat" data-i18n-title="newChat">
+                    <svg class="sidebar-btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span class="btn-label" data-i18n="newChat">New Chat</span>
+                </button>
             </div>
 
             <!-- Scrollable Chats History List in Left Sidebar -->
@@ -87,7 +77,14 @@
                         <textarea id="message-input" placeholder="Ask Kai or describe a task..." rows="1"></textarea>
                         <div class="input-toolbar">
                             <div class="toolbar-left">
-                                <!-- File Upload Attachment Button -->
+                                <!-- Folder Selection Button (Links van de + knop van het input veld) -->
+                                <button type="button" class="toolbar-icon-btn workspace-badge" id="workspace-badge-btn" title="Select Workspace Folder">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                    </svg>
+                                </button>
+
+                                <!-- File Upload Attachment Button (+) -->
                                 <button type="button" class="toolbar-icon-btn" id="attach-file-btn" title="Attach Files">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                 </button>
