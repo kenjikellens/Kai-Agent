@@ -558,14 +558,20 @@ button:disabled {
 #send-btn {
   width: 28px;
   height: 28px;
+  min-width: 28px;
+  max-width: 28px;
+  aspect-ratio: 1 / 1;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border-radius: 999px;
+  border-radius: var(--app-radius-md);
+  border: 0 !important;
+  outline: none;
   background: var(--app-accent);
   color: var(--vscode-button-foreground, #ffffff);
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 #send-btn svg {
@@ -574,11 +580,13 @@ button:disabled {
 }
 
 #send-btn:hover:not(:disabled) {
-  background: var(--app-accent-hover);
+  background: var(--app-accent-hover, #0098ff);
+  box-shadow: 0 0 0 1px var(--app-accent-hover, #0098ff);
 }
 
 #send-btn:disabled {
   opacity: 0.4;
+  box-shadow: none !important;
 }
 
 .secondary-btn:hover:not(:disabled) {
@@ -1101,22 +1109,27 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  max-width: 28px;
+  aspect-ratio: 1 / 1;
   padding: 0;
   border: 0 !important;
+  outline: none;
   border-radius: var(--app-radius-md);
   background: var(--app-accent, #007acc);
   color: var(--vscode-button-foreground, #ffffff);
   cursor: pointer;
   box-sizing: border-box;
   flex-shrink: 0;
-  transition: opacity 0.15s ease;
+  transition: background-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
 }
 
-#send-btn:hover,
+#send-btn:hover:not(:disabled),
 #stop-btn:hover {
-  opacity: 0.9;
+  background: var(--app-accent-hover, #0098ff);
+  box-shadow: 0 0 0 1px var(--app-accent-hover, #0098ff);
 }
 
 /* Compact icon buttons for file upload (+) and capabilities (@) */
@@ -1124,22 +1137,27 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  max-width: 28px;
+  aspect-ratio: 1 / 1;
   padding: 0;
   border: 0 !important;
+  outline: none;
   border-radius: var(--app-radius-md);
   background: var(--app-surface-strong);
   color: var(--app-muted);
   cursor: pointer;
   box-sizing: border-box;
   flex-shrink: 0;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .toolbar-icon-btn:hover {
   background: var(--app-surface-hover);
   color: var(--app-fg);
+  box-shadow: 0 0 0 1px var(--app-surface-hover);
 }
 
 /* Active indicator highlight when Planning Mode is enabled */
