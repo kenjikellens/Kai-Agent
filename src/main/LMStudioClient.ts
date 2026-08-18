@@ -101,35 +101,55 @@ export class LMStudioClient implements ILLMProvider {
 
         const uniqueUrls = Array.from(new Set(urlsToTry));
 
-        for (const url of uniqueUrls) {
+        const probePromises = uniqueUrls.map(url => HttpClient.getJson<{ data: any[] }>(url, {}, 800));
+        const results = await Promise.allSettled(probePromises);
+
+        for (const res of results) {
+            if (res.status === 'fulfilled' && res.value && Array.isArray(res.value.data) && res.value.data.length > 0) {
+                const allIds = res.value.data.map((m: any) => m.id || m.name).filter(Boolean);
+                const filtered = LMStudioReasoningEngine.filterChatModels(allIds);
+                if (filtered.length > 0) {
+                    return filtered;
+                }
+            }
+        }
+        return [];
+    }
+
+    /**
+     * Fetches models currently loaded in LM Studio or Gemini.
+     * Only returns models that are actively loaded in memory (state === 'loaded' or active in lms ps).
+     */
+    public async getLoadedModels(): Promise<string[]> {
+        // 1. Try local lms CLI ps command
+        const localLoaded = await this.getLocalLoadedModels().catch(() => []);
+        if (localLoaded.length > 0) {
+            return localLoaded;
+        }
+
+        // 2. Try LM Studio api/v0/models endpoint for models with state === 'loaded'
+        const { hostname, port } = this.parseServerUrl();
+        const urlsToTry = [
+            `http://${hostname}:${port}/api/v0/models`,
+            `http://${hostname === 'localhost' ? '127.0.0.1' : 'localhost'}:${port}/api/v0/models`
+        ];
+
+        for (const url of Array.from(new Set(urlsToTry))) {
             try {
-                const res = await HttpClient.getJson<{ data: any[] }>(url, {}, 1500);
-                if (res && Array.isArray(res.data) && res.data.length > 0) {
-                    const allIds = res.data.map((m: any) => m.id || m.name).filter(Boolean);
-                    const filtered = LMStudioReasoningEngine.filterChatModels(allIds);
+                const res = await HttpClient.getJson<{ data: any[] }>(url, {}, 800);
+                if (res && Array.isArray(res.data)) {
+                    const loadedIds = res.data
+                        .filter((m: any) => m && m.state === 'loaded')
+                        .map((m: any) => m.id || m.name);
+                    const filtered = LMStudioReasoningEngine.filterChatModels(loadedIds);
                     if (filtered.length > 0) {
                         return filtered;
                     }
                 }
             } catch {}
         }
-        return [];
-    }
 
-    /**
-     * Fetches models currently loaded in LM Studio or Gemini with fallback to discovered models.
-     */
-    public async getLoadedModels(): Promise<string[]> {
-        const localLoaded = await this.getLocalLoadedModels().catch(() => []);
-        if (localLoaded.length > 0) {
-            return localLoaded;
-        }
-        const lmModels = await this.getLMStudioModels().catch(() => []);
-        if (lmModels.length > 0) {
-            return lmModels;
-        }
-        const geminiModels = await this.geminiClient.getModels().catch(() => []);
-        return geminiModels;
+        return [];
     }
 
     /**

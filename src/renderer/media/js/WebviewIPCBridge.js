@@ -48,37 +48,7 @@ class WebviewIPCBridge {
         switch (message.type) {
             case 'checkConnection': {
                 const apiKey = localStorage.getItem('kai.geminiApiKey') || localStorage.getItem('kai.apiKey') || '';
-                const serverUrl = localStorage.getItem('kai.serverUrl') || 'http://localhost:1234/v1';
-
-                let lmConnected = false;
-                let lmModels = [];
-                const rawUrl = (serverUrl || 'http://localhost:1234/v1').trim().replace(/\/$/, '');
-                const urlCandidates = [
-                    `${rawUrl}/models`,
-                    `${rawUrl}/v1/models`,
-                    `${rawUrl.replace('localhost', '127.0.0.1')}/models`,
-                    `${rawUrl.replace('localhost', '127.0.0.1')}/v1/models`,
-                    'http://127.0.0.1:1234/v1/models',
-                    'http://localhost:1234/v1/models'
-                ];
-                const uniqueCandidates = Array.from(new Set(urlCandidates));
-
-                for (const testUrl of uniqueCandidates) {
-                    try {
-                        const controller = new AbortController();
-                        const timer = setTimeout(() => controller.abort(), 1500);
-                        const res = await fetch(testUrl, { method: 'GET', signal: controller.signal });
-                        clearTimeout(timer);
-                        if (res.ok) {
-                            const json = await res.json();
-                            if (json && Array.isArray(json.data) && json.data.length > 0) {
-                                lmModels = json.data.map(m => m.id || m.name).filter(Boolean);
-                                lmConnected = lmModels.length > 0;
-                                if (lmConnected) break;
-                            }
-                        }
-                    } catch (e) {}
-                }
+                const serverUrl = localStorage.getItem('kai.serverUrl') || 'http://127.0.0.1:1234/v1';
 
                 const defaultGemini = (typeof KAI_CONSTANTS !== 'undefined' && KAI_CONSTANTS.DEFAULT_GEMINI_MODELS) || [
                     'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite',
@@ -88,7 +58,7 @@ class WebviewIPCBridge {
                 const defaultProviders = (typeof KAI_CONSTANTS !== 'undefined' && KAI_CONSTANTS.DEFAULT_PROVIDERS_WITH_MODELS) || [];
                 const freeProviders = (typeof KAI_CONSTANTS !== 'undefined' && KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS) || [];
 
-                const freeProvidersConfig = freeProviders.map(p => {
+                const buildFreeProviders = () => freeProviders.map(p => {
                     const savedKey = localStorage.getItem(`kai.${p.configKey}`) || '';
                     const matchedGroup = defaultProviders.find(dp => dp.name.includes(p.name));
                     const models = matchedGroup ? matchedGroup.models : [];
@@ -102,10 +72,80 @@ class WebviewIPCBridge {
                     };
                 });
 
+                const v0Urls = [
+                    'http://127.0.0.1:1234/api/v0/models',
+                    'http://localhost:1234/api/v0/models'
+                ];
+                const v1Urls = [
+                    'http://127.0.0.1:1234/v1/models',
+                    'http://localhost:1234/v1/models'
+                ];
+
+                let lmConnected = false;
+                let lmModels = [];
+                let loadedModels = [];
+
+                // Fast probe for raw model data
+                const probeCandidate = async (url) => {
+                    const controller = new AbortController();
+                    const timer = setTimeout(() => controller.abort(), 2000);
+                    try {
+                        const res = await fetch(url, { method: 'GET', signal: controller.signal });
+                        clearTimeout(timer);
+                        if (res.ok) {
+                            const json = await res.json();
+                            if (json && Array.isArray(json.data) && json.data.length > 0) {
+                                return json.data;
+                            }
+                        }
+                    } catch (e) {
+                        clearTimeout(timer);
+                    }
+                    return [];
+                };
+
+                const v0Results = await Promise.allSettled(v0Urls.map(probeCandidate));
+                let rawData = null;
+                for (const r of v0Results) {
+                    if (r.status === 'fulfilled' && r.value && r.value.length > 0) {
+                        rawData = r.value;
+                        break;
+                    }
+                }
+
+                if (!rawData) {
+                    const v1Results = await Promise.allSettled(v1Urls.map(probeCandidate));
+                    for (const r of v1Results) {
+                        if (r.status === 'fulfilled' && r.value && r.value.length > 0) {
+                            rawData = r.value;
+                            break;
+                        }
+                    }
+                }
+
+                if (rawData && Array.isArray(rawData)) {
+                    lmConnected = true;
+                    // Filter chat models (exclude embeddings)
+                    lmModels = rawData
+                        .filter(m => {
+                            const id = (m.id || m.name || '').toLowerCase();
+                            const type = (m.type || '').toLowerCase();
+                            return type !== 'embeddings' && !id.includes('embed') && !id.includes('nomic') && !id.includes('bge-') && !id.includes('minilm');
+                        })
+                        .map(m => m.id || m.name)
+                        .filter(Boolean);
+
+                    // ONLY models with state === 'loaded' are considered loaded in memory
+                    loadedModels = rawData
+                        .filter(m => m.state === 'loaded')
+                        .map(m => m.id || m.name)
+                        .filter(Boolean);
+                }
+
+                const freeProvidersConfig = buildFreeProviders();
                 const isGeminiConnected = !!apiKey.trim();
-                const loadedModels = lmConnected ? lmModels : (isGeminiConnected ? defaultGemini : []);
-                const activeModel = lmConnected && lmModels.length > 0
-                    ? lmModels[0]
+                const activeModel = lmModels.length > 0
+                    ? (loadedModels.length > 0 ? loadedModels[0] : lmModels[0])
                     : (isGeminiConnected ? defaultGemini[0] : 'local-model');
 
                 emit({
@@ -120,7 +160,11 @@ class WebviewIPCBridge {
                     serverUrl: serverUrl,
                     apiKey: apiKey,
                     lmStudioCacheDir: localStorage.getItem('kai.lmStudioCacheDir') || '',
-                    lmStudioCacheStatus: { valid: false, error: 'Browser Preview Mode' },
+                    lmStudioCacheStatus: {
+                        valid: lmConnected,
+                        modelCount: lmModels.length,
+                        error: lmConnected ? '' : 'LM Studio server offline'
+                    },
                     lmStudioCapabilities: {},
                     workspacePath: 'Browser Preview',
                     workspaceName: 'Browser Preview'

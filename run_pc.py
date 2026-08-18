@@ -15,7 +15,7 @@ RENDERER_DIR = APP_DIR / "src" / "renderer"
 
 
 class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
-    """Simple static HTTP handler serving the src/renderer directory."""
+    """Simple static HTTP handler serving the src/renderer directory with no-cache headers."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(RENDERER_DIR), **kwargs)
@@ -23,6 +23,20 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
     def log_message(self, format, *args):
         # Suppress noisy standard request logging
         pass
+
+    def end_headers(self):
+        """Sends cache-busting headers so the browser always loads fresh JavaScript."""
+        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
+        super().end_headers()
+
+    def do_POST(self):
+        """Fallback handler for any POST requests in preview mode."""
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(b'{"status":"ok"}')
 
 
 def start_server(port: int = 5173) -> None:
