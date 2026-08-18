@@ -102,14 +102,33 @@ class FileUploadController {
             chip.className = 'attached-file-chip';
             chip.title = file.filePath;
 
-            const isImg = /\.(png|jpe?g|webp|gif)$/i.test(file.fileName);
-            const iconSpan = document.createElement('span');
-            iconSpan.textContent = isImg ? '🖼️ ' : '📄 ';
+            const isImg = /\.(png|jpe?g|webp|gif|svg)$/i.test(file.fileName);
+            const parts = file.fileName.split('.');
+            const ext = parts.length > 1 ? parts.pop().toUpperCase() : 'FILE';
 
-            const textSpan = document.createElement('span');
-            textSpan.className = 'chip-name';
-            textSpan.textContent = file.fileName;
+            // 1. Square Icon Box
+            const iconBox = document.createElement('div');
+            iconBox.className = 'chip-file-icon-box';
+            const iconSvg = (window.KAI_SVGS && (isImg ? window.KAI_SVGS.image_file : window.KAI_SVGS.read_file))
+                || (isImg ? '🖼' : '📄');
+            iconBox.innerHTML = iconSvg;
 
+            // 2. Info block: Filename on top, uppercase light extension below
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'chip-file-info';
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'chip-filename';
+            nameSpan.textContent = file.fileName;
+
+            const extSpan = document.createElement('span');
+            extSpan.className = 'chip-extension';
+            extSpan.textContent = ext;
+
+            infoDiv.appendChild(nameSpan);
+            infoDiv.appendChild(extSpan);
+
+            // 3. Remove Button
             const deleteBtn = document.createElement('button');
             deleteBtn.type = 'button';
             deleteBtn.className = 'chip-remove-btn';
@@ -120,8 +139,8 @@ class FileUploadController {
                 this.removeFile(index);
             });
 
-            chip.appendChild(iconSpan);
-            chip.appendChild(textSpan);
+            chip.appendChild(iconBox);
+            chip.appendChild(infoDiv);
             chip.appendChild(deleteBtn);
             this.attachedFilesBar.appendChild(chip);
         });
