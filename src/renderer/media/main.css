@@ -1012,7 +1012,7 @@ button:disabled {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   margin-bottom: 8px;
   padding-bottom: 6px;
   border-bottom: 1px solid var(--app-border-subtle);
@@ -1022,34 +1022,93 @@ button:disabled {
 .attached-file-chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  max-width: 220px;
-  padding: 3px 10px;
-  border-radius: var(--app-radius-sm);
+  gap: 8px;
+  max-width: 240px;
+  padding: 4px 8px 4px 6px;
+  border-radius: var(--app-radius-md);
   background: var(--app-surface-strong);
+  border: 1px solid var(--app-border);
   color: var(--app-fg);
-  font-size: 0.78rem;
   user-select: none;
+  box-sizing: border-box;
 }
 
-.attached-file-chip .chip-name {
+/* Square container hosting file type icon */
+.chip-file-icon-box {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  max-width: 28px;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--app-radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--app-accent, #007acc);
+  flex-shrink: 0;
+}
+
+.chip-file-icon-box svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Text metadata layout */
+.chip-file-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Filename text */
+.chip-filename {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--app-fg);
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  line-height: 1.2;
 }
 
-.attached-file-chip .chip-remove-btn {
+/* Uppercase light extension subtitle */
+.chip-extension {
+  font-size: 0.62rem;
+  font-weight: 200;
+  text-transform: uppercase;
+  color: var(--app-muted);
+  opacity: 0.75;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  margin-top: 1px;
+}
+
+/* Remove button */
+.chip-remove-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--app-radius-sm);
   background: transparent;
   color: var(--app-muted, #888888);
   font-size: 0.75rem;
-  padding: 0 2px;
+  padding: 0;
   margin-left: 2px;
   border: 0 !important;
   cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.15s ease, background-color 0.15s ease;
 }
 
-.attached-file-chip .chip-remove-btn:hover {
-  color: #e74c3c;
+.chip-remove-btn:hover {
+  color: #ff4d4f;
+  background: rgba(255, 77, 79, 0.15);
 }
 
 /* Auto-expanding prompt input textarea with max height limit */
