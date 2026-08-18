@@ -994,10 +994,10 @@ button:disabled {
   width: 100%;
   max-width: 820px;
   margin: 0 auto;
-  padding: 8px 14px;
+  padding: 12px 16px;
   background: var(--app-input-bg);
   border: 1px solid var(--app-border-strong);
-  border-radius: 16px;
+  border-radius: 18px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.28);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -1013,8 +1013,8 @@ button:disabled {
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  margin-bottom: 6px;
-  padding-bottom: 4px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
   border-bottom: 1px solid var(--app-border-subtle);
 }
 
@@ -1022,13 +1022,13 @@ button:disabled {
 .attached-file-chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  max-width: 200px;
-  padding: 2px 8px;
+  gap: 5px;
+  max-width: 220px;
+  padding: 3px 10px;
   border-radius: var(--app-radius-sm);
   background: var(--app-surface-strong);
   color: var(--app-fg);
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   user-select: none;
 }
 
@@ -1041,7 +1041,7 @@ button:disabled {
 .attached-file-chip .chip-remove-btn {
   background: transparent;
   color: var(--app-muted, #888888);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   padding: 0 2px;
   margin-left: 2px;
   border: 0 !important;
@@ -1055,17 +1055,17 @@ button:disabled {
 /* Auto-expanding prompt input textarea with max height limit */
 #message-input {
   width: 100%;
-  min-height: 24px;
-  max-height: 200px;
+  min-height: 28px;
+  max-height: 220px;
   padding: 2px 2px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   border: 0;
   resize: none;
   overflow-y: hidden;
   background: transparent;
   color: var(--vscode-input-foreground, var(--app-fg));
-  font-size: 0.95rem;
-  line-height: 1.4;
+  font-size: 1rem;
+  line-height: 1.5;
   transition: height 0.1s ease-out;
   scrollbar-width: thin;
 }
@@ -1080,11 +1080,11 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-left: -14px;
-  margin-right: -14px;
-  padding-top: 8px;
-  padding-left: 14px;
-  padding-right: 14px;
+  margin-left: -16px;
+  margin-right: -16px;
+  padding-top: 10px;
+  padding-left: 16px;
+  padding-right: 16px;
   border-top: 1px solid var(--app-border-subtle);
 }
 
@@ -1093,7 +1093,7 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
   flex: 1 1 auto;
 }
@@ -1103,7 +1103,7 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
@@ -1113,10 +1113,10 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  max-width: 28px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  max-width: 32px;
   aspect-ratio: 1 / 1;
   padding: 0;
   border: 0 !important;
@@ -1130,10 +1130,21 @@ button:disabled {
   transition: background-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
 }
 
+#send-btn svg,
+#stop-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
 #send-btn:hover:not(:disabled),
 #stop-btn:hover {
   background: var(--app-accent-hover, #0098ff);
   box-shadow: 0 0 0 1px var(--app-accent-hover, #0098ff);
+}
+
+#send-btn:disabled {
+  opacity: 0.4;
+  box-shadow: none !important;
 }
 
 /* Compact icon buttons for file upload (+) and capabilities (@) */
@@ -1141,10 +1152,10 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  max-width: 28px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  max-width: 32px;
   aspect-ratio: 1 / 1;
   padding: 0;
   border: 0 !important;
@@ -1156,6 +1167,11 @@ button:disabled {
   box-sizing: border-box;
   flex-shrink: 0;
   transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.toolbar-icon-btn svg {
+  width: 16px;
+  height: 16px;
 }
 
 .toolbar-icon-btn:hover {
@@ -1307,21 +1323,21 @@ button:disabled {
 
 /* Primary Model Selector Dropdown Trigger Button - Fits text length up to max-width */
 .dropdown-trigger {
-  height: 28px;
+  height: 32px;
   box-sizing: border-box;
   width: auto;
   max-width: 100%;
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 6px;
-  padding: 0 10px;
+  gap: 8px;
+  padding: 0 12px;
   border: 0 !important;
   outline: none;
   border-radius: var(--app-radius-md);
   background: var(--app-surface-strong);
   color: var(--app-muted);
-  font-size: 0.8rem;
+  font-size: 0.86rem;
   text-align: left;
   cursor: pointer;
   user-select: none;
