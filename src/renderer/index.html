@@ -102,10 +102,14 @@
                                 </div>
                             </div>
                             <div class="toolbar-right">
-                                <!-- Context & Capabilities Dropdown ("@" Button) -->
+                                <!-- Context & Capabilities Dropdown (Active Mode Button) -->
                                 <div class="custom-dropdown" id="context-options-dropdown-container">
-                                    <button type="button" class="toolbar-icon-btn" id="at-mention-trigger-btn" title="Select mode (@)">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"></path></svg>
+                                    <button type="button" class="toolbar-mode-btn" id="at-mention-trigger-btn" title="Select mode (@)">
+                                        <span class="mode-btn-icon" id="active-mode-icon">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                        </span>
+                                        <span class="mode-btn-label" id="active-mode-text">Chat</span>
+                                        <svg class="mode-btn-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                     </button>
                                     <div class="dropdown-menu hidden" id="context-options-menu">
                                         <div class="context-options-header">

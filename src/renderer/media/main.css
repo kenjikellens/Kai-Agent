@@ -1513,6 +1513,58 @@ button:disabled {
   box-shadow: none !important;
 }
 
+/* Toolbar Mode Selector Button (Shows active mode icon + label text + chevron) */
+.toolbar-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 8px 0 9px;
+  border: 0 !important;
+  outline: none;
+  border-radius: var(--app-radius-md);
+  background: var(--app-surface-strong);
+  color: var(--app-fg);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.toolbar-mode-btn:hover {
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
+  box-shadow: 0 0 0 1px var(--app-surface-hover);
+}
+
+.toolbar-mode-btn.active-mode {
+  color: var(--vscode-button-foreground, #ffffff);
+  background: var(--app-accent);
+}
+
+.mode-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+  flex-shrink: 0;
+}
+
+.mode-btn-label {
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: currentColor;
+  white-space: nowrap;
+}
+
+.mode-btn-chevron {
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
 /* Compact icon buttons for file upload (+) and capabilities (@) */
 .toolbar-icon-btn {
   display: inline-flex;

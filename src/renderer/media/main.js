@@ -326,7 +326,21 @@
 
         if (atMentionTriggerBtn) {
             atMentionTriggerBtn.classList.toggle('active-mode', mode !== 'chat');
-            const modeLabels = { chat: 'Chat Mode', agent: 'Agent Mode', planning: 'Plan Mode' };
+            const modeLabels = { chat: 'Chat', agent: 'Agent', planning: 'Plan' };
+            const modeIcons = {
+                chat: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
+                agent: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>',
+                planning: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>'
+            };
+            
+            const iconEl = document.getElementById('active-mode-icon');
+            if (iconEl && modeIcons[mode]) {
+                iconEl.innerHTML = modeIcons[mode];
+            }
+            const textEl = document.getElementById('active-mode-text');
+            if (textEl) {
+                textEl.textContent = modeLabels[mode] || 'Chat';
+            }
             atMentionTriggerBtn.title = `Mode: ${modeLabels[mode] || 'Chat'} (@)`;
         }
 
