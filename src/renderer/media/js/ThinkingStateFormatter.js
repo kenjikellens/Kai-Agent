@@ -47,11 +47,20 @@ class ThinkingStateFormatter {
                 const effortLabels = { xhigh: 'X-High', high: 'X-High', medium: 'Medium', low: 'Low' };
                 const effortKey = (storedEffort in effortLabels) ? storedEffort : 'xhigh';
 
-                if (hasSelectField || hasBooleanField) {
+                if (hasSelectField) {
                     return {
                         isThinkingCapable: true,
-                        isMultiLevel: hasSelectField,
+                        isMultiLevel: true,
                         level: effortKey,
+                        isOn: isLmThinkingOn,
+                        labelText: isLmThinkingOn ? 'thinking' : '',
+                        rawModel: rawModel
+                    };
+                } else if (hasBooleanField) {
+                    return {
+                        isThinkingCapable: true,
+                        isMultiLevel: false,
+                        level: isLmThinkingOn ? 'high' : 'off',
                         isOn: isLmThinkingOn,
                         labelText: isLmThinkingOn ? 'thinking' : '',
                         rawModel: rawModel
@@ -60,8 +69,8 @@ class ThinkingStateFormatter {
             }
         }
 
-        // 2. Gemini Multi-level models
-        if (lowerRaw.includes('gemini')) {
+        // 2. Gemini Thinking models (e.g. gemini-2.0-flash-thinking, gemini-2.5-flash-thinking)
+        if (lowerRaw.includes('gemini') && (lowerRaw.includes('thinking') || lowerRaw.includes('flash-thinking') || lowerRaw.includes('2.0-flash-exp') || lowerRaw.includes('2.5'))) {
             const level = localStorage.getItem(`kai.geminiThinkingLevel.${modelId}`) ||
                           localStorage.getItem(`kai.geminiThinkingLevel.${rawModel}`) ||
                           localStorage.getItem('kai.geminiThinkingLevel') || 'high';
@@ -79,27 +88,7 @@ class ThinkingStateFormatter {
             };
         }
 
-        // 3. Qwen, GLM, Gemma, DeepSeek, and other reasoning local models (Fallback when no manifest)
-        const isReasoningLocal = lowerRaw.includes('qwen') || lowerRaw.includes('qwq') || lowerRaw.includes('glm') ||
-                                 lowerRaw.includes('gemma') || lowerRaw.includes('deepseek') || lowerRaw.includes('r1');
-        if (isReasoningLocal) {
-            const isLmThinkingOn = localStorage.getItem(`kai.lmStudioThinking.${rawModel}`) !== 'false';
-            const storedEffort = localStorage.getItem(`kai.lmStudioReasoningLevel.${rawModel}`) ||
-                                 localStorage.getItem(`kai.lmStudioReasoningLevel.${modelId}`) || 'xhigh';
-            const effortLabels = { xhigh: 'X-High', high: 'X-High', medium: 'Medium', low: 'Low' };
-            const effortKey = (storedEffort in effortLabels) ? storedEffort : 'xhigh';
-
-            return {
-                isThinkingCapable: true,
-                isMultiLevel: true,
-                level: effortKey,
-                isOn: isLmThinkingOn,
-                labelText: isLmThinkingOn ? 'thinking' : '',
-                rawModel: rawModel
-            };
-        }
-
-        // 4. Mistral Reasoning models (Binary On/Off)
+        // 3. Mistral Reasoning models (Binary On/Off toggle only)
         const isMistralReasoning = lowerRaw.includes('magistral') || lowerRaw.includes('mistral-small') || lowerRaw.includes('mistral-medium') || lowerRaw.includes('codestral');
         if (isMistralReasoning) {
             const stored = localStorage.getItem(`kai.mistralThinking.${rawModel}`);

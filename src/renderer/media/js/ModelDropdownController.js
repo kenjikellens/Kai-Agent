@@ -392,28 +392,7 @@ class ModelDropdownController {
 
                         const cap = ThinkingStateFormatter.lmStudioCapabilities[itemData.rawModel] ||
                                     ThinkingStateFormatter.lmStudioCapabilities[lowerModel];
-                        let fields = (cap && Array.isArray(cap.fields) && cap.fields.length > 0) ? cap.fields : [];
-
-                        // Fallback default fields for Qwen, GLM, Gemma, DeepSeek when no manifest is available
-                        if (fields.length === 0 && (lowerModel.includes('qwen') || lowerModel.includes('qwq') || lowerModel.includes('glm') || lowerModel.includes('gemma') || lowerModel.includes('deepseek') || lowerModel.includes('r1'))) {
-                            fields = [
-                                {
-                                    displayName: 'Thinking',
-                                    type: 'boolean',
-                                    variable: 'enable_thinking'
-                                },
-                                {
-                                    displayName: 'Reasoning Effort',
-                                    type: 'select',
-                                    variable: 'reasoning_effort',
-                                    options: [
-                                        { label: 'X-High', value: 'xhigh' },
-                                        { label: 'Medium', value: 'medium' },
-                                        { label: 'Low', value: 'low' }
-                                    ]
-                                }
-                            ];
-                        }
+                        const fields = (cap && Array.isArray(cap.fields) && cap.fields.length > 0) ? cap.fields : [];
 
                         let toggleEl = null;
 
