@@ -554,8 +554,8 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  max-width: 80%;
-  padding: 6px 14px;
+  max-width: 480px;
+  padding: 5px 8px 5px 12px;
   background: var(--app-surface, #1e1e24);
   border: 1px solid var(--app-border-subtle, rgba(255, 255, 255, 0.08)) !important;
   border-radius: var(--app-radius-md, 8px);
@@ -567,6 +567,7 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18), 0 1px 2px rgba(0, 0, 0, 0.12);
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   user-select: none;
+  overflow: hidden;
 }
 
 .top-workspace-bar:hover {
@@ -585,11 +586,46 @@ body {
   color: var(--app-fg, #f4f4f5);
 }
 
+/* Left-fade text container so the rightmost folder name is always crystal clear */
 .top-workspace-text {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  direction: rtl; /* Align to right so end of path is visible */
+  text-align: left;
   letter-spacing: -0.01em;
+  mask-image: linear-gradient(to right, transparent, black 28px);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 28px);
+}
+
+.top-workspace-text * {
+  direction: ltr;
+  unicode-bidi: bidi-override;
+}
+
+/* Detach 'X' button inside top workspace badge */
+.top-workspace-detach-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  padding: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--app-muted, #71717a);
+  cursor: pointer;
+  flex-shrink: 0;
+  border: 0;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.top-workspace-detach-btn:hover {
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.15);
 }
 
 /* -----------------------------

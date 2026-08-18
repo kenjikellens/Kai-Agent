@@ -59,12 +59,15 @@
             <div id="chat-view" class="content-view">
                 <!-- Centered Top Workspace Path Bar (Header) -->
                 <div class="top-workspace-bar-container">
-                    <button type="button" class="top-workspace-bar" id="top-workspace-btn" title="Click to Change Workspace Directory">
+                    <div class="top-workspace-bar" id="top-workspace-btn" title="Click to Change Workspace Directory">
                         <svg class="top-workspace-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                         </svg>
                         <span class="top-workspace-text" id="top-workspace-path">No Workspace Selected</span>
-                    </button>
+                        <button type="button" class="top-workspace-detach-btn hidden" id="top-workspace-detach-btn" title="Detach Workspace Folder">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Chat Output Area (Centered column) -->

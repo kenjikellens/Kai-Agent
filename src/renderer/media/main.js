@@ -200,8 +200,20 @@
 
     const topWorkspaceBtn = document.getElementById('top-workspace-btn');
     if (topWorkspaceBtn) {
-        topWorkspaceBtn.addEventListener('click', () => {
+        topWorkspaceBtn.addEventListener('click', (e) => {
+            if (e.target.closest('#top-workspace-detach-btn')) {
+                return;
+            }
             ipcBridge.browseWorkspaceFolder();
+        });
+    }
+
+    const topWorkspaceDetachBtn = document.getElementById('top-workspace-detach-btn');
+    if (topWorkspaceDetachBtn) {
+        topWorkspaceDetachBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            updateWorkspaceUi('');
+            saveCurrentChat();
         });
     }
 
@@ -236,6 +248,11 @@
         const topWsBtn = document.getElementById('top-workspace-btn');
         if (topWsBtn) {
             topWsBtn.title = hasWs ? `Active Workspace: ${workspacePath} (Click to change)` : 'Click to Select Workspace Folder';
+        }
+
+        const topWsDetachBtn = document.getElementById('top-workspace-detach-btn');
+        if (topWsDetachBtn) {
+            topWsDetachBtn.classList.toggle('hidden', !hasWs);
         }
 
         if (modeOptAgent) {
