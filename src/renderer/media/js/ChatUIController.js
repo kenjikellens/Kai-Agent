@@ -45,7 +45,7 @@ class ChatUIController {
     initEventListeners() {
         if (this.settingsBtn) {
             this.settingsBtn.addEventListener('click', () => {
-                this.showView('settings');
+                window.location.hash = 'settings';
             });
         }
 
@@ -54,7 +54,8 @@ class ChatUIController {
                 if (this.settingsController) {
                     this.settingsController.hideKeysOverlay();
                 }
-                this.showView('chat');
+                const activeId = localStorage.getItem('kai.activeChatId');
+                window.location.hash = activeId ? `session-${activeId}` : '';
             });
         }
 
@@ -63,11 +64,7 @@ class ChatUIController {
                 // 1. Welcome Help button
                 const helpBtn = e.target.closest('#welcome-help-btn');
                 if (helpBtn) {
-                    if (this.helpModalController) {
-                        this.helpModalController.open();
-                    } else {
-                        this.showView('settings');
-                    }
+                    window.location.hash = 'help';
                     return;
                 }
 

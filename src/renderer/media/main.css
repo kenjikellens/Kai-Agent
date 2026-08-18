@@ -555,7 +555,7 @@ body {
   align-items: center;
   gap: 8px;
   max-width: 480px;
-  padding: 5px 8px 5px 12px;
+  padding: 6px 14px;
   background: var(--app-surface, #1e1e24);
   border: 1px solid var(--app-border-subtle, rgba(255, 255, 255, 0.08)) !important;
   border-radius: var(--app-radius-md, 8px);
@@ -602,30 +602,6 @@ body {
 .top-workspace-text * {
   direction: ltr;
   unicode-bidi: bidi-override;
-}
-
-/* Detach 'X' button inside top workspace badge */
-.top-workspace-detach-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  min-width: 20px;
-  min-height: 20px;
-  padding: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--app-muted, #71717a);
-  cursor: pointer;
-  flex-shrink: 0;
-  border: 0;
-  transition: color 0.15s ease, background-color 0.15s ease;
-}
-
-.top-workspace-detach-btn:hover {
-  color: #ff6b6b;
-  background: rgba(255, 107, 107, 0.15);
 }
 
 /* -----------------------------
@@ -1593,8 +1569,9 @@ button:disabled {
   color: #38bdf8; /* Light Blue for Plan Mode */
 }
 
+.toolbar-mode-btn[data-mode="ask"] .mode-btn-icon,
 .toolbar-mode-btn[data-mode="chat"] .mode-btn-icon {
-  color: var(--app-muted, #9ca3af); /* White/Gray for Chat Mode */
+  color: var(--app-muted, #9ca3af); /* White/Gray for Ask / Chat Mode */
 }
 
 .mode-btn-label {
@@ -3760,14 +3737,14 @@ details[open]>summary>.custom-chevron {
   position: relative;
   z-index: 2001;
   width: 100%;
-  max-width: 420px;
-  max-height: 85vh;
+  max-width: 640px;
+  max-height: 88vh;
   display: flex;
   flex-direction: column;
-  background: var(--app-bg, #1e1e1e);
-  border: 1px solid var(--app-border-strong, #3c3c3c);
-  border-radius: var(--app-radius-lg, 8px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  background: var(--app-bg, #18181b);
+  border: 1px solid var(--app-border-strong, #333338);
+  border-radius: var(--app-radius-lg, 10px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
   overflow: hidden;
 }
 
@@ -3775,107 +3752,131 @@ details[open]>summary>.custom-chevron {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--app-border-subtle, #2d2d2d);
-  background: var(--app-surface-strong, #252526);
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--app-border-subtle, #27272a);
+  background: var(--app-surface-strong, #202024);
 }
 
 .help-modal-title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.82rem;
+  gap: 10px;
+  font-size: 0.9rem;
   font-weight: 600;
-  color: var(--app-fg, #cccccc);
+  color: #f4f4f5;
+  letter-spacing: -0.01em;
+}
+
+.help-modal-title svg {
+  color: var(--app-muted, #a1a1aa);
 }
 
 .help-close-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   border: 0 !important;
   border-radius: var(--app-radius-sm, 4px);
   background: transparent;
-  color: var(--app-muted, #888888);
+  color: var(--app-muted, #a1a1aa);
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .help-close-btn:hover {
-  background: var(--app-surface-hover, #37373d);
-  color: var(--app-fg, #ffffff);
+  background: var(--app-surface-hover, #2e2e34);
+  color: #ffffff;
 }
 
 .help-modal-body {
-  padding: 14px;
+  padding: 20px 24px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 18px;
 }
 
 .help-section {
-  padding: 10px;
-  background: var(--app-surface-subtle, #252526);
-  border: 1px solid var(--app-border-subtle, #2e2e2e);
-  border-radius: var(--app-radius-md, 6px);
-}
-
-.help-section-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.76rem;
-  font-weight: 600;
-  color: var(--app-accent, #007acc);
-  margin-bottom: 4px;
-}
-
-.help-section-desc {
-  font-size: 0.72rem;
-  color: var(--app-muted, #999999);
-  line-height: 1.45;
-}
-
-.help-section-desc code {
-  padding: 1px 4px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.08);
-  font-size: 0.7rem;
-  color: var(--app-fg, #e0e0e0);
-}
-
-.help-shortcuts-grid {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-top: 6px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--app-border-subtle, #27272a);
+}
+
+.help-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.help-section-title {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.help-text-block {
+  font-size: 0.78rem;
+  color: var(--app-muted, #a1a1aa);
+  line-height: 1.6;
+}
+
+.help-text-block p {
+  margin: 0 0 6px 0;
+}
+
+.help-text-block p:last-child {
+  margin-bottom: 0;
+}
+
+.help-text-block strong {
+  color: #e4e4e7;
+  font-weight: 600;
+}
+
+.help-text-block code {
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: var(--app-mono, monospace);
+  font-size: 0.74rem;
+  color: #e4e4e7;
+}
+
+.help-shortcuts-table {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
 }
 
 .help-shortcut-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.72rem;
+  font-size: 0.78rem;
+  padding: 2px 0;
 }
 
-.help-shortcut-label {
-  color: var(--app-muted, #999999);
+.help-shortcut-row span {
+  color: var(--app-muted, #a1a1aa);
 }
 
 .help-kbd {
   display: inline-block;
-  padding: 2px 6px;
-  font-size: 0.68rem;
-  font-family: var(--vscode-editor-font-family, monospace);
-  color: var(--app-fg, #cccccc);
-  background: var(--app-surface-strong, #2d2d2d);
-  border: 1px solid var(--app-border-strong, #3c3c3c);
-  border-radius: 3px;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+  padding: 2px 7px;
+  font-size: 0.72rem;
+  font-family: var(--app-mono, monospace);
+  color: #e4e4e7;
+  background: var(--app-surface-strong, #27272a);
+  border: 1px solid var(--app-border-strong, #3f3f46);
+  border-radius: 4px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
 }
 
 

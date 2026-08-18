@@ -139,14 +139,10 @@ class HistoryManager {
             });
             
             item.addEventListener('click', () => {
-                if (isWaitingForResponse) {
+                if (typeof isWaitingForResponse !== 'undefined' && isWaitingForResponse) {
                     this.ipcBridge.abort();
                 }
-                this.setActiveChatId(chat.id);
-                this.ipcBridge.loadChat(chat.id);
-                if (this.onViewSwitch) {
-                    this.onViewSwitch('chat');
-                }
+                window.location.hash = 'session-' + chat.id;
             });
             
             item.appendChild(content);

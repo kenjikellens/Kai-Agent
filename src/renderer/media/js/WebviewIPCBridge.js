@@ -282,8 +282,8 @@ class WebviewIPCBridge {
                 let systemPrompt = `You are Kai, a friendly, intelligent, and versatile AI assistant with web access and utility tools. Respond in the user's language.`;
                 try {
                     let promptFile = 'system_prompt_chat.md';
-                    if (activeMode === 'chat') {
-                        promptFile = hasWs ? 'system_prompt_chat_workspace.md' : 'system_prompt_chat.md';
+                    if (activeMode === 'chat' || activeMode === 'ask') {
+                        promptFile = hasWs ? 'system_prompt_ask.md' : 'system_prompt_chat.md';
                     } else if (activeMode === 'planning') {
                         promptFile = 'system_prompt_planning.md';
                     } else if (activeMode === 'agent') {
@@ -445,8 +445,8 @@ class WebviewIPCBridge {
                                                 }
                                                 fullText += textToAdd;
 
-                                                // Check if a tool call was initiated (e.g. <tool_call, <|tool_call, ```json {)
-                                                const toolTagMatch = /<\|?tool_call|```json\s*\{/i.exec(fullText);
+                                                // Check if a tool call was initiated (e.g. <tool, <|tool, <|, ```json {)
+                                                const toolTagMatch = /<\||<tool|```json\s*\{/i.exec(fullText);
                                                 if (!toolTagMatch) {
                                                     emit({ type: 'agentProgress', progressType: 'token', output: textToAdd });
                                                 }

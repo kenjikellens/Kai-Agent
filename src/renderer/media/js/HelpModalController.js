@@ -80,19 +80,27 @@ class HelpModalController {
 
     /**
      * Opens the help modal and renders the latest localized guide content.
+     * @param {boolean} [syncHash=true] Whether to trigger hash sync.
      */
-    open() {
+    open(syncHash = true) {
         if (!this.container) return;
         this.renderHelpContent();
         this.container.classList.remove('hidden');
+        if (syncHash && typeof this.onOpen === 'function') {
+            this.onOpen();
+        }
     }
 
     /**
      * Closes the help modal dialog.
+     * @param {boolean} [syncHash=true] Whether to trigger hash sync.
      */
-    close() {
+    close(syncHash = true) {
         if (!this.container) return;
         this.container.classList.add('hidden');
+        if (syncHash && typeof this.onClose === 'function') {
+            this.onClose();
+        }
     }
 
     /**
@@ -102,56 +110,53 @@ class HelpModalController {
         const bodyEl = document.getElementById('help-modal-body');
         if (!bodyEl) return;
 
-        const i18n = window.KAI_I18N || {};
-
         bodyEl.innerHTML = `
             <div class="help-section">
-                <div class="help-section-title">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-                    <span>${i18n.lmStudioHeader || 'LM Studio & Local Models'}</span>
-                </div>
-                <div class="help-section-desc">
-                    Connect to your local LM Studio server (<code>http://localhost:1234/v1</code>) or select a detected model directly from the toolbar dropdown.
-                </div>
-            </div>
-
-            <div class="help-section">
-                <div class="help-section-title">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
-                    <span>${i18n.thinkingToggle || 'Thinking & Reasoning'}</span>
-                </div>
-                <div class="help-section-desc">
-                    Toggle model reasoning effort and choose between collapsible or persistent thought process rendering in the settings.
+                <div class="help-section-title">Modes</div>
+                <div class="help-text-block">
+                    <p><strong>Chat</strong>: Default mode when no workspace folder is attached. Provides general assistance, calculations, and web search without filesystem access.</p>
+                    <p><strong>Ask</strong>: Read-only inspection of the active workspace. Inspects code, searches files, and answers architecture questions without modifying files.</p>
+                    <p><strong>Agent</strong>: Autonomous workspace execution. Creates, edits, and deletes project files, and executes commands.</p>
+                    <p><strong>Plan</strong>: Generates structured step-by-step implementation plans before performing edits.</p>
                 </div>
             </div>
 
             <div class="help-section">
-                <div class="help-section-title">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"></path></svg>
-                    <span>${i18n.planningMode || 'Planning Mode (@)'}</span>
-                </div>
-                <div class="help-section-desc">
-                    Click the <strong>@</strong> icon to enforce step-by-step implementation planning before code modifications begin.
+                <div class="help-section-title">Workspace Management</div>
+                <div class="help-text-block">
+                    <p>Folder attachment is managed per chat session via the folder button in the input toolbar.</p>
+                    <p>When a folder is selected, the AI receives root directory mapping. To change or disconnect the folder, use the central top bar or the close button on the workspace badge.</p>
                 </div>
             </div>
 
             <div class="help-section">
-                <div class="help-section-title">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"></rect><line x1="6" y1="8" x2="6" y2="8"></line><line x1="10" y1="8" x2="10" y2="8"></line><line x1="14" y1="8" x2="14" y2="8"></line><line x1="18" y1="8" x2="18" y2="8"></line><line x1="6" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="18" y2="12"></line><line x1="6" y1="16" x2="18" y2="16"></line></svg>
-                    <span>Keyboard Shortcuts</span>
+                <div class="help-section-title">Tools & Capabilities</div>
+                <div class="help-text-block">
+                    <p><strong>Filesystem:</strong> <code>list_dir</code>, <code>read_file</code>, <code>write_file</code>, <code>replace_file_content</code>, <code>delete_item</code></p>
+                    <p><strong>Code Search:</strong> <code>grep_search</code>, <code>symbol_search</code>, <code>get_diagnostics</code></p>
+                    <p><strong>Web & Network:</strong> <code>web_search</code>, <code>fetch_url</code></p>
+                    <p><strong>Utilities:</strong> <code>calculate</code>, <code>get_time</code>, <code>unit_converter</code>, <code>text_stats</code>, <code>uuid_random</code></p>
                 </div>
-                <div class="help-shortcuts-grid">
+            </div>
+
+            <div class="help-section">
+                <div class="help-section-title">Shortcuts</div>
+                <div class="help-shortcuts-table">
                     <div class="help-shortcut-row">
-                        <span class="help-shortcut-label">Send message</span>
+                        <span>Send message</span>
                         <kbd class="help-kbd">Enter</kbd>
                     </div>
                     <div class="help-shortcut-row">
-                        <span class="help-shortcut-label">New line</span>
+                        <span>New line in input</span>
                         <kbd class="help-kbd">Shift + Enter</kbd>
                     </div>
                     <div class="help-shortcut-row">
-                        <span class="help-shortcut-label">Inline edit selection</span>
-                        <kbd class="help-kbd">Ctrl + Alt + K</kbd>
+                        <span>Cancel active generation</span>
+                        <kbd class="help-kbd">Escape</kbd>
+                    </div>
+                    <div class="help-shortcut-row">
+                        <span>Open mode selector</span>
+                        <kbd class="help-kbd">@</kbd>
                     </div>
                 </div>
             </div>

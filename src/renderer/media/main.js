@@ -200,20 +200,8 @@
 
     const topWorkspaceBtn = document.getElementById('top-workspace-btn');
     if (topWorkspaceBtn) {
-        topWorkspaceBtn.addEventListener('click', (e) => {
-            if (e.target.closest('#top-workspace-detach-btn')) {
-                return;
-            }
+        topWorkspaceBtn.addEventListener('click', () => {
             ipcBridge.browseWorkspaceFolder();
-        });
-    }
-
-    const topWorkspaceDetachBtn = document.getElementById('top-workspace-detach-btn');
-    if (topWorkspaceDetachBtn) {
-        topWorkspaceDetachBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            updateWorkspaceUi('');
-            saveCurrentChat();
         });
     }
 
@@ -250,9 +238,10 @@
             topWsBtn.title = hasWs ? `Active Workspace: ${workspacePath} (Click to change)` : 'Click to Select Workspace Folder';
         }
 
-        const topWsDetachBtn = document.getElementById('top-workspace-detach-btn');
-        if (topWsDetachBtn) {
-            topWsDetachBtn.classList.toggle('hidden', !hasWs);
+        // Without a folder attached, only 1 mode (Chat) exists -> hide mode selector button entirely
+        const modeContainer = document.getElementById('context-options-dropdown-container');
+        if (modeContainer) {
+            modeContainer.classList.toggle('hidden', !hasWs);
         }
 
         if (modeOptAgent) {
@@ -266,25 +255,35 @@
             modeOptPlanning.title = hasWs ? 'Structured plan-first protocol before code edits' : 'Select a workspace folder first to use Plan Mode';
         }
 
-        if (!hasWs && appState.activeMode !== 'chat') {
+        if (!hasWs) {
             setActiveMode('chat');
+        } else if (appState.activeMode === 'chat') {
+            setActiveMode('ask');
         }
     }
 
     /**
      * Resets active session and UI for a brand new chat.
+     * @param {string} [newSessionId] Optional explicit session ID to initialize.
      */
-    function createNewChat() {
+    function createNewChat(newSessionId) {
         if (appState.isWaitingForResponse) {
             ipcBridge.abort();
         }
         appState.resetChat();
+        if (newSessionId) {
+            appState.currentChatId = newSessionId;
+        }
+        localStorage.setItem('kai.activeChatId', appState.currentChatId);
         updateWorkspaceUi('');
-        historyManager.setActiveChatId(null);
+        historyManager.setActiveChatId(appState.currentChatId);
         chatUIController.clearChatContainer();
         chatUIController.resetAssistantStream();
         chatUIController.setUiLoading(false, appState);
         chatUIController.showView('chat');
+        if (helpModalController && typeof helpModalController.close === 'function') {
+            helpModalController.close(false);
+        }
         ipcBridge.loadChatHistory();
         if (messageInput) {
             messageInput.focus();
@@ -297,7 +296,8 @@
         if (appState.messages.length > 0) {
             saveCurrentChat();
         }
-        createNewChat();
+        const newId = appState.generateChatId();
+        window.location.hash = `session-${newId}`;
     };
 
     if (newChatBtn) {
@@ -308,14 +308,15 @@
     }
 
     // When user deletes the currently open chat from sidebar, reset to a clean new chat
-    historyManager.setOnDeleteActiveChat(() => {
-        createNewChat();
-    });
+    historyManager.onActiveChatDeleted = () => {
+        const newId = appState.generateChatId();
+        window.location.hash = `session-${newId}`;
+    };
 
     /**
-     * Dynamically resizes the message input textarea based on content scrollHeight.
+     * Auto-resizes the input textarea as user types, up to MAX_HEIGHT.
      */
-    function adjustInputHeight() {
+    function autoResizeInput() {
         if (!messageInput) return;
         messageInput.style.height = 'auto';
         const MAX_HEIGHT = 200;
@@ -326,26 +327,30 @@
 
     /**
      * Updates active mode UI selection and input placeholder accordingly.
-     * @param {'chat'|'agent'|'planning'} mode New active mode.
+     * @param {'chat'|'ask'|'agent'|'planning'} mode New active mode.
      */
     function setActiveMode(mode) {
-        if (!appState.hasActiveWorkspace && mode !== 'chat') {
+        if (!appState.hasActiveWorkspace) {
             mode = 'chat';
+        } else if (mode === 'chat') {
+            mode = 'ask';
         }
         appState.activeMode = mode;
         localStorage.setItem('kai.activeMode', mode);
 
         if (contextModeSelector) {
             contextModeSelector.querySelectorAll('.context-mode-item').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.mode === mode);
+                const itemMode = btn.dataset.mode;
+                btn.classList.toggle('active', itemMode === mode || (itemMode === 'ask' && mode === 'ask'));
             });
         }
 
         if (atMentionTriggerBtn) {
             atMentionTriggerBtn.dataset.mode = mode;
-            const modeLabels = { chat: 'Chat', agent: 'Agent', planning: 'Plan' };
+            const modeLabels = { chat: 'Chat', ask: 'Ask', agent: 'Agent', planning: 'Plan' };
             const modeIcons = {
                 chat: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
+                ask: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
                 agent: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>',
                 planning: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>'
             };
@@ -356,14 +361,16 @@
             }
             const textEl = document.getElementById('active-mode-text');
             if (textEl) {
-                textEl.textContent = modeLabels[mode] || 'Chat';
+                textEl.textContent = modeLabels[mode] || 'Ask';
             }
-            atMentionTriggerBtn.title = `Mode: ${modeLabels[mode] || 'Chat'} (@)`;
+            atMentionTriggerBtn.title = `Mode: ${modeLabels[mode] || 'Ask'} (@)`;
         }
 
         if (messageInput) {
             if (mode === 'chat') {
                 messageInput.placeholder = 'Ask Kai anything, calculate, convert, or search the web...';
+            } else if (mode === 'ask') {
+                messageInput.placeholder = 'Ask questions about your workspace codebase...';
             } else if (mode === 'agent') {
                 messageInput.placeholder = 'Ask Kai to edit code, execute tasks, or run commands...';
             } else if (mode === 'planning') {
@@ -454,7 +461,7 @@
 
         if (messageInput) {
             messageInput.value = '';
-            adjustInputHeight();
+            autoResizeInput();
         }
         appState.selectedCodeContext = '';
 
@@ -508,6 +515,10 @@
     if (atMentionTriggerBtn && contextOptionsMenu) {
         atMentionTriggerBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+            if (!appState.hasActiveWorkspace) {
+                contextOptionsMenu.classList.add('hidden');
+                return;
+            }
             contextOptionsMenu.classList.toggle('hidden');
         });
 
@@ -521,7 +532,7 @@
 
 
     if (messageInput) {
-        messageInput.addEventListener('input', adjustInputHeight);
+        messageInput.addEventListener('input', autoResizeInput);
         messageInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -741,4 +752,81 @@
     // Start periodic server connection health checks
     ipcBridge.checkConnection();
     setInterval(() => ipcBridge.checkConnection(), 15000);
+
+    /**
+     * Central Hash Router for Client-Side SPA Navigation.
+     * Routes:
+     * - #settings -> Opens Settings view
+     * - #help -> Opens Help modal view
+     * - #session-<chatId> -> Loads the specified chat session or initializes a new one
+     */
+    function handleHashRouting() {
+        const rawHash = (window.location.hash || '').replace(/^#/, '').trim();
+
+        if (rawHash === 'settings') {
+            chatUIController.showView('settings');
+            if (helpModalController && typeof helpModalController.close === 'function') {
+                helpModalController.close(false);
+            }
+            return;
+        }
+
+        if (rawHash === 'help') {
+            if (helpModalController && typeof helpModalController.open === 'function') {
+                helpModalController.open(false);
+            }
+            return;
+        }
+
+        if (rawHash.startsWith('session-')) {
+            const targetSessionId = rawHash.substring(8);
+            if (helpModalController && typeof helpModalController.close === 'function') {
+                helpModalController.close(false);
+            }
+
+            if (appState.currentChatId === targetSessionId && appState.messages.length > 0) {
+                chatUIController.showView('chat');
+                return;
+            }
+
+            // Check localStorage cache for session
+            try {
+                const saved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
+                const found = saved.find(c => c.id === targetSessionId);
+                if (found) {
+                    loadChatSession(found);
+                    return;
+                }
+            } catch (e) {}
+
+            // If not found in cache, initialize as a clean session with targetSessionId
+            createNewChat(targetSessionId);
+            return;
+        }
+
+        // Default: If hash is empty, assign current active chat session hash
+        const activeId = appState.currentChatId || appState.generateChatId();
+        window.location.hash = `session-${activeId}`;
+    }
+
+    // Help modal hash sync hooks
+    if (helpModalController) {
+        helpModalController.onOpen = () => {
+            if (window.location.hash !== '#help') {
+                window.location.hash = 'help';
+            }
+        };
+        helpModalController.onClose = () => {
+            if (window.location.hash === '#help') {
+                const activeId = appState.currentChatId || localStorage.getItem('kai.activeChatId');
+                window.location.hash = activeId ? `session-${activeId}` : '';
+            }
+        };
+    }
+
+    // Listen for hash navigation (back/forward, history click, link navigation)
+    window.addEventListener('hashchange', handleHashRouting);
+
+    // Run router on initial startup
+    handleHashRouting();
 })();

@@ -59,15 +59,12 @@
             <div id="chat-view" class="content-view">
                 <!-- Centered Top Workspace Path Bar (Header) -->
                 <div class="top-workspace-bar-container">
-                    <div class="top-workspace-bar" id="top-workspace-btn" title="Click to Change Workspace Directory">
+                    <button type="button" class="top-workspace-bar" id="top-workspace-btn" title="Click to Change Workspace Directory">
                         <svg class="top-workspace-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                         </svg>
                         <span class="top-workspace-text" id="top-workspace-path">No Workspace Selected</span>
-                        <button type="button" class="top-workspace-detach-btn hidden" id="top-workspace-detach-btn" title="Detach Workspace Folder">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                        </button>
-                    </div>
+                    </button>
                 </div>
 
                 <!-- Chat Output Area (Centered column) -->
@@ -105,8 +102,8 @@
                                 </div>
                             </div>
                             <div class="toolbar-right">
-                                <!-- Context & Capabilities Dropdown (Active Mode Button) -->
-                                <div class="custom-dropdown" id="context-options-dropdown-container">
+                                <!-- Context & Capabilities Dropdown (Active Mode Button - only visible when a folder is attached) -->
+                                <div class="custom-dropdown hidden" id="context-options-dropdown-container">
                                     <button type="button" class="toolbar-mode-btn" id="at-mention-trigger-btn" title="Select mode (@)">
                                         <span class="mode-btn-icon" id="active-mode-icon">
                                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
@@ -119,9 +116,9 @@
                                             <span>Select Mode</span>
                                         </div>
                                         <div class="context-mode-selector" id="context-mode-selector">
-                                            <button type="button" class="context-mode-item active" data-mode="chat" id="mode-opt-chat" title="Safe Q&amp;A, math, web and code analysis">
+                                            <button type="button" class="context-mode-item active" data-mode="ask" id="mode-opt-chat" title="Safe Q&amp;A, codebase inspection, math, web and code analysis">
                                                 <svg class="mode-item-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                                                <span class="mode-item-title">Chat</span>
+                                                <span class="mode-item-title" id="mode-opt-chat-title">Ask</span>
                                                 <svg class="mode-check-svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                             </button>
                                             <button type="button" class="context-mode-item disabled" data-mode="agent" id="mode-opt-agent" title="Select a workspace folder first to use Agent Mode" disabled>
