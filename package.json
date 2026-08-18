@@ -1,0 +1,48 @@
+{
+  "name": "kai-agent-app",
+  "productName": "KAI Agent",
+  "version": "1.0.0",
+  "description": "Standalone AI Developer Assistant desktop application",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "compile": "tsc",
+    "watch": "tsc -w",
+    "start": "tsc && electron .",
+    "build": "tsc && electron-builder --dir",
+    "dist": "tsc && electron-builder --win"
+  },
+  "keywords": [
+    "ai",
+    "developer",
+    "assistant",
+    "lm-studio",
+    "gemini",
+    "agent"
+  ],
+  "author": "Kenji Kellens",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@vscode/codicons": "^0.0.45"
+  },
+  "build": {
+    "appId": "com.kaiagent.app",
+    "productName": "KAI Agent",
+    "win": {
+      "target": "nsis"
+    },
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "src/renderer/**/*",
+      "node_modules/@vscode/codicons/**/*"
+    ]
+  }
+}

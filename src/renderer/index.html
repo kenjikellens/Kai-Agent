@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KAI Agent</title>
+    <link href="media/codicons/codicon.css" rel="stylesheet" />
+    <link href="media/main.css" rel="stylesheet" />
+    <style>
+        /* Standalone App Window Header & Workspace Selector styling */
+        .app-window-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 14px;
+            background: var(--app-bg, #1e1e1e);
+            border-bottom: 1px solid var(--app-border, rgba(255, 255, 255, 0.08));
+            user-select: none;
+        }
+
+        .workspace-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--app-border, rgba(255, 255, 255, 0.1));
+            color: var(--app-fg, #cccccc);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+
+        .workspace-badge:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--app-focus, #007acc);
+        }
+
+        .workspace-icon {
+            opacity: 0.8;
+        }
+
+        .workspace-name {
+            font-weight: 500;
+            max-width: 220px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar-container">
+        <!-- Minimalist Top Bar with Workspace Picker & Quick Actions -->
+        <div class="sidebar-header app-window-header">
+            <div class="header-left">
+                <button type="button" class="workspace-badge" id="workspace-badge-btn" title="Click to Change Workspace Directory">
+                    <svg class="workspace-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span class="workspace-name" id="active-workspace-name">Select Workspace...</span>
+                </button>
+            </div>
+            <div class="header-actions">
+                <button id="new-chat-btn" class="icon-btn-header" title="New Chat">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                </button>
+                <button id="history-btn" class="icon-btn-header" title="Chat History">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                </button>
+                <button id="settings-btn" class="icon-btn-header" title="Settings">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content Container (Swappable Views) -->
+        <div id="main-content-container" class="main-content-container">
+            <!-- View A: Active Chat View (Default) -->
+            <div id="chat-view" class="content-view">
+                <!-- Chat Output Area -->
+                <div id="chat-container" class="chat-container"></div>
+
+                <!-- Chat Input Area -->
+                <div class="input-panel">
+                    <div class="input-card">
+                        <div id="attached-files-bar" class="attached-files-bar hidden"></div>
+                        <textarea id="message-input" placeholder="Ask Kai or describe a task..." rows="1"></textarea>
+                        <div class="input-toolbar">
+                            <div class="toolbar-left">
+                                <!-- File Upload Attachment Button -->
+                                <button type="button" class="toolbar-icon-btn" id="attach-file-btn" title="Attach Files">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                </button>
+
+                                <!-- Model Selector Dropdown -->
+                                <div class="custom-dropdown" id="model-dropdown-container">
+                                    <button type="button" class="dropdown-trigger" id="dropdown-trigger-btn" title="Active Model">
+                                        <span id="status-dot" class="status-dot status-disconnected"></span>
+                                        <div id="selected-model-text-container" class="model-text-container">
+                                            <span id="selected-model-text" class="model-text-inner">Select Model</span>
+                                        </div>
+                                        <svg class="dropdown-trigger-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    </button>
+                                    <div class="dropdown-menu hidden" id="dropdown-options-menu"></div>
+                                </div>
+                            </div>
+                            <div class="toolbar-right">
+                                <!-- Context & Capabilities Dropdown ("@" Button) -->
+                                <div class="custom-dropdown" id="context-options-dropdown-container">
+                                    <button type="button" class="toolbar-icon-btn" id="at-mention-trigger-btn" title="Capabilities & Mentions (@)">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"></path></svg>
+                                    </button>
+                                    <div class="dropdown-menu hidden" id="context-options-menu">
+                                        <div class="context-options-header">
+                                            <span>Capabilities</span>
+                                        </div>
+                                        <div class="context-option-row" id="planning-mode-option-row"></div>
+                                    </div>
+                                </div>
+                                <button id="send-btn" title="Send message">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View B: History View -->
+            <div id="history-container" class="content-view history-container hidden">
+                <div class="history-panel-header">
+                    <span>Previous Chats</span>
+                    <button id="close-history-btn" class="icon-btn-header" title="Close History">✕</button>
+                </div>
+                <div id="history-list" class="history-list"></div>
+            </div>
+
+            <!-- View C: Settings View -->
+            <div id="settings-container" class="content-view settings-container hidden">
+                <div class="settings-panel-header">
+                    <span>Settings</span>
+                    <button id="close-settings-btn" class="icon-btn-header" title="Close Settings">✕</button>
+                </div>
+                <div class="settings-content-panel">
+                    <!-- General Settings -->
+                    <div class="settings-category" id="category-general">
+                        <button type="button" class="category-header-btn" data-category="general">
+                            <span class="category-title">General Settings</span>
+                            <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                        <div class="category-content">
+                            <div class="setting-item">
+                                <label for="language-select-container" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">Language</label>
+                                <div id="language-select-container"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LM Studio Settings -->
+                    <div class="settings-category" id="category-lmstudio">
+                        <button type="button" class="category-header-btn" data-category="lmstudio">
+                            <span class="category-title">LM Studio</span>
+                            <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                        <div class="category-content">
+                            <div class="setting-item">
+                                <label for="settings-server-url" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">Server URL</label>
+                                <input type="text" id="settings-server-url" placeholder="http://localhost:1234/v1" />
+                            </div>
+                            <div class="setting-item">
+                                <label for="settings-lmstudio-path" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">LM Studio Directory</label>
+                                <div style="display: flex; gap: 6px; align-items: center;">
+                                    <input type="text" id="settings-lmstudio-path" style="flex: 1;" placeholder="Auto-detected (~/.cache/lm-studio, ~/.lmstudio)" />
+                                    <button type="button" id="browse-lmstudio-path-btn" class="settings-browse-btn">Browse...</button>
+                                </div>
+                                <div id="lmstudio-cache-status-indicator" class="cache-status-indicator">
+                                    <span id="cache-status-dot" class="status-dot status-disconnected"></span>
+                                    <span id="cache-status-text" class="cache-status-label">Checking cache...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- API Keys Settings -->
+                    <div class="settings-category" id="category-apikeys">
+                        <button type="button" class="category-header-btn" data-category="apikeys">
+                            <span class="category-title">API Keys</span>
+                            <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                        <div class="category-content">
+                            <div class="setting-item">
+                                <label for="settings-gemini-key" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">Google Gemini API Key</label>
+                                <div class="password-input-wrapper">
+                                    <input type="password" id="settings-gemini-key" placeholder="AIzaSy..." />
+                                    <button type="button" class="toggle-password-btn" data-target="settings-gemini-key" title="Show/Hide">👁</button>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <label style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">Free Provider API Keys</label>
+                                <div id="free-providers-keys-list" class="free-providers-keys-list"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Thinking Settings -->
+                    <div class="settings-category" id="category-thinking">
+                        <button type="button" class="category-header-btn" data-category="thinking">
+                            <span class="category-title">Thinking & Reasoning</span>
+                            <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                        <div class="category-content">
+                            <div class="setting-item" id="show-thinking-setting-row"></div>
+                            <div class="setting-item" id="keep-thinking-generating-setting-row"></div>
+                            <div class="setting-item" id="keep-thinking-finished-setting-row"></div>
+                            <div class="setting-item">
+                                <label for="thinking-style-select-container" style="font-size: 0.75rem; color: var(--app-muted); margin-bottom: 4px; display: block;">Thinking Display Style</label>
+                                <div id="thinking-style-select-container"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inject Global Assets & SVGs -->
+    <script>
+        window.KAI_SVGS = {
+            "at": '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"></path></svg>',
+            "plus": '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>',
+            "send": '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>',
+            "kai_icon": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v8"></path><path d="M8 12h8"></path></svg>',
+            "delete": '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>',
+            "check": '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+            "chevron": '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>',
+            "chevron_down": '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>',
+            "chevron_up": '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"></polyline></svg>',
+            "spinner": '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>',
+            "stop": '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>',
+            "default_tool": '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>',
+            "read_file": '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>',
+            "write_file": '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>',
+            "edit_file": '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>',
+            "list_dir": '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>',
+            "run_command": '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>'
+        };
+
+        window.KAI_I18N = {
+            newChat: "New Chat",
+            previousChats: "Previous Chats",
+            noPreviousChats: "No previous chats",
+            history: "History",
+            settings: "Settings",
+            manageApiKeys: "Manage API Keys",
+            showThinking: "Show Thinking / Reasoning",
+            keepThinkingGenerating: "Keep Thinking Expanded while Generating",
+            keepThinkingFinished: "Keep Thinking Expanded when Finished",
+            thinkingToggle: "Thinking",
+            thinkingProcess: "Thinking Process",
+            thinkingText: "Thinking...",
+            messagePlaceholder: "Ask Kai or describe a task...",
+            lmStudioHeader: "LM Studio",
+            checkingServer: "Checking server...",
+            connected: "Connected",
+            offline: "Offline",
+            cloudProvidersHeader: "Cloud Providers",
+            selectModel: "Select Model",
+            noWorkspaceError: "No workspace folder selected.",
+            language: "Language",
+            uploadFile: "Attach Files",
+            planningMode: "Planning Mode",
+            planningModeDesc: "Enforce step-by-step planning before execution",
+            generalSettings: "General Settings",
+            thinkingSettings: "Thinking & Reasoning",
+            apiKeysSettings: "API Keys",
+            thinkingDisplayStyle: "Thinking Display Style",
+            serverUrl: "Server URL",
+            lmStudioDirectory: "LM Studio Directory",
+            browse: "Browse...",
+            checkingCache: "Checking cache...",
+            cacheLoaded: "Cache loaded",
+            cacheNotFound: "Cache not found",
+            geminiApiKey: "Gemini API Key",
+            manageFreeProviderKeys: "Manage Free Provider Keys",
+            externalProvidersHeader: "External Providers",
+            externalProviderApiKeys: "External Provider API Keys",
+            close: "Close",
+            iconAndText: "Icon and Text",
+            iconOnly: "Icon Only",
+            textOnly: "Text Only",
+            welcomeTitle: "KAI Agent",
+            welcomePromptHint: "How can I help you today?",
+            help: "Help",
+            readme: "README"
+        };
+
+        window.KAI_LANG = "en";
+        window.KAI_SUPPORTED_LANGUAGES = [
+            { value: "auto", label: "Auto (System)" },
+            { value: "en", label: "English" },
+            { value: "nl", label: "Nederlands" },
+            { value: "de", label: "Deutsch" },
+            { value: "fr", label: "Français" },
+            { value: "es", label: "Español" }
+        ];
+
+        // Workspace Selector Click Handler
+        document.addEventListener('DOMContentLoaded', () => {
+            const wsBtn = document.getElementById('workspace-badge-btn');
+            if (wsBtn) {
+                wsBtn.addEventListener('click', () => {
+                    if (window.electronAPI) {
+                        window.electronAPI.postMessage({ type: 'browseWorkspaceFolder' });
+                    }
+                });
+            }
+        });
+    </script>
+
+    <!-- Load Client Scripts -->
+    <script src="media/js/Constants.js"></script>
+    <script src="media/js/DOMUtils.js"></script>
+    <script src="media/js/AppState.js"></script>
+    <script src="media/js/MarkdownFormatter.js"></script>
+    <script src="media/js/WebviewIPCBridge.js"></script>
+    <script src="media/js/FileSummaryWidget.js"></script>
+    <script src="media/js/ToggleComponent.js"></script>
+    <script src="media/js/CustomSelectComponent.js"></script>
+    <script src="media/js/ThinkingStateFormatter.js"></script>
+    <script src="media/js/ModelDropdownController.js"></script>
+    <script src="media/js/SettingsController.js"></script>
+    <script src="media/js/HistoryManager.js"></script>
+    <script src="media/js/FileUploadController.js"></script>
+    <script src="media/js/HelpModalController.js"></script>
+    <script src="media/js/ChatUIController.js"></script>
+    <script src="media/main.js"></script>
+
+    <!-- Update Workspace Name Listener -->
+    <script>
+        if (window.electronAPI) {
+            window.electronAPI.onMessage((msg) => {
+                if (msg && msg.type === 'connectionStatus' && msg.workspaceName) {
+                    const el = document.getElementById('active-workspace-name');
+                    if (el) el.textContent = msg.workspaceName;
+                    const wsBtn = document.getElementById('workspace-badge-btn');
+                    if (wsBtn && msg.workspacePath) {
+                        wsBtn.title = `Active Workspace: ${msg.workspacePath} (Click to change)`;
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

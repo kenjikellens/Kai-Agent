@@ -1,0 +1,2486 @@
+/* VS Code extension webview stylesheet
+   Goals:
+   - theme-aware defaults via VS Code variables
+   - remove duplicated rules
+   - consistent spacing, sizing, and focus states
+   - maintainable section structure
+*/
+
+/* -----------------------------
+   Theme tokens / defaults
+------------------------------ */
+:root {
+  --app-bg: var(--vscode-sideBar-background, #1e1e1e);
+  --app-fg: var(--vscode-editor-foreground, var(--vscode-foreground, #cccccc));
+  --app-muted: var(--vscode-descriptionForeground, #888888);
+  --app-border: rgba(255, 255, 255, 0.08);
+  --app-border-strong: rgba(255, 255, 255, 0.14);
+  --app-border-subtle: rgba(255, 255, 255, 0.05);
+  --app-surface: rgba(255, 255, 255, 0.03);
+  --app-surface-strong: rgba(255, 255, 255, 0.06);
+  --app-surface-hover: rgba(255, 255, 255, 0.08);
+  --app-accent: var(--vscode-button-background, #007acc);
+  --app-accent-hover: var(--vscode-button-hoverBackground, #0062a3);
+  --app-input-bg: var(--vscode-input-background, #252526);
+  --app-input-border: var(--vscode-input-border, rgba(255, 255, 255, 0.08));
+  --app-focus: var(--vscode-focusBorder, #007acc);
+  --app-radius-sm: 4px;
+  --app-radius-md: 6px;
+  --app-radius-lg: 8px;
+  --app-radius-xl: 12px;
+  --app-gap: 8px;
+  --app-gap-sm: 4px;
+  --app-gap-lg: 12px;
+  --app-font: var(--vscode-font-family, "Inter", "Segoe UI Variable Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
+  --app-mono: var(--vscode-editor-font-family, "Cascadia Code", "Fira Code", "JetBrains Mono", "Consolas", "Courier New", monospace);
+
+  /* Component specific theme tokens for dark theme default */
+  --app-code-bg: rgba(0, 0, 0, 0.35);
+  --app-inline-code-bg: rgba(0, 0, 0, 0.3);
+  --app-tool-dropdown-bg: rgba(0, 0, 0, 0.25);
+  --app-tool-dropdown-text: #a5d6a7;
+  --app-tool-call-text: #00bcd4;
+  --app-tool-query-text: #80deea;
+  --app-tool-query-bg: rgba(0, 0, 0, 0.15);
+  --app-tool-error-bg: rgba(0, 0, 0, 0.25);
+  --app-tool-error-text: #ff8a80;
+  --app-file-summary-bg: var(--vscode-editor-background, #1e1e1e);
+  --app-dropdown-bg: var(--vscode-dropdown-background, #252526);
+  --app-dropdown-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
+  --app-flyout-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --app-scrollbar-thumb: rgba(255, 255, 255, 0.12);
+  --app-scrollbar-thumb-hover: rgba(255, 255, 255, 0.22);
+}
+
+/* Light Theme Tokens Override for VS Code Light & High Contrast Light Themes */
+body.vscode-light,
+body.vscode-high-contrast-light {
+  --app-bg: var(--vscode-sideBar-background, #f3f3f3);
+  --app-fg: var(--vscode-editor-foreground, var(--vscode-foreground, #24292e));
+  --app-muted: var(--vscode-descriptionForeground, #57606a);
+  --app-border: var(--vscode-widget-border, rgba(0, 0, 0, 0.12));
+  --app-border-strong: var(--vscode-widget-border, rgba(0, 0, 0, 0.22));
+  --app-border-subtle: rgba(0, 0, 0, 0.08);
+  --app-surface: rgba(0, 0, 0, 0.03);
+  --app-surface-strong: rgba(0, 0, 0, 0.06);
+  --app-surface-hover: rgba(0, 0, 0, 0.08);
+  --app-input-bg: var(--vscode-input-background, #ffffff);
+  --app-input-border: var(--vscode-input-border, rgba(0, 0, 0, 0.18));
+  --app-code-bg: var(--vscode-editor-background, #f6f8fa);
+  --app-inline-code-bg: rgba(0, 0, 0, 0.05);
+  --app-tool-dropdown-bg: rgba(0, 0, 0, 0.04);
+  --app-tool-dropdown-text: #2e7d32;
+  --app-tool-call-text: #007acc;
+  --app-tool-query-text: #00838f;
+  --app-tool-query-bg: rgba(0, 0, 0, 0.05);
+  --app-tool-error-bg: rgba(211, 47, 47, 0.08);
+  --app-tool-error-text: #c62828;
+  --app-file-summary-bg: var(--vscode-editor-background, #ffffff);
+  --app-dropdown-bg: var(--vscode-dropdown-background, #ffffff);
+  --app-dropdown-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --app-flyout-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  --app-scrollbar-thumb: rgba(0, 0, 0, 0.15);
+  --app-scrollbar-thumb-hover: rgba(0, 0, 0, 0.25);
+}
+
+.kai-spinner {
+  animation: kai-spin 0.8s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+@keyframes kai-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* -----------------------------
+   Global reset
+------------------------------ */
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 10px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--app-bg);
+  color: var(--app-fg);
+  font-family: var(--app-font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+:where(button, input, select, textarea) {
+  font: inherit;
+}
+
+:where(button, input, select, textarea):focus {
+  outline: none;
+}
+
+:where(button, input, select, textarea):focus-visible {
+  outline: 1px solid var(--app-focus);
+  outline-offset: 2px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* -----------------------------
+   Sidebar shell
+------------------------------ */
+.sidebar-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  container-type: inline-size;
+}
+
+.sidebar-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--app-gap);
+  padding: 6px 4px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--app-border-subtle);
+  font-size: 0.75rem;
+  color: var(--app-muted);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+#status-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* -----------------------------
+   Icons / buttons
+------------------------------ */
+button {
+  border: 0 !important;
+  outline: none;
+  cursor: pointer;
+  border-radius: var(--app-radius-sm);
+  transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.icon-btn-header,
+.icon-btn,
+.history-item-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: currentColor;
+}
+
+.icon-btn-header {
+  padding: 5px;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--app-radius-md);
+  color: var(--app-muted);
+  box-sizing: border-box;
+}
+
+.icon-btn-header svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.icon-btn-header:hover {
+  color: var(--app-fg);
+  background: var(--app-surface-hover);
+}
+
+.icon-btn {
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  border-radius: 3px;
+}
+
+.icon-btn:hover {
+  background: var(--app-surface-hover);
+}
+
+#send-btn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--app-accent);
+  color: var(--vscode-button-foreground, #ffffff);
+}
+
+#send-btn:hover:not(:disabled) {
+  background: var(--app-accent-hover);
+}
+
+#send-btn:disabled {
+  opacity: 0.4;
+}
+
+.secondary-btn:hover:not(:disabled) {
+  background: var(--app-surface-hover);
+}
+
+.btn-primary {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-accent);
+  color: var(--vscode-button-foreground, #ffffff);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--app-accent-hover);
+}
+
+/* -----------------------------
+   Chat area
+------------------------------ */
+.chat-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 8px;
+  padding-right: 2px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  max-width: 90%;
+  margin-bottom: 10px;
+  animation: fadeInMessage 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes fadeInMessage {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.user-message {
+  align-self: flex-end;
+  background: var(--vscode-merge-common-header-background, rgba(120, 120, 120, 0.15));
+  color: var(--app-fg);
+  border: 1px solid rgba(120, 120, 120, 0.25);
+  border-radius: 12px 12px 2px 12px;
+}
+
+.assistant-message {
+  align-self: flex-start;
+  max-width: 100%;
+  margin-top: 4px;
+  background: transparent;
+  border: 0;
+  color: var(--app-fg);
+  padding: 0 !important;
+}
+
+.response-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0;
+  margin: 2px 0;
+}
+
+.text-block {
+  background: transparent;
+  border: none;
+  padding: 4px 6px;
+}
+
+.system-message {
+  align-self: center;
+  width: 100%;
+  max-width: 100%;
+  text-align: center;
+  background: var(--app-surface);
+  border: 1px dashed var(--app-border-subtle);
+  border-radius: var(--app-radius-sm);
+  color: var(--app-muted);
+  font-size: 0.8rem;
+}
+
+.message-content {
+  padding: 6px 8px;
+  font-family: var(--app-font);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.message-content p {
+  margin: 4px 0;
+}
+
+.message-content p:first-child {
+  margin-top: 0;
+}
+
+.message-content p:last-child {
+  margin-bottom: 0;
+}
+
+.message-content :where(h1, h2, h3) {
+  margin: 10px 0 4px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+  color: var(--app-fg);
+}
+
+.message-content h1 {
+  font-size: 1.1rem;
+}
+
+.message-content h2 {
+  font-size: 1rem;
+}
+
+.message-content h3 {
+  font-size: 0.9rem;
+}
+
+.message-content code,
+.tool-query,
+.tool-output-pre code,
+.tool-status-row code,
+#code-context-preview {
+  font-family: var(--app-mono);
+}
+
+.message-content code {
+  background: var(--app-inline-code-bg);
+  border: 1px solid var(--app-border-subtle);
+  color: var(--app-fg);
+  padding: 2px 5px;
+  border-radius: var(--app-radius-sm);
+  font-family: var(--app-mono);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+/* Code Block Wrapper with Syntax Header Bar & Copy Button */
+.code-block-wrapper {
+  margin: 8px 0;
+  background: var(--app-code-bg);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-md);
+  overflow: hidden;
+}
+
+.code-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 10px;
+  background: var(--app-surface-strong);
+  font-family: var(--app-mono);
+  font-size: 0.7rem;
+  color: var(--app-muted);
+  border-bottom: 1px solid var(--app-border-subtle);
+  user-select: none;
+}
+
+.code-lang-label {
+  text-transform: lowercase;
+  font-weight: 500;
+  color: var(--app-muted);
+}
+
+.copy-code-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: var(--app-muted);
+  font-size: 0.68rem;
+  font-family: var(--app-font);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.copy-code-btn:hover {
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
+}
+
+.message-content pre {
+  margin: 0;
+  padding: 8px 10px;
+  overflow-x: auto;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  tab-size: 2;
+}
+
+.message-content pre code {
+  display: block;
+  padding: 0;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  font-family: var(--app-mono);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  font-variant-ligatures: contextual;
+}
+
+/* Blockquote Styling */
+.message-content blockquote {
+  margin: 8px 0;
+  padding: 6px 12px;
+  background: rgba(0, 122, 204, 0.08);
+  border-left: 3px solid var(--app-accent);
+  border-radius: 0 var(--app-radius-sm) var(--app-radius-sm) 0;
+  color: var(--app-fg);
+  font-style: italic;
+}
+
+/* List Styling */
+.message-content .md-list {
+  margin: 6px 0;
+  padding-left: 18px;
+}
+
+.message-content .md-list li {
+  margin-bottom: 3px;
+  line-height: 1.45;
+}
+
+/* Markdown Table Styling */
+.message-content .md-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 0.78rem;
+}
+
+.message-content .md-table th,
+.message-content .md-table td {
+  padding: 5px 8px;
+  text-align: left;
+  border: 1px solid var(--app-border);
+}
+
+.message-content .md-table th {
+  background: var(--app-surface-strong);
+  color: var(--app-fg);
+  font-weight: 600;
+}
+
+.message-content .md-table tr:nth-child(even) {
+  background: var(--app-surface);
+}
+
+.typing-indicator,
+.thinking-loader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--app-muted);
+  font-size: 0.8rem;
+}
+
+.typing-indicator {
+  padding: 8px 12px;
+}
+
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--app-muted);
+  animation: bounceOpacity 1.2s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes bounceOpacity {
+
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+/* -----------------------------
+   Code context preview
+------------------------------ */
+.code-context-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-bottom: 8px;
+  border: 1px solid rgba(0, 122, 204, 0.25);
+  border-radius: var(--app-radius-md);
+  background: rgba(0, 122, 204, 0.08);
+}
+
+.code-context-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  background: rgba(0, 122, 204, 0.15);
+  color: #29b6f6;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+#code-context-preview {
+  margin: 0;
+  padding: 6px 8px;
+  max-height: 80px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  background: rgba(0, 0, 0, 0.15);
+  color: #81d4fa;
+  font-size: 0.75rem;
+}
+
+#code-context-preview::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+/* -----------------------------
+   Input area
+------------------------------ */
+.input-panel {
+  display: flex;
+  flex-direction: column;
+  padding-top: 8px;
+  border-top: 1px solid var(--app-border-subtle);
+  flex-shrink: 0;
+  min-height: 0;
+}
+
+.input-card {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 8px;
+  background: var(--app-input-bg);
+  border: 1px solid var(--app-input-border);
+  border-radius: var(--app-radius-lg);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input-card:focus-within {
+  border-color: var(--app-focus);
+  box-shadow: 0 0 0 1px var(--app-focus);
+}
+
+/* Container bar rendering attached file preview badges above input */
+.attached-files-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--app-border-subtle);
+}
+
+/* Individual preview chip badge representing an attached file */
+.attached-file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 200px;
+  padding: 2px 8px;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-surface-strong);
+  color: var(--app-fg);
+  font-size: 0.72rem;
+  user-select: none;
+}
+
+.attached-file-chip .chip-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.attached-file-chip .chip-remove-btn {
+  background: transparent;
+  color: var(--app-muted, #888888);
+  font-size: 0.7rem;
+  padding: 0 2px;
+  margin-left: 2px;
+  border: 0 !important;
+  cursor: pointer;
+}
+
+.attached-file-chip .chip-remove-btn:hover {
+  color: #e74c3c;
+}
+
+/* Auto-expanding prompt input textarea with max height limit */
+#message-input {
+  width: 100%;
+  min-height: 32px;
+  max-height: 180px;
+  padding: 4px;
+  border: 0;
+  resize: none;
+  overflow-y: hidden;
+  background: transparent;
+  color: var(--vscode-input-foreground, var(--app-fg));
+  font-size: 0.85rem;
+  line-height: 1.4;
+  transition: height 0.1s ease-out;
+  scrollbar-width: thin;
+}
+
+#message-input:focus {
+  outline: none;
+}
+
+/* Toolbar container hosting input action buttons */
+.input-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--app-border-subtle);
+}
+
+/* Left alignment group for plus file upload, model selector, and @ capabilities dropdown */
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* Right alignment group for capabilities dropdown (@) and send/stop button */
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Send & stop generation button */
+#send-btn,
+#stop-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0 !important;
+  border-radius: var(--app-radius-md);
+  background: var(--app-accent, #007acc);
+  color: var(--vscode-button-foreground, #ffffff);
+  cursor: pointer;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease;
+}
+
+#send-btn:hover,
+#stop-btn:hover {
+  opacity: 0.9;
+}
+
+/* Compact icon buttons for file upload (+) and capabilities (@) */
+.toolbar-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0 !important;
+  border-radius: var(--app-radius-md);
+  background: var(--app-surface-strong);
+  color: var(--app-muted);
+  cursor: pointer;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.toolbar-icon-btn:hover {
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
+}
+
+/* Active indicator highlight when Planning Mode is enabled */
+.toolbar-icon-btn.active-mode {
+  color: var(--vscode-button-foreground, #ffffff);
+  background: var(--app-accent);
+}
+
+/* Context & capabilities popup menu (@ button menu) */
+#context-options-menu {
+  position: absolute;
+  right: 0;
+  left: auto;
+  bottom: calc(100% + 6px);
+  z-index: 1000;
+  min-width: 200px;
+  padding: 8px 10px;
+  box-sizing: border-box;
+  background: var(--app-dropdown-bg);
+  border: 1px solid var(--app-border-strong);
+  border-radius: var(--app-radius-md);
+  box-shadow: var(--app-dropdown-shadow);
+}
+
+.context-options-header {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--app-muted);
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--app-border-subtle);
+}
+
+.context-option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+/* -----------------------------
+   Centered Welcome Hero (Empty State)
+------------------------------ */
+.welcome-hero-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 24px 16px;
+  box-sizing: border-box;
+  text-align: center;
+  user-select: none;
+}
+
+.welcome-badge-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--app-radius-lg, 8px);
+  background: rgba(0, 122, 204, 0.12);
+  border: 1px solid rgba(0, 122, 204, 0.25);
+  color: var(--app-accent, #007acc);
+  margin-bottom: 12px;
+}
+
+.welcome-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--app-fg, #cccccc);
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+
+.welcome-hint {
+  font-size: 0.78rem;
+  color: var(--app-muted, #888888);
+  max-width: 280px;
+  line-height: 1.4;
+  margin-bottom: 16px;
+}
+
+.welcome-links-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.welcome-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: var(--app-radius-md, 6px);
+  background: var(--app-surface-strong, #252526);
+  border: 1px solid var(--app-border, #3c3c3c);
+  color: var(--app-muted, #999999);
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.welcome-link-btn:hover {
+  background: var(--app-surface-hover, #2d2d2d);
+  color: var(--app-fg, #ffffff);
+  border-color: var(--app-border-strong, #555555);
+}
+
+/* ==========================================================================
+   DROPDOWN ARCHITECTURE & COMPONENTS
+   --------------------------------------------------------------------------
+   1. MODEL SELECTOR DROPDOWN (.custom-dropdown, #dropdown-options-menu, .dropdown-item):
+      - Primary dropdown triggered by #dropdown-trigger-btn in the input toolbar.
+      - Enables model selection across providers (LM Studio, Gemini, Mistral, etc.).
+      - Every option is styled and designated as an interactive button (.dropdown-item).
+
+   2. THINKING DROPDOWN / FLYOUT MENU (.thinking-flyout-menu, .flyout-option):
+      - Secondary sub-dropdown attached to thinking-capable models (e.g., Gemini).
+      - Enables fine-tuning reasoning/thinking effort (High, Medium, Low, Minimal/Off).
+   ========================================================================== */
+
+/* Custom dropdown container for the Model Selector Dropdown */
+.custom-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 1 auto;
+  max-width: 100%;
+  min-width: 0;
+}
+
+#model-dropdown-container {
+  flex: 1 1 auto;
+}
+
+/* Primary Model Selector Dropdown Trigger Button - Fits text length up to max-width */
+.dropdown-trigger {
+  height: 24px;
+  box-sizing: border-box;
+  width: auto;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 5px;
+  padding: 0 8px;
+  border: 0 !important;
+  border-radius: var(--app-radius-md);
+  background: var(--app-surface-strong);
+  color: var(--app-muted);
+  font-size: 0.72rem;
+  text-align: left;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.dropdown-trigger:hover,
+.dropdown-trigger:focus {
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
+}
+
+/* Outer container clipping text behind the component */
+.model-text-container {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  mask-image: none;
+  -webkit-mask-image: none;
+  transition: mask-image 0.2s ease, -webkit-mask-image 0.2s ease;
+}
+
+/* Fade out right edge ONLY when text overflows container boundary */
+.model-text-container.has-overflow {
+  mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 20px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 20px), transparent 100%);
+}
+
+/* Inner Text Element - flex-shrink: 0 ensures text retains natural width for overflow measurement */
+.model-text-inner {
+  display: inline-block;
+  white-space: nowrap;
+  flex-shrink: 0;
+  will-change: transform;
+  transform: translateX(0);
+  transition: transform 0.3s ease-out;
+}
+
+/* Soft fade on both sides during scroll on hover */
+.dropdown-trigger:hover .model-text-container.has-overflow,
+.dropdown-item:hover .model-text-container.has-overflow,
+.model-text-container.has-overflow:hover {
+  mask-image: linear-gradient(to right, transparent 0px, #000 12px, #000 calc(100% - 14px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0px, #000 12px, #000 calc(100% - 14px), transparent 100%);
+}
+
+.dropdown-trigger:hover .model-text-container.has-overflow .model-text-inner,
+.dropdown-item:hover .model-text-container.has-overflow .model-text-inner,
+.model-text-container.has-overflow:hover .model-text-inner {
+  animation: modelTextPingPong var(--scroll-duration, 8s) ease-in-out infinite !important;
+}
+
+/* Keyframes for no-delay, smooth continuous ping-pong scroll on hover */
+@keyframes modelTextPingPong {
+  0% {
+    transform: translateX(0);
+  }
+
+  48% {
+    transform: translateX(var(--scroll-offset, -100px));
+  }
+
+  62% {
+    transform: translateX(var(--scroll-offset, -100px));
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.dropdown-trigger-chevron,
+.thinking-chevron {
+  color: var(--app-muted);
+  flex-shrink: 0;
+}
+
+/* Options menu container for the Model Selector Dropdown (Leaves 195px reserved distance from the right side for the thinking flyout menu) */
+.dropdown-menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  z-index: 1000;
+  width: calc(100cqw - 195px);
+  min-width: 140px;
+  max-width: calc(100cqw - 195px);
+  padding: 4px 2px;
+  box-sizing: border-box;
+  background: var(--app-dropdown-bg);
+  border: 1px solid var(--app-border-strong);
+  border-radius: var(--app-radius-md);
+  box-shadow: var(--app-dropdown-shadow);
+  overflow: visible;
+}
+
+/* Accordion provider group within the Model Selector Dropdown */
+.dropdown-category {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Category header toggle button for provider accordions (LM Studio, Gemini, Mistral AI, etc.) */
+.dropdown-category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  margin: 1px 0;
+  background: var(--app-surface-strong);
+  color: var(--app-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  border: 0;
+  border-radius: var(--app-radius-sm);
+  outline: none;
+  transition: color 0.15s ease;
+}
+
+.dropdown-category-header:hover,
+.dropdown-category-header:focus-visible {
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
+}
+
+.dropdown-category-header .chevron-icon {
+  transition: transform 0.2s ease;
+}
+
+.dropdown-category-content {
+  display: flex;
+  flex-direction: column;
+  max-height: 1000px;
+  overflow: visible;
+  transition: max-height 0.2s ease;
+}
+
+.dropdown-category-content.collapsed {
+  max-height: 0;
+  overflow: hidden;
+}
+
+/* Unified button option item for ALL dropdowns (Model Selector & Thinking Dropdown) */
+.dropdown-item,
+.flyout-option {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 4px 10px;
+  margin: 1px 2px;
+  overflow: visible;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--app-muted);
+  font-size: 0.72rem;
+  background: transparent;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid transparent;
+  border-radius: var(--app-radius-sm);
+  outline: none;
+  width: calc(100% - 4px);
+  text-align: left;
+  box-sizing: border-box;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus-visible,
+.flyout-option:hover,
+.flyout-option:focus-visible {
+  color: var(--app-fg);
+  background: var(--vscode-list-hoverBackground, var(--app-surface-hover));
+}
+
+/* Selected item state for dropdown options */
+.dropdown-item.selected,
+.flyout-option.selected {
+  color: var(--app-fg);
+  background: var(--app-surface-strong);
+  font-weight: 600;
+}
+
+.dropdown-item .check-icon,
+.flyout-option .check-icon {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  color: var(--app-accent);
+}
+
+.dropdown-item.model-hover-item {
+  position: relative;
+}
+
+.model-flyout-chevron {
+  font-size: 0.85rem;
+  color: var(--app-muted);
+  margin-left: auto;
+  padding-left: 4px;
+}
+
+/* Thinking Dropdown Flyout Sub-Menu Container */
+.thinking-flyout-menu {
+  position: fixed;
+  min-width: max-content;
+  width: max-content;
+  z-index: 99999;
+  display: none;
+  flex-direction: column;
+}
+
+/* Inner visible box of the Thinking Dropdown flyout (No borders, 1px button gap) */
+.thinking-flyout-menu-inner {
+  background: var(--app-dropdown-bg);
+  border: 1px solid var(--app-border-strong);
+  border-radius: var(--app-radius-md);
+  box-shadow: var(--app-flyout-shadow);
+  padding: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* Divider inside Thinking Flyout menu between toggle and reasoning levels */
+.flyout-divider {
+  height: 1px;
+  background: var(--app-border-strong, #3c3c3c);
+  margin: 3px 2px;
+}
+
+.dropdown-item.model-hover-item.flyout-open {
+  color: var(--app-fg);
+  background: var(--app-surface-hover);
+}
+
+.dropdown-item.model-hover-item.flyout-open > .thinking-flyout-menu {
+  display: flex;
+}
+
+.dropdown-category-content.collapsed .thinking-flyout-menu,
+.dropdown-menu.hidden .thinking-flyout-menu {
+  display: none !important;
+}
+
+
+.dropdown-item .status-dot {
+  margin-right: 0;
+  flex-shrink: 0;
+}
+
+.dropdown-item-placeholder {
+  padding: 10px 12px;
+  color: var(--vscode-disabledForeground, #555555);
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+/* ==========================================================================
+   THINKING BATTERY SVG ICON STYLING (.thinking-battery-icon)
+   Vector SVG battery level indicator rendered in trigger buttons & flyout menus
+   ========================================================================== */
+
+.thinking-battery-icon,
+.flyout-battery-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  vertical-align: middle;
+  margin-right: 4px;
+  margin-left: 2px;
+  color: var(--app-fg);
+}
+
+.flyout-option .flyout-battery-icon {
+  margin-left: 6px;
+  margin-right: 0;
+}
+
+/* ==========================================================================
+   SETTINGS CATEGORIES & ACCORDIONS (.settings-category)
+   Collapsible setting categories with persistent top divider lines
+   and text-adjacent chevrons that fade in on hover only.
+   ========================================================================== */
+
+/* Settings panel header & container layout - Clean, zero lopsided margins */
+.settings-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 4px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--app-border-subtle);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--app-fg);
+}
+
+.settings-container,
+.settings-content-panel {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 2px 0;
+  margin: 0;
+}
+
+/* Settings category wrapper - 1px minimal distance between category containers */
+.settings-category {
+  position: relative;
+  margin-top: 1px;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-top: none;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.settings-category.has-open-select {
+  z-index: 10000;
+}
+
+.settings-category:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+/* Category header toggle button - Completely borderless & transparent, hover chevron only */
+.category-header-btn {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 4px 0;
+  margin-bottom: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: var(--app-fg);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease;
+}
+
+.category-header-btn:hover,
+.category-header-btn:focus-visible {
+  background: transparent;
+  border: 0;
+  color: var(--app-fg);
+}
+
+/* Category Title - Uppercase, muted grey, refined larger text size */
+.category-title {
+  text-transform: uppercase;
+  font-size: 0.80rem;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  color: var(--app-muted);
+}
+
+/* Setting Item Label & Switch Label - Thinner font weight (400) and soft lighter color */
+.setting-item label,
+.setting-label,
+.switch-label {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--app-fg);
+  margin-bottom: 4px;
+}
+
+/* Chevron icon next to category title, hidden by default, visible on hover only */
+.category-chevron {
+  color: var(--app-muted, #888888);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.2s ease;
+}
+
+.category-header-btn:hover .category-chevron,
+.category-header-btn:focus-visible .category-chevron {
+  opacity: 1;
+  visibility: visible;
+}
+
+.settings-category.collapsed .category-chevron {
+  transform: rotate(-90deg);
+}
+
+/* Category Content Container - Internal padding on all sides (top, bottom, left, right) for all items */
+.category-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 6px 20px 6px;
+  box-sizing: border-box;
+}
+
+.category-content .setting-item {
+  margin-bottom: 2px;
+}
+
+#manage-keys-container {
+  margin-top: 4px;
+  margin-bottom: 2px;
+}
+
+.settings-category.collapsed .category-content {
+  display: none !important;
+}
+
+/* Borderless Hover-Only Button (Matching Tool Call Card Button Style) */
+.btn-hover-only {
+  background: transparent;
+  border: 1px solid transparent;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-hover-only:hover,
+.btn-hover-only:focus-visible {
+  background: var(--app-surface-hover);
+  border-color: var(--app-border);
+}
+
+/* ==========================================================================
+   CUSTOM SELECT DROPDOWN COMPONENT (.custom-select-container)
+   Standalone custom dropdown used in Settings for Language Select & Thinking Display Format,
+   matching the dark aesthetic, borders, hover states, and checkmarks of thinking dropdowns.
+   ========================================================================== */
+
+/* Outer container positioning wrapper for custom select component */
+.custom-select-container {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Custom Select trigger button styling */
+.custom-select-trigger {
+  width: 100%;
+  height: 28px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  background: var(--app-input-bg);
+  color: var(--app-fg);
+  border: 1px solid var(--app-input-border);
+  border-radius: var(--app-radius-sm);
+  font-size: 0.75rem;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.custom-select-trigger:hover,
+.custom-select-trigger:focus,
+.custom-select-trigger.active {
+  background: var(--app-surface-hover);
+  border-color: var(--app-border-strong);
+  color: var(--app-fg);
+}
+
+/* Label text container within custom select trigger button */
+.custom-select-label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  flex: 1 1 auto;
+  text-align: left;
+}
+
+/* Chevron icon indicator inside custom select trigger button */
+.custom-select-chevron {
+  color: var(--app-muted);
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+
+/* Custom Select popup menu panel container matching thinking dropdown styling */
+.custom-select-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%;
+  z-index: 10000;
+  background: var(--app-dropdown-bg);
+  border: 1px solid var(--app-border-strong);
+  border-radius: var(--app-radius-md);
+  box-shadow: var(--app-flyout-shadow);
+  padding: 3px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.custom-select-menu.hidden {
+  display: none !important;
+}
+
+/* Custom Select option item button styling, reusing dropdown-item style tokens */
+.custom-select-option {
+  width: 100%;
+  margin: 0;
+  border-radius: var(--app-radius-sm, 4px);
+}
+
+.toggle-container,
+.switch-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--app-muted);
+  font-size: 0.75rem;
+  user-select: none;
+  white-space: nowrap;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.toggle-container input {
+  margin: 0;
+  cursor: pointer;
+}
+
+.switch-container input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+.slider-track {
+  position: relative;
+  display: inline-block;
+  width: 28px;
+  height: 16px;
+  border-radius: 8px;
+  background: var(--app-surface-strong);
+  transition: background-color 0.2s ease;
+}
+
+.slider-track::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  bottom: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--app-fg);
+  transition: left 0.2s ease;
+}
+
+.switch-container input:checked+.slider-track {
+  background: var(--app-accent);
+}
+
+.switch-container input:checked+.slider-track::before {
+  left: 14px;
+}
+
+.switch-label {
+  line-height: 1;
+}
+
+@media (max-width: 280px) {
+  .switch-container .switch-label {
+    display: none;
+  }
+}
+
+/* -----------------------------
+   Status / activity indicators
+------------------------------ */
+/* Static status indicator dot for model connection state */
+.status-dot {
+  width: 6px;
+  height: 6px;
+  display: inline-block;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* Connected status state indicator - solid green dot */
+.status-dot.status-connected {
+  background: #2ecc71;
+}
+
+/* Disconnected status state indicator - solid red dot */
+.status-dot.status-disconnected {
+  background: #e74c3c;
+}
+
+.thinking-block {
+  display: flex;
+  flex-direction: column;
+  margin: 2px 0;
+  padding: 2px 0;
+  border-left: 0;
+}
+
+.thinking-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+  color: var(--app-muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+  user-select: none;
+  cursor: pointer;
+}
+
+.thinking-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 6px;
+  border: 2px solid var(--app-border-strong);
+  border-top-color: var(--app-muted);
+  border-radius: 50%;
+  animation: spin-loader 1s linear infinite;
+}
+
+/* Dynamic activity status card (e.g. Processing..., Loading model into RAM...) */
+.activity-status-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0;
+  padding: 4px 8px;
+  color: var(--app-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  user-select: none;
+}
+
+.activity-status-card .thinking-spinner {
+  margin-right: 2px;
+}
+
+.activity-status-text {
+  color: var(--app-muted);
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+@keyframes spin-loader {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.thinking-content {
+  max-height: 78px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  color: var(--app-muted);
+  font-size: 0.75rem;
+  line-height: 1.3;
+  font-style: italic;
+  margin: 0;
+}
+
+.thinking-content p {
+  margin: 2px 0;
+}
+
+.thinking-content.collapsed {
+  display: none;
+}
+
+/* -----------------------------
+   Tool cards
+------------------------------ */
+.tool-status-row {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  margin: 2px 0;
+  padding: 4px 8px;
+  border-radius: var(--app-radius-sm);
+  color: var(--app-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.tool-status-row:hover {
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
+}
+
+.tool-call-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.tool-call-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tool-chevron {
+  font-size: 10px;
+  color: var(--app-muted);
+  transition: transform 0.2s ease;
+}
+
+.tool-status-row.expanded .tool-chevron {
+  transform: rotate(90deg);
+}
+
+.tool-result-dropdown {
+  margin-top: 4px;
+  padding: 6px 8px;
+  background: var(--app-tool-dropdown-bg);
+  border: 1px solid var(--app-border-subtle);
+  border-radius: var(--app-radius-sm);
+  overflow: hidden;
+}
+
+.tool-result-dropdown.hidden {
+  display: none;
+}
+
+.tool-result-dropdown pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: var(--app-mono);
+  font-size: 0.72rem;
+  color: var(--app-tool-dropdown-text);
+}
+
+.tool-status-row svg {
+  display: inline-block;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.tool-status-row code {
+  margin-left: 4px;
+  padding: 1px 3px;
+  border-radius: 3px;
+  background: var(--app-surface);
+  color: var(--app-fg);
+  font-size: 0.72rem;
+}
+
+.tool-status-row.in-progress {
+  color: #29b6f6;
+  animation: rowPulse 1.5s infinite ease-in-out;
+}
+
+.tool-status-row.completed {
+  color: var(--app-muted);
+}
+
+.tool-status-row.errored {
+  color: #e74c3c;
+}
+
+.tool-error-detail {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 4px;
+  padding: 4px 8px;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-tool-error-bg);
+  color: var(--app-tool-error-text);
+  font-family: var(--app-mono);
+  font-size: 0.7rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+@keyframes rowPulse {
+
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.agent-step-card {
+  border-color: var(--app-border-subtle);
+  color: var(--app-muted);
+}
+
+.tool-call-card {
+  background: rgba(0, 122, 204, 0.05);
+  border: 1px solid rgba(0, 122, 204, 0.2);
+  color: var(--app-tool-call-text);
+  text-align: left;
+}
+
+.tool-result-card {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border-subtle);
+  color: var(--app-fg);
+  text-align: left;
+}
+
+.tool-title {
+  margin-bottom: 2px;
+  font-size: 0.8rem;
+}
+
+.tool-query {
+  margin-top: 4px;
+  padding: 3px 6px;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-tool-query-bg);
+  color: var(--app-tool-query-text);
+  font-size: 0.75rem;
+}
+
+.tool-result-header {
+  margin-bottom: 4px;
+  color: var(--app-muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.tool-output-pre {
+  margin: 4px 0 0;
+  max-height: 120px;
+  overflow: auto;
+  padding: 6px;
+  background: var(--app-tool-dropdown-bg);
+  border: 1px solid var(--app-border-subtle);
+  border-radius: var(--app-radius-sm);
+}
+
+.tool-output-pre code {
+  display: block;
+  white-space: pre;
+  background: transparent;
+  color: var(--app-tool-dropdown-text);
+  font-size: 0.75rem;
+}
+
+/* -----------------------------
+   Main Content Container & Swappable Views
+------------------------------ */
+.main-content-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-view {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.history-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  padding: 4px 0;
+  box-sizing: border-box;
+  background: var(--app-bg);
+  overflow-y: auto;
+}
+
+.settings-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  padding: 4px 0;
+  box-sizing: border-box;
+  background: var(--app-bg);
+  overflow: hidden;
+}
+
+.keys-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+  box-sizing: border-box;
+  background: var(--app-bg);
+  overflow-y: auto;
+}
+
+.history-panel-header,
+.settings-panel-header,
+.keys-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--app-border-subtle);
+  color: var(--app-fg);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.history-list,
+.keys-content-panel {
+  min-height: 0;
+}
+
+.settings-content-panel {
+  min-height: 0;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+
+.history-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--app-muted);
+  font-size: 0.8rem;
+  background: transparent;
+  border: none;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  gap: 8px;
+  border: 0 !important;
+  border-radius: var(--app-radius-md);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.history-item:hover {
+  background: var(--app-surface-hover);
+}
+
+.history-item-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.history-item-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--app-muted);
+  flex-shrink: 0;
+}
+
+.history-item-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--app-fg);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.history-item-time {
+  flex: 0 0 auto;
+  color: var(--app-muted);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  margin-left: 4px;
+}
+
+.history-item-delete-btn {
+  flex: 0 0 auto;
+  margin-left: 4px;
+  padding: 4px;
+  border-radius: var(--app-radius-sm);
+  color: var(--app-muted);
+  opacity: 0.6;
+  transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.history-item:hover .history-item-delete-btn {
+  opacity: 1;
+}
+
+.history-item-delete-btn:hover {
+  background: rgba(231, 76, 60, 0.15);
+  color: #e74c3c;
+}
+
+.settings-content-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--app-muted);
+  font-size: 0.8rem;
+  user-select: none;
+  cursor: pointer;
+}
+
+.setting-row input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.setting-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.setting-item label {
+  color: var(--app-fg);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.setting-item :is(select, input[type="password"], input[type="text"]) {
+  padding: 6px 10px;
+  border: 1px solid var(--app-input-border);
+  border-radius: var(--app-radius-sm);
+  background: var(--app-input-bg);
+  color: var(--vscode-input-foreground, var(--app-fg));
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.setting-item :is(select, input[type="password"], input[type="text"]):focus-visible {
+  border-color: var(--app-focus);
+  box-shadow: 0 0 0 1px var(--app-focus);
+}
+
+.setting-sub-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+  margin-left: 16px;
+  padding-left: 12px;
+  border-left: 1px solid var(--app-border-subtle);
+}
+
+.keys-content-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+
+/* -----------------------------
+   File summary widget
+------------------------------ */
+.file-summary-message {
+  align-self: stretch;
+  width: 100%;
+  margin: 8px 0;
+}
+
+.file-summary-widget {
+  padding: 8px 12px;
+  background: var(--app-file-summary-bg);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-md);
+}
+
+.file-summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--app-border-subtle);
+  color: var(--app-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.files-edited-container {
+  width: 100%;
+  overflow: hidden;
+  margin: 4px 0;
+}
+
+.files-edited-scroll-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px;
+  scrollbar-width: thin;
+}
+
+.files-edited-scroll-row::-webkit-scrollbar {
+  height: 4px;
+}
+
+.files-edited-scroll-row::-webkit-scrollbar-thumb {
+  background: var(--app-scrollbar-thumb);
+  border-radius: 2px;
+}
+
+.file-card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  background: var(--app-surface-strong);
+  border: 1px solid var(--app-border);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.file-card:hover {
+  background: var(--app-surface-hover);
+  border-color: var(--app-border-strong);
+}
+
+.file-card-name {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--app-fg);
+  white-space: nowrap;
+}
+
+.file-card .codicon {
+  font-size: 14px;
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.html-icon {
+  color: #e44d26;
+}
+
+.css-icon {
+  color: #42a5f5;
+}
+
+.js-icon {
+  color: #f7df1e;
+}
+
+.ts-icon {
+  color: #3178c6;
+}
+
+.json-icon {
+  color: #cbcb41;
+}
+
+.md-icon {
+  color: #42a5f5;
+}
+
+.py-icon {
+  color: #3776ab;
+}
+
+.lang-icon {
+  color: #a29bfe;
+}
+
+.term-icon {
+  color: #2ecc71;
+}
+
+.db-icon {
+  color: #e67e22;
+}
+
+.config-icon {
+  color: #b2bec3;
+}
+
+.media-icon {
+  color: #fd79a8;
+}
+
+.pdf-icon {
+  color: #e74c3c;
+}
+
+.zip-icon {
+  color: #fdcb6e;
+}
+
+.lock-icon {
+  color: #e74c3c;
+}
+
+.git-icon {
+  color: #f14e32;
+}
+
+.docker-icon {
+  color: #2496ed;
+}
+
+.default-file-icon {
+  color: var(--app-muted);
+}
+
+.file-name {
+  color: var(--app-fg);
+  font-weight: 500;
+}
+
+.file-path {
+  color: var(--app-muted);
+  font-size: 0.7rem;
+}
+
+/* -----------------------------
+   Details / chevrons
+------------------------------ */
+details summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0;
+  color: var(--vscode-foreground, #cccccc);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+  outline: none;
+}
+
+details summary::-webkit-details-marker,
+details summary::marker {
+  display: none;
+  content: "";
+}
+
+details summary .custom-chevron {
+  flex-shrink: 0;
+  color: var(--app-muted);
+  transform: rotate(-90deg);
+  transition: transform 0.2s ease;
+}
+
+details[open]>summary>.custom-chevron {
+  transform: rotate(0deg);
+}
+
+/* -----------------------------
+   Scrollbars
+------------------------------ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--app-scrollbar-thumb);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--app-scrollbar-thumb-hover);
+}
+
+/* -----------------------------
+   Responsive tweaks
+------------------------------ */
+@media (max-width: 280px) {
+  .switch-container .switch-label {
+    display: none;
+  }
+}
+
+@media (max-width: 240px) {
+  .header-actions {
+    gap: 2px;
+  }
+
+  .icon-btn-header {
+    width: 22px;
+    height: 22px;
+    padding: 3px;
+  }
+
+  .icon-btn-header svg {
+    width: 13px;
+    height: 13px;
+  }
+}
+
+/* -----------------------------
+   LM Studio Cache Directory & Status
+------------------------------ */
+.settings-browse-btn {
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--app-border-strong, #3c3c3c);
+  border-radius: var(--app-radius-sm, 4px);
+  background: var(--app-surface-strong, #2d2d2d);
+  color: var(--app-fg, #cccccc);
+  font-size: 0.72rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease;
+}
+
+.settings-browse-btn:hover {
+  background: var(--app-surface-hover, #37373d);
+  color: var(--app-fg, #ffffff);
+}
+
+.cache-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 0.72rem;
+}
+
+.cache-status-text {
+  color: var(--app-muted, #888888);
+  font-size: 0.72rem;
+  word-break: break-all;
+}
+
+/* --------------------------------------------------------------------------
+   HELP MODAL DIALOG COMPONENT (.help-container, .help-modal-card)
+   Sleek overlay dialog presenting user guides, features, and keyboard shortcuts.
+   -------------------------------------------------------------------------- */
+.help-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.help-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(2px);
+}
+
+.help-modal-card {
+  position: relative;
+  z-index: 2001;
+  width: 100%;
+  max-width: 420px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--app-bg, #1e1e1e);
+  border: 1px solid var(--app-border-strong, #3c3c3c);
+  border-radius: var(--app-radius-lg, 8px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.help-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--app-border-subtle, #2d2d2d);
+  background: var(--app-surface-strong, #252526);
+}
+
+.help-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--app-fg, #cccccc);
+}
+
+.help-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0 !important;
+  border-radius: var(--app-radius-sm, 4px);
+  background: transparent;
+  color: var(--app-muted, #888888);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.help-close-btn:hover {
+  background: var(--app-surface-hover, #37373d);
+  color: var(--app-fg, #ffffff);
+}
+
+.help-modal-body {
+  padding: 14px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.help-section {
+  padding: 10px;
+  background: var(--app-surface-subtle, #252526);
+  border: 1px solid var(--app-border-subtle, #2e2e2e);
+  border-radius: var(--app-radius-md, 6px);
+}
+
+.help-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--app-accent, #007acc);
+  margin-bottom: 4px;
+}
+
+.help-section-desc {
+  font-size: 0.72rem;
+  color: var(--app-muted, #999999);
+  line-height: 1.45;
+}
+
+.help-section-desc code {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.7rem;
+  color: var(--app-fg, #e0e0e0);
+}
+
+.help-shortcuts-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.help-shortcut-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+}
+
+.help-shortcut-label {
+  color: var(--app-muted, #999999);
+}
+
+.help-kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: 0.68rem;
+  font-family: var(--vscode-editor-font-family, monospace);
+  color: var(--app-fg, #cccccc);
+  background: var(--app-surface-strong, #2d2d2d);
+  border: 1px solid var(--app-border-strong, #3c3c3c);
+  border-radius: 3px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+}
+
+
