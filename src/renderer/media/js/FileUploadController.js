@@ -82,6 +82,16 @@ class FileUploadController {
     }
 
     /**
+     * Resolves the standardized SVG icon corresponding to the file extension.
+     * @param {string} fileName File name string.
+     * @returns {string} Standardized SVG markup.
+     */
+    getFileIconSvg(fileName) {
+        const svgs = window.KAI_SVGS || {};
+        return svgs['read_file'] || '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>';
+    }
+
+    /**
      * Renders attached file preview chips into the DOM container.
      */
     render() {
@@ -102,16 +112,13 @@ class FileUploadController {
             chip.className = 'attached-file-chip';
             chip.title = file.filePath;
 
-            const isImg = /\.(png|jpe?g|webp|gif|svg)$/i.test(file.fileName);
             const parts = file.fileName.split('.');
             const ext = parts.length > 1 ? parts.pop().toUpperCase() : 'FILE';
 
             // 1. Square Icon Box
             const iconBox = document.createElement('div');
             iconBox.className = 'chip-file-icon-box';
-            const iconSvg = (window.KAI_SVGS && (isImg ? window.KAI_SVGS.image_file : window.KAI_SVGS.read_file))
-                || (isImg ? '🖼' : '📄');
-            iconBox.innerHTML = iconSvg;
+            iconBox.innerHTML = this.getFileIconSvg(file.fileName);
 
             // 2. Info block: Filename on top, uppercase light extension below
             const infoDiv = document.createElement('div');

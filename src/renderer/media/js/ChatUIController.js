@@ -129,7 +129,7 @@ class ChatUIController {
         heroDiv.className = 'welcome-hero-container';
         heroDiv.id = 'welcome-hero';
 
-        const logoSvg = svgs['plan'] || '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>';
+        const logoSvg = svgs['kai_icon'] || '<svg width="24" height="24" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><rect x="7.5" y="1" width="1" height="2" fill="currentColor"/><circle cx="8" cy="1" r="0.8" fill="currentColor"/><rect x="2" y="6" width="1" height="3" rx="0.5" fill="currentColor"/><rect x="13" y="6" width="1" height="3" rx="0.5" fill="currentColor"/><path fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round" d="M4 4.5 h8 a0.5 0.5 0 0 1 0.5 0.5 v5.5 a0.5 0.5 0 0 1 -0.5 0.5 h-6 l-2 2 v-2 h-0.5 a0.5 0.5 0 0 1 -0.5 -0.5 v-5.5 a0.5 0.5 0 0 1 0.5 -0.5 z"/><rect x="5.5" y="6.5" width="1.2" height="1.2" fill="currentColor"/><rect x="9.3" y="6.5" width="1.2" height="1.2" fill="currentColor"/><path fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" d="M6 9.2 Q8 10.5 10 9.2"/></svg>';
 
         heroDiv.innerHTML = `
             <div class="welcome-badge-icon">

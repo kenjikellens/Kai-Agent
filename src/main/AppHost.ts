@@ -83,20 +83,16 @@ export class AppHost {
                 if (data.lmStudioCacheDir !== undefined) updates.lmStudioCacheDir = data.lmStudioCacheDir;
                 if (data.apiKey !== undefined) {
                     updates.apiKey = data.apiKey;
-                    envUpdates['GEMINI_API_KEY'] = data.apiKey;
                 }
                 if (data.language !== undefined) updates.language = data.language;
 
                 if (data.providerKeys && typeof data.providerKeys === 'object') {
                     for (const [configKey, keyValue] of Object.entries(data.providerKeys)) {
                         updates[configKey] = keyValue;
-                        const envName = configKey.replace('ApiKey', '_API_KEY').toUpperCase();
-                        envUpdates[envName] = keyValue as string;
                     }
                 }
 
                 this.configManager.update(updates);
-                this.syncEnvFile(envUpdates);
                 await this.handleCheckConnection();
                 break;
             }
@@ -309,16 +305,6 @@ export class AppHost {
             workspaceName: path.basename(workspacePath) || workspacePath,
             svgs: svgs
         });
-
-        const envSync: Record<string, string> = { 'GEMINI_API_KEY': apiKey };
-        for (const p of FREE_PROVIDERS) {
-            const keyVal = (config as any)[p.configKey] || '';
-            if (keyVal) {
-                const envName = p.configKey.replace('ApiKey', '_API_KEY').toUpperCase();
-                envSync[envName] = keyVal;
-            }
-        }
-        this.syncEnvFile(envSync);
     }
 
     /**
@@ -394,41 +380,6 @@ export class AppHost {
                 type: 'filesSelected',
                 files: files
             });
-        }
-    }
-
-    /**
-     * Synchronizes API keys to workspace .env file.
-     */
-    private syncEnvFile(envEntries: Record<string, string>): void {
-        const workspacePath = this.workspaceManager.getWorkspacePath();
-        if (!workspacePath || !fs.existsSync(workspacePath)) return;
-
-        const envPath = path.join(workspacePath, '.env');
-        let lines: string[] = [];
-        if (fs.existsSync(envPath)) {
-            lines = fs.readFileSync(envPath, 'utf8').split(/\r?\n/);
-        }
-
-        const envMap = new Map<string, string>();
-        for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed || trimmed.startsWith('#')) continue;
-            const eqIdx = trimmed.indexOf('=');
-            if (eqIdx !== -1) {
-                envMap.set(trimmed.slice(0, eqIdx).trim(), trimmed.slice(eqIdx + 1).trim());
-            }
-        }
-
-        for (const [key, val] of Object.entries(envEntries)) {
-            if (val) envMap.set(key, val);
-        }
-
-        const updated = Array.from(envMap.entries()).map(([k, v]) => `${k}=${v}`).join('\n') + '\n';
-        try {
-            fs.writeFileSync(envPath, updated, 'utf8');
-        } catch {
-            // ignore
         }
     }
 
