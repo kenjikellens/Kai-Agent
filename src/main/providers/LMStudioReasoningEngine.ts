@@ -70,12 +70,13 @@ export class LMStudioReasoningEngine {
             return userProfiles[modelId].reasoningType !== 'none';
         }
 
-        // Qwen, GLM, Gemma, Mistral, DeepSeek, and generic thinking models
+        // Qwen, GLM, Gemma, Bonsai, Mistral, DeepSeek, and generic thinking models
         return (
             lower.includes('qwen') ||
             lower.includes('qwq') ||
             lower.includes('glm') ||
             lower.includes('gemma') ||
+            lower.includes('bonsai') ||
             lower.includes('mistral') ||
             lower.includes('codestral') ||
             lower.includes('magistral') ||
@@ -151,13 +152,17 @@ export class LMStudioReasoningEngine {
             return;
         }
 
-        // 5. Gemma Architecture (e.g. Gemma 4 E4B, Gemma 4 E2B, Gemma 4 31B, Gemma 4 26B, Gemma 2)
-        if (lower.includes('gemma')) {
+        // 5. Gemma & Bonsai Architecture (e.g. Gemma 4 E4B, Gemma 4 E2B, Gemma 4 31B, Gemma 4 26B, Gemma 2, Bonsai)
+        if (lower.includes('gemma') || lower.includes('bonsai')) {
             requestParams.reasoning_effort = effortVal;
             if (thinking) {
                 requestParams.thinking = true;
+                requestParams.enable_thinking = true;
+                requestParams.chat_template_kwargs = { enable_thinking: true };
             } else {
                 requestParams.thinking = false;
+                requestParams.enable_thinking = false;
+                requestParams.chat_template_kwargs = { enable_thinking: false };
             }
             return;
         }
