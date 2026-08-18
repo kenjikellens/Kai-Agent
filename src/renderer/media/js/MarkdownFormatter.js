@@ -120,8 +120,9 @@ class MarkdownFormatter {
         // 1. Strip complete <|tool_call|> ... <|tool_call|> or <tool_call> ... </tool_call> blocks
         cleanText = cleanText.replace(/<\|?tool_call\|?>[\s\S]*?(?:<\|?\/tool_call\|?>|<\|?tool_call\|?>|$)/gi, '');
 
-        // 2. Strip incomplete streaming <|tool_call|> blocks at the end of text
-        cleanText = cleanText.replace(/<\|?tool_call\|?>[\s\S]*$/gi, '');
+        // 2. Strip any incomplete or open <|tool_call or <tool_call tags (even if not fully closed)
+        cleanText = cleanText.replace(/<\|?tool_call[\s\S]*$/gi, '');
+        cleanText = cleanText.replace(/<\|?\/tool_call[\s\S]*$/gi, '');
 
         // 3. Strip legacy fenced JSON tool calls (```json ... ```)
         cleanText = cleanText.replace(/```json\s*\{[\s\S]*?\}\s*```/gi, '');

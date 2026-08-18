@@ -1539,30 +1539,40 @@ button:disabled {
   box-shadow: 0 0 0 1px var(--app-surface-hover);
 }
 
-.toolbar-mode-btn.active-mode {
-  color: var(--vscode-button-foreground, #ffffff);
-  background: var(--app-accent);
-}
-
+/* Icon specific colors per active mode */
 .mode-btn-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: currentColor;
   flex-shrink: 0;
+  color: var(--app-muted, #9ca3af);
+  transition: color 0.15s ease;
+}
+
+.toolbar-mode-btn[data-mode="agent"] .mode-btn-icon {
+  color: #f59e0b; /* Warm Yellow for Agent Mode */
+}
+
+.toolbar-mode-btn[data-mode="planning"] .mode-btn-icon {
+  color: #38bdf8; /* Light Blue for Plan Mode */
+}
+
+.toolbar-mode-btn[data-mode="chat"] .mode-btn-icon {
+  color: var(--app-muted, #9ca3af); /* White/Gray for Chat Mode */
 }
 
 .mode-btn-label {
   font-family: inherit;
   font-size: 0.78rem;
   font-weight: 500;
-  color: currentColor;
+  color: var(--app-fg);
   white-space: nowrap;
 }
 
 .mode-btn-chevron {
   opacity: 0.6;
   flex-shrink: 0;
+  color: var(--app-muted);
 }
 
 /* Compact icon buttons for file upload (+) and capabilities (@) */

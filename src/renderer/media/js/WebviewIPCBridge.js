@@ -427,8 +427,8 @@ class WebviewIPCBridge {
                                                 }
                                                 fullText += textToAdd;
 
-                                                // Check if a tool call was initiated (e.g. <tool_call>, <|tool_call|>, ```json {)
-                                                const toolTagMatch = /<\|?tool_call\|?>|```json\s*\{/i.exec(fullText);
+                                                // Check if a tool call was initiated (e.g. <tool_call, <|tool_call, ```json {)
+                                                const toolTagMatch = /<\|?tool_call|```json\s*\{/i.exec(fullText);
                                                 if (!toolTagMatch) {
                                                     emit({ type: 'agentProgress', progressType: 'token', output: textToAdd });
                                                 }
