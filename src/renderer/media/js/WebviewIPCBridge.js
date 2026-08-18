@@ -290,150 +290,188 @@ class WebviewIPCBridge {
 
                 try {
                     const cleanUrl = serverUrl.replace(/\/$/, '') + '/chat/completions';
-                    const payload = {
-                        model: model,
-                        messages: messagesToSend.map(m => ({ role: m.role, content: m.content })),
-                        stream: true
-                    };
-
                     const effortVal = message.geminiThinkingLevel || 'xhigh';
                     const caps = (typeof ThinkingStateFormatter !== 'undefined' && ThinkingStateFormatter._capabilities)
                         ? (ThinkingStateFormatter._capabilities[model] || ThinkingStateFormatter._capabilities[model.toLowerCase()])
                         : null;
 
-                    if (message.thinking) {
-                        payload.thinking = true;
-                        payload.enable_thinking = true;
-                        payload.reasoning_effort = effortVal;
-                        payload.chat_template_kwargs = { enable_thinking: true };
+                    // Agentic loop: stream response, parse tool calls, execute, repeat
+                    const maxIterations = 15;
+                    let iteration = 0;
+                    let lastFullText = '';
 
-                        if (caps && Array.isArray(caps.fields)) {
-                            for (const field of caps.fields) {
-                                if (field.type === 'boolean') {
-                                    payload[field.variable] = true;
-                                    payload.chat_template_kwargs[field.variable] = true;
-                                } else if (field.type === 'select') {
-                                    payload[field.variable] = effortVal;
-                                    payload.chat_template_kwargs[field.variable] = effortVal;
-                                }
-                            }
-                        }
-                    } else {
-                        payload.thinking = false;
-                        payload.enable_thinking = false;
-                        payload.reasoning_effort = 'none';
-                        payload.chat_template_kwargs = { enable_thinking: false };
+                    while (iteration < maxIterations) {
+                        iteration++;
 
-                        if (caps && Array.isArray(caps.fields)) {
-                            for (const field of caps.fields) {
-                                if (field.type === 'boolean') {
-                                    payload[field.variable] = false;
-                                    payload.chat_template_kwargs[field.variable] = false;
-                                } else if (field.type === 'select') {
-                                    payload[field.variable] = 'none';
-                                    payload.chat_template_kwargs[field.variable] = 'none';
-                                }
-                            }
-                        }
-                    }
+                        const payload = {
+                            model: model,
+                            messages: messagesToSend.map(m => ({ role: m.role, content: m.content })),
+                            stream: true
+                        };
 
-                    const response = await fetch(cleanUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`LM Studio returned ${response.status}: ${response.statusText}`);
-                    }
-
-                    const reader = response.body.getReader();
-                    const decoder = new TextDecoder();
-                    let fullText = '';
-                    let buffer = '';
-                    let isThinking = false;
-                    const allowThinkingUI = !!message.thinking;
-
-                    while (true) {
-                        const { done, value } = await reader.read();
-                        if (done) break;
-                        buffer += decoder.decode(value, { stream: true });
-                        const lines = buffer.split('\n');
-                        buffer = lines.pop() || '';
-
-                        for (const line of lines) {
-                            const trimmed = line.trim();
-                            if (!trimmed || trimmed.startsWith(':')) continue;
-                            if (trimmed === 'data: [DONE]') break;
-                            if (trimmed.startsWith('data: ')) {
-                                try {
-                                    const json = JSON.parse(trimmed.slice(6));
-                                    const delta = json.choices?.[0]?.delta;
-                                    if (!delta) continue;
-
-                                    const reasoningChunk = delta.reasoning_content || delta.reasoning;
-                                    const contentChunk = delta.content || delta.text;
-
-                                    if (reasoningChunk && allowThinkingUI) {
-                                        if (!isThinking) {
-                                            isThinking = true;
-                                            fullText += '<think>';
-                                            emit({
-                                                type: 'agentProgress',
-                                                progressType: 'token',
-                                                output: '<think>'
-                                            });
-                                        }
-                                        fullText += reasoningChunk;
-                                        emit({
-                                            type: 'agentProgress',
-                                            progressType: 'token',
-                                            output: reasoningChunk
-                                        });
-                                    } else {
-                                        const textToAdd = contentChunk || (!allowThinkingUI ? reasoningChunk : '');
-                                        if (textToAdd) {
-                                            if (isThinking) {
-                                                isThinking = false;
-                                                fullText += '</think>';
-                                                emit({
-                                                    type: 'agentProgress',
-                                                    progressType: 'token',
-                                                    output: '</think>'
-                                                });
-                                            }
-                                            fullText += textToAdd;
-                                            emit({
-                                                type: 'agentProgress',
-                                                progressType: 'token',
-                                                output: textToAdd
-                                            });
-                                        }
+                        // Apply thinking/reasoning settings
+                        if (message.thinking) {
+                            payload.thinking = true;
+                            payload.enable_thinking = true;
+                            payload.reasoning_effort = effortVal;
+                            payload.chat_template_kwargs = { enable_thinking: true };
+                            if (caps && Array.isArray(caps.fields)) {
+                                for (const field of caps.fields) {
+                                    if (field.type === 'boolean') {
+                                        payload[field.variable] = true;
+                                        payload.chat_template_kwargs[field.variable] = true;
+                                    } else if (field.type === 'select') {
+                                        payload[field.variable] = effortVal;
+                                        payload.chat_template_kwargs[field.variable] = effortVal;
                                     }
-                                } catch (e) {}
+                                }
+                            }
+                        } else {
+                            payload.thinking = false;
+                            payload.enable_thinking = false;
+                            payload.reasoning_effort = 'none';
+                            payload.chat_template_kwargs = { enable_thinking: false };
+                            if (caps && Array.isArray(caps.fields)) {
+                                for (const field of caps.fields) {
+                                    if (field.type === 'boolean') {
+                                        payload[field.variable] = false;
+                                        payload.chat_template_kwargs[field.variable] = false;
+                                    } else if (field.type === 'select') {
+                                        payload[field.variable] = 'none';
+                                        payload.chat_template_kwargs[field.variable] = 'none';
+                                    }
+                                }
                             }
                         }
-                    }
 
-                    if (isThinking) {
-                        isThinking = false;
-                        fullText += '</think>';
+                        const response = await fetch(cleanUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`LM Studio returned ${response.status}: ${response.statusText}`);
+                        }
+
+                        // Stream the response tokens
+                        const reader = response.body.getReader();
+                        const decoder = new TextDecoder();
+                        let fullText = '';
+                        let buffer = '';
+                        let isThinking = false;
+                        const allowThinkingUI = !!message.thinking;
+
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+                            buffer += decoder.decode(value, { stream: true });
+                            const lines = buffer.split('\n');
+                            buffer = lines.pop() || '';
+
+                            for (const line of lines) {
+                                const trimmed = line.trim();
+                                if (!trimmed || trimmed.startsWith(':')) continue;
+                                if (trimmed === 'data: [DONE]') break;
+                                if (trimmed.startsWith('data: ')) {
+                                    try {
+                                        const json = JSON.parse(trimmed.slice(6));
+                                        const delta = json.choices?.[0]?.delta;
+                                        if (!delta) continue;
+
+                                        const reasoningChunk = delta.reasoning_content || delta.reasoning;
+                                        const contentChunk = delta.content || delta.text;
+
+                                        if (reasoningChunk && allowThinkingUI) {
+                                            if (!isThinking) {
+                                                isThinking = true;
+                                                fullText += '<think>';
+                                                emit({ type: 'agentProgress', progressType: 'token', output: '<think>' });
+                                            }
+                                            fullText += reasoningChunk;
+                                            emit({ type: 'agentProgress', progressType: 'token', output: reasoningChunk });
+                                        } else {
+                                            const textToAdd = contentChunk || (!allowThinkingUI ? reasoningChunk : '');
+                                            if (textToAdd) {
+                                                if (isThinking) {
+                                                    isThinking = false;
+                                                    fullText += '</think>';
+                                                    emit({ type: 'agentProgress', progressType: 'token', output: '</think>' });
+                                                }
+                                                fullText += textToAdd;
+                                                emit({ type: 'agentProgress', progressType: 'token', output: textToAdd });
+                                            }
+                                        }
+                                    } catch (e) {}
+                                }
+                            }
+                        }
+
+                        if (isThinking) {
+                            fullText += '</think>';
+                            emit({ type: 'agentProgress', progressType: 'token', output: '</think>' });
+                        }
+
+                        lastFullText = fullText;
+
+                        // Parse tool call from the streamed response
+                        const toolCall = this._parseToolCall(fullText);
+
+                        if (!toolCall) {
+                            // No tool call found — this is the final reply
+                            break;
+                        }
+
+                        // Tool call detected — execute it
+                        messagesToSend.push({ role: 'assistant', content: fullText });
+
+                        const toolId = `tool-${Date.now()}-${iteration}`;
+                        const targetName = this._getToolTarget(toolCall.name, toolCall.args);
+
                         emit({
                             type: 'agentProgress',
-                            progressType: 'token',
-                            output: '</think>'
+                            progressType: 'tool_start',
+                            tool: toolCall.name,
+                            query: toolCall.query,
+                            toolId: toolId,
+                            fileName: targetName
+                        });
+
+                        let toolResult = '';
+                        try {
+                            toolResult = await this._executeBrowserTool(toolCall.name, toolCall.args);
+                        } catch (toolErr) {
+                            toolResult = `[Error executing tool ${toolCall.name}]: ${toolErr.message || toolErr}`;
+                        }
+
+                        const isError = toolResult.startsWith('[Error');
+
+                        emit({
+                            type: 'agentProgress',
+                            progressType: 'tool_end',
+                            tool: toolCall.name,
+                            output: toolResult,
+                            toolId: toolId,
+                            fileName: targetName
+                        });
+
+                        // Append tool result as a user message for next iteration
+                        messagesToSend.push({
+                            role: 'user',
+                            content: `[Tool Result for ${toolCall.name}]:\n${toolResult}`
                         });
                     }
 
+                    // Emit the final reply
                     emit({
                         type: 'reply',
-                        content: fullText,
+                        content: lastFullText,
                         modifiedFiles: []
                     });
 
                     // Trigger Background AI Chat Title Generation ONLY on the very first user message
                     const targetChatId = message.chatId;
-                    const userMessages = messages.filter(m => m.role === 'user');
+                    const userMessages = rawMessages.filter(m => m.role === 'user');
                     const firstUserMsg = userMessages[0];
                     if (userMessages.length === 1 && firstUserMsg && firstUserMsg.content) {
                         (async () => {
@@ -472,12 +510,9 @@ class WebviewIPCBridge {
                                     const titleData = await titleRes.json();
                                     const choice = titleData.choices?.[0]?.message;
                                     let raw = (choice?.content || choice?.reasoning_content || '').trim();
-                                    // Strip any <think>...</think> blocks
                                     raw = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
-                                    // Extract the final line if multiple lines exist
                                     const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
                                     let rawTitle = lines.length > 0 ? lines[lines.length - 1] : raw;
-                                    // Remove "Title:" prefixes, quotes, markdown characters
                                     rawTitle = rawTitle.replace(/^(title|topic)\s*:\s*/i, '')
                                                        .replace(/["'`*_#]/g, ' ')
                                                        .replace(/\s+/g, ' ')
@@ -511,6 +546,330 @@ class WebviewIPCBridge {
                 }
                 break;
             }
+        }
+    }
+
+    /**
+     * Parses a tool call from LLM response text using multiple regex strategies.
+     * Mirrors the parsing logic in AgentExecutor.parseToolCall().
+     * @param {string} text Full LLM response text.
+     * @returns {{ name: string, args: object, query: string } | null} Parsed tool call or null.
+     */
+    _parseToolCall(text) {
+        // Strategy 1: Explicit <|tool_call|> or <tool_call> tags
+        const explicitTagRegex = /<\|?tool_call\|?>\s*([\s\S]*?)\s*(?:<\|?\/tool_call\|?>|<\|?tool_call\|?>|$)/i;
+        const explicitMatch = explicitTagRegex.exec(text);
+        if (explicitMatch) {
+            const parsed = this._parseJsonToolCall(explicitMatch[1]);
+            if (parsed) return parsed;
+        }
+
+        // Strategy 2: Loose tag wrapper with optional call: prefix
+        const tagRegex = /(?:<\|?tool_call\|?>)?\s*(?:call:\w+)?\s*(\{[\s\S]*?\})\s*(?:<\|?tool_call\|?>)?/i;
+        const tagMatch = tagRegex.exec(text);
+        if (tagMatch) {
+            const parsed = this._parseJsonToolCall(tagMatch[1]);
+            if (parsed) return parsed;
+        }
+
+        // Strategy 3: ```json fenced code block
+        const jsonBlockRegex = /```json\s*([\s\S]*?)\s*(?:```|$)/i;
+        const jsonMatch = jsonBlockRegex.exec(text);
+        if (jsonMatch) {
+            const parsed = this._parseJsonToolCall(jsonMatch[1]);
+            if (parsed) return parsed;
+        }
+
+        // Strategy 4: Brace-counted JSON extraction
+        const braceJson = this._extractJsonBlock(text);
+        if (braceJson) {
+            const parsed = this._parseJsonToolCall(braceJson);
+            if (parsed) return parsed;
+        }
+
+        return null;
+    }
+
+    /**
+     * Extracts the first JSON object from text using brace counting, anchored on known tool keys.
+     * @param {string} text Source text to search.
+     * @returns {string | null} Extracted JSON string or null.
+     */
+    _extractJsonBlock(text) {
+        const typeRegex = /\{\s*["'](?:type|path|command|chunks|query|action|tool|name)["']/g;
+        let match;
+        let startIndex = -1;
+        while ((match = typeRegex.exec(text)) !== null) {
+            startIndex = match.index;
+            break;
+        }
+        if (startIndex === -1) return null;
+
+        let braceCount = 0;
+        let inString = false;
+        let escape = false;
+        for (let i = startIndex; i < text.length; i++) {
+            const char = text[i];
+            if (escape) { escape = false; continue; }
+            if (char === '\\') { escape = true; continue; }
+            if (char === '"') { inString = !inString; continue; }
+            if (!inString) {
+                if (char === '{') braceCount++;
+                else if (char === '}') {
+                    braceCount--;
+                    if (braceCount === 0) return text.substring(startIndex, i + 1);
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Parses a JSON string into a tool call object, matching against supported browser tools.
+     * @param {string} jsonStr Raw JSON string.
+     * @returns {{ name: string, args: object, query: string } | null} Parsed tool call or null.
+     */
+    _parseJsonToolCall(jsonStr) {
+        // List of tools executable in browser preview
+        const supportedTools = ['utility_tools', 'web_search', 'fetch_url', 'get_time', 'calculate', 'text_stats', 'unit_converter', 'uuid_random'];
+
+        try {
+            const parsed = JSON.parse(jsonStr.trim());
+            if (!parsed || typeof parsed !== 'object') return null;
+
+            let type = parsed.type || parsed.action || parsed.tool || parsed.name || parsed.function;
+
+            // Normalize common aliases
+            if (type) {
+                const normalized = type.toLowerCase();
+                if (normalized === 'full-web-search' || normalized === 'websearch') {
+                    type = 'web_search';
+                } else {
+                    type = normalized;
+                }
+            }
+
+            if (type && supportedTools.includes(type)) {
+                const args = { ...parsed };
+                delete args.type;
+                delete args.action;
+                delete args.tool;
+                delete args.name;
+                delete args.function;
+
+                let query = `Executing ${type}`;
+                if (args.query) query = `${type}: ${args.query}`;
+                else if (args.url) query = `${type}: ${args.url}`;
+                else if (args.expression) query = `${type}: ${args.expression}`;
+                else if (args.action) query = `${type}: ${args.action}`;
+
+                return { name: type, args, query };
+            }
+        } catch (e) {}
+        return null;
+    }
+
+    /**
+     * Extracts a display-friendly target name from tool call arguments.
+     * @param {string} tool Tool name.
+     * @param {object} args Tool arguments.
+     * @returns {string} Human-readable target name.
+     */
+    _getToolTarget(tool, args) {
+        if (tool === 'web_search') return args.query ? `"${args.query}"` : '';
+        if (tool === 'fetch_url') return args.url || '';
+        if (tool === 'utility_tools') return args.action || '';
+        if (tool === 'get_time') return 'current time';
+        if (tool === 'calculate') return args.expression || '';
+        if (tool === 'text_stats') return 'text analysis';
+        if (tool === 'unit_converter') return `${args.value || ''} ${args.from_unit || ''} → ${args.to_unit || ''}`;
+        if (tool === 'uuid_random') return 'generate';
+        return '';
+    }
+
+    /**
+     * Executes a tool in browser preview mode. Supports utility operations client-side
+     * and proxies web_search/fetch_url through run_pc.py endpoints.
+     * @param {string} name Tool name.
+     * @param {object} args Tool arguments.
+     * @returns {Promise<string>} Tool execution result text.
+     */
+    async _executeBrowserTool(name, args) {
+        // Handle utility_tools as a dispatcher for sub-actions
+        if (name === 'utility_tools') {
+            const action = args.action || '';
+            switch (action) {
+                case 'get_time':
+                    return this._toolGetTime();
+                case 'calculate':
+                    return this._toolCalculate(args.expression || '');
+                case 'unit_converter':
+                    return this._toolUnitConverter(args.value, args.from_unit, args.to_unit);
+                case 'text_stats':
+                    return this._toolTextStats(args.text || '');
+                case 'uuid_random':
+                    return this._toolUuidRandom(args.type || 'uuid');
+                default:
+                    return `[Error]: Unknown utility_tools action: ${action}`;
+            }
+        }
+
+        // Direct tool name matches
+        switch (name) {
+            case 'get_time':
+                return this._toolGetTime();
+            case 'calculate':
+                return this._toolCalculate(args.expression || '');
+            case 'text_stats':
+                return this._toolTextStats(args.text || '');
+            case 'unit_converter':
+                return this._toolUnitConverter(args.value, args.from_unit, args.to_unit);
+            case 'uuid_random':
+                return this._toolUuidRandom(args.type || 'uuid');
+            case 'web_search':
+                return this._toolWebSearch(args.query || '', args.limit || 5);
+            case 'fetch_url':
+                return this._toolFetchUrl(args.url || '');
+            default:
+                return `[Error]: Tool "${name}" is not available in browser preview mode.`;
+        }
+    }
+
+    /** Returns the current date, time, timezone, and UNIX timestamp. */
+    _toolGetTime() {
+        const now = new Date();
+        return JSON.stringify({
+            date: now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+            time: now.toLocaleTimeString('en-US', { hour12: false }),
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            unix: Math.floor(now.getTime() / 1000)
+        }, null, 2);
+    }
+
+    /**
+     * Evaluates a math expression safely.
+     * @param {string} expression Math expression string.
+     */
+    _toolCalculate(expression) {
+        try {
+            // Sanitize: only allow digits, operators, parens, dots, spaces, and common math functions
+            const sanitized = expression.replace(/[^0-9+\-*/().%\s^,eE]/g, '');
+            if (!sanitized.trim()) return '[Error]: Empty expression';
+            const result = Function('"use strict"; return (' + sanitized + ')')();
+            return `Expression: ${expression}\nResult: ${result}`;
+        } catch (e) {
+            return `[Error calculating]: ${e.message}`;
+        }
+    }
+
+    /**
+     * Converts a value between two units.
+     * @param {number} value Numeric value to convert.
+     * @param {string} fromUnit Source unit.
+     * @param {string} toUnit Target unit.
+     */
+    _toolUnitConverter(value, fromUnit, toUnit) {
+        // Simple conversion factors to meters / base units
+        const lengthUnits = { m: 1, km: 1000, cm: 0.01, mm: 0.001, miles: 1609.344, mi: 1609.344, ft: 0.3048, in: 0.0254, yard: 0.9144, yd: 0.9144 };
+        const weightUnits = { kg: 1, g: 0.001, mg: 0.000001, lb: 0.453592, lbs: 0.453592, oz: 0.0283495, ton: 1000 };
+        const tempUnits = ['celsius', 'c', 'fahrenheit', 'f', 'kelvin', 'k'];
+
+        const from = (fromUnit || '').toLowerCase();
+        const to = (toUnit || '').toLowerCase();
+
+        // Temperature conversions
+        if (tempUnits.includes(from) && tempUnits.includes(to)) {
+            let celsius;
+            if (from === 'celsius' || from === 'c') celsius = value;
+            else if (from === 'fahrenheit' || from === 'f') celsius = (value - 32) * 5 / 9;
+            else celsius = value - 273.15;
+
+            let result;
+            if (to === 'celsius' || to === 'c') result = celsius;
+            else if (to === 'fahrenheit' || to === 'f') result = celsius * 9 / 5 + 32;
+            else result = celsius + 273.15;
+
+            return `${value} ${fromUnit} = ${result.toFixed(2)} ${toUnit}`;
+        }
+
+        // Length conversions
+        if (lengthUnits[from] && lengthUnits[to]) {
+            const result = value * lengthUnits[from] / lengthUnits[to];
+            return `${value} ${fromUnit} = ${result.toFixed(6)} ${toUnit}`;
+        }
+
+        // Weight conversions
+        if (weightUnits[from] && weightUnits[to]) {
+            const result = value * weightUnits[from] / weightUnits[to];
+            return `${value} ${fromUnit} = ${result.toFixed(6)} ${toUnit}`;
+        }
+
+        return `[Error]: Cannot convert between "${fromUnit}" and "${toUnit}". Unsupported unit pair.`;
+    }
+
+    /**
+     * Computes basic text statistics.
+     * @param {string} text Input text to analyze.
+     */
+    _toolTextStats(text) {
+        const charCount = text.length;
+        const wordCount = text.split(/\s+/).filter(Boolean).length;
+        const sentenceCount = text.split(/[.!?]+/).filter(s => s.trim()).length;
+        const lineCount = text.split(/\r?\n/).length;
+        return `Characters: ${charCount}\nWords: ${wordCount}\nSentences: ${sentenceCount}\nLines: ${lineCount}`;
+    }
+
+    /**
+     * Generates a UUID v4 or random hex token.
+     * @param {string} type 'uuid' or 'hex'.
+     */
+    _toolUuidRandom(type) {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+        // Fallback UUID v4 generation
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+            const r = Math.random() * 16 | 0;
+            return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
+    }
+
+    /**
+     * Searches the web via run_pc.py proxy endpoint.
+     * @param {string} query Search query.
+     * @param {number} limit Max results.
+     */
+    async _toolWebSearch(query, limit) {
+        try {
+            const res = await fetch('/api/tools/web_search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query, limit })
+            });
+            if (!res.ok) throw new Error(`Proxy returned ${res.status}`);
+            const data = await res.json();
+            return data.result || JSON.stringify(data, null, 2);
+        } catch (e) {
+            return `[Error searching web]: ${e.message}`;
+        }
+    }
+
+    /**
+     * Fetches a URL's content via run_pc.py proxy endpoint.
+     * @param {string} url Target URL to fetch.
+     */
+    async _toolFetchUrl(url) {
+        try {
+            const res = await fetch('/api/tools/fetch_url', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            });
+            if (!res.ok) throw new Error(`Proxy returned ${res.status}`);
+            const data = await res.json();
+            return data.result || JSON.stringify(data, null, 2);
+        } catch (e) {
+            return `[Error fetching URL]: ${e.message}`;
         }
     }
 

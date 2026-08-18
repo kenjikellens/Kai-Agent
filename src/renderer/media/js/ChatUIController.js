@@ -688,6 +688,27 @@ class ChatUIController {
             case 'delete_item':
                 verb = state === 'start' ? 'deleting' : (state === 'success' ? 'deleted' : 'failed deleting');
                 break;
+            case 'utility_tools':
+                verb = state === 'start' ? 'running utility' : (state === 'success' ? 'completed utility' : 'failed utility');
+                break;
+            case 'web_search':
+                verb = state === 'start' ? 'searching' : (state === 'success' ? 'searched' : 'failed searching');
+                break;
+            case 'get_time':
+                verb = state === 'start' ? 'checking time' : (state === 'success' ? 'checked time' : 'failed time check');
+                break;
+            case 'calculate':
+                verb = state === 'start' ? 'calculating' : (state === 'success' ? 'calculated' : 'failed calculating');
+                break;
+            case 'unit_converter':
+                verb = state === 'start' ? 'converting' : (state === 'success' ? 'converted' : 'failed converting');
+                break;
+            case 'text_stats':
+                verb = state === 'start' ? 'analysing text' : (state === 'success' ? 'analysed text' : 'failed text analysis');
+                break;
+            case 'uuid_random':
+                verb = state === 'start' ? 'generating' : (state === 'success' ? 'generated' : 'failed generating');
+                break;
             default:
                 verb = state === 'start' ? 'running' : (state === 'success' ? 'completed' : 'failed');
         }

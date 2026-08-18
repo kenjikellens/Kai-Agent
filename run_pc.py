@@ -126,11 +126,196 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_POST(self):
-        """Fallback handler for any POST requests in preview mode."""
+        """Routes POST requests to tool proxy endpoints or returns a fallback OK."""
+        content_length = int(self.headers.get("Content-Length", 0))
+        raw_body = self.rfile.read(content_length) if content_length > 0 else b""
+
+        if self.path.startswith("/api/tools/web_search"):
+            self._handle_web_search(raw_body)
+            return
+
+        if self.path.startswith("/api/tools/fetch_url"):
+            self._handle_fetch_url(raw_body)
+            return
+
+        # Fallback for unknown POST paths
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
         self.wfile.write(b'{"status":"ok"}')
+
+    def _handle_web_search(self, raw_body):
+        """Proxies a web search query via the bundled web-search-mcp server (Playwright-based)."""
+        try:
+            body = json.loads(raw_body) if raw_body else {}
+        except Exception:
+            body = {}
+
+        query = body.get("query", "")
+        limit = body.get("limit", 5)
+        include_content = body.get("includeContent", True)
+
+        if not query:
+            self._json_response(400, {"error": "Missing 'query' parameter"})
+            return
+
+        tool_name = "full-web-search" if include_content else "get-web-search-summaries"
+        try:
+            result = _call_mcp_tool(tool_name, {
+                "query": query.strip(),
+                "limit": limit,
+                "includeContent": include_content
+            })
+            self._json_response(200, {"result": result})
+        except Exception as e:
+            self._json_response(500, {"result": f"[Error searching web]: {e}"})
+
+    def _handle_fetch_url(self, raw_body):
+        """Proxies a URL fetch via the bundled web-search-mcp server (Playwright-based)."""
+        try:
+            body = json.loads(raw_body) if raw_body else {}
+        except Exception:
+            body = {}
+
+        url = body.get("url", "")
+        if not url:
+            self._json_response(400, {"error": "Missing 'url' parameter"})
+            return
+
+        try:
+            result = _call_mcp_tool("extract-webpage-content", {"url": url})
+            self._json_response(200, {"result": result})
+        except Exception as e:
+            self._json_response(500, {"result": f"[Error fetching URL]: {e}"})
+
+    def _json_response(self, status_code, data):
+        """Sends a JSON response with the given status code and data dict."""
+        self.send_response(status_code)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps(data).encode("utf-8"))
+
+
+def _call_mcp_tool(tool_name, arguments, timeout_sec=40):
+    """
+    Calls a tool on the bundled web-search-mcp server via JSON-RPC 2.0 over stdio.
+    Mirrors the protocol used by McpProcessBridge.ts in the Electron app.
+    """
+    import subprocess
+    import threading
+
+    # Locate the MCP server script
+    mcp_script = APP_DIR / "web-search-mcp-v0.3.2" / "dist" / "index.js"
+    if not mcp_script.exists():
+        raise RuntimeError(f"MCP server script not found at {mcp_script}")
+
+    mcp_cwd = str(APP_DIR / "web-search-mcp-v0.3.2")
+
+    # Spawn node process
+    proc = subprocess.Popen(
+        ["node", str(mcp_script)],
+        cwd=mcp_cwd,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env={**os.environ, "FORCE_COLOR": "0"}
+    )
+
+    result_holder = {"result": None, "error": None}
+    stdout_buffer = ""
+
+    def _send(msg):
+        """Writes a JSON-RPC message to the child process stdin."""
+        proc.stdin.write((json.dumps(msg) + "\n").encode("utf-8"))
+        proc.stdin.flush()
+
+    def _communicate():
+        """Reads stdout line by line and processes JSON-RPC responses."""
+        nonlocal stdout_buffer
+        request_id = 1
+
+        # Step 1: Send initialize request
+        _send({
+            "jsonrpc": "2.0",
+            "id": request_id,
+            "method": "initialize",
+            "params": {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": {"name": "Kai-Agent-Preview", "version": "1.0.0"}
+            }
+        })
+
+        init_id = request_id
+        request_id += 1
+
+        # Read lines until we get both init response and tool call response
+        for raw_line in iter(proc.stdout.readline, b""):
+            line = raw_line.decode("utf-8", errors="replace").strip()
+            if not line:
+                continue
+            try:
+                msg = json.loads(line)
+            except Exception:
+                continue
+
+            msg_id = msg.get("id")
+
+            if msg_id == init_id:
+                # Initialize succeeded — send initialized notification + tool call
+                if msg.get("error"):
+                    result_holder["error"] = f"MCP init error: {json.dumps(msg['error'])}"
+                    return
+
+                _send({"jsonrpc": "2.0", "method": "notifications/initialized"})
+
+                call_id = request_id
+                _send({
+                    "jsonrpc": "2.0",
+                    "id": call_id,
+                    "method": "tools/call",
+                    "params": {
+                        "name": tool_name,
+                        "arguments": arguments
+                    }
+                })
+
+            elif msg_id is not None and msg_id != init_id:
+                # This is the tool call response
+                if msg.get("error"):
+                    result_holder["error"] = f"MCP tool error: {json.dumps(msg['error'])}"
+                    return
+
+                res = msg.get("result", {})
+                if isinstance(res, dict) and "content" in res:
+                    texts = [
+                        c["text"] for c in res["content"]
+                        if isinstance(c, dict) and c.get("type") == "text" and isinstance(c.get("text"), str)
+                    ]
+                    result_holder["result"] = "\n\n".join(texts) if texts else json.dumps(res)
+                elif isinstance(res, str):
+                    result_holder["result"] = res
+                else:
+                    result_holder["result"] = json.dumps(res, indent=2)
+                return
+
+    # Run communication in a thread with timeout
+    thread = threading.Thread(target=_communicate, daemon=True)
+    thread.start()
+    thread.join(timeout=timeout_sec)
+
+    # Cleanup
+    try:
+        proc.kill()
+    except Exception:
+        pass
+
+    if result_holder["error"]:
+        raise RuntimeError(result_holder["error"])
+    if result_holder["result"] is None:
+        raise RuntimeError(f"MCP tool execution timed out after {timeout_sec}s")
+
+    return result_holder["result"]
 
 
 def start_server(port: int = 5173) -> None:
