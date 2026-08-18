@@ -12,12 +12,15 @@ let appHost: AppHost | null = null;
 function createWindow(): void {
     const workspaceManager = new WorkspaceManager(process.cwd());
 
+    const iconPath = path.resolve(__dirname, '../../src/renderer/media/svg/kai_icon.png');
+
     mainWindow = new BrowserWindow({
         width: 1200,
         height: 850,
         minWidth: 800,
         minHeight: 600,
         title: 'KAI Agent',
+        icon: iconPath,
         backgroundColor: '#1e1e1e',
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),

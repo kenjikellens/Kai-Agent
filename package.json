@@ -33,8 +33,10 @@
   "build": {
     "appId": "com.kaiagent.app",
     "productName": "KAI Agent",
+    "icon": "src/renderer/media/svg/kai_icon.ico",
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "src/renderer/media/svg/kai_icon.ico"
     },
     "directories": {
       "output": "release"
