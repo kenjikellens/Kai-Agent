@@ -875,7 +875,6 @@ class WebviewIPCBridge {
             return `[Error executing ${tool}]: ${e.message}`;
         }
     }
-    }
 
     /** Returns the current date, time, timezone, and UNIX timestamp. */
     _toolGetTime() {
