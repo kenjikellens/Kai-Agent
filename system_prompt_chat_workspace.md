@@ -19,15 +19,15 @@ Output a concise explanation followed by exactly ONE tool call enclosed inside `
 <|tool_call|>
 
 ## ACTION SCHEMAS
-
+ 
 **Read File:**
 <|tool_call|>
-{"type": "read_file", "path": "src/index.ts"}
+{"type": "read_file", "path": "index.ts"}
 <|tool_call|>
 
-**List Directory Contents:**
+**List Directory Contents (use '.' for workspace root):**
 <|tool_call|>
-{"type": "list_dir", "path": "src"}
+{"type": "list_dir", "path": "."}
 <|tool_call|>
 
 **Grep Search:**
@@ -42,7 +42,7 @@ Output a concise explanation followed by exactly ONE tool call enclosed inside `
 
 **Get Linter Diagnostics:**
 <|tool_call|>
-{"type": "get_diagnostics", "path": "src/main.ts"}
+{"type": "get_diagnostics", "path": "main.ts"}
 <|tool_call|>
 
 **Utility Operations (Time, Calculator, Unit Converter, Text Stats, UUID):**

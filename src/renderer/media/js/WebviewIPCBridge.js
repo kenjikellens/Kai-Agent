@@ -282,9 +282,9 @@ class WebviewIPCBridge {
                     }
                 } catch (e) {}
 
-                // Load workspace structure if available (mirrors AgentExecutor.ts)
-                let workspacePrefix = '';
-                if (hasWs && rawMessages.length <= 1) {
+                // Load workspace directory structure and append to system prompt
+                if (hasWs) {
+                    let workspaceInfo = `\n\n[Active Workspace Directory: ${savedWs}]\n`;
                     try {
                         const wsRes = await fetch('/api/tools/execute', {
                             method: 'POST',
@@ -294,23 +294,14 @@ class WebviewIPCBridge {
                         if (wsRes.ok) {
                             const wsData = await wsRes.json();
                             if (wsData.result) {
-                                workspacePrefix = wsData.result + '\n';
+                                workspaceInfo += `${wsData.result}\n`;
                             }
                         }
                     } catch (e) {}
+                    systemPrompt += workspaceInfo;
                 }
 
                 const messagesToSend = [...rawMessages];
-                if (workspacePrefix && messagesToSend.length > 0) {
-                    const firstMsg = messagesToSend[0];
-                    if (firstMsg.role === 'user') {
-                        messagesToSend[0] = {
-                            role: 'user',
-                            content: workspacePrefix + firstMsg.content
-                        };
-                    }
-                }
-
                 const sysIdx = messagesToSend.findIndex(m => m.role === 'system');
                 if (sysIdx !== -1) {
                     messagesToSend[sysIdx] = { role: 'system', content: systemPrompt };
