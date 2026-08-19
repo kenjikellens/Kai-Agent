@@ -45,7 +45,7 @@
             await ipcBridge.rollbackTurnChanges(appState.currentChatId);
         }
 
-        // Truncate messages and uiEvents: remove the assistant reply and re-send the prompt
+        // Find position of this assistant message among all rows
         const allMessageNodes = Array.from(chatUIController.chatContainer.children).filter(el => 
             el.classList.contains('user-message-row') || 
             el.classList.contains('message') || 
@@ -55,18 +55,55 @@
         const targetIndex = allMessageNodes.indexOf(assistantMsgElement);
 
         if (targetIndex !== -1) {
+            // Count how many user messages came before this assistant reply
+            const precedingUserNodes = allMessageNodes.slice(0, targetIndex).filter(el => el.classList.contains('user-message-row'));
+            const userIndex = precedingUserNodes.length; // 1-based count of user prompts up to this turn
+
+            if (userIndex > 0) {
+                // Find cutoff index in appState.messages: keep messages up to the userIndex-th user prompt
+                let userMsgCount = 0;
+                let msgCutoffIndex = -1;
+                for (let i = 0; i < appState.messages.length; i++) {
+                    if (appState.messages[i].role === 'user') {
+                        userMsgCount++;
+                        if (userMsgCount === userIndex) {
+                            msgCutoffIndex = i + 1; // include this user message, discard everything after
+                            break;
+                        }
+                    }
+                }
+                if (msgCutoffIndex !== -1) {
+                    appState.messages = appState.messages.slice(0, msgCutoffIndex);
+                }
+
+                // Find matching cutoff in appState.uiEvents
+                let uiUserCount = 0;
+                let uiCutoffIndex = -1;
+                for (let i = 0; i < appState.uiEvents.length; i++) {
+                    if (appState.uiEvents[i].type === 'user') {
+                        uiUserCount++;
+                        if (uiUserCount === userIndex) {
+                            uiCutoffIndex = i + 1; // include this user event, discard everything after
+                            break;
+                        }
+                    }
+                }
+                if (uiCutoffIndex !== -1) {
+                    appState.uiEvents = appState.uiEvents.slice(0, uiCutoffIndex);
+                }
+            }
+
+            // Remove DOM nodes from targetIndex onward
             const nodesToRemove = allMessageNodes.slice(targetIndex);
             nodesToRemove.forEach(node => node.remove());
         } else {
             assistantMsgElement.remove();
-        }
-
-        // If the last message in appState is an assistant message, remove it
-        while (appState.messages.length > 0 && appState.messages[appState.messages.length - 1].role !== 'user') {
-            appState.messages.pop();
-        }
-        while (appState.uiEvents.length > 0 && appState.uiEvents[appState.uiEvents.length - 1].type !== 'user') {
-            appState.uiEvents.pop();
+            while (appState.messages.length > 0 && appState.messages[appState.messages.length - 1].role !== 'user') {
+                appState.messages.pop();
+            }
+            while (appState.uiEvents.length > 0 && appState.uiEvents[appState.uiEvents.length - 1].type !== 'user') {
+                appState.uiEvents.pop();
+            }
         }
 
         // If we have messages left and the last is user, re-send it
