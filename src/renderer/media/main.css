@@ -4264,10 +4264,108 @@ details[open]>summary>.custom-chevron {
   border: 1px solid rgba(34, 197, 94, 0.3);
 }
 
-.approval-badge.badge-refused {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+/* ==========================================================================
+   SETTINGS ACCORDION CATEGORIES (.settings-category)
+   ========================================================================== */
+.settings-content-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 14px 16px 14px;
+}
+
+/* Settings category wrapper - Minimal spacing with uniform subtle border */
+.settings-category {
+  position: relative;
+  margin: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--app-border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: var(--app-radius-sm, 4px);
+  background: transparent;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.settings-category.has-open-select {
+  z-index: 10000;
+}
+
+/* Category header toggle button - Completely borderless & transparent, hover chevron only */
+.category-header-btn {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 3px 0;
+  margin-bottom: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: var(--app-fg);
+  font-size: 0.80rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease;
+}
+
+.category-header-btn:hover,
+.category-header-btn:focus-visible {
+  background: transparent;
+  border: 0;
+  color: var(--app-fg);
+}
+
+/* Category Title - Uppercase, muted grey */
+.category-title {
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  color: var(--app-muted);
+  transition: color 0.15s ease;
+}
+
+/* When category is open/expanded: title is lighter (whiter) */
+.settings-category:not(.collapsed) .category-title {
+  color: var(--app-fg, #ffffff);
+}
+
+.category-header-btn:hover .category-title {
+  color: var(--app-fg, #ffffff);
+}
+
+/* Chevron icon next to category title, hidden by default, visible on hover only */
+.category-chevron {
+  color: var(--app-muted, #888888);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.2s ease;
+}
+
+.category-header-btn:hover .category-chevron,
+.category-header-btn:focus-visible .category-chevron {
+  opacity: 1;
+  visibility: visible;
+}
+
+.settings-category.collapsed .category-chevron {
+  transform: rotate(-90deg);
+}
+
+/* Category Content Container - Internal padding and compact spacing */
+.category-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 2px 8px 2px;
+  box-sizing: border-box;
+}
+
+.settings-category.collapsed .category-content {
+  display: none !important;
 }
 
 

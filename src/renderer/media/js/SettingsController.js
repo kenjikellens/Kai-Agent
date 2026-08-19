@@ -229,6 +229,27 @@ class SettingsController {
      * Registers event listeners for settings controls.
      */
     initEventListeners() {
+        // Collapsible category accordion headers (single-open rule)
+        const categoryBtns = document.querySelectorAll('.category-header-btn');
+        categoryBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const categoryEl = btn.closest('.settings-category');
+                if (!categoryEl) return;
+                
+                const isCurrentlyCollapsed = categoryEl.classList.contains('collapsed');
+                
+                // Close all other categories first (only 1 open at a time)
+                document.querySelectorAll('.settings-category').forEach(el => {
+                    el.classList.add('collapsed');
+                });
+
+                // If it was collapsed, expand it; if it was open, it is now collapsed
+                if (isCurrentlyCollapsed) {
+                    categoryEl.classList.remove('collapsed');
+                }
+            });
+        });
+
         if (this.browseLMStudioBtn) {
             this.browseLMStudioBtn.addEventListener('click', () => {
                 this.ipcBridge.browseLMStudioFolder();

@@ -154,12 +154,13 @@
                     </div>
 
                     <div class="settings-content-panel">
-                        <!-- Section 1: General Preferences -->
-                        <div class="settings-section" id="category-general">
-                            <div class="settings-section-header">
-                                <span class="settings-section-title" data-i18n="generalSettings">General Settings</span>
-                            </div>
-                            <div class="settings-section-body">
+                        <!-- Category 1: General Preferences -->
+                        <div class="settings-category" id="category-general">
+                            <button type="button" class="category-header-btn" data-category="general">
+                                <span class="category-title" data-i18n="generalSettings">General Settings</span>
+                                <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </button>
+                            <div class="category-content">
                                 <div class="setting-row">
                                     <div class="setting-info">
                                         <span class="setting-label" data-i18n="language">Language</span>
@@ -175,12 +176,13 @@
                             </div>
                         </div>
 
-                        <!-- Section 2: Reasoning & Thinking -->
-                        <div class="settings-section" id="category-thinking">
-                            <div class="settings-section-header">
-                                <span class="settings-section-title" data-i18n="thinkingSettings">Thinking & Reasoning</span>
-                            </div>
-                            <div class="settings-section-body">
+                        <!-- Category 2: Reasoning & Thinking -->
+                        <div class="settings-category collapsed" id="category-thinking">
+                            <button type="button" class="category-header-btn" data-category="thinking">
+                                <span class="category-title" data-i18n="thinkingSettings">Thinking & Reasoning</span>
+                                <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </button>
+                            <div class="category-content">
                                 <div class="setting-row" id="show-thinking-setting-row"></div>
                                 <div class="setting-row" id="keep-thinking-generating-setting-row"></div>
                                 <div class="setting-row" id="keep-thinking-finished-setting-row"></div>
@@ -199,12 +201,13 @@
                             </div>
                         </div>
 
-                        <!-- Section 3: Local AI (LM Studio) -->
-                        <div class="settings-section" id="category-lmstudio">
-                            <div class="settings-section-header">
-                                <span class="settings-section-title" data-i18n="lmStudioHeader">LM Studio</span>
-                            </div>
-                            <div class="settings-section-body">
+                        <!-- Category 3: Local AI (LM Studio) -->
+                        <div class="settings-category collapsed" id="category-lmstudio">
+                            <button type="button" class="category-header-btn" data-category="lmstudio">
+                                <span class="category-title" data-i18n="lmStudioHeader">LM Studio</span>
+                                <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </button>
+                            <div class="category-content">
                                 <div class="setting-row">
                                     <div class="setting-info">
                                         <span class="setting-label" data-i18n="serverUrl">Server URL</span>
@@ -231,12 +234,13 @@
                             </div>
                         </div>
 
-                        <!-- Section 4: Cloud AI & API Keys -->
-                        <div class="settings-section" id="category-apikeys">
-                            <div class="settings-section-header">
-                                <span class="settings-section-title" data-i18n="apiKeysSettings">API Keys & Providers</span>
-                            </div>
-                            <div class="settings-section-body">
+                        <!-- Category 4: Cloud AI & API Keys -->
+                        <div class="settings-category collapsed" id="category-apikeys">
+                            <button type="button" class="category-header-btn" data-category="apikeys">
+                                <span class="category-title" data-i18n="apiKeysSettings">API Keys & Providers</span>
+                                <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </button>
+                            <div class="category-content">
                                 <div class="setting-row">
                                     <div class="setting-info">
                                         <span class="setting-label" data-i18n="geminiApiKey">Google Gemini API Key</span>
