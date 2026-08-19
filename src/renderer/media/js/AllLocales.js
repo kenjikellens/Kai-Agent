@@ -585,7 +585,7 @@ window.KAI_ALL_LOCALES = {
     "welcomePromptHint": "Stel een vraag, bewerk code of voeg bestanden toe om te beginnen",
     "help": "Help",
     "readme": "README",
-    "thinkingMaxHeight": "Maximale hoogte thinking proces"
+    "thinkingMaxHeight": "Maximale hoogte denkproces"
   },
   "pl": {
     "newChat": "Nowy czat",
