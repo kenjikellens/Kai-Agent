@@ -29,13 +29,19 @@ class ModelDropdownController {
         this.selectedModelText = document.getElementById('selected-model-text');
         this.statusDot = document.getElementById('status-dot');
 
+        this.settingsController = new ModelSettingsController({
+            onSettingsChange: () => this.updateModelDropdownItemBatteries()
+        });
+
         if (this.selectedModelText && this.selectedModelValue && this.selectedModelValue !== 'local-model') {
             this.selectedModelText.textContent = this.formatter.formatModelName(this.selectedModelValue);
         }
 
         this.initEventListeners();
         this.initDefaultDropdown();
-        this.updateCapabilitiesToolbar();
+        if (this.settingsController) {
+            this.settingsController.update(this.selectedModelValue);
+        }
         
         window.addEventListener('resize', () => this.updateTextOverflowMetrics());
         window.addEventListener('kaiThinkingStyleChanged', () => {
@@ -110,12 +116,16 @@ class ModelDropdownController {
 
     /**
      * Registers dropdown trigger and global click-outside listeners for the Model Selector Dropdown.
+     * Manages mutual exclusion and dismissal of open menus and flyouts.
      */
     initEventListeners() {
         if (this.dropdownTriggerBtn) {
             this.dropdownTriggerBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.closeActiveFlyoutImmediately();
+                if (this.settingsController) {
+                    this.settingsController.close();
+                }
                 if (this.dropdownOptionsMenu) {
                     this.dropdownOptionsMenu.classList.toggle('hidden');
                 }
@@ -429,7 +439,7 @@ class ModelDropdownController {
         }
 
         this.updateGeminiThinkingVisibility();
-        this.updateCapabilitiesToolbar();
+        this.updateModelSettingsDropdown();
     }
 
     /**
@@ -502,7 +512,7 @@ class ModelDropdownController {
     }
 
     /**
-     * Sets active model ID and updates UI elements and connection status indicators.
+     * Sets active model ID and updates UI elements, settings dropdown, and connection status indicators.
      * @param {string} modelId Model ID.
      */
     setSelectedModel(modelId) {
@@ -536,175 +546,39 @@ class ModelDropdownController {
             });
         }
         this.updateGeminiThinkingVisibility();
-        this.updateCapabilitiesToolbar();
+        if (this.settingsController) {
+            this.settingsController.update(modelId);
+        }
     }
 
     /**
-     * Renders dedicated capability buttons (Think toggle, Reasoning Effort dropdown)
-     * directly into the toolbar next to the model selector.
+     * Refreshes battery icons on model selector dropdown items after settings change.
+     * Updates icon elements in the primary model dropdown list.
      */
-    updateCapabilitiesToolbar() {
-        const toolbar = document.getElementById('model-capabilities-toolbar');
-        if (!toolbar) return;
-        toolbar.innerHTML = '';
-
-        const caps = ThinkingStateFormatter.getCapabilitiesState(this.selectedModelValue);
-        const rawModel = caps.rawModel;
-
-        // 1. Dedicated Thinking Toggle Button [Battery Think]
-        if (caps.hasThinkingToggle) {
-            const thinkBtn = document.createElement('button');
-            thinkBtn.type = 'button';
-            thinkBtn.className = `cap-toggle-btn ${caps.isThinkingOn ? 'active' : ''}`;
-            thinkBtn.title = caps.isThinkingOn ? 'Thinking is Enabled (Click to Disable)' : 'Thinking is Disabled (Click to Enable)';
-
-            let batteryIcon = DOMUtils.createBatteryIcon(caps.isThinkingOn, 'cap-battery-icon');
-            thinkBtn.appendChild(batteryIcon);
-
-            const labelSpan = document.createElement('span');
-            labelSpan.textContent = 'Think';
-            thinkBtn.appendChild(labelSpan);
-
-            thinkBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const newState = !thinkBtn.classList.contains('active');
-                if (newState) {
-                    thinkBtn.classList.add('active');
-                    thinkBtn.title = 'Thinking is Enabled (Click to Disable)';
+    updateModelDropdownItemBatteries() {
+        if (!this.dropdownOptionsMenu) return;
+        const items = this.dropdownOptionsMenu.querySelectorAll('.dropdown-item');
+        items.forEach(item => {
+            const val = item.dataset.value;
+            if (!val) return;
+            const thState = ThinkingStateFormatter.getThinkingState(val);
+            const oldBattery = item.querySelector('.item-battery-icon');
+            if (thState.isThinkingCapable) {
+                const newBattery = DOMUtils.createBatteryIcon(thState.isMultiLevel ? thState.level : thState.isOn, 'item-battery-icon');
+                if (oldBattery) {
+                    oldBattery.replaceWith(newBattery);
                 } else {
-                    thinkBtn.classList.remove('active');
-                    thinkBtn.title = 'Thinking is Disabled (Click to Enable)';
-                }
-
-                const newBattery = DOMUtils.createBatteryIcon(newState, 'cap-battery-icon');
-                batteryIcon.replaceWith(newBattery);
-                batteryIcon = newBattery;
-
-                localStorage.setItem(`kai.lmStudioThinking.${rawModel}`, newState ? 'true' : 'false');
-                localStorage.setItem(`kai.mistralThinking.${rawModel}`, newState ? 'true' : 'false');
-                if (rawModel.includes('/')) {
-                    const short = rawModel.split('/').pop();
-                    localStorage.setItem(`kai.lmStudioThinking.${short}`, newState ? 'true' : 'false');
-                }
-            });
-
-            toolbar.appendChild(thinkBtn);
-        }
-
-        // 2. Dedicated Reasoning Effort Dropdown [Battery Effort: <level> ▾]
-        if (caps.hasReasoningEffort && Array.isArray(caps.effortOptions) && caps.effortOptions.length > 0) {
-            const dropdownContainer = document.createElement('div');
-            dropdownContainer.className = 'cap-dropdown';
-
-            const triggerBtn = document.createElement('button');
-            triggerBtn.type = 'button';
-            triggerBtn.className = 'cap-dropdown-trigger';
-            triggerBtn.title = `${caps.effortDisplayName}: ${caps.reasoningLevel}`;
-
-            let batteryIcon = DOMUtils.createBatteryIcon(caps.reasoningLevel, 'cap-battery-icon');
-            triggerBtn.appendChild(batteryIcon);
-
-            const labelSpan = document.createElement('span');
-            labelSpan.className = 'cap-label';
-            const matchedOpt = caps.effortOptions.find(o => o.value === caps.reasoningLevel);
-            labelSpan.textContent = matchedOpt ? matchedOpt.label : caps.reasoningLevel;
-            triggerBtn.appendChild(labelSpan);
-
-            const chevronSvg = DOMUtils.createSvg('svg', {
-                class: 'cap-chevron',
-                width: '8',
-                height: '8',
-                viewBox: '0 0 24 24',
-                fill: 'none',
-                stroke: 'currentColor',
-                'stroke-width': '3',
-                'stroke-linecap': 'round',
-                'stroke-linejoin': 'round'
-            });
-            const polyline = DOMUtils.createSvg('polyline', { points: '6 9 12 15 18 9' });
-            chevronSvg.appendChild(polyline);
-            triggerBtn.appendChild(chevronSvg);
-
-            const menu = document.createElement('div');
-            menu.className = 'cap-dropdown-menu hidden';
-
-            caps.effortOptions.forEach(opt => {
-                const itemBtn = document.createElement('button');
-                itemBtn.type = 'button';
-                const isSelected = opt.value === caps.reasoningLevel;
-                itemBtn.className = `cap-dropdown-item ${isSelected ? 'selected' : ''}`;
-
-                const optLabelSpan = document.createElement('span');
-                optLabelSpan.className = 'cap-opt-label';
-                optLabelSpan.textContent = opt.label;
-                itemBtn.appendChild(optLabelSpan);
-
-                const optRight = document.createElement('div');
-                optRight.className = 'cap-opt-right';
-
-                const optBattery = DOMUtils.createBatteryIcon(opt.value, 'cap-battery-icon');
-                optRight.appendChild(optBattery);
-
-                if (isSelected) {
-                    const checkSvg = DOMUtils.createCheckIcon('check-icon');
-                    optRight.appendChild(checkSvg);
-                }
-
-                itemBtn.appendChild(optRight);
-
-                itemBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    labelSpan.textContent = opt.label;
-                    triggerBtn.title = `${caps.effortDisplayName}: ${opt.label}`;
-
-                    // Update trigger battery icon
-                    const newBattery = DOMUtils.createBatteryIcon(opt.value, 'cap-battery-icon');
-                    batteryIcon.replaceWith(newBattery);
-                    batteryIcon = newBattery;
-
-                    menu.querySelectorAll('.cap-dropdown-item').forEach(el => {
-                        el.classList.remove('selected');
-                        const check = el.querySelector('.check-icon');
-                        if (check) check.remove();
-                    });
-                    itemBtn.classList.add('selected');
-                    const checkSvg = DOMUtils.createCheckIcon('check-icon');
-                    optRight.appendChild(checkSvg);
-
-                    menu.classList.add('hidden');
-
-                    if (rawModel.toLowerCase().includes('gemini')) {
-                        localStorage.setItem(`kai.geminiThinkingLevel.${this.selectedModelValue}`, opt.value);
-                        localStorage.setItem(`kai.geminiThinkingLevel.${rawModel}`, opt.value);
-                        localStorage.setItem('kai.geminiThinkingLevel', opt.value);
+                    const check = item.querySelector('.check-icon');
+                    if (check) {
+                        item.insertBefore(newBattery, check);
                     } else {
-                        localStorage.setItem(`kai.lmStudioReasoningLevel.${rawModel}`, opt.value);
-                        localStorage.setItem(`kai.lmStudioReasoningLevel.${this.selectedModelValue}`, opt.value);
-                        if (rawModel.includes('/')) {
-                            const short = rawModel.split('/').pop();
-                            localStorage.setItem(`kai.lmStudioReasoningLevel.${short}`, opt.value);
-                        }
+                        item.appendChild(newBattery);
                     }
-                });
-
-                menu.appendChild(itemBtn);
-            });
-
-            triggerBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                menu.classList.toggle('hidden');
-            });
-
-            dropdownContainer.appendChild(triggerBtn);
-            dropdownContainer.appendChild(menu);
-            toolbar.appendChild(dropdownContainer);
-
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('.cap-dropdown')) {
-                    menu.classList.add('hidden');
                 }
-            });
-        }
+            } else if (oldBattery) {
+                oldBattery.remove();
+            }
+        });
     }
 
     /**

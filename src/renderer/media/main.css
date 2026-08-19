@@ -2151,101 +2151,150 @@ button:disabled {
   position: relative;
 }
 
-/* Container for dynamic capability toolbar buttons next to model selector */
-.model-capabilities-toolbar {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex: 0 0 auto;
-  justify-content: flex-start;
-}
-
-/* Dedicated toggle button for Thinking capability matching dropdown trigger styling */
-.cap-toggle-btn {
+/* Chevron-only trigger button for Model Settings in input toolbar */
+.chevron-only-btn {
   height: 32px;
+  width: 28px;
+  min-width: 28px;
   box-sizing: border-box;
-  width: auto;
-  max-width: 100%;
   display: inline-flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 6px;
-  padding: 0 10px;
+  justify-content: center;
+  padding: 0;
   border: 0 !important;
   outline: none;
   border-radius: var(--app-radius-md);
   background: var(--app-surface-strong);
   color: var(--app-muted);
-  font-size: 0.86rem;
-  text-align: left;
   cursor: pointer;
   user-select: none;
   transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Hover state for capability toggle button */
-.cap-toggle-btn:hover,
-.cap-toggle-btn:focus {
+/* Hover state for chevron-only trigger button */
+.chevron-only-btn:hover,
+.chevron-only-btn:focus {
   background: var(--app-surface-hover);
   color: var(--app-fg);
   box-shadow: 0 0 0 1px var(--app-surface-hover);
 }
 
-/* Active state for capability toggle button when enabled */
-.cap-toggle-btn.active {
-  background: rgba(88, 101, 242, 0.15);
+/* Settings dropdown popup menu with compact width and visible overflow for submenus */
+#model-settings-menu {
+  width: max-content;
+  min-width: max-content;
+  max-width: 320px;
+  padding: 4px;
+  overflow: visible;
+}
+
+/* Category section title inside settings dropdown */
+.settings-section-title {
+  padding: 4px 8px 2px 8px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--app-muted);
+  white-space: nowrap;
+}
+
+/* Toggle switch row component inside model settings dropdown */
+.toggle-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 8px;
+  border-radius: var(--app-radius-sm);
+  background: transparent;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: background-color 0.15s ease;
+}
+
+/* Hover state for toggle switch row */
+.toggle-switch-row:hover {
+  background: var(--app-surface-hover);
+}
+
+/* Label container inside toggle switch row */
+.toggle-label {
+  font-size: 0.8rem;
   color: var(--app-fg);
-  box-shadow: 0 0 0 1px var(--app-accent, #5865F2);
-}
-
-/* Dropdown container for Reasoning Effort capability in input toolbar */
-.cap-dropdown {
-  position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  flex: 0 0 auto;
-}
-
-/* Trigger button for Reasoning Effort capability dropdown matching dropdown trigger styling */
-.cap-dropdown-trigger {
-  height: 32px;
-  box-sizing: border-box;
-  width: auto;
-  max-width: 100%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-start;
   gap: 6px;
-  padding: 0 10px;
-  border: 0 !important;
-  outline: none;
-  border-radius: var(--app-radius-md);
-  background: var(--app-surface-strong);
+  white-space: nowrap;
+}
+
+/* Visual pill background for toggle switch */
+.switch-pill {
+  width: 32px;
+  height: 18px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.15);
+  position: relative;
+  transition: background-color 0.15s ease;
+  flex-shrink: 0;
+}
+
+/* Active state for toggle switch pill */
+.switch-pill.active {
+  background: var(--app-accent);
+}
+
+/* Circular handle inside toggle switch */
+.switch-handle {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: left 0.15s ease;
+}
+
+/* Active position for toggle switch handle */
+.switch-pill.active .switch-handle {
+  left: 16px;
+}
+
+/* Flyout trigger row inside settings menu for multiple-choice options */
+.flyout-trigger-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 8px;
+  border-radius: var(--app-radius-sm);
+  background: transparent;
   color: var(--app-fg);
-  font-size: 0.86rem;
-  text-align: left;
+  font-size: 0.8rem;
   cursor: pointer;
   user-select: none;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-/* Hover state for capability dropdown trigger */
-.cap-dropdown-trigger:hover,
-.cap-dropdown-trigger:focus {
+/* Hover and active state for flyout trigger row */
+.flyout-trigger-row:hover,
+.flyout-trigger-row.active {
   background: var(--app-surface-hover);
   color: var(--app-fg);
-  box-shadow: 0 0 0 1px var(--app-surface-hover);
 }
 
-/* Dropdown popup menu for Reasoning Effort options */
-.cap-dropdown-menu {
+/* Floating popup submenu for multiple-choice options positioned next to the row */
+.flyout-popup-menu {
   position: absolute;
-  left: 0;
-  bottom: calc(100% + 8px);
-  z-index: 1000;
-  min-width: 150px;
-  max-height: 280px;
-  overflow-y: auto;
+  left: calc(100% + 4px);
+  top: 0;
+  z-index: 1002;
+  width: max-content;
+  min-width: max-content;
   padding: 4px;
   box-sizing: border-box;
   background: var(--app-dropdown-bg);
@@ -2257,60 +2306,13 @@ button:disabled {
   gap: 2px;
 }
 
-/* Dropdown option button for capability options */
-.cap-dropdown-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 5px 10px;
-  border: 0 !important;
-  border-radius: var(--app-radius-sm);
-  background: transparent;
-  color: var(--app-muted);
-  font-size: 0.75rem;
-  cursor: pointer;
-  user-select: none;
-  text-align: left;
-  transition: background-color 0.15s ease, color 0.15s ease;
-}
-
-/* Hover state for capability dropdown item */
-.cap-dropdown-item:hover,
-.cap-dropdown-item:focus-visible {
-  color: var(--app-fg);
-  background: var(--vscode-list-hoverBackground, var(--app-surface-hover));
-}
-
-/* Selected state for capability dropdown item */
-.cap-dropdown-item.selected {
-  color: var(--app-fg);
-  background: var(--app-surface-strong);
-  font-weight: 600;
-}
-
-/* Label text inside capability dropdown option */
-.cap-opt-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex: 1 1 auto;
-}
-
-/* Right side container inside capability dropdown option */
-.cap-opt-right {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-/* Battery icon inside capability toolbar elements */
-.cap-battery-icon {
+/* Chevron indicator icon inside flyout trigger row */
+.flyout-chevron {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  color: var(--app-muted);
 }
 
 /* Battery icon inside model dropdown items */
@@ -2329,23 +2331,6 @@ button:disabled {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-}
-
-/* Icon wrapper inside capability buttons */
-.cap-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-/* Chevron indicator icon inside capability dropdown trigger */
-.cap-chevron {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  opacity: 0.7;
 }
 
 .model-flyout-chevron {
