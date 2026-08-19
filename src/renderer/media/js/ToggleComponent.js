@@ -13,7 +13,7 @@ class ToggleComponent {
      * @returns {HTMLLabelElement} Switch container label element.
      */
     static create({ id, label = '', checked = false, onChange = null, title = '' } = {}) {
-        const container = document.createElement('label');
+        const container = document.createElement('div');
         container.className = 'switch-container';
         if (title) {
             container.title = title;
@@ -28,6 +28,29 @@ class ToggleComponent {
 
         const track = document.createElement('span');
         track.className = 'slider-track';
+        track.tabIndex = 0;
+        track.setAttribute('role', 'switch');
+        track.setAttribute('aria-checked', String(Boolean(checked)));
+
+        track.addEventListener('click', (e) => {
+            e.stopPropagation();
+            input.checked = !input.checked;
+            track.setAttribute('aria-checked', String(input.checked));
+            if (typeof onChange === 'function') {
+                onChange(input.checked, e);
+            }
+        });
+
+        track.addEventListener('keydown', (e) => {
+            if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                input.checked = !input.checked;
+                track.setAttribute('aria-checked', String(input.checked));
+                if (typeof onChange === 'function') {
+                    onChange(input.checked, e);
+                }
+            }
+        });
 
         container.appendChild(input);
         container.appendChild(track);
@@ -37,12 +60,6 @@ class ToggleComponent {
             labelSpan.className = 'switch-label';
             labelSpan.textContent = label;
             container.appendChild(labelSpan);
-        }
-
-        if (typeof onChange === 'function') {
-            input.addEventListener('change', (e) => {
-                onChange(input.checked, e);
-            });
         }
 
         return container;

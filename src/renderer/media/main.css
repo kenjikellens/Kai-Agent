@@ -2551,6 +2551,7 @@ button:disabled {
   overflow-y: auto !important;
   overflow-x: hidden;
   scrollbar-width: thin;
+  font-family: var(--app-font);
 }
 
 .settings-container:not(.hidden) {
@@ -2583,22 +2584,27 @@ button:disabled {
 }
 
 .settings-title {
-  font-size: 1.3rem;
+  font-family: var(--app-font);
+  font-size: 1.35rem;
   font-weight: 700;
   color: #ffffff;
   margin: 0;
+  letter-spacing: -0.01em;
+  cursor: default;
+  user-select: text;
 }
 
 .settings-close-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 6px 14px;
   border-radius: var(--app-radius-md);
   background: var(--app-surface-hover);
   border: 1px solid var(--app-border-strong) !important;
   color: var(--app-fg);
-  font-size: 0.85rem;
+  font-family: var(--app-font);
+  font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
   flex-shrink: 0;
@@ -2607,13 +2613,13 @@ button:disabled {
 
 .settings-close-btn:hover {
   background: var(--app-surface-strong);
-  border-color: var(--app-focus) !important;
+  border-color: var(--app-border-strong) !important;
 }
 
 .settings-content-panel {
   display: flex;
   flex-direction: column;
-  gap: 36px;
+  gap: 32px;
 }
 
 /* Settings Section */
@@ -2632,15 +2638,19 @@ button:disabled {
 }
 
 .settings-section-title {
-  font-size: 0.98rem;
+  font-family: var(--app-font);
+  font-size: 1.08rem;
   font-weight: 700;
   color: #ffffff;
   letter-spacing: 0.01em;
+  cursor: default;
+  user-select: text;
 }
 
 .settings-section-body {
   display: flex;
   flex-direction: column;
+  cursor: default;
 }
 
 /* Individual Setting Row */
@@ -2649,8 +2659,10 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 10px 0;
+  padding: 11px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  cursor: default !important;
+  user-select: text;
 }
 
 .setting-row:last-child {
@@ -2662,20 +2674,51 @@ button:disabled {
   align-items: center;
   flex: 1;
   min-width: 0;
+  cursor: default !important;
+  user-select: text;
 }
 
 .setting-label {
-  font-size: 0.88rem;
+  font-family: var(--app-font);
+  font-size: 0.95rem !important;
+  font-weight: 500 !important;
+  color: var(--app-fg) !important;
+  cursor: default !important;
+  user-select: text;
+  pointer-events: auto;
+}
+
+.provider-name {
+  font-family: var(--app-font);
+  font-size: 0.94rem;
   font-weight: 500;
   color: var(--app-fg);
+  flex: 1;
+  cursor: default !important;
+  user-select: text;
+  pointer-events: auto;
 }
 
 .setting-control {
   flex-shrink: 0;
-  min-width: 320px;
-  max-width: 380px;
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  cursor: default !important;
+}
+
+.setting-control:not(.setting-control-stacked):not(:has(.setting-input-text)):not(:has(.custom-select-container)) {
+  min-width: unset;
+  max-width: unset;
+  width: auto;
+}
+
+.setting-control:has(.setting-input-text),
+.setting-control:has(.custom-select-container),
+.setting-control-stacked {
+  min-width: 320px;
+  max-width: 380px;
+  width: 100%;
 }
 
 .setting-control-stacked {
@@ -2685,21 +2728,30 @@ button:disabled {
 
 .setting-input-text {
   width: 100%;
-  height: 32px;
-  padding: 0 10px;
-  background: var(--app-input-bg);
-  border: 1px solid var(--app-input-border);
-  border-radius: var(--app-radius-sm);
+  height: 35px;
+  padding: 0 12px;
+  background: var(--app-surface-strong, #2a2a2e);
+  border: 1px solid var(--app-border-strong, rgba(255, 255, 255, 0.1));
+  border-radius: var(--app-radius-md, 6px);
+  box-shadow: none;
   color: var(--app-fg);
-  font-size: 0.85rem;
+  font-family: var(--app-font);
+  font-size: 0.92rem;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.setting-input-text:hover {
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
+  box-shadow: 0 0 0 1px var(--app-surface-hover);
 }
 
 .setting-input-text:focus {
-  border-color: var(--app-focus);
-  box-shadow: 0 0 0 1px var(--app-focus);
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
+  box-shadow: 0 0 0 1px var(--app-border-strong);
 }
 
 .input-with-action {
@@ -2710,14 +2762,15 @@ button:disabled {
 }
 
 .setting-action-btn {
-  height: 32px;
-  padding: 0 12px;
-  border-radius: var(--app-radius-sm);
-  background: var(--app-surface-hover);
-  border: 0 !important;
+  height: 35px;
+  padding: 0 14px;
+  border-radius: var(--app-radius-md, 6px);
+  background: var(--app-surface-strong, #2a2a2e);
+  border: 1px solid var(--app-border-strong, rgba(255, 255, 255, 0.1)) !important;
   outline: none;
   color: var(--app-fg);
-  font-size: 0.82rem;
+  font-family: var(--app-font);
+  font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
   flex-shrink: 0;
@@ -2725,9 +2778,9 @@ button:disabled {
 }
 
 .setting-action-btn:hover {
-  background: var(--app-surface-strong);
+  background: var(--app-surface-hover);
   color: var(--app-fg);
-  box-shadow: 0 0 0 1px var(--app-surface-strong);
+  box-shadow: 0 0 0 1px var(--app-surface-hover);
 }
 
 .free-providers-keys-list {
@@ -2740,19 +2793,12 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 8px 0;
+  padding: 9px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .provider-key-row:last-child {
   border-bottom: none;
-}
-
-.provider-name {
-  font-size: 0.88rem;
-  font-weight: 500;
-  color: var(--app-fg);
-  flex: 1;
 }
 
 .provider-key-control {
@@ -2769,14 +2815,14 @@ button:disabled {
 }
 
 .password-input-wrapper .setting-input-text {
-  padding-right: 32px;
+  padding-right: 34px;
 }
 
 .toggle-password-btn {
   position: absolute;
-  right: 4px;
-  height: 24px;
-  width: 24px;
+  right: 5px;
+  height: 26px;
+  width: 26px;
   aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
@@ -2786,76 +2832,13 @@ button:disabled {
   cursor: pointer;
   border-radius: var(--app-radius-sm);
   border: 0 !important;
-  font-size: 0.8rem;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  font-size: 0.85rem;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .toggle-password-btn:hover {
   color: var(--app-fg);
   background: var(--app-surface-hover);
-  box-shadow: 0 0 0 1px var(--app-surface-hover);
-}
-
-.category-header-btn:hover,
-.category-header-btn:focus-visible {
-  background: transparent;
-  border: 0;
-  color: var(--app-fg);
-}
-
-/* Category Title - Uppercase, muted grey, refined larger text size */
-.category-title {
-  text-transform: uppercase;
-  font-size: 0.80rem;
-  font-weight: 600;
-  letter-spacing: 0.6px;
-  color: var(--app-muted);
-}
-
-/* Setting Item Label & Switch Label - Thinner font weight (400) and soft lighter color */
-.setting-item label,
-.setting-label,
-.switch-label {
-  font-size: 0.75rem;
-  font-weight: 400;
-  color: var(--app-fg);
-  margin-bottom: 4px;
-}
-
-/* Chevron icon next to category title, hidden by default, visible on hover only */
-.category-chevron {
-  color: var(--app-muted, #888888);
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.2s ease;
-}
-
-.category-header-btn:hover .category-chevron,
-.category-header-btn:focus-visible .category-chevron {
-  opacity: 1;
-  visibility: visible;
-}
-
-.settings-category.collapsed .category-chevron {
-  transform: rotate(-90deg);
-}
-
-/* Category Content Container - Internal padding on all sides (top, bottom, left, right) for all items */
-.category-content {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 16px 6px 20px 6px;
-  box-sizing: border-box;
-}
-
-.category-content .setting-item {
-  margin-bottom: 2px;
-}
-
-#manage-keys-container {
-  margin-top: 4px;
-  margin-bottom: 2px;
 }
 
 .settings-category.collapsed .category-content {
@@ -2891,29 +2874,36 @@ button:disabled {
 /* Custom Select trigger button styling */
 .custom-select-trigger {
   width: 100%;
-  height: 28px;
+  height: 35px;
   box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 10px;
-  background: var(--app-input-bg);
+  padding: 0 12px;
+  background: var(--app-surface-strong, #2a2a2e);
   color: var(--app-fg);
-  border: 1px solid var(--app-input-border);
-  border-radius: var(--app-radius-sm);
-  font-size: 0.75rem;
-  cursor: pointer;
+  border: 1px solid var(--app-border-strong, rgba(255, 255, 255, 0.1));
+  border-radius: var(--app-radius-md, 6px);
+  box-shadow: none;
+  font-family: var(--app-font);
+  font-size: 0.92rem;
+  font-weight: 500;
+  cursor: pointer !important;
   user-select: none;
   outline: none;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.custom-select-trigger * {
+  cursor: pointer !important;
 }
 
 .custom-select-trigger:hover,
 .custom-select-trigger:focus,
 .custom-select-trigger.active {
   background: var(--app-surface-hover);
-  border-color: var(--app-border-strong);
   color: var(--app-fg);
+  box-shadow: 0 0 0 1px var(--app-surface-hover);
 }
 
 /* Label text container within custom select trigger button */
@@ -2923,6 +2913,7 @@ button:disabled {
   text-overflow: ellipsis;
   flex: 1 1 auto;
   text-align: left;
+  cursor: pointer !important;
 }
 
 /* Chevron icon indicator inside custom select trigger button */
@@ -2930,6 +2921,7 @@ button:disabled {
   color: var(--app-muted);
   flex-shrink: 0;
   margin-left: 6px;
+  cursor: pointer !important;
 }
 
 /* Custom Select popup menu panel container matching thinking dropdown styling */
@@ -2941,14 +2933,14 @@ button:disabled {
   z-index: 10000;
   background: var(--app-dropdown-bg);
   border: 1px solid var(--app-border-strong);
-  border-radius: var(--app-radius-md);
+  border-radius: var(--app-radius-md, 6px);
   box-shadow: var(--app-flyout-shadow);
-  padding: 3px;
+  padding: 4px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  max-height: 220px;
+  gap: 2px;
+  max-height: 240px;
   overflow-y: auto;
 }
 
@@ -2960,19 +2952,27 @@ button:disabled {
 .custom-select-option {
   width: 100%;
   margin: 0;
+  padding: 7px 10px;
+  font-family: var(--app-font);
+  font-size: 0.88rem;
   border-radius: var(--app-radius-sm, 4px);
+  cursor: pointer !important;
+}
+
+.custom-select-option * {
+  cursor: pointer !important;
 }
 
 .toggle-container,
 .switch-container {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   color: var(--app-muted);
   font-size: 0.75rem;
   user-select: none;
   white-space: nowrap;
-  cursor: pointer;
+  cursor: default !important;
   flex-shrink: 0;
 }
 
@@ -2986,6 +2986,7 @@ button:disabled {
   width: 0;
   height: 0;
   opacity: 0;
+  pointer-events: none;
 }
 
 .slider-track {
@@ -2996,6 +2997,7 @@ button:disabled {
   border-radius: 8px;
   background: var(--app-surface-strong);
   transition: background-color 0.2s ease;
+  cursor: pointer !important;
 }
 
 .slider-track::before {
