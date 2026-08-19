@@ -10,13 +10,15 @@ class ChatUIController {
      * @param {FileSummaryWidget} fileSummaryWidget File summary widget instance.
      * @param {SettingsController} settingsController Settings controller instance.
      * @param {HelpModalController} [helpModalController] Help modal controller instance.
+     * @param {ModelDropdownController} [modelDropdownController] Model dropdown controller instance.
      */
-    constructor(formatter, ipcBridge, fileSummaryWidget, settingsController, helpModalController) {
+    constructor(formatter, ipcBridge, fileSummaryWidget, settingsController, helpModalController, modelDropdownController) {
         this.formatter = formatter;
         this.ipcBridge = ipcBridge;
         this.fileSummaryWidget = fileSummaryWidget;
         this.settingsController = settingsController;
         this.helpModalController = helpModalController;
+        this.modelDropdownController = modelDropdownController;
 
         this.chatContainer = document.getElementById('chat-container');
         this.messageInput = document.getElementById('message-input');
@@ -433,22 +435,28 @@ class ChatUIController {
         const rawSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>';
         const infoSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
 
+        const rawModelName = meta.model || (this.settingsController ? this.settingsController.getSelectedModel() : '') || localStorage.getItem('kai.selectedModel') || 'Local Model';
+        const displayModelName = this.formatter.formatModelName(rawModelName);
         const effectiveMode = mode || meta.mode || 'chat';
         const modeLabel = effectiveMode === 'planning' ? 'Plan' : (effectiveMode.charAt(0).toUpperCase() + effectiveMode.slice(1));
-        const modelName = meta.model || (this.settingsController ? this.settingsController.getSelectedModel() : '') || localStorage.getItem('kai.selectedModel') || 'Local Model';
 
-        // Check if model actually supports thinking / reasoning capabilities
-        const thinkingCapability = ThinkingStateFormatter.getThinkingState(meta.model || modelName);
+        // Check dropdown options directly to see if this model has reasoning capabilities / flyout
+        const lowerModel = rawModelName.toLowerCase();
+        const isGemini = lowerModel.includes('gemini');
+        const isMistralReasoning = lowerModel.includes('magistral') || lowerModel.includes('codestral') || lowerModel.includes('mistral-small') || lowerModel.includes('mistral-medium');
+        const isMuseGlimmer = lowerModel.includes('muse') || lowerModel.includes('glimmer');
+        const thinkingStateObj = ThinkingStateFormatter.getThinkingState(rawModelName);
+        
+        // A model supports thinking if and only if it has a thinking flyout in the dropdown
+        const hasReasoningSupport = isGemini || isMistralReasoning || (thinkingStateObj.isThinkingCapable && !isMuseGlimmer);
+
         let thinkingState = 'Not supported';
-        if (thinkingCapability && thinkingCapability.isThinkingCapable) {
-            if (meta.thinking !== undefined) {
-                const effort = meta.geminiThinkingLevel || meta.reasoningEffort || thinkingCapability.level || '';
-                const effortDisplay = (effort && effort !== 'none' && effort !== 'off') ? ` (${effort})` : '';
-                thinkingState = meta.thinking ? `On${effortDisplay}` : 'Off';
-            } else {
-                thinkingState = thinkingCapability.isOn ? `On (${thinkingCapability.level || 'on'})` : 'Off';
-            }
-        } else if (meta.thinking === false && (!meta.reasoningEffort || meta.reasoningEffort === 'none')) {
+        if (hasReasoningSupport) {
+            const effort = meta.reasoningEffort || thinkingStateObj.level || '';
+            const effortDisplay = (effort && effort !== 'none' && effort !== 'off' && effort !== 'minimal') ? ` (${effort})` : '';
+            const isThinkingOn = meta.thinking !== undefined ? meta.thinking : thinkingStateObj.isOn;
+            thinkingState = isThinkingOn ? `On${effortDisplay}` : 'Off';
+        } else {
             thinkingState = 'Not supported';
         }
 
@@ -469,7 +477,7 @@ class ChatUIController {
                 <div class="msg-info-popover">
                     <div class="info-popover-row">
                         <span class="info-popover-label">Model:</span>
-                        <span class="info-popover-value">${this.formatter.escapeHtml(modelName)}</span>
+                        <span class="info-popover-value" title="${this.formatter.escapeHtml(rawModelName)}">${this.formatter.escapeHtml(displayModelName)}</span>
                     </div>
                     <div class="info-popover-row">
                         <span class="info-popover-label">Mode:</span>
@@ -979,7 +987,8 @@ class ChatUIController {
                     this.appendMessage('assistant', evt.content, evt.mode, {
                         model: evt.model,
                         thinking: evt.thinking,
-                        geminiThinkingLevel: evt.geminiThinkingLevel
+                        isThinkingCapable: evt.isThinkingCapable,
+                        reasoningEffort: evt.reasoningEffort
                     });
                 } else if (evt.type === 'file-summary') {
                     this.appendMessage('file-summary', JSON.stringify(evt.files));

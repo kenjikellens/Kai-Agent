@@ -28,7 +28,8 @@
         ipcBridge,
         fileSummaryWidget,
         settingsController,
-        helpModalController
+        helpModalController,
+        modelDropdownController
     );
 
     // Wire Command Approval Request dialog
@@ -214,7 +215,7 @@
         saveCurrentChat();
 
         const modelDetails = modelDropdownController.getSelectedModelDetails();
-        const geminiThinkingLevel = modelDetails.reasoningEffort || settingsController.getGeminiThinkingLevel(modelDetails.model);
+        const reasoningLevel = modelDetails.reasoningEffort || 'none';
         const attachedFilesCopy = fileUploadController.getAttachedFiles();
         fileUploadController.clear();
 
@@ -222,7 +223,7 @@
             appState.messages,
             modelDetails.model,
             modelDetails.thinking,
-            geminiThinkingLevel,
+            reasoningLevel,
             appState.activeMode === 'planning',
             attachedFilesCopy,
             appState.currentChatId,
@@ -365,13 +366,17 @@
     // When user deletes the currently open chat from sidebar, reset to a clean new chat
     historyManager.onDeleteActiveChat = (deletedChatId) => {
         if (appState.currentChatId === deletedChatId) {
+            isDirty = false;
             const newId = appState.generateChatId();
             window.location.hash = `session-${newId}`;
+            createNewChat(newId);
         }
     };
     historyManager.onActiveChatDeleted = () => {
+        isDirty = false;
         const newId = appState.generateChatId();
         window.location.hash = `session-${newId}`;
+        createNewChat(newId);
     };
 
     /**
@@ -477,8 +482,23 @@
      */
     function saveCurrentChat() {
         const details = modelDropdownController.getSelectedModelDetails();
-        ipcBridge.saveChat(appState.toChatPayload(details.thinking));
+        const payload = appState.toChatPayload(details.thinking);
+        ipcBridge.saveChat(payload);
         historyManager.setActiveChatId(appState.currentChatId);
+
+        // Update localStorage cache of savedChats so history is instantly updated
+        try {
+            let saved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
+            const idx = saved.findIndex(c => c.id === payload.id);
+            if (idx !== -1) {
+                saved[idx] = { id: payload.id, title: payload.title, timestamp: payload.timestamp, messages: payload.messages, uiEvents: payload.uiEvents, model: payload.model, mode: payload.mode, workspacePath: payload.workspacePath };
+            } else {
+                saved.unshift({ id: payload.id, title: payload.title, timestamp: payload.timestamp, messages: payload.messages, uiEvents: payload.uiEvents, model: payload.model, mode: payload.mode, workspacePath: payload.workspacePath });
+            }
+            localStorage.setItem('kai.savedChats', JSON.stringify(saved));
+            historyManager.renderHistoryList(saved, appState.isWaitingForResponse);
+        } catch (e) {}
+
         isDirty = false;
     }
 
@@ -530,7 +550,7 @@
         saveCurrentChat();
 
         const modelDetails = modelDropdownController.getSelectedModelDetails();
-        const geminiThinkingLevel = modelDetails.reasoningEffort || settingsController.getGeminiThinkingLevel(modelDetails.model);
+        const reasoningLevel = modelDetails.reasoningEffort || 'none';
 
         const attachedFilesCopy = fileUploadController.getAttachedFiles();
         fileUploadController.clear();
@@ -539,7 +559,7 @@
             appState.messages,
             modelDetails.model,
             modelDetails.thinking,
-            geminiThinkingLevel,
+            reasoningLevel,
             appState.activeMode === 'planning',
             attachedFilesCopy,
             appState.currentChatId,
@@ -776,12 +796,12 @@
 
         const currentMode = message.mode || appState.activeMode || 'chat';
         const modelDetails = modelDropdownController.getSelectedModelDetails();
-        const geminiThinkingLevel = modelDetails.reasoningEffort || settingsController.getGeminiThinkingLevel(modelDetails.model);
         const meta = {
             model: modelDetails.displayName || modelDetails.model || appState.selectedModelValue,
             mode: currentMode,
             thinking: modelDetails.thinking,
-            geminiThinkingLevel: geminiThinkingLevel
+            isThinkingCapable: modelDetails.isThinkingCapable,
+            reasoningEffort: modelDetails.reasoningEffort
         };
 
         if (chatUIController.currentAssistantMsgElement) {
@@ -813,7 +833,8 @@
                 mode: currentMode,
                 model: meta.model,
                 thinking: meta.thinking,
-                geminiThinkingLevel: meta.geminiThinkingLevel
+                isThinkingCapable: meta.isThinkingCapable,
+                reasoningEffort: meta.reasoningEffort
             });
         }
 
@@ -843,6 +864,11 @@
     });
 
     ipcBridge.on('chatHistory', (message) => {
+        if (message && message.chats) {
+            try {
+                localStorage.setItem('kai.savedChats', JSON.stringify(message.chats));
+            } catch (e) {}
+        }
         historyManager.renderHistoryList(message.chats, appState.isWaitingForResponse);
     });
 
@@ -884,9 +910,14 @@
                 helpModalController.close(false);
             }
 
-            if (appState.currentChatId === targetSessionId && appState.messages.length > 0) {
+            if (appState.currentChatId === targetSessionId) {
                 chatUIController.showView('chat');
                 return;
+            }
+
+            // Save ongoing chat if dirty before switching
+            if (appState.messages.length > 0 && appState.currentChatId && appState.currentChatId !== targetSessionId) {
+                saveCurrentChat();
             }
 
             // Check localStorage cache for session
@@ -899,8 +930,14 @@
                 }
             } catch (e) {}
 
-            // If not found in cache, initialize as a clean session with targetSessionId
-            createNewChat(targetSessionId);
+            // Check if this ID is in the cached chat history list from backend
+            const isExistingChat = historyManager.cachedChats && historyManager.cachedChats.some(c => c.id === targetSessionId);
+            if (isExistingChat) {
+                ipcBridge.loadChat(targetSessionId);
+            } else {
+                // Initialize as a brand new empty chat session
+                createNewChat(targetSessionId);
+            }
             return;
         }
 
