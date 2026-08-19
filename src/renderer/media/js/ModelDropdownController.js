@@ -35,6 +35,7 @@ class ModelDropdownController {
 
         this.initEventListeners();
         this.initDefaultDropdown();
+        this.updateCapabilitiesToolbar();
         
         window.addEventListener('resize', () => this.updateTextOverflowMetrics());
         window.addEventListener('kaiThinkingStyleChanged', () => {
@@ -240,17 +241,9 @@ class ModelDropdownController {
             });
 
             displayItems.forEach(itemData => {
-                const lowerModel = itemData.rawModel.toLowerCase();
-                const isGemini = lowerModel.includes('gemini');
-                const isMistralReasoning = lowerModel.includes('magistral') || lowerModel.includes('codestral') || lowerModel.includes('mistral-small') || lowerModel.includes('mistral-medium');
-                const isMuseGlimmer = lowerModel.includes('muse') || lowerModel.includes('glimmer');
-                const thinkingState = ThinkingStateFormatter.getThinkingState(itemData.rawModel);
-                const isLMStudio = isLMStudioCategory && !isMuseGlimmer && thinkingState.isThinkingCapable;
-                const hasFlyout = isGemini || isMistralReasoning || isLMStudio;
-                
                 // Model Selector Dropdown Button Item (Interactive button element)
                 const item = document.createElement('div');
-                item.className = hasFlyout ? 'dropdown-item model-hover-item' : 'dropdown-item';
+                item.className = 'dropdown-item';
                 item.setAttribute('role', 'button');
                 item.setAttribute('tabindex', '0');
                 item.setAttribute('aria-label', `Select model ${itemData.label}`);
@@ -276,354 +269,12 @@ class ModelDropdownController {
                 textContainer.appendChild(textSpan);
                 item.appendChild(textContainer);
 
-                // THINKING DROPDOWN / FLYOUT MENU (Attached sub-menu for thinking level / toggle)
-                if (hasFlyout) {
-                    const chevronSpan = document.createElement('span');
-                    chevronSpan.className = 'model-flyout-chevron';
-                    chevronSpan.textContent = '›';
-                    item.appendChild(chevronSpan);
-
-                    const flyoutMenu = document.createElement('div');
-                    flyoutMenu.className = 'thinking-flyout-menu';
-
-                    const flyoutInner = document.createElement('div');
-                    flyoutInner.className = 'thinking-flyout-menu-inner';
-
-                    if (isGemini) {
-                        const currentGeminiLevel = localStorage.getItem(`kai.geminiThinkingLevel.${itemData.value}`) || localStorage.getItem('kai.geminiThinkingLevel') || 'high';
-                        const levels = [
-                            { level: 'high', label: 'High' },
-                            { level: 'medium', label: 'Medium' },
-                            { level: 'low', label: 'Low' },
-                            { level: 'minimal', label: 'Minimal (Off)' }
-                        ];
-
-                        levels.forEach(lvl => {
-                            const flyoutOpt = document.createElement('button');
-                            flyoutOpt.type = 'button';
-                            const isSelected = lvl.level === currentGeminiLevel;
-                            flyoutOpt.className = `dropdown-item flyout-option ${isSelected ? 'selected' : ''}`;
-                            flyoutOpt.setAttribute('role', 'button');
-                            flyoutOpt.setAttribute('aria-label', `Set thinking level to ${lvl.label}`);
-                            
-                            ThinkingStateFormatter.renderFlyoutOptionContent(flyoutOpt, lvl.label, lvl.level);
-
-                            if (isSelected) {
-                                const checkSvg = DOMUtils.createCheckIcon('check-icon');
-                                flyoutOpt.appendChild(checkSvg);
-                            }
-                            
-                            const handleFlyoutSelect = (e) => {
-                                e.stopPropagation();
-                                localStorage.setItem(`kai.geminiThinkingLevel.${itemData.value}`, lvl.level);
-                                localStorage.setItem('kai.geminiThinkingLevel', lvl.level);
-                                this.selectedModelValue = itemData.value;
-                                localStorage.setItem('kai.selectedModel', itemData.value);
-
-                                flyoutInner.querySelectorAll('.flyout-option').forEach(opt => {
-                                    opt.classList.remove('selected');
-                                    const oldCheck = opt.querySelector('.check-icon');
-                                    if (oldCheck) oldCheck.remove();
-                                });
-                                flyoutOpt.classList.add('selected');
-                                const checkSvg = DOMUtils.createCheckIcon('check-icon');
-                                flyoutOpt.appendChild(checkSvg);
-
-                                this.setSelectedModel(itemData.value);
-
-                                this.closeActiveFlyoutImmediately();
-                                if (this.dropdownOptionsMenu) {
-                                    this.dropdownOptionsMenu.classList.add('hidden');
-                                }
-                                if (this.onSelect) {
-                                    this.onSelect(itemData.value);
-                                }
-                            };
-
-                            flyoutOpt.addEventListener('click', handleFlyoutSelect);
-                            flyoutInner.appendChild(flyoutOpt);
-                        });
-                      } else if (isMistralReasoning) {
-                        const isMistralThinkingOn = localStorage.getItem(`kai.mistralThinking.${itemData.rawModel}`) !== 'false';
-                        
-                        const flyoutRow = document.createElement('div');
-                        flyoutRow.className = 'dropdown-item flyout-option';
-                        flyoutRow.style.width = 'calc(100% - 4px)';
-                        flyoutRow.style.justifyContent = 'space-between';
-                        flyoutRow.style.gap = '12px';
-
-                        const leftWrapper = document.createElement('div');
-                        leftWrapper.style.display = 'inline-flex';
-                        leftWrapper.style.alignItems = 'center';
-                        leftWrapper.style.gap = '6px';
-
-                        ThinkingStateFormatter.renderFlyoutOptionContent(leftWrapper, 'Thinking', isMistralThinkingOn);
-
-                        const toggleEl = ToggleComponent.create({
-                            id: `mistral-thinking-toggle-${itemData.rawModel.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
-                            checked: isMistralThinkingOn,
-                            title: 'Enable reasoning/thinking for this Mistral model',
-                            onChange: (checked) => {
-                                localStorage.setItem(`kai.mistralThinking.${itemData.rawModel}`, checked ? 'true' : 'false');
-                                this.setSelectedModel(this.selectedModelValue);
-                                if (this.onSelect && this.selectedModelValue === itemData.value) {
-                                    this.onSelect(itemData.value);
-                                }
-                            }
-                        });
-
-                        flyoutRow.appendChild(leftWrapper);
-                        flyoutRow.appendChild(toggleEl);
-
-                        flyoutRow.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            const checkbox = toggleEl.querySelector('input[type="checkbox"]');
-                            if (checkbox && e.target !== checkbox) {
-                                checkbox.checked = !checkbox.checked;
-                                checkbox.dispatchEvent(new Event('change'));
-                            }
-                        });
-
-                        flyoutInner.appendChild(flyoutRow);
-                    } else if (isLMStudio) {
-                        const isLmThinkingOn = localStorage.getItem(`kai.lmStudioThinking.${itemData.rawModel}`) !== 'false';
-                        const currentLmReasoningLevel = localStorage.getItem(`kai.lmStudioReasoningLevel.${itemData.rawModel}`) ||
-                                                        localStorage.getItem('kai.lmStudioReasoningLevel') || 'xhigh';
-
-                        const cap = ThinkingStateFormatter.lmStudioCapabilities[itemData.rawModel] ||
-                                    ThinkingStateFormatter.lmStudioCapabilities[lowerModel];
-                        let fields = (cap && Array.isArray(cap.fields) && cap.fields.length > 0) ? cap.fields : [];
-
-                        // Fallback fields strictly when no manifest exists
-                        if (fields.length === 0) {
-                            if (lowerModel.includes('qwen') || lowerModel.includes('qwq') || lowerModel.includes('glm')) {
-                                fields = [
-                                    {
-                                        displayName: 'Thinking',
-                                        type: 'boolean',
-                                        variable: 'enable_thinking'
-                                    },
-                                    {
-                                        displayName: 'Reasoning Effort',
-                                        type: 'select',
-                                        variable: 'reasoning_effort',
-                                        options: [
-                                            { label: 'xhigh', value: 'xhigh' },
-                                            { label: 'Medium', value: 'medium' },
-                                            { label: 'Low', value: 'low' }
-                                        ]
-                                    }
-                                ];
-                            } else if (lowerModel.includes('gemma') || lowerModel.includes('bonsai') || lowerModel.includes('deepseek') || lowerModel.includes('r1')) {
-                                fields = [
-                                    {
-                                        displayName: 'Thinking',
-                                        type: 'boolean',
-                                        variable: 'enable_thinking'
-                                    }
-                                ];
-                            }
-                        }
-
-                        // Separate boolean toggle and select fields
-                        const selectField = fields.find(f => f.type === 'select' && Array.isArray(f.options) && f.options.length > 0);
-                        const booleanField = fields.find(f => f.type === 'boolean') || (!selectField && thinkingState.isThinkingCapable);
-
-                        // 1. Render Select options FIRST (xhigh, medium, low)
-                        if (selectField) {
-                            const cleanOptions = selectField.options.filter(o => o.value !== 'off' && o.value !== 'none');
-                            cleanOptions.forEach(opt => {
-                                const flyoutOpt = document.createElement('button');
-                                flyoutOpt.type = 'button';
-                                const optVal = typeof opt === 'string' ? opt : (opt.value || opt.label);
-                                const isSelected = optVal === currentLmReasoningLevel;
-                                flyoutOpt.className = `dropdown-item flyout-option ${isSelected ? 'selected' : ''}`;
-                                flyoutOpt.setAttribute('role', 'button');
-                                
-                                const optLabel = optVal;
-                                flyoutOpt.setAttribute('aria-label', `Set ${selectField.displayName || 'Reasoning Effort'} to ${optLabel}`);
-                                
-                                ThinkingStateFormatter.renderFlyoutOptionContent(flyoutOpt, optLabel, optVal);
-
-                                if (isSelected) {
-                                    const checkSvg = DOMUtils.createCheckIcon('check-icon');
-                                    flyoutOpt.appendChild(checkSvg);
-                                }
-                                
-                                const handleFlyoutSelect = (e) => {
-                                    e.stopPropagation();
-                                    const aliases = [
-                                        itemData.rawModel,
-                                        itemData.rawModel.toLowerCase(),
-                                        itemData.value,
-                                        itemData.value.toLowerCase(),
-                                        itemData.rawModel.split('/').pop(),
-                                        itemData.rawModel.split('/').pop().toLowerCase()
-                                    ];
-                                    aliases.filter(Boolean).forEach(a => {
-                                        localStorage.setItem(`kai.lmStudioReasoningLevel.${a}`, opt.value);
-                                        localStorage.setItem(`kai.lmStudioThinking.${a}`, 'true');
-                                    });
-                                    localStorage.setItem('kai.lmStudioReasoningLevel', opt.value);
-                                    this.selectedModelValue = itemData.value;
-                                    localStorage.setItem('kai.selectedModel', itemData.value);
-
-                                    flyoutInner.querySelectorAll('.flyout-option').forEach(el => {
-                                        el.classList.remove('selected');
-                                        const oldCheck = el.querySelector('.check-icon');
-                                        if (oldCheck) oldCheck.remove();
-                                    });
-                                    flyoutOpt.classList.add('selected');
-                                    const checkSvg = DOMUtils.createCheckIcon('check-icon');
-                                    flyoutOpt.appendChild(checkSvg);
-
-                                    this.setSelectedModel(itemData.value);
-
-                                    this.closeActiveFlyoutImmediately();
-                                    if (this.dropdownOptionsMenu) {
-                                        this.dropdownOptionsMenu.classList.add('hidden');
-                                    }
-                                    if (this.onSelect) {
-                                        this.onSelect(itemData.value);
-                                    }
-                                };
-
-                                flyoutOpt.addEventListener('click', handleFlyoutSelect);
-                                flyoutInner.appendChild(flyoutOpt);
-                            });
-                        }
-
-                        // 2. Render Boolean Toggle SECOND (Thinking Toggle switch)
-                        if (booleanField) {
-                            const isLmThinkingOn = localStorage.getItem(`kai.lmStudioThinking.${itemData.rawModel}`) !== 'false';
-
-                            const toggleRow = document.createElement('div');
-                            toggleRow.className = 'dropdown-item flyout-option';
-                            toggleRow.style.width = 'calc(100% - 4px)';
-                            toggleRow.style.justifyContent = 'space-between';
-                            toggleRow.style.gap = '12px';
-
-                            const leftWrapper = document.createElement('div');
-                            leftWrapper.style.display = 'inline-flex';
-                            leftWrapper.style.alignItems = 'center';
-                            leftWrapper.style.gap = '6px';
-
-                            ThinkingStateFormatter.renderFlyoutOptionContent(leftWrapper, 'Thinking', isLmThinkingOn);
-
-                            const toggleEl = ToggleComponent.create({
-                                id: `lm-thinking-toggle-${itemData.rawModel.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
-                                checked: isLmThinkingOn,
-                                title: 'Enable reasoning/thinking for this local model',
-                                onChange: (checked) => {
-                                    const valStr = checked ? 'true' : 'false';
-                                    const aliases = [
-                                        itemData.rawModel,
-                                        itemData.rawModel.toLowerCase(),
-                                        itemData.value,
-                                        itemData.value.toLowerCase(),
-                                        itemData.rawModel.split('/').pop(),
-                                        itemData.rawModel.split('/').pop().toLowerCase(),
-                                        this.selectedModelValue,
-                                        (this.selectedModelValue || '').toLowerCase()
-                                    ];
-                                    aliases.filter(Boolean).forEach(a => localStorage.setItem(`kai.lmStudioThinking.${a}`, valStr));
-                                    
-                                    // Update battery icon in flyout
-                                    leftWrapper.innerHTML = '';
-                                    ThinkingStateFormatter.renderFlyoutOptionContent(leftWrapper, 'Thinking', checked);
-
-                                    // Update trigger button
-                                    this.setSelectedModel(this.selectedModelValue);
-
-                                    if (this.onSelect && (this.selectedModelValue === itemData.value || this.selectedModelValue === itemData.rawModel)) {
-                                        this.onSelect(this.selectedModelValue);
-                                    }
-                                }
-                            });
-
-                            toggleRow.appendChild(leftWrapper);
-                            toggleRow.appendChild(toggleEl);
-
-                            toggleRow.addEventListener('click', (e) => {
-                                e.stopPropagation();
-                                const checkbox = toggleEl.querySelector('input[type="checkbox"]');
-                                if (checkbox && e.target !== checkbox) {
-                                    checkbox.checked = !checkbox.checked;
-                                    checkbox.dispatchEvent(new Event('change'));
-                                }
-                            });
-
-                            flyoutInner.appendChild(toggleRow);
-                        }
-                    }
-
-                    flyoutMenu.appendChild(flyoutInner);
-                    item.appendChild(flyoutMenu);
-
-                    /* Position thinking flyout dropdown & manage 0.5s timeout on container leave vs 0ms on model switch */
-                    const positionFlyout = () => {
-                        if (this.flyoutCloseTimer) {
-                            clearTimeout(this.flyoutCloseTimer);
-                            this.flyoutCloseTimer = null;
-                        }
-                        if (this.activeFlyoutItem && this.activeFlyoutItem !== item) {
-                            this.closeActiveFlyoutImmediately();
-                        }
-                        this.activeFlyoutItem = item;
-                        item.classList.add('flyout-open');
-
-                        const itemRect = item.getBoundingClientRect();
-                        let left = itemRect.right - 2;
-                        flyoutMenu.style.left = left + 'px';
-                        flyoutMenu.style.top  = itemRect.top + 'px';
-                    };
-
-                    const startCloseTimer = () => {
-                        if (this.flyoutCloseTimer) {
-                            clearTimeout(this.flyoutCloseTimer);
-                        }
-                        // 0.5s (500ms) timeout when hovering away from the container into empty space
-                        this.flyoutCloseTimer = setTimeout(() => {
-                            if (this.activeFlyoutItem === item) {
-                                this.closeActiveFlyoutImmediately();
-                            }
-                        }, 500);
-                    };
-
-                    item.addEventListener('mouseenter', () => {
-                        if (this.flyoutCloseTimer) {
-                            clearTimeout(this.flyoutCloseTimer);
-                            this.flyoutCloseTimer = null;
-                        }
-                        positionFlyout();
-                    });
-
-                    item.addEventListener('mouseleave', startCloseTimer);
-
-                    flyoutMenu.addEventListener('mouseenter', () => {
-                        if (this.flyoutCloseTimer) {
-                            clearTimeout(this.flyoutCloseTimer);
-                            this.flyoutCloseTimer = null;
-                        }
-                        this.activeFlyoutItem = item;
-                        item.classList.add('flyout-open');
-                    });
-
-                    flyoutMenu.addEventListener('mouseleave', startCloseTimer);
+                if (itemData.value === this.selectedModelValue) {
+                    const checkSvg = DOMUtils.createCheckIcon('check-icon');
+                    item.appendChild(checkSvg);
                 }
-
-                // Immediately close any open flyout from another item when hovering over a non-flyout model item (0ms delay)
-                item.addEventListener('mouseenter', () => {
-                    if (this.activeFlyoutItem && this.activeFlyoutItem !== item) {
-                        this.closeActiveFlyoutImmediately();
-                    }
-                });
                 
                 const handleItemClick = (e) => {
-                    // Prevent trigger when clicking directly inside the sub-thinking flyout menu
-                    if (e.target.closest('.thinking-flyout-menu')) {
-                        return;
-                    }
                     e.stopPropagation();
                     this.selectedModelValue = itemData.value;
                     localStorage.setItem('kai.selectedModel', itemData.value);
@@ -771,6 +422,7 @@ class ModelDropdownController {
         }
 
         this.updateGeminiThinkingVisibility();
+        this.updateCapabilitiesToolbar();
     }
 
     /**
@@ -817,34 +469,20 @@ class ModelDropdownController {
     }
 
     /**
-     * Resolves currently selected model details including bare model ID and thinking toggle flag.
+     * Resolves currently selected model details including bare model ID, thinking toggle flag, and reasoning effort.
      * @param {string} [modelId] Optional target model ID to inspect.
      * @returns {object} Object containing model ID string, boolean thinking flag, and reasoning effort.
      */
     getSelectedModelDetails(modelId = null) {
         const targetModel = modelId || this.selectedModelValue || 'local-model';
         const raw = targetModel.endsWith(' (thinking)') ? targetModel.slice(0, -11) : targetModel;
-        const thinkingState = ThinkingStateFormatter.getThinkingState(raw);
-
-        if (!thinkingState.isThinkingCapable) {
-            return {
-                model: raw,
-                thinking: false,
-                isThinkingCapable: false,
-                reasoningEffort: 'none'
-            };
-        }
-
-        // Map 'on'/'off' to valid LM Studio API values (none, low, medium, high, xhigh)
-        let effort = thinkingState.level || 'xhigh';
-        if (effort === 'on') effort = 'xhigh';
-        if (effort === 'off') effort = 'none';
+        const caps = ThinkingStateFormatter.getCapabilitiesState(raw);
 
         return {
             model: raw,
-            thinking: thinkingState.isOn,
-            isThinkingCapable: true,
-            reasoningEffort: thinkingState.isOn ? effort : 'none'
+            thinking: caps.isThinkingOn,
+            isThinkingCapable: caps.hasThinkingToggle || caps.hasReasoningEffort,
+            reasoningEffort: caps.hasReasoningEffort ? caps.reasoningLevel : (caps.isThinkingOn ? 'xhigh' : 'none')
         };
     }
 
@@ -891,6 +529,157 @@ class ModelDropdownController {
             });
         }
         this.updateGeminiThinkingVisibility();
+        this.updateCapabilitiesToolbar();
+    }
+
+    /**
+     * Renders dedicated capability buttons (Think toggle, Reasoning Effort dropdown)
+     * directly into the toolbar next to the model selector.
+     */
+    updateCapabilitiesToolbar() {
+        const toolbar = document.getElementById('model-capabilities-toolbar');
+        if (!toolbar) return;
+        toolbar.innerHTML = '';
+
+        const caps = ThinkingStateFormatter.getCapabilitiesState(this.selectedModelValue);
+        const rawModel = caps.rawModel;
+
+        // 1. Dedicated Thinking Toggle Button [Lightbulb Think]
+        if (caps.hasThinkingToggle) {
+            const thinkBtn = document.createElement('button');
+            thinkBtn.type = 'button';
+            thinkBtn.className = `cap-toggle-btn ${caps.isThinkingOn ? 'active' : ''}`;
+            thinkBtn.title = caps.isThinkingOn ? 'Thinking is Enabled (Click to Disable)' : 'Thinking is Disabled (Click to Enable)';
+
+            const lightbulbIcon = DOMUtils.createLightbulbIcon('cap-icon');
+            thinkBtn.appendChild(lightbulbIcon);
+
+            const labelSpan = document.createElement('span');
+            labelSpan.textContent = 'Think';
+            thinkBtn.appendChild(labelSpan);
+
+            thinkBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const newState = !thinkBtn.classList.contains('active');
+                if (newState) {
+                    thinkBtn.classList.add('active');
+                    thinkBtn.title = 'Thinking is Enabled (Click to Disable)';
+                } else {
+                    thinkBtn.classList.remove('active');
+                    thinkBtn.title = 'Thinking is Disabled (Click to Enable)';
+                }
+
+                localStorage.setItem(`kai.lmStudioThinking.${rawModel}`, newState ? 'true' : 'false');
+                localStorage.setItem(`kai.mistralThinking.${rawModel}`, newState ? 'true' : 'false');
+                if (rawModel.includes('/')) {
+                    const short = rawModel.split('/').pop();
+                    localStorage.setItem(`kai.lmStudioThinking.${short}`, newState ? 'true' : 'false');
+                }
+            });
+
+            toolbar.appendChild(thinkBtn);
+        }
+
+        // 2. Dedicated Reasoning Effort Dropdown [Gauge Effort: <level> ▾]
+        if (caps.hasReasoningEffort && Array.isArray(caps.effortOptions) && caps.effortOptions.length > 0) {
+            const dropdownContainer = document.createElement('div');
+            dropdownContainer.className = 'cap-dropdown';
+
+            const triggerBtn = document.createElement('button');
+            triggerBtn.type = 'button';
+            triggerBtn.className = 'cap-dropdown-trigger';
+            triggerBtn.title = `${caps.effortDisplayName}: ${caps.reasoningLevel}`;
+
+            const gaugeIcon = DOMUtils.createGaugeIcon('cap-icon');
+            triggerBtn.appendChild(gaugeIcon);
+
+            const labelSpan = document.createElement('span');
+            labelSpan.className = 'cap-label';
+            const matchedOpt = caps.effortOptions.find(o => o.value === caps.reasoningLevel);
+            labelSpan.textContent = matchedOpt ? matchedOpt.label : caps.reasoningLevel;
+            triggerBtn.appendChild(labelSpan);
+
+            const chevronSvg = DOMUtils.createSvg('svg', {
+                class: 'cap-chevron',
+                width: '8',
+                height: '8',
+                viewBox: '0 0 24 24',
+                fill: 'none',
+                stroke: 'currentColor',
+                'stroke-width': '3',
+                'stroke-linecap': 'round',
+                'stroke-linejoin': 'round'
+            });
+            const polyline = DOMUtils.createSvg('polyline', { points: '6 9 12 15 18 9' });
+            chevronSvg.appendChild(polyline);
+            triggerBtn.appendChild(chevronSvg);
+
+            const menu = document.createElement('div');
+            menu.className = 'cap-dropdown-menu hidden';
+
+            caps.effortOptions.forEach(opt => {
+                const itemBtn = document.createElement('button');
+                itemBtn.type = 'button';
+                const isSelected = opt.value === caps.reasoningLevel;
+                itemBtn.className = `cap-dropdown-item ${isSelected ? 'selected' : ''}`;
+
+                const optText = document.createElement('span');
+                optText.textContent = opt.label;
+                itemBtn.appendChild(optText);
+
+                if (isSelected) {
+                    const checkSvg = DOMUtils.createCheckIcon('check-icon');
+                    itemBtn.appendChild(checkSvg);
+                }
+
+                itemBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    labelSpan.textContent = opt.label;
+                    triggerBtn.title = `${caps.effortDisplayName}: ${opt.label}`;
+
+                    menu.querySelectorAll('.cap-dropdown-item').forEach(el => {
+                        el.classList.remove('selected');
+                        const check = el.querySelector('.check-icon');
+                        if (check) check.remove();
+                    });
+                    itemBtn.classList.add('selected');
+                    const checkSvg = DOMUtils.createCheckIcon('check-icon');
+                    itemBtn.appendChild(checkSvg);
+
+                    menu.classList.add('hidden');
+
+                    if (rawModel.toLowerCase().includes('gemini')) {
+                        localStorage.setItem(`kai.geminiThinkingLevel.${this.selectedModelValue}`, opt.value);
+                        localStorage.setItem(`kai.geminiThinkingLevel.${rawModel}`, opt.value);
+                        localStorage.setItem('kai.geminiThinkingLevel', opt.value);
+                    } else {
+                        localStorage.setItem(`kai.lmStudioReasoningLevel.${rawModel}`, opt.value);
+                        localStorage.setItem(`kai.lmStudioReasoningLevel.${this.selectedModelValue}`, opt.value);
+                        if (rawModel.includes('/')) {
+                            const short = rawModel.split('/').pop();
+                            localStorage.setItem(`kai.lmStudioReasoningLevel.${short}`, opt.value);
+                        }
+                    }
+                });
+
+                menu.appendChild(itemBtn);
+            });
+
+            triggerBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                menu.classList.toggle('hidden');
+            });
+
+            dropdownContainer.appendChild(triggerBtn);
+            dropdownContainer.appendChild(menu);
+            toolbar.appendChild(dropdownContainer);
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.cap-dropdown')) {
+                    menu.classList.add('hidden');
+                }
+            });
+        }
     }
 
     /**

@@ -15,22 +15,20 @@ class ThinkingStateFormatter {
     }
 
     /**
-     * Inspects capabilities and localStorage to return a unified reasoning state object.
+     * Inspects dynamic manifest and settings to return detailed capability state.
      * @param {string} modelId Active or raw model ID string.
-     * @returns {object} Reasoning state metadata object.
+     * @returns {object} Full capability state object.
      */
-    static getThinkingState(modelId) {
+    static getCapabilitiesState(modelId) {
         if (!modelId) {
             return {
-                isThinkingCapable: false,
-                isMultiLevel: false,
-                level: 'off',
-                isOn: false,
-                labelText: '',
-                dropdownText: '',
-                hasReasoning: false,
-                reasoningLevel: null,
-                rawModel: ''
+                rawModel: '',
+                hasThinkingToggle: false,
+                isThinkingOn: false,
+                hasReasoningEffort: false,
+                reasoningLevel: 'off',
+                effortOptions: [],
+                effortDisplayName: 'Reasoning Effort'
             };
         }
 
@@ -38,17 +36,6 @@ class ThinkingStateFormatter {
         const isThinkingSuffix = lower.endsWith(' (thinking)');
         const rawModel = isThinkingSuffix ? modelId.slice(0, -11) : modelId;
         const lowerRaw = rawModel.toLowerCase();
-        const keysToTest = [
-            `kai.lmStudioThinking.${rawModel}`,
-            `kai.lmStudioThinking.${lowerRaw}`,
-            `kai.lmStudioThinking.${modelId}`,
-            `kai.lmStudioThinking.${lower}`
-        ];
-        if (rawModel.includes('/')) {
-            const shortName = rawModel.split('/').pop();
-            keysToTest.push(`kai.lmStudioThinking.${shortName}`);
-            keysToTest.push(`kai.lmStudioThinking.${shortName.toLowerCase()}`);
-        }
 
         // 1. Check dynamic LM Studio manifest capabilities first
         const cap = ThinkingStateFormatter.lmStudioCapabilities[rawModel] ||
@@ -56,151 +43,123 @@ class ThinkingStateFormatter {
             ThinkingStateFormatter.lmStudioCapabilities[modelId] ||
             ThinkingStateFormatter.lmStudioCapabilities[lower];
 
-        if (cap && cap.modelId) {
-            keysToTest.push(`kai.lmStudioThinking.${cap.modelId}`);
-            keysToTest.push(`kai.lmStudioThinking.${cap.modelId.toLowerCase()}`);
-        }
+        if (cap && Array.isArray(cap.fields) && cap.fields.length > 0) {
+            const booleanField = cap.fields.find(f => f.type === 'boolean');
+            const selectField = cap.fields.find(f => f.type === 'select');
 
-        const isLmThinkingOn = !keysToTest.some(k => localStorage.getItem(k) === 'false');
-
-        if (cap) {
-            const fields = Array.isArray(cap.fields) ? cap.fields : [];
-            if (fields.length > 0) {
-                const selectField = fields.find(f => f.type === 'select');
-                const booleanField = fields.find(f => f.type === 'boolean');
-
-                if (selectField) {
-                    const defaultVal = selectField.defaultValue || (selectField.options && selectField.options[0]?.value) || 'xhigh';
-                    const effortKeys = [
-                        `kai.lmStudioReasoningLevel.${rawModel}`,
-                        `kai.lmStudioReasoningLevel.${lowerRaw}`,
-                        `kai.lmStudioReasoningLevel.${modelId}`,
-                        `kai.lmStudioReasoningLevel.${lower}`
-                    ];
-                    if (cap.modelId) effortKeys.push(`kai.lmStudioReasoningLevel.${cap.modelId}`);
-                    let storedEffort = defaultVal;
-                    for (const ek of effortKeys) {
-                        const val = localStorage.getItem(ek);
-                        if (val) { storedEffort = val; break; }
-                    }
-                    const effortLabels = { xhigh: 'xhigh', high: 'xhigh', medium: 'medium', low: 'low' };
-                    const effortKey = (storedEffort in effortLabels) ? effortLabels[storedEffort] : storedEffort;
-
-                    return {
-                        isThinkingCapable: true,
-                        isMultiLevel: true,
-                        level: effortKey,
-                        isOn: isLmThinkingOn,
-                        labelText: isLmThinkingOn ? effortKey : '',
-                        dropdownText: isLmThinkingOn ? effortKey : '',
-                        hasReasoning: true,
-                        reasoningLevel: isLmThinkingOn ? effortKey : 'off',
-                        rawModel: rawModel
-                    };
-                } else if (booleanField) {
-                    return {
-                        isThinkingCapable: true,
-                        isMultiLevel: false,
-                        level: isLmThinkingOn ? 'on' : 'off',
-                        isOn: isLmThinkingOn,
-                        labelText: isLmThinkingOn ? 'thinking' : '',
-                        dropdownText: isLmThinkingOn ? 'thinking' : '',
-                        hasReasoning: false,
-                        reasoningLevel: null,
-                        rawModel: rawModel
-                    };
-                }
+            let hasThinkingToggle = !!booleanField;
+            let isThinkingOn = true;
+            if (hasThinkingToggle) {
+                const stored = localStorage.getItem(`kai.lmStudioThinking.${rawModel}`) ??
+                    localStorage.getItem(`kai.lmStudioThinking.${lowerRaw}`) ??
+                    localStorage.getItem(`kai.lmStudioThinking.${modelId}`);
+                isThinkingOn = stored !== 'false';
             }
+
+            let hasReasoningEffort = !!selectField;
+            let reasoningLevel = 'xhigh';
+            let effortOptions = [];
+            let effortDisplayName = 'Reasoning Effort';
+
+            if (hasReasoningEffort) {
+                effortDisplayName = selectField.displayName || 'Reasoning Effort';
+                effortOptions = (selectField.options || []).map(o => ({
+                    label: o.label || o.value,
+                    value: o.value || o.label
+                }));
+                const defaultVal = selectField.defaultValue || (effortOptions[0]?.value) || 'xhigh';
+                const storedEffort = localStorage.getItem(`kai.lmStudioReasoningLevel.${rawModel}`) ??
+                    localStorage.getItem(`kai.lmStudioReasoningLevel.${lowerRaw}`) ??
+                    localStorage.getItem(`kai.lmStudioReasoningLevel.${modelId}`);
+                reasoningLevel = storedEffort || defaultVal;
+            }
+
+            return {
+                rawModel: rawModel,
+                hasThinkingToggle: hasThinkingToggle,
+                isThinkingOn: isThinkingOn,
+                hasReasoningEffort: hasReasoningEffort,
+                reasoningLevel: reasoningLevel,
+                effortOptions: effortOptions,
+                effortDisplayName: effortDisplayName
+            };
         }
 
-        // 2. Gemini Multi-level models (Thinking budget: high, medium, low, off)
+        // 2. Google Gemini cloud models
         if (lowerRaw.includes('gemini')) {
             const level = localStorage.getItem(`kai.geminiThinkingLevel.${modelId}`) ||
                 localStorage.getItem(`kai.geminiThinkingLevel.${rawModel}`) ||
                 localStorage.getItem('kai.geminiThinkingLevel') || 'high';
-            const levelLabels = { high: 'high', medium: 'medium', low: 'low', minimal: 'off', off: 'off' };
-            const labelText = levelLabels[level] || 'high';
-            const isOn = labelText !== 'off';
-
             return {
-                isThinkingCapable: true,
-                isMultiLevel: true,
-                level: level,
-                isOn: isOn,
-                labelText: isOn ? labelText : '',
-                dropdownText: isOn ? labelText : '',
-                hasReasoning: false,
-                reasoningLevel: null,
-                rawModel: rawModel
+                rawModel: rawModel,
+                hasThinkingToggle: false,
+                isThinkingOn: level !== 'off' && level !== 'minimal',
+                hasReasoningEffort: true,
+                reasoningLevel: level,
+                effortOptions: [
+                    { label: 'High', value: 'high' },
+                    { label: 'Medium', value: 'medium' },
+                    { label: 'Low', value: 'low' },
+                    { label: 'Off', value: 'minimal' }
+                ],
+                effortDisplayName: 'Thinking Level'
             };
         }
 
-        // 3. Fallback for LM Studio models with select fields when manifest is offline (Qwen/GLM)
-        const isQwenReasoning = lowerRaw.includes('qwen') || lowerRaw.includes('qwq') || lowerRaw.includes('glm');
-        if (isQwenReasoning) {
-            const storedEffort = localStorage.getItem(`kai.lmStudioReasoningLevel.${rawModel}`) ||
-                localStorage.getItem(`kai.lmStudioReasoningLevel.${lowerRaw}`) ||
-                localStorage.getItem(`kai.lmStudioReasoningLevel.${modelId}`) || 'xhigh';
-            const effortLabels = { xhigh: 'xhigh', high: 'xhigh', medium: 'medium', low: 'low' };
-            const effortKey = (storedEffort in effortLabels) ? storedEffort : 'xhigh';
-
-            return {
-                isThinkingCapable: true,
-                isMultiLevel: true,
-                level: effortKey,
-                isOn: isLmThinkingOn,
-                labelText: isLmThinkingOn ? effortKey : '',
-                dropdownText: isLmThinkingOn ? effortKey : '',
-                hasReasoning: true,
-                reasoningLevel: isLmThinkingOn ? effortKey : 'off',
-                rawModel: rawModel
-            };
-        }
-
-        // 4. Gemma & DeepSeek-R1 boolean thinking fallback
-        const isBooleanThinking = lowerRaw.includes('gemma') || lowerRaw.includes('deepseek') || lowerRaw.includes('r1');
-        if (isBooleanThinking) {
-            return {
-                isThinkingCapable: true,
-                isMultiLevel: false,
-                level: isLmThinkingOn ? 'on' : 'off',
-                isOn: isLmThinkingOn,
-                labelText: isLmThinkingOn ? 'thinking' : '',
-                dropdownText: isLmThinkingOn ? 'thinking' : '',
-                hasReasoning: false,
-                reasoningLevel: null,
-                rawModel: rawModel
-            };
-        }
-
-        // 5. Mistral Reasoning models (Thinking Toggle: on/off)
-        const isMistralReasoning = lowerRaw.includes('magistral') || lowerRaw.includes('mistral-small') || lowerRaw.includes('mistral-medium') || lowerRaw.includes('codestral');
+        // 3. Mistral cloud reasoning models
+        const isMistralReasoning = lowerRaw.includes('magistral') || lowerRaw.includes('codestral');
         if (isMistralReasoning) {
             const stored = localStorage.getItem(`kai.mistralThinking.${rawModel}`);
             const isOn = stored !== 'false';
             return {
-                isThinkingCapable: true,
-                isMultiLevel: false,
-                level: isOn ? 'on' : 'off',
-                isOn: isOn,
-                labelText: isOn ? 'thinking' : '',
-                dropdownText: isOn ? 'thinking' : '',
-                hasReasoning: false,
-                reasoningLevel: null,
-                rawModel: rawModel
+                rawModel: rawModel,
+                hasThinkingToggle: true,
+                isThinkingOn: isOn,
+                hasReasoningEffort: false,
+                reasoningLevel: 'off',
+                effortOptions: [],
+                effortDisplayName: 'Reasoning Effort'
             };
         }
 
+        // 4. Standard non-thinking models (no hardcoded fallback assumptions)
         return {
-            isThinkingCapable: false,
-            isMultiLevel: false,
-            level: 'off',
-            isOn: false,
-            labelText: '',
-            dropdownText: '',
-            hasReasoning: false,
-            reasoningLevel: null,
-            rawModel: rawModel
+            rawModel: rawModel,
+            hasThinkingToggle: false,
+            isThinkingOn: false,
+            hasReasoningEffort: false,
+            reasoningLevel: 'off',
+            effortOptions: [],
+            effortDisplayName: 'Reasoning Effort'
+        };
+    }
+
+    /**
+     * Inspects capabilities and localStorage to return a unified reasoning state object.
+     * @param {string} modelId Active or raw model ID string.
+     * @returns {object} Reasoning state metadata object.
+     */
+    static getThinkingState(modelId) {
+        const caps = ThinkingStateFormatter.getCapabilitiesState(modelId);
+        const isCapable = caps.hasThinkingToggle || caps.hasReasoningEffort;
+
+        let labelText = '';
+        if (caps.hasReasoningEffort && caps.reasoningLevel !== 'off' && caps.reasoningLevel !== 'minimal') {
+            labelText = caps.reasoningLevel;
+        } else if (caps.hasThinkingToggle && caps.isThinkingOn) {
+            labelText = 'thinking';
+        }
+
+        return {
+            isThinkingCapable: isCapable,
+            isMultiLevel: caps.hasReasoningEffort,
+            level: caps.reasoningLevel,
+            isOn: caps.isThinkingOn,
+            labelText: labelText,
+            dropdownText: labelText,
+            hasReasoning: caps.hasReasoningEffort,
+            reasoningLevel: caps.reasoningLevel,
+            rawModel: caps.rawModel
         };
     }
 

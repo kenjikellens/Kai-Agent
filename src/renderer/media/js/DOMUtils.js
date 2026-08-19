@@ -152,6 +152,72 @@ class DOMUtils {
     }
 
     /**
+     * Creates a standard Lightbulb SVG element for Thinking toggle controls.
+     * @param {string} [className] Optional CSS class name.
+     * @returns {SVGElement} The created SVG element.
+     */
+    static createLightbulbIcon(className = '') {
+        const svg = DOMUtils.createSvg('svg', {
+            class: className,
+            width: '13',
+            height: '13',
+            viewBox: '0 0 24 24',
+            fill: 'none',
+            stroke: 'currentColor',
+            'stroke-width': '2',
+            'stroke-linecap': 'round',
+            'stroke-linejoin': 'round'
+        });
+        const path = DOMUtils.createSvg('path', {
+            d: 'M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5'
+        });
+        const line1 = DOMUtils.createSvg('path', { d: 'M9 18h6' });
+        const line2 = DOMUtils.createSvg('path', { d: 'M10 22h4' });
+        svg.appendChild(path);
+        svg.appendChild(line1);
+        svg.appendChild(line2);
+        return svg;
+    }
+
+    /**
+     * Creates a standard Gauge / Sliders SVG element for Reasoning Effort controls.
+     * @param {string} [className] Optional CSS class name.
+     * @returns {SVGElement} The created SVG element.
+     */
+    static createGaugeIcon(className = '') {
+        const svg = DOMUtils.createSvg('svg', {
+            class: className,
+            width: '13',
+            height: '13',
+            viewBox: '0 0 24 24',
+            fill: 'none',
+            stroke: 'currentColor',
+            'stroke-width': '2',
+            'stroke-linecap': 'round',
+            'stroke-linejoin': 'round'
+        });
+        const line1 = DOMUtils.createSvg('line', { x1: '4', y1: '21', x2: '4', y2: '14' });
+        const line2 = DOMUtils.createSvg('line', { x1: '4', y1: '10', x2: '4', y2: '3' });
+        const line3 = DOMUtils.createSvg('line', { x1: '12', y1: '21', x2: '12', y2: '12' });
+        const line4 = DOMUtils.createSvg('line', { x1: '12', y1: '8', x2: '12', y2: '3' });
+        const line5 = DOMUtils.createSvg('line', { x1: '20', y1: '21', x2: '20', y2: '16' });
+        const line6 = DOMUtils.createSvg('line', { x1: '20', y1: '12', x2: '20', y2: '3' });
+        const line7 = DOMUtils.createSvg('line', { x1: '1', y1: '14', x2: '7', y2: '14' });
+        const line8 = DOMUtils.createSvg('line', { x1: '9', y1: '8', x2: '15', y2: '8' });
+        const line9 = DOMUtils.createSvg('line', { x1: '17', y1: '16', x2: '23', y2: '16' });
+        svg.appendChild(line1);
+        svg.appendChild(line2);
+        svg.appendChild(line3);
+        svg.appendChild(line4);
+        svg.appendChild(line5);
+        svg.appendChild(line6);
+        svg.appendChild(line7);
+        svg.appendChild(line8);
+        svg.appendChild(line9);
+        return svg;
+    }
+
+    /**
      * Creates a debounced function that delays invocation until after wait milliseconds.
      * @param {Function} func The target function to debounce.
      * @param {number} wait Delay in milliseconds.

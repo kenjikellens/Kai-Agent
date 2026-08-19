@@ -562,36 +562,27 @@ class WebviewIPCBridge {
                                 stream: true
                             };
 
-                            // Apply thinking/reasoning settings for LM Studio
-                            if (message.thinking) {
-                                payload.thinking = true;
-                                payload.enable_thinking = true;
+                            // Apply thinking and reasoning effort settings independently for LM Studio
+                            const isThinkingOn = message.thinking === true;
+                            payload.thinking = isThinkingOn;
+                            payload.enable_thinking = isThinkingOn;
+                            payload.chat_template_kwargs = payload.chat_template_kwargs || {};
+                            payload.chat_template_kwargs.enable_thinking = isThinkingOn;
+
+                            if (effortVal && effortVal !== 'none' && effortVal !== 'off') {
                                 payload.reasoning_effort = effortVal;
-                                payload.chat_template_kwargs = { enable_thinking: true };
-                                if (caps && Array.isArray(caps.fields)) {
-                                    for (const field of caps.fields) {
-                                        if (field.type === 'boolean') {
-                                            payload[field.variable] = true;
-                                            payload.chat_template_kwargs[field.variable] = true;
-                                        } else if (field.type === 'select') {
+                                payload.chat_template_kwargs.reasoning_effort = effortVal;
+                            }
+
+                            if (caps && Array.isArray(caps.fields)) {
+                                for (const field of caps.fields) {
+                                    if (field.type === 'boolean') {
+                                        payload[field.variable] = isThinkingOn;
+                                        payload.chat_template_kwargs[field.variable] = isThinkingOn;
+                                    } else if (field.type === 'select') {
+                                        if (effortVal && effortVal !== 'none' && effortVal !== 'off') {
                                             payload[field.variable] = effortVal;
                                             payload.chat_template_kwargs[field.variable] = effortVal;
-                                        }
-                                    }
-                                }
-                            } else {
-                                payload.thinking = false;
-                                payload.enable_thinking = false;
-                                payload.reasoning_effort = 'none';
-                                payload.chat_template_kwargs = { enable_thinking: false };
-                                if (caps && Array.isArray(caps.fields)) {
-                                    for (const field of caps.fields) {
-                                        if (field.type === 'boolean') {
-                                            payload[field.variable] = false;
-                                            payload.chat_template_kwargs[field.variable] = false;
-                                        } else if (field.type === 'select') {
-                                            payload[field.variable] = 'none';
-                                            payload.chat_template_kwargs[field.variable] = 'none';
                                         }
                                     }
                                 }

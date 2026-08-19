@@ -2150,6 +2150,146 @@ button:disabled {
   position: relative;
 }
 
+/* Container for dynamic capability toolbar buttons next to model selector */
+.model-capabilities-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+/* Dedicated toggle button for Thinking capability in input toolbar */
+.cap-toggle-btn {
+  height: 32px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--app-border, #333333);
+  border-radius: var(--app-radius-md, 6px);
+  background: var(--app-surface-strong, #1e1e1e);
+  color: var(--app-muted, #888888);
+  font-size: 0.82rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+/* Hover state for capability toggle button */
+.cap-toggle-btn:hover {
+  background: var(--app-surface-hover, #2a2a2a);
+  color: var(--app-fg, #ffffff);
+  border-color: var(--app-border-strong, #555555);
+}
+
+/* Active state for capability toggle button when enabled */
+.cap-toggle-btn.active {
+  background: rgba(88, 101, 242, 0.15);
+  color: var(--app-accent, #5865F2);
+  border-color: var(--app-accent, #5865F2);
+  font-weight: 500;
+}
+
+/* Dropdown container for Reasoning Effort capability in input toolbar */
+.cap-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+/* Trigger button for Reasoning Effort capability dropdown */
+.cap-dropdown-trigger {
+  height: 32px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--app-border, #333333);
+  border-radius: var(--app-radius-md, 6px);
+  background: var(--app-surface-strong, #1e1e1e);
+  color: var(--app-fg, #ffffff);
+  font-size: 0.82rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+/* Hover state for capability dropdown trigger */
+.cap-dropdown-trigger:hover {
+  background: var(--app-surface-hover, #2a2a2a);
+  border-color: var(--app-border-strong, #555555);
+}
+
+/* Dropdown popup menu for Reasoning Effort options */
+.cap-dropdown-menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  min-width: 140px;
+  background: var(--app-surface, #1e1e1e);
+  border: 1px solid var(--app-border, #333333);
+  border-radius: var(--app-radius-md, 6px);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  z-index: 1000;
+}
+
+/* Dropdown option button for capability options */
+.cap-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 0 !important;
+  border-radius: var(--app-radius-sm, 4px);
+  background: transparent;
+  color: var(--app-muted, #aaaaaa);
+  font-size: 0.8rem;
+  cursor: pointer;
+  user-select: none;
+  text-align: left;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* Hover state for capability dropdown item */
+.cap-dropdown-item:hover {
+  background: var(--app-surface-hover, #2a2a2a);
+  color: var(--app-fg, #ffffff);
+}
+
+/* Selected state for capability dropdown item */
+.cap-dropdown-item.selected {
+  background: var(--app-surface-strong, #252525);
+  color: var(--app-fg, #ffffff);
+  font-weight: 600;
+}
+
+/* Icon wrapper inside capability buttons */
+.cap-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Chevron indicator icon inside capability dropdown trigger */
+.cap-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
 .model-flyout-chevron {
   font-size: 0.85rem;
   color: var(--app-muted);
