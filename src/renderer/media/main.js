@@ -36,6 +36,9 @@
         return await chatUIController.requestCommandApproval(command);
     };
 
+    // Helper to identify real human user prompts vs intermediate tool results
+    const isRealUserPrompt = (m) => m && m.role === 'user' && typeof m.content === 'string' && !m.content.startsWith('[Tool Result for ');
+
     // Wire Retry Callback (Rolls back filesystem changes and retries from clicked assistant message)
     chatUIController.onRetry = async (assistantMsgElement) => {
         if (appState.isWaitingForResponse) return;
@@ -55,19 +58,19 @@
         const targetIndex = allMessageNodes.indexOf(assistantMsgElement);
 
         if (targetIndex !== -1) {
-            // Count how many user messages came before this assistant reply
+            // Count how many real user messages came before this assistant reply
             const precedingUserNodes = allMessageNodes.slice(0, targetIndex).filter(el => el.classList.contains('user-message-row'));
             const userIndex = precedingUserNodes.length; // 1-based count of user prompts up to this turn
 
             if (userIndex > 0) {
-                // Find cutoff index in appState.messages: keep messages up to the userIndex-th user prompt
+                // Find cutoff index in appState.messages: keep messages up to the userIndex-th real user prompt
                 let userMsgCount = 0;
                 let msgCutoffIndex = -1;
                 for (let i = 0; i < appState.messages.length; i++) {
-                    if (appState.messages[i].role === 'user') {
+                    if (isRealUserPrompt(appState.messages[i])) {
                         userMsgCount++;
                         if (userMsgCount === userIndex) {
-                            msgCutoffIndex = i + 1; // include this user message, discard everything after
+                            msgCutoffIndex = i + 1; // include this user message, discard all tool calls/results/replies of this turn
                             break;
                         }
                     }
@@ -91,14 +94,24 @@
                 if (uiCutoffIndex !== -1) {
                     appState.uiEvents = appState.uiEvents.slice(0, uiCutoffIndex);
                 }
-            }
 
-            // Remove DOM nodes from targetIndex onward
-            const nodesToRemove = allMessageNodes.slice(targetIndex);
-            nodesToRemove.forEach(node => node.remove());
+                // Remove all DOM nodes after the preceding user message node (including tool-status-row cards and assistantMsgElement)
+                const lastPrecedingUserNode = precedingUserNodes[precedingUserNodes.length - 1];
+                const userNodeIndex = allMessageNodes.indexOf(lastPrecedingUserNode);
+                if (userNodeIndex !== -1) {
+                    const nodesToRemove = allMessageNodes.slice(userNodeIndex + 1);
+                    nodesToRemove.forEach(node => node.remove());
+                } else {
+                    const nodesToRemove = allMessageNodes.slice(targetIndex);
+                    nodesToRemove.forEach(node => node.remove());
+                }
+            } else {
+                const nodesToRemove = allMessageNodes.slice(targetIndex);
+                nodesToRemove.forEach(node => node.remove());
+            }
         } else {
             assistantMsgElement.remove();
-            while (appState.messages.length > 0 && appState.messages[appState.messages.length - 1].role !== 'user') {
+            while (appState.messages.length > 0 && !isRealUserPrompt(appState.messages[appState.messages.length - 1])) {
                 appState.messages.pop();
             }
             while (appState.uiEvents.length > 0 && appState.uiEvents[appState.uiEvents.length - 1].type !== 'user') {
@@ -158,7 +171,7 @@
             let userMsgCount = 0;
             let msgCutoffIndex = -1;
             for (let i = 0; i < appState.messages.length; i++) {
-                if (appState.messages[i].role === 'user') {
+                if (isRealUserPrompt(appState.messages[i])) {
                     if (userMsgCount === userIndex) {
                         msgCutoffIndex = i;
                         break;

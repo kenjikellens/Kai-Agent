@@ -518,7 +518,7 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
             return
 
         try:
-            result = _call_mcp_tool("extract-webpage-content", {"url": url})
+            result = _call_mcp_tool("get-single-web-page-content", {"url": url})
             self._json_response(200, {"result": result})
         except Exception as e:
             self._json_response(500, {"result": f"[Error fetching URL]: {e}"})
