@@ -91,7 +91,7 @@ class DOMUtils {
             filledCount = level ? 3 : 0;
         } else {
             const normalized = String(level).toLowerCase();
-            if (normalized === 'xhigh' || normalized === 'high' || normalized === 'full') {
+            if (normalized === 'xhigh' || normalized === 'high' || normalized === 'max' || normalized === 'full') {
                 filledCount = 3;
             } else if (normalized === 'medium' || normalized === 'med') {
                 filledCount = 2;

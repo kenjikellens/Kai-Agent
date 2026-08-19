@@ -181,17 +181,15 @@ class ThinkingStateFormatter {
     }
 
     /**
-     * Renders model display text, text suffix, and battery SVG icon into a target container.
-     * Order specified by user: Base Model Name -> Text Suffix -> Battery SVG Icon.
+     * Renders clean base model display text into the model selector trigger button.
+     * Suffixes and icons are omitted since dedicated toolbar capability buttons are active.
      * @param {object} params Rendering parameters.
      * @param {string} params.modelId Active model ID.
      * @param {HTMLElement} params.container Target DOM container element.
      * @param {object} params.formatter Formatter instance for base model name formatting.
-     * @param {string} [params.displayStyle] User display preference ('both', 'icon', 'text').
      */
-    static renderTriggerLabel({ modelId, container, formatter, displayStyle = null }) {
+    static renderTriggerLabel({ modelId, container, formatter }) {
         if (!container) return;
-        const style = displayStyle || localStorage.getItem('kai.thinkingDisplayStyle') || 'both';
         const state = ThinkingStateFormatter.getThinkingState(modelId);
         const formattedBaseName = formatter ? formatter.formatModelName(state.rawModel) : state.rawModel;
 
@@ -200,22 +198,6 @@ class ThinkingStateFormatter {
         const baseSpan = document.createElement('span');
         baseSpan.textContent = formattedBaseName;
         container.appendChild(baseSpan);
-
-        if (state.isThinkingCapable) {
-            // 1. Text Suffix first
-            if ((style === 'text' || style === 'both') && state.labelText) {
-                const spaceText = document.createTextNode(` (${state.labelText})`);
-                container.appendChild(spaceText);
-            }
-
-            // 2. Battery SVG Icon second
-            if (style === 'icon' || style === 'both') {
-                const spaceIcon = document.createTextNode(' ');
-                container.appendChild(spaceIcon);
-                const batterySvg = DOMUtils.createBatteryIcon(state.isMultiLevel ? state.level : state.isOn, 'thinking-battery-icon');
-                container.appendChild(batterySvg);
-            }
-        }
     }
 
     /**

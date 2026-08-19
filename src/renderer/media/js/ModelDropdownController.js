@@ -269,6 +269,13 @@ class ModelDropdownController {
                 textContainer.appendChild(textSpan);
                 item.appendChild(textContainer);
 
+                // Battery icon in dropdown list for thinking/reasoning models
+                const thState = ThinkingStateFormatter.getThinkingState(itemData.value);
+                if (thState.isThinkingCapable) {
+                    const itemBattery = DOMUtils.createBatteryIcon(thState.isMultiLevel ? thState.level : thState.isOn, 'item-battery-icon');
+                    item.appendChild(itemBattery);
+                }
+
                 if (itemData.value === this.selectedModelValue) {
                     const checkSvg = DOMUtils.createCheckIcon('check-icon');
                     item.appendChild(checkSvg);
@@ -544,15 +551,15 @@ class ModelDropdownController {
         const caps = ThinkingStateFormatter.getCapabilitiesState(this.selectedModelValue);
         const rawModel = caps.rawModel;
 
-        // 1. Dedicated Thinking Toggle Button [Lightbulb Think]
+        // 1. Dedicated Thinking Toggle Button [Battery Think]
         if (caps.hasThinkingToggle) {
             const thinkBtn = document.createElement('button');
             thinkBtn.type = 'button';
             thinkBtn.className = `cap-toggle-btn ${caps.isThinkingOn ? 'active' : ''}`;
             thinkBtn.title = caps.isThinkingOn ? 'Thinking is Enabled (Click to Disable)' : 'Thinking is Disabled (Click to Enable)';
 
-            const lightbulbIcon = DOMUtils.createLightbulbIcon('cap-icon');
-            thinkBtn.appendChild(lightbulbIcon);
+            let batteryIcon = DOMUtils.createBatteryIcon(caps.isThinkingOn, 'cap-battery-icon');
+            thinkBtn.appendChild(batteryIcon);
 
             const labelSpan = document.createElement('span');
             labelSpan.textContent = 'Think';
@@ -569,6 +576,10 @@ class ModelDropdownController {
                     thinkBtn.title = 'Thinking is Disabled (Click to Enable)';
                 }
 
+                const newBattery = DOMUtils.createBatteryIcon(newState, 'cap-battery-icon');
+                batteryIcon.replaceWith(newBattery);
+                batteryIcon = newBattery;
+
                 localStorage.setItem(`kai.lmStudioThinking.${rawModel}`, newState ? 'true' : 'false');
                 localStorage.setItem(`kai.mistralThinking.${rawModel}`, newState ? 'true' : 'false');
                 if (rawModel.includes('/')) {
@@ -580,7 +591,7 @@ class ModelDropdownController {
             toolbar.appendChild(thinkBtn);
         }
 
-        // 2. Dedicated Reasoning Effort Dropdown [Gauge Effort: <level> ▾]
+        // 2. Dedicated Reasoning Effort Dropdown [Battery Effort: <level> ▾]
         if (caps.hasReasoningEffort && Array.isArray(caps.effortOptions) && caps.effortOptions.length > 0) {
             const dropdownContainer = document.createElement('div');
             dropdownContainer.className = 'cap-dropdown';
@@ -590,8 +601,8 @@ class ModelDropdownController {
             triggerBtn.className = 'cap-dropdown-trigger';
             triggerBtn.title = `${caps.effortDisplayName}: ${caps.reasoningLevel}`;
 
-            const gaugeIcon = DOMUtils.createGaugeIcon('cap-icon');
-            triggerBtn.appendChild(gaugeIcon);
+            let batteryIcon = DOMUtils.createBatteryIcon(caps.reasoningLevel, 'cap-battery-icon');
+            triggerBtn.appendChild(batteryIcon);
 
             const labelSpan = document.createElement('span');
             labelSpan.className = 'cap-label';
@@ -623,19 +634,33 @@ class ModelDropdownController {
                 const isSelected = opt.value === caps.reasoningLevel;
                 itemBtn.className = `cap-dropdown-item ${isSelected ? 'selected' : ''}`;
 
-                const optText = document.createElement('span');
-                optText.textContent = opt.label;
-                itemBtn.appendChild(optText);
+                const optLabelSpan = document.createElement('span');
+                optLabelSpan.className = 'cap-opt-label';
+                optLabelSpan.textContent = opt.label;
+                itemBtn.appendChild(optLabelSpan);
+
+                const optRight = document.createElement('div');
+                optRight.className = 'cap-opt-right';
+
+                const optBattery = DOMUtils.createBatteryIcon(opt.value, 'cap-battery-icon');
+                optRight.appendChild(optBattery);
 
                 if (isSelected) {
                     const checkSvg = DOMUtils.createCheckIcon('check-icon');
-                    itemBtn.appendChild(checkSvg);
+                    optRight.appendChild(checkSvg);
                 }
+
+                itemBtn.appendChild(optRight);
 
                 itemBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     labelSpan.textContent = opt.label;
                     triggerBtn.title = `${caps.effortDisplayName}: ${opt.label}`;
+
+                    // Update trigger battery icon
+                    const newBattery = DOMUtils.createBatteryIcon(opt.value, 'cap-battery-icon');
+                    batteryIcon.replaceWith(newBattery);
+                    batteryIcon = newBattery;
 
                     menu.querySelectorAll('.cap-dropdown-item').forEach(el => {
                         el.classList.remove('selected');
@@ -644,7 +669,7 @@ class ModelDropdownController {
                     });
                     itemBtn.classList.add('selected');
                     const checkSvg = DOMUtils.createCheckIcon('check-icon');
-                    itemBtn.appendChild(checkSvg);
+                    optRight.appendChild(checkSvg);
 
                     menu.classList.add('hidden');
 

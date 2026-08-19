@@ -1910,7 +1910,8 @@ button:disabled {
 }
 
 #model-dropdown-container {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
+  max-width: max-content;
 }
 
 /* Primary Model Selector Dropdown Trigger Button - Fits text length up to max-width */
@@ -2156,40 +2157,45 @@ button:disabled {
   align-items: center;
   gap: 6px;
   flex: 0 0 auto;
+  justify-content: flex-start;
 }
 
-/* Dedicated toggle button for Thinking capability in input toolbar */
+/* Dedicated toggle button for Thinking capability matching dropdown trigger styling */
 .cap-toggle-btn {
   height: 32px;
   box-sizing: border-box;
+  width: auto;
+  max-width: 100%;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 6px;
   padding: 0 10px;
-  border: 1px solid var(--app-border, #333333);
-  border-radius: var(--app-radius-md, 6px);
-  background: var(--app-surface-strong, #1e1e1e);
-  color: var(--app-muted, #888888);
-  font-size: 0.82rem;
+  border: 0 !important;
+  outline: none;
+  border-radius: var(--app-radius-md);
+  background: var(--app-surface-strong);
+  color: var(--app-muted);
+  font-size: 0.86rem;
+  text-align: left;
   cursor: pointer;
   user-select: none;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 /* Hover state for capability toggle button */
-.cap-toggle-btn:hover {
-  background: var(--app-surface-hover, #2a2a2a);
-  color: var(--app-fg, #ffffff);
-  border-color: var(--app-border-strong, #555555);
+.cap-toggle-btn:hover,
+.cap-toggle-btn:focus {
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
+  box-shadow: 0 0 0 1px var(--app-surface-hover);
 }
 
 /* Active state for capability toggle button when enabled */
 .cap-toggle-btn.active {
   background: rgba(88, 101, 242, 0.15);
-  color: var(--app-accent, #5865F2);
-  border-color: var(--app-accent, #5865F2);
-  font-weight: 500;
+  color: var(--app-fg);
+  box-shadow: 0 0 0 1px var(--app-accent, #5865F2);
 }
 
 /* Dropdown container for Reasoning Effort capability in input toolbar */
@@ -2200,46 +2206,55 @@ button:disabled {
   flex: 0 0 auto;
 }
 
-/* Trigger button for Reasoning Effort capability dropdown */
+/* Trigger button for Reasoning Effort capability dropdown matching dropdown trigger styling */
 .cap-dropdown-trigger {
   height: 32px;
   box-sizing: border-box;
+  width: auto;
+  max-width: 100%;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 6px;
   padding: 0 10px;
-  border: 1px solid var(--app-border, #333333);
-  border-radius: var(--app-radius-md, 6px);
-  background: var(--app-surface-strong, #1e1e1e);
-  color: var(--app-fg, #ffffff);
-  font-size: 0.82rem;
+  border: 0 !important;
+  outline: none;
+  border-radius: var(--app-radius-md);
+  background: var(--app-surface-strong);
+  color: var(--app-fg);
+  font-size: 0.86rem;
+  text-align: left;
   cursor: pointer;
   user-select: none;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 /* Hover state for capability dropdown trigger */
-.cap-dropdown-trigger:hover {
-  background: var(--app-surface-hover, #2a2a2a);
-  border-color: var(--app-border-strong, #555555);
+.cap-dropdown-trigger:hover,
+.cap-dropdown-trigger:focus {
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
+  box-shadow: 0 0 0 1px var(--app-surface-hover);
 }
 
 /* Dropdown popup menu for Reasoning Effort options */
 .cap-dropdown-menu {
   position: absolute;
-  bottom: calc(100% + 6px);
   left: 0;
-  min-width: 140px;
-  background: var(--app-surface, #1e1e1e);
-  border: 1px solid var(--app-border, #333333);
-  border-radius: var(--app-radius-md, 6px);
+  bottom: calc(100% + 8px);
+  z-index: 1000;
+  min-width: 150px;
+  max-height: 280px;
+  overflow-y: auto;
   padding: 4px;
+  box-sizing: border-box;
+  background: var(--app-dropdown-bg);
+  border: 1px solid var(--app-border-strong);
+  border-radius: var(--app-radius-md);
+  box-shadow: var(--app-dropdown-shadow);
   display: flex;
   flex-direction: column;
   gap: 2px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-  z-index: 1000;
 }
 
 /* Dropdown option button for capability options */
@@ -2248,12 +2263,12 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 6px 10px;
+  padding: 5px 10px;
   border: 0 !important;
-  border-radius: var(--app-radius-sm, 4px);
+  border-radius: var(--app-radius-sm);
   background: transparent;
-  color: var(--app-muted, #aaaaaa);
-  font-size: 0.8rem;
+  color: var(--app-muted);
+  font-size: 0.75rem;
   cursor: pointer;
   user-select: none;
   text-align: left;
@@ -2261,16 +2276,59 @@ button:disabled {
 }
 
 /* Hover state for capability dropdown item */
-.cap-dropdown-item:hover {
-  background: var(--app-surface-hover, #2a2a2a);
-  color: var(--app-fg, #ffffff);
+.cap-dropdown-item:hover,
+.cap-dropdown-item:focus-visible {
+  color: var(--app-fg);
+  background: var(--vscode-list-hoverBackground, var(--app-surface-hover));
 }
 
 /* Selected state for capability dropdown item */
 .cap-dropdown-item.selected {
-  background: var(--app-surface-strong, #252525);
-  color: var(--app-fg, #ffffff);
+  color: var(--app-fg);
+  background: var(--app-surface-strong);
   font-weight: 600;
+}
+
+/* Label text inside capability dropdown option */
+.cap-opt-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 auto;
+}
+
+/* Right side container inside capability dropdown option */
+.cap-opt-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Battery icon inside capability toolbar elements */
+.cap-battery-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Battery icon inside model dropdown items */
+.item-battery-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  margin-right: 6px;
+  flex-shrink: 0;
+  color: var(--app-muted);
+}
+
+/* Battery icon inside model trigger and flyouts */
+.thinking-battery-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 /* Icon wrapper inside capability buttons */
