@@ -32,13 +32,17 @@ class ToggleComponent {
         track.setAttribute('role', 'switch');
         track.setAttribute('aria-checked', String(Boolean(checked)));
 
-        track.addEventListener('click', (e) => {
-            e.stopPropagation();
-            input.checked = !input.checked;
+        input.addEventListener('change', (e) => {
             track.setAttribute('aria-checked', String(input.checked));
             if (typeof onChange === 'function') {
                 onChange(input.checked, e);
             }
+        });
+
+        track.addEventListener('click', (e) => {
+            e.stopPropagation();
+            input.checked = !input.checked;
+            input.dispatchEvent(new Event('change'));
         });
 
         track.addEventListener('keydown', (e) => {

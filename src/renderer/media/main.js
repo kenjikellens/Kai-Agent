@@ -17,6 +17,15 @@
     const modelDropdownController = new ModelDropdownController(formatter, (selectedModel) => {
         appState.selectedModelValue = selectedModel;
         saveCurrentChat();
+
+        // Automatically unload previous models and load selected LM Studio model in memory
+        if (selectedModel && !selectedModel.toLowerCase().startsWith('gemini') && selectedModel !== 'local-model') {
+            const freeProviders = (typeof KAI_CONSTANTS !== 'undefined' && KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS) || [];
+            const isFreeProvider = freeProviders.some(p => (p.models || []).includes(selectedModel));
+            if (!isFreeProvider) {
+                ipcBridge.switchLMStudioModel(selectedModel);
+            }
+        }
     });
 
     const historyManager = new HistoryManager(ipcBridge, (viewName) => {

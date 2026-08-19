@@ -198,6 +198,17 @@ class WebviewIPCBridge {
                 await this._handleClientSideIPC({ type: 'checkConnection' });
                 break;
             }
+            case 'switchLMStudioModel': {
+                try {
+                    await fetch('/api/lmstudio/switch', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ model: message.model, unloadPrevious: true })
+                    });
+                } catch (e) {}
+                await this._handleClientSideIPC({ type: 'checkConnection' });
+                break;
+            }
             case 'openFilePicker': {
                 await this._openBrowserFilePicker();
                 break;
@@ -335,10 +346,12 @@ class WebviewIPCBridge {
                 });
 
                 try {
-                    const cleanUrl = serverUrl.replace(/\/$/, '') + '/chat/completions';
-                    const effortVal = message.geminiThinkingLevel || 'xhigh';
+                    const modelLower = (model || '').toLowerCase();
+                    const isGemini = modelLower.includes('gemini');
+                    const isMistral = !isGemini && (modelLower.includes('mistral') || modelLower.includes('codestral') || modelLower.includes('ministral')) && !modelLower.includes('gguf');
+                    const effortVal = message.geminiThinkingLevel || 'high';
                     const caps = (typeof ThinkingStateFormatter !== 'undefined' && ThinkingStateFormatter._capabilities)
-                        ? (ThinkingStateFormatter._capabilities[model] || ThinkingStateFormatter._capabilities[model.toLowerCase()])
+                        ? (ThinkingStateFormatter._capabilities[model] || ThinkingStateFormatter._capabilities[modelLower])
                         : null;
 
                     // Agentic loop: stream response, parse tool calls, execute, repeat
@@ -350,42 +363,113 @@ class WebviewIPCBridge {
                     while (iteration < maxIterations) {
                         iteration++;
 
-                        const payload = {
-                            model: model,
-                            messages: messagesToSend.map(m => ({ role: m.role, content: m.content })),
-                            stream: true
-                        };
+                        let targetUrl = '';
+                        const fetchHeaders = { 'Content-Type': 'application/json' };
+                        let payload = {};
 
-                        // Apply thinking/reasoning settings
-                        if (message.thinking) {
-                            payload.thinking = true;
-                            payload.enable_thinking = true;
-                            payload.reasoning_effort = effortVal;
-                            payload.chat_template_kwargs = { enable_thinking: true };
-                            if (caps && Array.isArray(caps.fields)) {
-                                for (const field of caps.fields) {
-                                    if (field.type === 'boolean') {
-                                        payload[field.variable] = true;
-                                        payload.chat_template_kwargs[field.variable] = true;
-                                    } else if (field.type === 'select') {
-                                        payload[field.variable] = effortVal;
-                                        payload.chat_template_kwargs[field.variable] = effortVal;
+                        if (isGemini) {
+                            const geminiKey = (localStorage.getItem('kai.geminiApiKey') || localStorage.getItem('kai.apiKey') || '').trim();
+                            if (!geminiKey) {
+                                emit({
+                                    type: 'error',
+                                    error: 'Google Gemini API-sleutel is niet ingesteld! Voer je Gemini API key in via Instellingen.'
+                                });
+                                emit({ type: 'streamEnd' });
+                                return;
+                            }
+                            targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${encodeURIComponent(geminiKey)}`;
+
+                            const contents = messagesToSend
+                                .filter(m => m.role !== 'system')
+                                .map(m => ({
+                                    role: m.role === 'assistant' ? 'model' : 'user',
+                                    parts: [{ text: m.content }]
+                                }));
+
+                            const isGemini3 = modelLower.includes('gemini-3');
+                            const geminiEffort = message.geminiThinkingLevel || localStorage.getItem(`kai.geminiThinkingLevel.${model}`) || localStorage.getItem('kai.geminiThinkingLevel') || 'high';
+                            const isThinkingOn = message.thinking !== false && geminiEffort !== 'off' && geminiEffort !== 'minimal';
+
+                            let thinkingConfig = {};
+                            if (isGemini3) {
+                                const minimalLevel = modelLower.includes('pro') ? 'LOW' : 'MINIMAL';
+                                thinkingConfig = {
+                                    thinkingLevel: isThinkingOn ? geminiEffort.toUpperCase() : minimalLevel,
+                                    includeThoughts: isThinkingOn
+                                };
+                            } else {
+                                const budgetMap = { low: 1024, medium: 4096, high: -1 };
+                                thinkingConfig = {
+                                    thinkingBudget: isThinkingOn ? (budgetMap[geminiEffort.toLowerCase()] ?? -1) : 0,
+                                    includeThoughts: isThinkingOn
+                                };
+                            }
+
+                            payload = {
+                                contents: contents,
+                                systemInstruction: { parts: [{ text: systemPrompt }] },
+                                generationConfig: {
+                                    temperature: 0.7,
+                                    thinkingConfig: thinkingConfig
+                                }
+                            };
+                        } else if (isMistral) {
+                            const mistralKey = (localStorage.getItem('kai.mistralApiKey') || '').trim();
+                            if (!mistralKey) {
+                                emit({
+                                    type: 'error',
+                                    error: 'Mistral API-sleutel is niet ingesteld! Voer je Mistral API key in via Instellingen.'
+                                });
+                                emit({ type: 'streamEnd' });
+                                return;
+                            }
+                            targetUrl = 'https://api.mistral.ai/v1/chat/completions';
+                            fetchHeaders['Authorization'] = `Bearer ${mistralKey}`;
+                            payload = {
+                                model: model,
+                                messages: messagesToSend.map(m => ({ role: m.role, content: m.content })),
+                                stream: true
+                            };
+                        } else {
+                            // Local LM Studio
+                            targetUrl = serverUrl.replace(/\/$/, '') + '/chat/completions';
+                            payload = {
+                                model: model,
+                                messages: messagesToSend.map(m => ({ role: m.role, content: m.content })),
+                                stream: true
+                            };
+
+                            // Apply thinking/reasoning settings for LM Studio
+                            if (message.thinking) {
+                                payload.thinking = true;
+                                payload.enable_thinking = true;
+                                payload.reasoning_effort = effortVal;
+                                payload.chat_template_kwargs = { enable_thinking: true };
+                                if (caps && Array.isArray(caps.fields)) {
+                                    for (const field of caps.fields) {
+                                        if (field.type === 'boolean') {
+                                            payload[field.variable] = true;
+                                            payload.chat_template_kwargs[field.variable] = true;
+                                        } else if (field.type === 'select') {
+                                            payload[field.variable] = effortVal;
+                                            payload.chat_template_kwargs[field.variable] = effortVal;
+                                        }
                                     }
                                 }
-                            }
-                        } else {
-                            payload.thinking = false;
-                            payload.enable_thinking = false;
-                            payload.reasoning_effort = 'none';
-                            payload.chat_template_kwargs = { enable_thinking: false };
-                            if (caps && Array.isArray(caps.fields)) {
-                                for (const field of caps.fields) {
-                                    if (field.type === 'boolean') {
-                                        payload[field.variable] = false;
-                                        payload.chat_template_kwargs[field.variable] = false;
-                                    } else if (field.type === 'select') {
-                                        payload[field.variable] = 'none';
-                                        payload.chat_template_kwargs[field.variable] = 'none';
+                            } else {
+                                payload.thinking = false;
+                                payload.enable_thinking = false;
+                                payload.reasoning_effort = 'none';
+                                payload.chat_template_kwargs = { enable_thinking: false };
+                                if (caps && Array.isArray(caps.fields)) {
+                                    for (const field of caps.fields) {
+                                        if (field.type === 'boolean') {
+                                            payload[field.variable] = false;
+                                            payload.chat_template_kwargs[field.variable] = false;
+                                        } else if (field.type === 'select') {
+                                            payload[field.variable] = 'none';
+                                            payload.chat_template_kwargs[field.variable] = 'none';
+                                        }
                                     }
                                 }
                             }
@@ -393,15 +477,17 @@ class WebviewIPCBridge {
 
                         if (abortController.signal.aborted) break;
 
-                        const response = await fetch(cleanUrl, {
+                        const response = await fetch(targetUrl, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: fetchHeaders,
                             body: JSON.stringify(payload),
                             signal: abortController.signal
                         });
 
                         if (!response.ok) {
-                            throw new Error(`LM Studio returned ${response.status}: ${response.statusText}`);
+                            const errBody = await response.text().catch(() => '');
+                            const providerName = isGemini ? 'Google Gemini' : (isMistral ? 'Mistral AI' : 'LM Studio');
+                            throw new Error(`${providerName} error (${response.status}): ${errBody || response.statusText}`);
                         }
 
                         // Stream the response tokens
@@ -430,48 +516,74 @@ class WebviewIPCBridge {
                                 if (trimmed.startsWith('data: ')) {
                                     try {
                                         const json = JSON.parse(trimmed.slice(6));
-                                        const delta = json.choices?.[0]?.delta;
-                                        if (!delta) continue;
 
-                                        const reasoningChunk = delta.reasoning_content || delta.reasoning;
-                                        const contentChunk = delta.content || delta.text;
-
-                                        if (reasoningChunk && allowThinkingUI) {
-                                            if (!isThinking) {
-                                                isThinking = true;
-                                                fullText += '<think>';
-                                                emit({ type: 'agentProgress', progressType: 'token', output: '<think>' });
-                                            }
-                                            fullText += reasoningChunk;
-                                            emit({ type: 'agentProgress', progressType: 'token', output: reasoningChunk });
-                                        } else {
-                                            const textToAdd = contentChunk || (!allowThinkingUI ? reasoningChunk : '');
-                                            if (textToAdd) {
-                                                if (isThinking) {
-                                                    isThinking = false;
-                                                    fullText += '</think>';
-                                                    emit({ type: 'agentProgress', progressType: 'token', output: '</think>' });
+                                        if (isGemini) {
+                                            const parts = json.candidates?.[0]?.content?.parts || [];
+                                            for (const part of parts) {
+                                                if (part.thought) {
+                                                    if (allowThinkingUI) {
+                                                        if (!isThinking) {
+                                                            isThinking = true;
+                                                            fullText += '<think>';
+                                                            emit({ type: 'agentProgress', progressType: 'token', output: '<think>' });
+                                                        }
+                                                        fullText += part.text;
+                                                        emit({ type: 'agentProgress', progressType: 'token', output: part.text });
+                                                    }
+                                                } else if (part.text) {
+                                                    if (isThinking) {
+                                                        isThinking = false;
+                                                        fullText += '</think>';
+                                                        emit({ type: 'agentProgress', progressType: 'token', output: '</think>' });
+                                                    }
+                                                    fullText += part.text;
+                                                    emit({ type: 'agentProgress', progressType: 'token', output: part.text });
                                                 }
-                                                fullText += textToAdd;
+                                            }
+                                        } else {
+                                            const delta = json.choices?.[0]?.delta;
+                                            if (!delta) continue;
 
-                                                // Early live tool detection as soon as filename/tool is typed by the model
-                                                const toolTagMatch = /<\||<tool|```json\s*\{/i.exec(fullText);
-                                                if (!toolTagMatch) {
-                                                    emit({ type: 'agentProgress', progressType: 'token', output: textToAdd });
-                                                } else if (!toolStartEmitted) {
-                                                    const liveTool = this._parseToolCall(fullText);
-                                                    if (liveTool) {
-                                                        const targetName = this._getToolTarget(liveTool.name, liveTool.args);
-                                                        if (targetName || liveTool.name) {
-                                                            toolStartEmitted = true;
-                                                            emit({
-                                                                type: 'agentProgress',
-                                                                progressType: 'tool_start',
-                                                                tool: liveTool.name,
-                                                                query: liveTool.query,
-                                                                toolId: activeToolId,
-                                                                fileName: targetName
-                                                            });
+                                            const reasoningChunk = delta.reasoning_content || delta.reasoning;
+                                            const contentChunk = delta.content || delta.text;
+
+                                            if (reasoningChunk && allowThinkingUI) {
+                                                if (!isThinking) {
+                                                    isThinking = true;
+                                                    fullText += '<think>';
+                                                    emit({ type: 'agentProgress', progressType: 'token', output: '<think>' });
+                                                }
+                                                fullText += reasoningChunk;
+                                                emit({ type: 'agentProgress', progressType: 'token', output: reasoningChunk });
+                                            } else {
+                                                const textToAdd = contentChunk || (!allowThinkingUI ? reasoningChunk : '');
+                                                if (textToAdd) {
+                                                    if (isThinking) {
+                                                        isThinking = false;
+                                                        fullText += '</think>';
+                                                        emit({ type: 'agentProgress', progressType: 'token', output: '</think>' });
+                                                    }
+                                                    fullText += textToAdd;
+
+                                                    // Early live tool detection
+                                                    const toolTagMatch = /<\||<tool|```json\s*\{/i.exec(fullText);
+                                                    if (!toolTagMatch) {
+                                                        emit({ type: 'agentProgress', progressType: 'token', output: textToAdd });
+                                                    } else if (!toolStartEmitted) {
+                                                        const liveTool = this._parseToolCall(fullText);
+                                                        if (liveTool) {
+                                                            const targetName = this._getToolTarget(liveTool.name, liveTool.args);
+                                                            if (targetName || liveTool.name) {
+                                                                toolStartEmitted = true;
+                                                                emit({
+                                                                    type: 'agentProgress',
+                                                                    progressType: 'tool_start',
+                                                                    tool: liveTool.name,
+                                                                    query: liveTool.query,
+                                                                    toolId: activeToolId,
+                                                                    fileName: targetName
+                                                                });
+                                                            }
                                                         }
                                                     }
                                                 }
@@ -1271,6 +1383,14 @@ class WebviewIPCBridge {
      */
     browseLMStudioFolder() {
         this.postMessage({ type: 'browseLMStudioFolder' });
+    }
+
+    /**
+     * Unloads previous local models and loads the specified LM Studio model dynamically.
+     * @param {string} modelId Identifier of the LM Studio model to load.
+     */
+    switchLMStudioModel(modelId) {
+        this.postMessage({ type: 'switchLMStudioModel', model: modelId });
     }
 
     /**

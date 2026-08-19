@@ -271,8 +271,7 @@ class ModelDropdownController {
 
                 const textSpan = document.createElement('span');
                 textSpan.className = 'model-text-inner dropdown-item-text';
-                const initialSuffix = thinkingState.dropdownText ? ` (${thinkingState.dropdownText})` : '';
-                textSpan.textContent = itemData.label + initialSuffix;
+                textSpan.textContent = itemData.label;
 
                 textContainer.appendChild(textSpan);
                 item.appendChild(textContainer);
@@ -453,7 +452,18 @@ class ModelDropdownController {
                                 
                                 const handleFlyoutSelect = (e) => {
                                     e.stopPropagation();
-                                    localStorage.setItem(`kai.lmStudioReasoningLevel.${itemData.rawModel}`, opt.value);
+                                    const aliases = [
+                                        itemData.rawModel,
+                                        itemData.rawModel.toLowerCase(),
+                                        itemData.value,
+                                        itemData.value.toLowerCase(),
+                                        itemData.rawModel.split('/').pop(),
+                                        itemData.rawModel.split('/').pop().toLowerCase()
+                                    ];
+                                    aliases.filter(Boolean).forEach(a => {
+                                        localStorage.setItem(`kai.lmStudioReasoningLevel.${a}`, opt.value);
+                                        localStorage.setItem(`kai.lmStudioThinking.${a}`, 'true');
+                                    });
                                     localStorage.setItem('kai.lmStudioReasoningLevel', opt.value);
                                     this.selectedModelValue = itemData.value;
                                     localStorage.setItem('kai.selectedModel', itemData.value);
@@ -485,6 +495,8 @@ class ModelDropdownController {
 
                         // 2. Render Boolean Toggle SECOND (Thinking Toggle switch)
                         if (booleanField) {
+                            const isLmThinkingOn = localStorage.getItem(`kai.lmStudioThinking.${itemData.rawModel}`) !== 'false';
+                            
                             const toggleRow = document.createElement('div');
                             toggleRow.className = 'dropdown-item flyout-option';
                             toggleRow.style.width = 'calc(100% - 4px)';
@@ -503,16 +515,25 @@ class ModelDropdownController {
                                 checked: isLmThinkingOn,
                                 title: 'Enable reasoning/thinking for this local model',
                                 onChange: (checked) => {
-                                    localStorage.setItem(`kai.lmStudioThinking.${itemData.rawModel}`, checked ? 'true' : 'false');
-                                    localStorage.setItem(`kai.lmStudioThinking.${itemData.value}`, checked ? 'true' : 'false');
+                                    const valStr = checked ? 'true' : 'false';
+                                    const aliases = [
+                                        itemData.rawModel,
+                                        itemData.rawModel.toLowerCase(),
+                                        itemData.value,
+                                        itemData.value.toLowerCase(),
+                                        itemData.rawModel.split('/').pop(),
+                                        itemData.rawModel.split('/').pop().toLowerCase(),
+                                        this.selectedModelValue,
+                                        (this.selectedModelValue || '').toLowerCase()
+                                    ];
+                                    aliases.filter(Boolean).forEach(a => localStorage.setItem(`kai.lmStudioThinking.${a}`, valStr));
                                     
+                                    // Update battery icon in flyout
+                                    leftWrapper.innerHTML = '';
+                                    ThinkingStateFormatter.renderFlyoutOptionContent(leftWrapper, 'Thinking', checked);
+
                                     // Update trigger button
                                     this.setSelectedModel(this.selectedModelValue);
-                                    
-                                    // Update this dropdown item's text
-                                    const st = ThinkingStateFormatter.getThinkingState(itemData.rawModel);
-                                    const suffix = st.dropdownText ? ` (${st.dropdownText})` : '';
-                                    textSpan.textContent = itemData.label + suffix;
 
                                     if (this.onSelect && (this.selectedModelValue === itemData.value || this.selectedModelValue === itemData.rawModel)) {
                                         this.onSelect(this.selectedModelValue);

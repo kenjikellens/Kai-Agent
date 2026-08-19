@@ -38,6 +38,17 @@ class ThinkingStateFormatter {
         const isThinkingSuffix = lower.endsWith(' (thinking)');
         const rawModel = isThinkingSuffix ? modelId.slice(0, -11) : modelId;
         const lowerRaw = rawModel.toLowerCase();
+        const keysToTest = [
+            `kai.lmStudioThinking.${rawModel}`,
+            `kai.lmStudioThinking.${lowerRaw}`,
+            `kai.lmStudioThinking.${modelId}`,
+            `kai.lmStudioThinking.${lower}`
+        ];
+        if (rawModel.includes('/')) {
+            const shortName = rawModel.split('/').pop();
+            keysToTest.push(`kai.lmStudioThinking.${shortName}`);
+            keysToTest.push(`kai.lmStudioThinking.${shortName.toLowerCase()}`);
+        }
 
         // 1. Check dynamic LM Studio manifest capabilities first
         const cap = ThinkingStateFormatter.lmStudioCapabilities[rawModel] ||
@@ -45,17 +56,33 @@ class ThinkingStateFormatter {
             ThinkingStateFormatter.lmStudioCapabilities[modelId] ||
             ThinkingStateFormatter.lmStudioCapabilities[lower];
 
+        if (cap && cap.modelId) {
+            keysToTest.push(`kai.lmStudioThinking.${cap.modelId}`);
+            keysToTest.push(`kai.lmStudioThinking.${cap.modelId.toLowerCase()}`);
+        }
+
+        const isLmThinkingOn = !keysToTest.some(k => localStorage.getItem(k) === 'false');
+
         if (cap) {
             const fields = Array.isArray(cap.fields) ? cap.fields : [];
             if (fields.length > 0) {
                 const selectField = fields.find(f => f.type === 'select');
                 const booleanField = fields.find(f => f.type === 'boolean');
-                const isLmThinkingOn = localStorage.getItem(`kai.lmStudioThinking.${rawModel}`) !== 'false';
 
                 if (selectField) {
                     const defaultVal = selectField.defaultValue || (selectField.options && selectField.options[0]?.value) || 'xhigh';
-                    const storedEffort = localStorage.getItem(`kai.lmStudioReasoningLevel.${rawModel}`) ||
-                        localStorage.getItem(`kai.lmStudioReasoningLevel.${modelId}`) || defaultVal;
+                    const effortKeys = [
+                        `kai.lmStudioReasoningLevel.${rawModel}`,
+                        `kai.lmStudioReasoningLevel.${lowerRaw}`,
+                        `kai.lmStudioReasoningLevel.${modelId}`,
+                        `kai.lmStudioReasoningLevel.${lower}`
+                    ];
+                    if (cap.modelId) effortKeys.push(`kai.lmStudioReasoningLevel.${cap.modelId}`);
+                    let storedEffort = defaultVal;
+                    for (const ek of effortKeys) {
+                        const val = localStorage.getItem(ek);
+                        if (val) { storedEffort = val; break; }
+                    }
                     const effortLabels = { xhigh: 'xhigh', high: 'xhigh', medium: 'medium', low: 'low' };
                     const effortKey = (storedEffort in effortLabels) ? effortLabels[storedEffort] : storedEffort;
 
@@ -111,8 +138,8 @@ class ThinkingStateFormatter {
         // 3. Fallback for LM Studio models with select fields when manifest is offline (Qwen/GLM)
         const isQwenReasoning = lowerRaw.includes('qwen') || lowerRaw.includes('qwq') || lowerRaw.includes('glm');
         if (isQwenReasoning) {
-            const isLmThinkingOn = localStorage.getItem(`kai.lmStudioThinking.${rawModel}`) !== 'false';
             const storedEffort = localStorage.getItem(`kai.lmStudioReasoningLevel.${rawModel}`) ||
+                localStorage.getItem(`kai.lmStudioReasoningLevel.${lowerRaw}`) ||
                 localStorage.getItem(`kai.lmStudioReasoningLevel.${modelId}`) || 'xhigh';
             const effortLabels = { xhigh: 'xhigh', high: 'xhigh', medium: 'medium', low: 'low' };
             const effortKey = (storedEffort in effortLabels) ? storedEffort : 'xhigh';
@@ -133,7 +160,6 @@ class ThinkingStateFormatter {
         // 4. Gemma & DeepSeek-R1 boolean thinking fallback
         const isBooleanThinking = lowerRaw.includes('gemma') || lowerRaw.includes('deepseek') || lowerRaw.includes('r1');
         if (isBooleanThinking) {
-            const isLmThinkingOn = localStorage.getItem(`kai.lmStudioThinking.${rawModel}`) !== 'false';
             return {
                 isThinkingCapable: true,
                 isMultiLevel: false,

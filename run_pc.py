@@ -8,6 +8,7 @@ import http.server
 import json
 import os
 import socketserver
+import subprocess
 import sys
 import webbrowser
 from pathlib import Path
@@ -150,7 +151,64 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
             self._handle_fetch_url(raw_body)
             return
 
+        if self.path.startswith("/api/lmstudio/switch"):
+            self._handle_lmstudio_switch(raw_body)
+            return
+
         # Fallback for unknown POST paths
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(b'{"status":"ok"}')
+
+    def _find_lms_cli(self):
+        """Finds the local LM Studio lms executable if installed.
+        Returns a Path object if found, otherwise None."""
+        candidates = [
+            Path.home() / ".cache" / "lm-studio" / "bin" / "lms.exe",
+            Path.home() / ".lmstudio" / "bin" / "lms.exe",
+            Path.home() / ".cache" / "lm-studio" / "bin" / "lms",
+            Path.home() / ".lmstudio" / "bin" / "lms",
+        ]
+        for p in candidates:
+            if p.exists():
+                return p
+        return None
+
+    def _handle_lmstudio_switch(self, raw_body):
+        """Unloads prior LM Studio models and loads the selected model dynamically.
+        Affects active LM Studio memory state by calling the lms CLI tool."""
+        try:
+            body = json.loads(raw_body) if raw_body else {}
+        except Exception:
+            body = {}
+
+        model = body.get("model", "")
+        unload_previous = body.get("unloadPrevious", True)
+        lms_path = self._find_lms_cli()
+
+        if lms_path and lms_path.exists():
+            if unload_previous:
+                try:
+                    subprocess.run(
+                        [str(lms_path), "unload", "--all"],
+                        capture_output=True,
+                        timeout=15,
+                        text=True
+                    )
+                except Exception:
+                    pass
+            if model and model != "local-model" and not model.lower().startswith("gemini"):
+                try:
+                    subprocess.run(
+                        [str(lms_path), "load", model, "-y"],
+                        capture_output=True,
+                        timeout=30,
+                        text=True
+                    )
+                except Exception:
+                    pass
+
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
