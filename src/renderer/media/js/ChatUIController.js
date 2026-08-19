@@ -419,23 +419,24 @@ class ChatUIController {
     }
 
     /**
-     * Creates an action toolbar containing Copy Response, Retry buttons, and a subtle mode badge for assistant messages.
-     * @param {string} [mode] The mode under which the reply was generated ('chat' | 'agent' | 'planning').
+     * Creates an action toolbar containing Copy Response, View Raw, Retry buttons, and an Info button for assistant messages.
+     * @param {string} [mode] The mode under which the reply was generated ('chat' | 'agent' | 'planning' | 'ask').
+     * @param {object} [meta] Additional metadata including model and thinking parameters.
      * @returns {HTMLElement} The actions toolbar element.
      */
-    createAssistantActionBar(mode) {
+    createAssistantActionBar(mode, meta = {}) {
         const bar = document.createElement('div');
         bar.className = 'message-actions';
 
-        const copySvg = window.KAI_SVGS['copy_response'] || '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
-        const retrySvg = window.KAI_SVGS['retry'] || '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>';
-        const rawSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>';
+        const copySvg = window.KAI_SVGS['copy_response'] || '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+        const retrySvg = window.KAI_SVGS['retry'] || '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>';
+        const rawSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>';
+        const infoSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
 
-        let badgeHtml = '';
-        if (mode) {
-            const modeLabel = mode === 'planning' ? 'Plan' : (mode.charAt(0).toUpperCase() + mode.slice(1));
-            badgeHtml = `<span class="message-mode-badge mode-badge-${mode}">${modeLabel}</span>`;
-        }
+        const effectiveMode = mode || meta.mode || 'chat';
+        const modeLabel = effectiveMode === 'planning' ? 'Plan' : (effectiveMode.charAt(0).toUpperCase() + effectiveMode.slice(1));
+        const modelName = meta.model || (this.settingsController ? this.settingsController.getSelectedModel() : '') || localStorage.getItem('kai.selectedModel') || 'Local Model';
+        const thinkingState = meta.thinking !== undefined ? (meta.thinking ? `On (${meta.geminiThinkingLevel || 'default'})` : 'Off') : (localStorage.getItem('kai.showThinking') !== 'false' ? 'On' : 'Off');
 
         bar.innerHTML = `
             <button type="button" class="msg-action-btn copy-response-btn" title="Copy response">
@@ -447,7 +448,25 @@ class ChatUIController {
             <button type="button" class="msg-action-btn retry-btn" title="Retry">
                 ${retrySvg}
             </button>
-            ${badgeHtml}
+            <div class="message-info-container">
+                <button type="button" class="msg-info-btn" title="Message Details (Model & Settings)">
+                    ${infoSvg}
+                </button>
+                <div class="msg-info-popover">
+                    <div class="info-popover-row">
+                        <span class="info-popover-label">Model:</span>
+                        <span class="info-popover-value">${this.formatter.escapeHtml(modelName)}</span>
+                    </div>
+                    <div class="info-popover-row">
+                        <span class="info-popover-label">Mode:</span>
+                        <span class="info-popover-value">${this.formatter.escapeHtml(modeLabel)}</span>
+                    </div>
+                    <div class="info-popover-row">
+                        <span class="info-popover-label">Thinking / Reasoning:</span>
+                        <span class="info-popover-value">${this.formatter.escapeHtml(thinkingState)}</span>
+                    </div>
+                </div>
+            </div>
         `;
         return bar;
     }
@@ -457,8 +476,9 @@ class ChatUIController {
      * @param {string} role Sender role ('user', 'assistant', 'system', or 'file-summary').
      * @param {string} text Message content string.
      * @param {string} [mode] Active mode for assistant messages.
+     * @param {object} [meta] Metadata for model & thinking parameters.
      */
-    appendMessage(role, text, mode) {
+    appendMessage(role, text, mode, meta = {}) {
         this.removeWelcomeHero();
 
         if (role === 'user') {
@@ -536,7 +556,7 @@ class ChatUIController {
         messageDiv.appendChild(contentDiv);
 
         if (role === 'assistant') {
-            messageDiv.appendChild(this.createAssistantActionBar(mode));
+            messageDiv.appendChild(this.createAssistantActionBar(mode, meta));
         }
 
         if (this.chatContainer) {
@@ -942,7 +962,11 @@ class ChatUIController {
                 if (evt.type === 'user') {
                     this.appendMessage('user', evt.text);
                 } else if (evt.type === 'assistant') {
-                    this.appendMessage('assistant', evt.content, evt.mode);
+                    this.appendMessage('assistant', evt.content, evt.mode, {
+                        model: evt.model,
+                        thinking: evt.thinking,
+                        geminiThinkingLevel: evt.geminiThinkingLevel
+                    });
                 } else if (evt.type === 'file-summary') {
                     this.appendMessage('file-summary', JSON.stringify(evt.files));
                 } else if (evt.type === 'tool') {

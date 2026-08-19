@@ -775,6 +775,14 @@
         const formatted = formatter.formatMarkdown(replyContent, forceThinkingCollapsed, isThinkingChecked, forcePlanExpanded);
 
         const currentMode = message.mode || appState.activeMode || 'chat';
+        const modelDetails = modelDropdownController.getSelectedModelDetails();
+        const geminiThinkingLevel = modelDetails.reasoningEffort || settingsController.getGeminiThinkingLevel(modelDetails.model);
+        const meta = {
+            model: modelDetails.displayName || modelDetails.model || appState.selectedModelValue,
+            mode: currentMode,
+            thinking: modelDetails.thinking,
+            geminiThinkingLevel: geminiThinkingLevel
+        };
 
         if (chatUIController.currentAssistantMsgElement) {
             if (formatted.trim()) {
@@ -782,13 +790,13 @@
                 chatUIController.currentAssistantMsgElement.dataset.mode = currentMode;
                 chatUIController.currentAssistantMsgElement.querySelector('.message-content').innerHTML = formatted;
                 if (!chatUIController.currentAssistantMsgElement.querySelector('.message-actions')) {
-                    chatUIController.currentAssistantMsgElement.appendChild(chatUIController.createAssistantActionBar(currentMode));
+                    chatUIController.currentAssistantMsgElement.appendChild(chatUIController.createAssistantActionBar(currentMode, meta));
                 }
             } else {
                 chatUIController.currentAssistantMsgElement.remove();
             }
         } else if (formatted.trim()) {
-            chatUIController.appendMessage('assistant', replyContent, currentMode);
+            chatUIController.appendMessage('assistant', replyContent, currentMode, meta);
         }
 
         if (message.fullHistory) {
@@ -799,7 +807,14 @@
 
         const lastEvt = appState.uiEvents[appState.uiEvents.length - 1];
         if (replyContent && (!lastEvt || lastEvt.type !== 'assistant')) {
-            appState.addUiEvent({ type: 'assistant', content: replyContent });
+            appState.addUiEvent({ 
+                type: 'assistant', 
+                content: replyContent, 
+                mode: currentMode,
+                model: meta.model,
+                thinking: meta.thinking,
+                geminiThinkingLevel: meta.geminiThinkingLevel
+            });
         }
 
         if (message.modifiedFiles && message.modifiedFiles.length > 0) {
