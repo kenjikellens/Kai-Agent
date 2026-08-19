@@ -139,8 +139,8 @@ class MarkdownFormatter {
             }
         }
 
-        // Clean up excessive blank lines
-        cleanText = cleanText.replace(/(\r?\n\s*){3,}/g, '\n\n');
+        // Clean up double/triple blank lines into single clean breaks
+        cleanText = cleanText.replace(/(\r?\n){2,}/g, '\n\n');
 
         let escaped = this.escapeHtml(cleanText);
 

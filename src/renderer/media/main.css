@@ -929,17 +929,16 @@ button:disabled {
   box-sizing: border-box;
 }
 
-/* Message actions toolbar (Copy, Retry) beneath assistant message */
+/* Message actions toolbar (Copy, Retry) beneath assistant message - always visible */
 .message-actions {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 0 6px 0;
-  opacity: 0;
-  transition: opacity 0.15s ease;
+  padding: 4px 0 2px 0;
+  opacity: 1;
 }
 
-.assistant-message:hover .message-actions {
+.assistant-message .message-actions {
   opacity: 1;
 }
 
@@ -990,13 +989,11 @@ button:disabled {
   border-color: rgba(206, 147, 216, 0.2);
 }
 
-
-
 .assistant-message .message-content {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  padding: 8px 0;
+  padding: 4px 0;
 }
 
 .response-container {
@@ -1010,7 +1007,7 @@ button:disabled {
 .text-block {
   background: transparent;
   border: none;
-  padding: 4px 6px;
+  padding: 2px 0;
 }
 
 .system-message {
@@ -1026,18 +1023,18 @@ button:disabled {
 }
 
 .message-content {
-  padding: 8px 12px;
+  padding: 2px 0;
   font-family: var(--app-font);
-  font-size: 0.95rem;
-  line-height: 1.6;
-  letter-spacing: -0.005em;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  letter-spacing: -0.00em;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   white-space: pre-wrap;
   word-break: break-word;
 }
 
 .message-content p {
-  margin: 4px 0;
+  margin: 2px 0;
 }
 
 .message-content p:first-child {
