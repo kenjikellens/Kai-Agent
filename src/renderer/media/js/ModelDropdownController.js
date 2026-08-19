@@ -530,7 +530,7 @@ class ModelDropdownController {
 
                             flyoutInner.appendChild(toggleRow);
                         }
-                    } }
+                    }
 
                     flyoutMenu.appendChild(flyoutInner);
                     item.appendChild(flyoutMenu);
@@ -702,14 +702,19 @@ class ModelDropdownController {
         const combinedModels = [...lmStudioModels, ...geminiModels];
 
         if (this.selectedModelValue && this.selectedModelValue !== 'local-model' && this.selectedModelValue !== 'No Models Loaded') {
-            const cleanDisplay = this.selectedModelValue.endsWith(' (thinking)')
-                ? `${this.formatter.formatModelName(this.selectedModelValue.slice(0, -11))} (thinking)`
-                : this.formatter.formatModelName(this.selectedModelValue);
-            this.selectedModelText.textContent = cleanDisplay;
+            ThinkingStateFormatter.renderTriggerLabel({
+                modelId: this.selectedModelValue,
+                container: this.selectedModelText,
+                formatter: this.formatter
+            });
             this.statusDot.className = isModelConnected(this.selectedModelValue) ? 'status-dot status-connected' : 'status-dot status-disconnected';
         } else if (combinedModels.length > 0) {
             this.selectedModelValue = combinedModels[0];
-            this.selectedModelText.textContent = this.formatter.formatModelName(this.selectedModelValue);
+            ThinkingStateFormatter.renderTriggerLabel({
+                modelId: this.selectedModelValue,
+                container: this.selectedModelText,
+                formatter: this.formatter
+            });
             this.statusDot.className = isModelConnected(this.selectedModelValue) ? 'status-dot status-connected' : 'status-dot status-disconnected';
         } else {
             this.selectedModelValue = 'local-model';
