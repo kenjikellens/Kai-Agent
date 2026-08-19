@@ -543,7 +543,7 @@ class WebviewIPCBridge {
                         // Append tool result as a user message for next iteration
                         messagesToSend.push({
                             role: 'user',
-                            content: `[Tool Result for ${toolCall.name}]:\n${toolResult}`
+                            content: `[Tool Result for ${toolCall.name}]:\n${toolResult}\n\nPlease proceed and answer the user's prompt directly and factually using the retrieved results above.`
                         });
                     }
 
@@ -551,11 +551,12 @@ class WebviewIPCBridge {
                         return;
                     }
 
-                    // Emit the final reply
+                    // Emit the final reply along with full conversation history including tool results
                     emit({
                         type: 'reply',
                         content: lastFullText,
-                        modifiedFiles: Array.from(modifiedFiles)
+                        modifiedFiles: Array.from(modifiedFiles),
+                        fullHistory: messagesToSend.filter(m => m.role !== 'system')
                     });
 
                     // Trigger Background AI Chat Title Generation ONLY on the very first user message
