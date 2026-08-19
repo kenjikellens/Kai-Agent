@@ -239,11 +239,15 @@ class MarkdownFormatter {
 
         // 5. Bold formatting
         escaped = escaped.replace(/\*\*([^\*\r\n]+?)\*\*/g, '<strong>$1</strong>');
-        escaped = escaped.replace(/__([^_\r\n]+?)__/g, '<strong>$1</strong>');
-
-        // 6. Italic formatting
-        escaped = escaped.replace(/(?<!\*)\*([^\*\s\r\n](?:[^\*\r\n]*?[^\*\s\r\n])?)\*(?!\*)/g, '<em>$1</em>');
-        escaped = escaped.replace(/(?<!_)_([^_\s\r\n](?:[^_\r\n]*?[^_\s\r\n])?)_(?!_)/g, '<em>$1</em>');
+        // 6. Italic formatting (supports *italic* and _italic_ cleanly across words and sentences)
+        escaped = escaped.replace(/(?:^|[^\*])\*([^\*\r\n]+?)\*(?!\*)/g, (match, p1) => {
+            const prefix = match.startsWith('*') ? '' : match.charAt(0);
+            return `${prefix}<em>${p1}</em>`;
+        });
+        escaped = escaped.replace(/(?:^|[\s\(\[\{])_([^_]+?)_(?=[\s\)\.\,\!\?\]\}]|$)/g, (match, p1) => {
+            const prefix = match.startsWith('_') ? '' : match.charAt(0);
+            return `${prefix}<em>${p1}</em>`;
+        });
 
         // 7. Headers formatting (support # up to ###### across start of text, newlines, and carriage returns)
         escaped = escaped.replace(/(?:^|\r?\n)######[ \t]+([^\r\n]+)/g, '\n<h6>$1</h6>');

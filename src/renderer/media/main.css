@@ -794,7 +794,7 @@ button:disabled {
   gap: 8px;
   max-width: 85%;
   align-self: flex-end;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   animation: fadeInMessage 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -810,10 +810,17 @@ button:disabled {
 
 .user-message {
   align-self: flex-end;
-  background: var(--vscode-merge-common-header-background, rgba(120, 120, 120, 0.15));
-  color: var(--app-fg);
-  border: 1px solid rgba(120, 120, 120, 0.25);
-  border-radius: 12px 12px 2px 12px;
+  background: var(--app-surface-hover, #2a2a2e);
+  color: var(--app-fg, #e4e4e7);
+  border: 1px solid var(--app-border, #3f3f46);
+  border-radius: 12px;
+  padding: 8px 12px !important;
+  box-sizing: border-box;
+}
+
+.user-message .message-content {
+  padding: 0 !important;
+  line-height: 1.45;
 }
 
 /* Edit prompt button next to user prompt bubble */
@@ -964,6 +971,24 @@ button:disabled {
 
 .msg-action-btn.copied {
   color: #4caf50;
+}
+
+.msg-action-btn.toggle-raw-btn.active {
+  color: var(--app-accent, #38bdf8);
+  background: var(--app-surface-hover);
+}
+
+.raw-markdown-pre {
+  margin: 4px 0;
+  padding: 8px 10px;
+  background: #18181b;
+  border: 1px solid var(--app-border, #3f3f46);
+  border-radius: 6px;
+  font-family: var(--app-mono, monospace);
+  font-size: 0.8rem;
+  color: #e4e4e7;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 
 /* Subtle mode badge indicator under assistant responses */

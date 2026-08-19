@@ -170,18 +170,40 @@ class ChatUIController {
                 if (copyRespBtn) {
                     const assistantMsg = copyRespBtn.closest('.assistant-message');
                     if (assistantMsg) {
+                        const rawText = assistantMsg.dataset.rawContent || (assistantMsg.querySelector('.message-content') ? assistantMsg.querySelector('.message-content').innerText : '') || '';
+                        navigator.clipboard.writeText(rawText).then(() => {
+                            const originalHTML = copyRespBtn.innerHTML;
+                            copyRespBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+                            copyRespBtn.classList.add('copied');
+                            setTimeout(() => {
+                                copyRespBtn.innerHTML = originalHTML;
+                                copyRespBtn.classList.remove('copied');
+                            }, 1600);
+                        });
+                    }
+                    return;
+                }
+
+                // 8b. Toggle Raw text button on assistant message
+                const rawToggleBtn = e.target.closest('.toggle-raw-btn');
+                if (rawToggleBtn) {
+                    const assistantMsg = rawToggleBtn.closest('.assistant-message');
+                    if (assistantMsg) {
                         const contentEl = assistantMsg.querySelector('.message-content');
                         if (contentEl) {
-                            const rawText = assistantMsg.dataset.rawContent || contentEl.innerText || '';
-                            navigator.clipboard.writeText(rawText).then(() => {
-                                const originalHTML = copyRespBtn.innerHTML;
-                                copyRespBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-                                copyRespBtn.classList.add('copied');
-                                setTimeout(() => {
-                                    copyRespBtn.innerHTML = originalHTML;
-                                    copyRespBtn.classList.remove('copied');
-                                }, 1600);
-                            });
+                            const isRaw = assistantMsg.classList.toggle('show-raw-mode');
+                            rawToggleBtn.classList.toggle('active', isRaw);
+                            const rawText = assistantMsg.dataset.rawContent || '';
+                            if (isRaw) {
+                                contentEl.dataset.formattedHtml = contentEl.innerHTML;
+                                contentEl.innerHTML = `<pre class="raw-markdown-pre"><code>${this.formatter.escapeHtml(rawText)}</code></pre>`;
+                            } else {
+                                if (contentEl.dataset.formattedHtml) {
+                                    contentEl.innerHTML = contentEl.dataset.formattedHtml;
+                                } else {
+                                    contentEl.innerHTML = this.formatter.formatMarkdown(rawText);
+                                }
+                            }
                         }
                     }
                     return;
@@ -393,6 +415,7 @@ class ChatUIController {
 
         const copySvg = window.KAI_SVGS['copy_response'] || '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
         const retrySvg = window.KAI_SVGS['retry'] || '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>';
+        const rawSvg = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>';
 
         let badgeHtml = '';
         if (mode) {
@@ -403,6 +426,9 @@ class ChatUIController {
         bar.innerHTML = `
             <button type="button" class="msg-action-btn copy-response-btn" title="Copy response">
                 ${copySvg}
+            </button>
+            <button type="button" class="msg-action-btn toggle-raw-btn" title="View raw markdown">
+                ${rawSvg}
             </button>
             <button type="button" class="msg-action-btn retry-btn" title="Retry">
                 ${retrySvg}
