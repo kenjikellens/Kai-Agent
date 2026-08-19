@@ -315,6 +315,11 @@ class WebviewIPCBridge {
                     systemPrompt += workspaceInfo;
                 }
 
+                // Append current day, date, and time automatically
+                const nowObj = new Date();
+                const currentDayTimeStr = `[Current Day and Time: ${nowObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}, ${nowObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}]`;
+                systemPrompt += `\n\n${currentDayTimeStr}\n`;
+
                 const messagesToSend = [...rawMessages];
                 const sysIdx = messagesToSend.findIndex(m => m.role === 'system');
                 if (sysIdx !== -1) {

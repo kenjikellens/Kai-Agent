@@ -73,7 +73,11 @@ export class AgentExecutor {
             provider.supportsNativeFunctionCalling?.() && provider.chatCompletionStreamWithTools
         );
 
-        const systemContent = this.getSystemPrompt(effectiveMode, hasWorkspace, useNativeFunctionCalling);
+        let systemContent = this.getSystemPrompt(effectiveMode, hasWorkspace, useNativeFunctionCalling);
+        const now = new Date();
+        const currentDayTimeStr = `[Current Day and Time: ${now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}, ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}]`;
+        systemContent += `\n\n${currentDayTimeStr}\n`;
+
         const existingSystemIndex = messages.findIndex((m) => m.role === 'system');
         if (existingSystemIndex !== -1) {
             messages[existingSystemIndex] = {

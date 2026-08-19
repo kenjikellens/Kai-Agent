@@ -440,6 +440,13 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
                 self._json_response(200, {"result": "\n".join(res_lines)})
                 return
 
+            if tool_name == "get_time" or (tool_name == "utility_tools" and args.get("action") == "get_time"):
+                import datetime
+                now = datetime.datetime.now()
+                res = f"Current Local Date and Time: {now.strftime('%A, %B %d, %Y at %H:%M:%S')} (ISO: {now.isoformat()})"
+                self._json_response(200, {"result": res})
+                return
+
             self._json_response(400, {"result": f"[Error]: Unknown tool '{tool_name}'"})
 
         except Exception as e:
