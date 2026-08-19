@@ -14,10 +14,7 @@ export class CohereClient extends BaseCloudProviderClient {
     public readonly keyHint = 'Get free key at dashboard.cohere.com';
     /** Available Cohere model identifiers. */
     public readonly models = [
-        'cohere/command-a-plus',
-        'cohere/command-a',
         'cohere/command-r-plus',
-        'cohere/command-r',
-        'cohere/command-r7b-12-2024'
+        'cohere/command-r'
     ];
 }

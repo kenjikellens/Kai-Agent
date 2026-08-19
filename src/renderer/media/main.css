@@ -4318,12 +4318,12 @@ details[open]>summary>.custom-chevron {
   color: var(--app-fg);
 }
 
-/* Category Title - Uppercase, muted grey */
+/* Category Title - Uppercase, muted grey, refined larger and bolder */
 .category-title {
   text-transform: uppercase;
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: 0.5px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.6px;
   color: var(--app-muted);
   transition: color 0.15s ease;
 }

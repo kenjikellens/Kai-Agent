@@ -17,13 +17,10 @@ export class MistralClient extends BaseCloudProviderClient {
     public readonly models = [
         'mistral/magistral-small-latest',
         'mistral/magistral-medium-latest',
-        'mistral/mistral-medium-3-5',
-        'mistral/mistral-medium-3',
         'mistral/mistral-small-latest',
-        'mistral/mistral-large-latest',
-        'mistral/open-mistral-nemo',
+        'mistral/mistral-medium-3-5',
         'mistral/codestral-latest',
-        'mistral/pixtral-large-latest'
+        'mistral/open-mixtral-8x22b'
     ];
 
     /**

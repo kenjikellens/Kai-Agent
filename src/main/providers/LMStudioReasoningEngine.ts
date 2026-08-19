@@ -151,13 +151,16 @@ export class LMStudioReasoningEngine {
             return;
         }
 
-        // 5. Gemma Architecture (e.g. Gemma 4 E4B, Gemma 4 E2B, Gemma 4 31B, Gemma 4 26B, Gemma 2)
-        if (lower.includes('gemma')) {
-            requestParams.reasoning_effort = effortVal;
+        // 5. Gemma & Bonsai Architecture (e.g. Gemma 4 E4B, Gemma 4 E2B, Gemma 4 12B/31B, Bonsai 27B)
+        if (lower.includes('gemma') || lower.includes('bonsai')) {
             if (thinking) {
                 requestParams.thinking = true;
+                requestParams.enable_thinking = true;
+                requestParams.chat_template_kwargs = { enable_thinking: true };
             } else {
                 requestParams.thinking = false;
+                requestParams.enable_thinking = false;
+                requestParams.chat_template_kwargs = { enable_thinking: false };
             }
             return;
         }
