@@ -198,18 +198,19 @@ class SettingsController {
             });
         }
 
-        // 7. Thinking Process Max Height Custom Select Dropdown (60px to 300px)
+        // 7. Thinking Process Max Height Custom Select Dropdown (50px to 400px in steps of 50px)
         const maxHeightContainer = document.getElementById('thinking-max-height-select-container');
         if (maxHeightContainer && typeof CustomSelectComponent !== 'undefined') {
-            const storedHeight = localStorage.getItem('kai.thinkingMaxHeight') || '140px';
+            const storedHeight = localStorage.getItem('kai.thinkingMaxHeight') || '150px';
             const heightOptions = [
-                { value: '60px', label: '60px' },
+                { value: '50px', label: '50px' },
                 { value: '100px', label: '100px' },
-                { value: '140px', label: '140px' },
-                { value: '180px', label: '180px' },
-                { value: '220px', label: '220px' },
-                { value: '260px', label: '260px' },
-                { value: '300px', label: '300px' }
+                { value: '150px', label: '150px' },
+                { value: '200px', label: '200px' },
+                { value: '250px', label: '250px' },
+                { value: '300px', label: '300px' },
+                { value: '350px', label: '350px' },
+                { value: '400px', label: '400px' }
             ];
             this.thinkingMaxHeightComponent = new CustomSelectComponent({
                 container: maxHeightContainer,
