@@ -271,7 +271,8 @@ class ModelDropdownController {
 
                 const textSpan = document.createElement('span');
                 textSpan.className = 'model-text-inner dropdown-item-text';
-                textSpan.textContent = itemData.label;
+                const initialSuffix = thinkingState.dropdownText ? ` (${thinkingState.dropdownText})` : '';
+                textSpan.textContent = itemData.label + initialSuffix;
 
                 textContainer.appendChild(textSpan);
                 item.appendChild(textContainer);
@@ -429,27 +430,21 @@ class ModelDropdownController {
                         const selectField = fields.find(f => f.type === 'select' && Array.isArray(f.options) && f.options.length > 0);
                         const booleanField = fields.find(f => f.type === 'boolean') || (!selectField && thinkingState.isThinkingCapable);
 
-                        // 1. Render Select options FIRST (xhigh, Medium, Low)
+                        // 1. Render Select options FIRST (xhigh, medium, low)
                         if (selectField) {
                             const cleanOptions = selectField.options.filter(o => o.value !== 'off' && o.value !== 'none');
                             cleanOptions.forEach(opt => {
                                 const flyoutOpt = document.createElement('button');
                                 flyoutOpt.type = 'button';
-                                const isSelected = opt.value === currentLmReasoningLevel;
+                                const optVal = typeof opt === 'string' ? opt : (opt.value || opt.label);
+                                const isSelected = optVal === currentLmReasoningLevel;
                                 flyoutOpt.className = `dropdown-item flyout-option ${isSelected ? 'selected' : ''}`;
                                 flyoutOpt.setAttribute('role', 'button');
                                 
-                                const formatOptLabel = (v, l) => {
-                                    if (v === 'xhigh' || l === 'xhigh' || l === 'Extra High' || l === 'X-High') return 'xhigh';
-                                    if (v === 'high' || l === 'high') return 'High';
-                                    if (v === 'medium' || l === 'medium') return 'Medium';
-                                    if (v === 'low' || l === 'low') return 'Low';
-                                    return l || v;
-                                };
-                                const optLabel = formatOptLabel(opt.value, opt.label);
-                                flyoutOpt.setAttribute('aria-label', `Set ${selectField.displayName} to ${optLabel}`);
+                                const optLabel = optVal;
+                                flyoutOpt.setAttribute('aria-label', `Set ${selectField.displayName || 'Reasoning Effort'} to ${optLabel}`);
                                 
-                                ThinkingStateFormatter.renderFlyoutOptionContent(flyoutOpt, optLabel, opt.value);
+                                ThinkingStateFormatter.renderFlyoutOptionContent(flyoutOpt, optLabel, optVal);
 
                                 if (isSelected) {
                                     const checkSvg = DOMUtils.createCheckIcon('check-icon');
@@ -509,9 +504,18 @@ class ModelDropdownController {
                                 title: 'Enable reasoning/thinking for this local model',
                                 onChange: (checked) => {
                                     localStorage.setItem(`kai.lmStudioThinking.${itemData.rawModel}`, checked ? 'true' : 'false');
+                                    localStorage.setItem(`kai.lmStudioThinking.${itemData.value}`, checked ? 'true' : 'false');
+                                    
+                                    // Update trigger button
                                     this.setSelectedModel(this.selectedModelValue);
-                                    if (this.onSelect && this.selectedModelValue === itemData.value) {
-                                        this.onSelect(itemData.value);
+                                    
+                                    // Update this dropdown item's text
+                                    const st = ThinkingStateFormatter.getThinkingState(itemData.rawModel);
+                                    const suffix = st.dropdownText ? ` (${st.dropdownText})` : '';
+                                    textSpan.textContent = itemData.label + suffix;
+
+                                    if (this.onSelect && (this.selectedModelValue === itemData.value || this.selectedModelValue === itemData.rawModel)) {
+                                        this.onSelect(this.selectedModelValue);
                                     }
                                 }
                             });
@@ -757,7 +761,7 @@ class ModelDropdownController {
                 model: raw.slice(0, -11),
                 thinking: true,
                 isThinkingCapable: true,
-                reasoningEffort: 'on'
+                reasoningEffort: 'xhigh'
             };
         }
 
@@ -771,11 +775,16 @@ class ModelDropdownController {
             };
         }
 
+        // Map 'on'/'off' to valid LM Studio API values (none, low, medium, high, xhigh)
+        let effort = thinkingState.level || 'xhigh';
+        if (effort === 'on') effort = 'xhigh';
+        if (effort === 'off') effort = 'none';
+
         return {
             model: raw,
             thinking: thinkingState.isOn,
             isThinkingCapable: true,
-            reasoningEffort: thinkingState.level || 'on'
+            reasoningEffort: thinkingState.isOn ? effort : 'none'
         };
     }
 

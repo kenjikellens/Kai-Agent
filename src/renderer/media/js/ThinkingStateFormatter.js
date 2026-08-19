@@ -21,7 +21,17 @@ class ThinkingStateFormatter {
      */
     static getThinkingState(modelId) {
         if (!modelId) {
-            return { isThinkingCapable: false, isMultiLevel: false, level: 'off', isOn: false, labelText: '', rawModel: '' };
+            return {
+                isThinkingCapable: false,
+                isMultiLevel: false,
+                level: 'off',
+                isOn: false,
+                labelText: '',
+                dropdownText: '',
+                hasReasoning: false,
+                reasoningLevel: null,
+                rawModel: ''
+            };
         }
 
         const lower = String(modelId).toLowerCase();
@@ -39,7 +49,7 @@ class ThinkingStateFormatter {
             const fields = Array.isArray(cap.fields) ? cap.fields : [];
             if (fields.length > 0) {
                 const selectField = fields.find(f => f.type === 'select');
-                const hasBooleanField = fields.some(f => f.type === 'boolean');
+                const booleanField = fields.find(f => f.type === 'boolean');
                 const isLmThinkingOn = localStorage.getItem(`kai.lmStudioThinking.${rawModel}`) !== 'false';
 
                 if (selectField) {
@@ -55,15 +65,21 @@ class ThinkingStateFormatter {
                         level: effortKey,
                         isOn: isLmThinkingOn,
                         labelText: isLmThinkingOn ? effortKey : '',
+                        dropdownText: isLmThinkingOn ? effortKey : '',
+                        hasReasoning: true,
+                        reasoningLevel: isLmThinkingOn ? effortKey : 'off',
                         rawModel: rawModel
                     };
-                } else if (hasBooleanField) {
+                } else if (booleanField) {
                     return {
                         isThinkingCapable: true,
                         isMultiLevel: false,
                         level: isLmThinkingOn ? 'on' : 'off',
                         isOn: isLmThinkingOn,
-                        labelText: isLmThinkingOn ? 'on' : '',
+                        labelText: isLmThinkingOn ? 'thinking' : '',
+                        dropdownText: isLmThinkingOn ? 'thinking' : '',
+                        hasReasoning: false,
+                        reasoningLevel: null,
                         rawModel: rawModel
                     };
                 }
@@ -85,11 +101,14 @@ class ThinkingStateFormatter {
                 level: level,
                 isOn: isOn,
                 labelText: isOn ? labelText : '',
+                dropdownText: isOn ? labelText : '',
+                hasReasoning: false,
+                reasoningLevel: null,
                 rawModel: rawModel
             };
         }
 
-        // 3. Architectural Fallbacks for LM Studio models without active manifest
+        // 3. Fallback for LM Studio models with select fields when manifest is offline (Qwen/GLM)
         const isQwenReasoning = lowerRaw.includes('qwen') || lowerRaw.includes('qwq') || lowerRaw.includes('glm');
         if (isQwenReasoning) {
             const isLmThinkingOn = localStorage.getItem(`kai.lmStudioThinking.${rawModel}`) !== 'false';
@@ -104,12 +123,15 @@ class ThinkingStateFormatter {
                 level: effortKey,
                 isOn: isLmThinkingOn,
                 labelText: isLmThinkingOn ? effortKey : '',
+                dropdownText: isLmThinkingOn ? effortKey : '',
+                hasReasoning: true,
+                reasoningLevel: isLmThinkingOn ? effortKey : 'off',
                 rawModel: rawModel
             };
         }
 
-        // 4. Gemma & Bonsai & DeepSeek-R1 boolean thinking fallback
-        const isBooleanThinking = lowerRaw.includes('gemma') || lowerRaw.includes('bonsai') || lowerRaw.includes('deepseek') || lowerRaw.includes('r1');
+        // 4. Gemma & DeepSeek-R1 boolean thinking fallback
+        const isBooleanThinking = lowerRaw.includes('gemma') || lowerRaw.includes('deepseek') || lowerRaw.includes('r1');
         if (isBooleanThinking) {
             const isLmThinkingOn = localStorage.getItem(`kai.lmStudioThinking.${rawModel}`) !== 'false';
             return {
@@ -117,7 +139,10 @@ class ThinkingStateFormatter {
                 isMultiLevel: false,
                 level: isLmThinkingOn ? 'on' : 'off',
                 isOn: isLmThinkingOn,
-                labelText: isLmThinkingOn ? 'on' : '',
+                labelText: isLmThinkingOn ? 'thinking' : '',
+                dropdownText: isLmThinkingOn ? 'thinking' : '',
+                hasReasoning: false,
+                reasoningLevel: null,
                 rawModel: rawModel
             };
         }
@@ -132,25 +157,42 @@ class ThinkingStateFormatter {
                 isMultiLevel: false,
                 level: isOn ? 'on' : 'off',
                 isOn: isOn,
-                labelText: isOn ? 'on' : '',
+                labelText: isOn ? 'thinking' : '',
+                dropdownText: isOn ? 'thinking' : '',
+                hasReasoning: false,
+                reasoningLevel: null,
                 rawModel: rawModel
             };
         }
 
-        // 6. Muse Glimmer (Reasoning is baked-in and cannot be toggled off)
-        const isMuseGlimmer = lowerRaw.includes('muse') || lowerRaw.includes('glimmer');
-        if (isMuseGlimmer) {
-            return {
-                isThinkingCapable: false,
-                isMultiLevel: false,
-                level: 'high',
-                isOn: true,
-                labelText: '',
-                rawModel: rawModel
-            };
+        return {
+            isThinkingCapable: false,
+            isMultiLevel: false,
+            level: 'off',
+            isOn: false,
+            labelText: '',
+            dropdownText: '',
+            hasReasoning: false,
+            reasoningLevel: null,
+            rawModel: rawModel
+        };
+    }
+
+    /**
+     * Resolves info metadata for the Help/Info modal with separated Thinking and Reasoning rows.
+     * @param {string} modelId Model ID string.
+     * @returns {{ thinking: string|null, reasoning: string|null }} Info status object.
+     */
+    static getInfoState(modelId) {
+        const state = ThinkingStateFormatter.getThinkingState(modelId);
+        if (!state.isThinkingCapable) {
+            return { thinking: null, reasoning: null };
         }
 
-        return { isThinkingCapable: false, isMultiLevel: false, level: 'off', isOn: false, labelText: '', rawModel: rawModel };
+        return {
+            thinking: state.isOn ? 'on' : 'off',
+            reasoning: state.hasReasoning ? (state.isOn ? state.level : 'off') : null
+        };
     }
 
     /**

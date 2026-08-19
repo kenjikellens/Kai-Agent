@@ -103,8 +103,10 @@ export class LMStudioReasoningEngine {
         const lower = (modelId || '').toLowerCase();
         const userProfiles = LMStudioReasoningEngine.getUserProfiles();
 
-        // Map effort string (normalize 'high' to 'xhigh' or keep 'xhigh'/'medium'/'low')
-        const effortVal = reasoningEffort === 'high' ? 'xhigh' : (reasoningEffort || 'xhigh');
+        // Map effort string (normalize 'high'/'on' to 'xhigh', 'off' to 'none', or keep 'xhigh'/'medium'/'low'/'none')
+        let effortVal = reasoningEffort || 'xhigh';
+        if (effortVal === 'high' || effortVal === 'on') effortVal = 'xhigh';
+        if (effortVal === 'off' || effortVal === 'minimal' || !thinking) effortVal = 'none';
 
         // 1. Check for user-defined configuration override
         const customProfile = userProfiles[modelId] || userProfiles[lower];
@@ -132,7 +134,7 @@ export class LMStudioReasoningEngine {
 
         // 3. Qwen & GLM Architecture (e.g. Qwen 3.8 27B, Qwen 3.6, Qwen 3.5, Qwen 3 Coder, GLM 4.7 Flash, QwQ)
         if (lower.includes('qwen') || lower.includes('glm') || lower.includes('qwq')) {
-            requestParams.reasoning_effort = effortVal;
+            requestParams.reasoning_effort = thinking ? effortVal : 'none';
             if (thinking) {
                 requestParams.thinking = true;
                 requestParams.enable_thinking = true;
@@ -147,7 +149,9 @@ export class LMStudioReasoningEngine {
 
         // 4. Mistral & Codestral Architecture (e.g. Magistral, Codestral, Mistral Small 3)
         if (lower.includes('mistral') || lower.includes('codestral') || lower.includes('magistral') || lower.includes('ministral')) {
-            requestParams.reasoning_effort = effortVal;
+            if (thinking) {
+                requestParams.reasoning_effort = effortVal;
+            }
             return;
         }
 
@@ -161,6 +165,7 @@ export class LMStudioReasoningEngine {
                 requestParams.thinking = false;
                 requestParams.enable_thinking = false;
                 requestParams.chat_template_kwargs = { enable_thinking: false };
+                requestParams.reasoning_effort = 'none';
             }
             return;
         }
