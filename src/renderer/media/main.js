@@ -592,6 +592,25 @@
 
 
 
+    // 10. Handle Proceed with Plan clicks inside implementation plan cards
+    document.addEventListener('click', (e) => {
+        const proceedBtn = e.target.closest('.plan-proceed-btn');
+        if (proceedBtn && !proceedBtn.disabled) {
+            // Disable button & update UI label
+            proceedBtn.disabled = true;
+            proceedBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"></path></svg><span>Plan Approved</span>`;
+            
+            // Switch mode to Agent automatically
+            setActiveMode('agent');
+
+            // Send confirmation prompt to start agent execution
+            if (messageInput) {
+                messageInput.value = 'Please proceed with executing the approved implementation plan.';
+                sendMessage();
+            }
+        }
+    });
+
     if (messageInput) {
         messageInput.addEventListener('input', autoResizeInput);
         messageInput.addEventListener('keydown', (e) => {
@@ -737,10 +756,15 @@
         appState.finalizeAssistantUiEvent();
 
         let forceThinkingCollapsed = null;
+        let forcePlanExpanded = null;
         if (chatUIController.currentAssistantMsgElement) {
             const existingThinking = chatUIController.currentAssistantMsgElement.querySelector('.thinking-content');
             if (existingThinking) {
                 forceThinkingCollapsed = existingThinking.classList.contains('collapsed');
+            }
+            const existingPlan = chatUIController.currentAssistantMsgElement.querySelector('.kai-plan-card');
+            if (existingPlan) {
+                forcePlanExpanded = existingPlan.classList.contains('expanded');
             }
         }
 
@@ -748,7 +772,7 @@
         const isThinkingChecked = (settingsController && settingsController.showThinkingToggle) 
             ? settingsController.showThinkingToggle.checked 
             : (localStorage.getItem('kai.showThinking') !== 'false');
-        const formatted = formatter.formatMarkdown(replyContent, forceThinkingCollapsed, isThinkingChecked);
+        const formatted = formatter.formatMarkdown(replyContent, forceThinkingCollapsed, isThinkingChecked, forcePlanExpanded);
 
         const currentMode = message.mode || appState.activeMode || 'chat';
 

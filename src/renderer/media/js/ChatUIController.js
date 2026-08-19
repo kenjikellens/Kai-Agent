@@ -116,6 +116,20 @@ class ChatUIController {
                     return;
                 }
 
+                // 5b. Collapsible implementation plan card trigger
+                const planHeader = e.target.closest('.kai-plan-header');
+                if (planHeader) {
+                    const card = planHeader.closest('.kai-plan-card');
+                    if (card) {
+                        const isExpanded = card.classList.toggle('expanded');
+                        const label = planHeader.querySelector('.plan-toggle-label');
+                        if (label) {
+                            label.textContent = isExpanded ? 'Show less' : 'Show more';
+                        }
+                    }
+                    return;
+                }
+
                 // 6. Copy code snippet button
                 const copyBtn = e.target.closest('.copy-code-btn');
                 if (copyBtn) {
@@ -546,10 +560,15 @@ class ChatUIController {
             appState.updateOrAddAssistantUiEvent(this.currentAssistantText);
             
             let forceThinkingCollapsed = null;
+            let forcePlanExpanded = null;
             if (this.currentAssistantMsgElement) {
                 const existingThinking = this.currentAssistantMsgElement.querySelector('.thinking-content');
                 if (existingThinking) {
                     forceThinkingCollapsed = existingThinking.classList.contains('collapsed');
+                }
+                const existingPlan = this.currentAssistantMsgElement.querySelector('.kai-plan-card');
+                if (existingPlan) {
+                    forcePlanExpanded = existingPlan.classList.contains('expanded');
                 }
             }
 
@@ -575,7 +594,7 @@ class ChatUIController {
                 const isThinkingChecked = (this.settingsController && this.settingsController.showThinkingToggle) 
                     ? this.settingsController.showThinkingToggle.checked 
                     : (localStorage.getItem('kai.showThinking') !== 'false');
-                const formatted = this.formatter.formatMarkdown(this.currentAssistantText, forceThinkingCollapsed, isThinkingChecked);
+                const formatted = this.formatter.formatMarkdown(this.currentAssistantText, forceThinkingCollapsed, isThinkingChecked, forcePlanExpanded);
                 
                 if (formatted.trim()) {
                     if (!this.currentAssistantMsgElement || (this.chatContainer && !this.chatContainer.contains(this.currentAssistantMsgElement))) {

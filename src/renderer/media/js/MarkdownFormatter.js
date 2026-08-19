@@ -109,9 +109,10 @@ class MarkdownFormatter {
      * @param {string} text Raw markdown text.
      * @param {boolean|null} forceThinkingCollapsed Optional collapse override.
      * @param {boolean} isThinkingEnabled Whether agent thinking is enabled.
+     * @param {boolean|null} forcePlanExpanded Optional plan expansion override.
      * @returns {string} Formatted HTML.
      */
-    formatMarkdown(text, forceThinkingCollapsed = null, isThinkingEnabled = true) {
+    formatMarkdown(text, forceThinkingCollapsed = null, isThinkingEnabled = true, forcePlanExpanded = null) {
         if (!text) return '';
         const chevronSvg = DOMUtils.getChevronSvgString('custom-chevron');
 
@@ -197,6 +198,44 @@ class MarkdownFormatter {
 
         // Replace tool call placeholders
         escaped = escaped.replace(/\[\[\[TOOL_CALL_START\]\]\]([\s\S]*?)\[\[\[TOOL_CALL_END\]\]\]/g, '');
+
+        // Plan cards placeholder extraction
+        const planCards = [];
+        const planChevronSvg = `<svg class="plan-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+        const planIconSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>`;
+        const proceedIconSvg = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`;
+
+        // Parse <implementation_plan title="...">...</implementation_plan> tags
+        escaped = escaped.replace(/&lt;implementation_plan(?:\s+title=&quot;([^&]*)&quot;|\s+title="([^"]*)")?&gt;([\s\S]*?)(?:&lt;\/implementation_plan&gt;|$)/gi, (match, title1, title2, body) => {
+            const planTitle = (title1 || title2 || 'Implementation Plan').trim();
+            const formattedBody = this.formatMarkdown(body.trim(), null, false, null);
+            const isExpanded = forcePlanExpanded === true;
+            const expandedClass = isExpanded ? ' expanded' : '';
+            const toggleText = isExpanded ? 'Show less' : 'Show more';
+            const cardHtml = `\n<div class="kai-plan-card${expandedClass}">` +
+                `<div class="kai-plan-header">` +
+                    `<div class="plan-header-title-box">` +
+                        `<div class="plan-mode-icon">${planIconSvg}</div>` +
+                        `<span class="plan-title-text">${this.escapeHtml(planTitle)}</span>` +
+                        `<span class="plan-status-badge">Ready for Review</span>` +
+                    `</div>` +
+                    `<div class="plan-header-right">` +
+                        `<span class="plan-toggle-label">${toggleText}</span>` +
+                        `${planChevronSvg}` +
+                    `</div>` +
+                `</div>` +
+                `<div class="kai-plan-content-wrapper">` +
+                    `<div class="kai-plan-body">${formattedBody}</div>` +
+                `</div>` +
+                `<div class="kai-plan-footer">` +
+                    `<div class="plan-footer-hint">Click Proceed to approve and execute in Agent mode.</div>` +
+                    `<button type="button" class="btn-proceed plan-proceed-btn">${proceedIconSvg}<span>Proceed with Plan</span></button>` +
+                `</div>` +
+            `</div>\n`;
+            const idx = planCards.length;
+            planCards.push(cardHtml);
+            return `\n%%PLANCARD${idx}%%\n`;
+        });
 
         // 1. Extract triple backtick code blocks into isolated placeholders
         const codeBlocks = [];
@@ -304,9 +343,10 @@ class MarkdownFormatter {
             return `<ul class="md-list">${items.map(item => `<li>${item}</li>`).join('')}</ul>`;
         });
 
-        // 11. Restore inline code and code block placeholders in proper order
+        // 11. Restore inline code, code blocks and plan card placeholders in proper order
         escaped = escaped.replace(/%%INLCODE(\d+)%%/g, (match, idx) => inlineCodes[Number(idx)] || '');
         escaped = escaped.replace(/%%CBLOCK(\d+)%%/g, (match, idx) => codeBlocks[Number(idx)] || '');
+        escaped = escaped.replace(/%%PLANCARD(\d+)%%/g, (match, idx) => planCards[Number(idx)] || '');
 
         return escaped;
     }

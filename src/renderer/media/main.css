@@ -991,27 +991,83 @@ button:disabled {
   word-break: break-all;
 }
 
-/* Subtle mode badge indicator under assistant responses */
-.message-mode-badge {
-  font-size: 0.65rem;
-  font-weight: 500;
-  padding: 1px 6px;
-  border-radius: 4px;
+/* Assistant message action buttons & info popup */
+.message-info-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.msg-info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--app-radius-sm);
+  background: transparent;
   color: var(--app-muted);
-  background: var(--app-surface);
-  border: 1px solid var(--app-border-subtle);
-  margin-left: 4px;
-  user-select: none;
+  border: 0 !important;
+  outline: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.message-mode-badge.mode-badge-agent {
-  color: #81d4fa;
-  border-color: rgba(129, 212, 250, 0.2);
+.msg-info-btn:hover {
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
 }
 
-.message-mode-badge.mode-badge-planning {
-  color: #ce93d8;
-  border-color: rgba(206, 147, 216, 0.2);
+.msg-info-popover {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  min-width: 220px;
+  max-width: 320px;
+  background: var(--app-input-bg, #252526);
+  border: 1px solid var(--app-border-strong, rgba(255, 255, 255, 0.14));
+  border-radius: var(--app-radius-md, 6px);
+  padding: 8px 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: var(--app-fg, #cccccc);
+  user-select: text;
+}
+
+.message-info-container:hover .msg-info-popover,
+.message-info-container:focus-within .msg-info-popover {
+  display: block;
+}
+
+.info-popover-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.info-popover-row:not(:last-child) {
+  border-bottom: 1px solid var(--app-border-subtle, rgba(255, 255, 255, 0.05));
+  margin-bottom: 3px;
+  padding-bottom: 3px;
+}
+
+.info-popover-label {
+  color: var(--app-muted, #888888);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.info-popover-value {
+  color: var(--app-fg, #ffffff);
+  font-family: var(--app-mono, monospace);
+  font-size: 0.72rem;
+  text-align: right;
+  word-break: break-all;
 }
 
 .assistant-message .message-content {
@@ -2235,6 +2291,207 @@ button:disabled {
 
 .thinking-content.collapsed {
   display: none;
+}
+
+/* ==========================================================================
+   PLANNING MODE IMPLEMENTATION PLAN CARD (.kai-plan-card)
+   Clean, theme-compliant container with collapsible partial height & bottom fade mask.
+   ========================================================================== */
+
+.kai-plan-card {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 6px 0;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border-strong);
+  border-radius: var(--app-radius-md);
+  overflow: hidden;
+  position: relative;
+}
+
+.kai-plan-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Plan Card Header */
+.kai-plan-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--app-surface-strong);
+  border-bottom: 1px solid var(--app-border-subtle);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease;
+}
+
+.kai-plan-header:hover {
+  background: var(--app-surface-hover);
+}
+
+.plan-header-title-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.plan-mode-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--app-muted);
+  flex-shrink: 0;
+}
+
+.plan-title-text {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--app-fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plan-status-badge {
+  font-size: 0.7rem;
+  font-weight: normal;
+  padding: 1px 6px;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-surface);
+  color: var(--app-muted);
+  border: 1px solid var(--app-border-subtle);
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+
+.plan-header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.plan-toggle-label {
+  font-size: 0.72rem;
+  color: var(--app-muted);
+}
+
+.plan-chevron {
+  color: var(--app-muted);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.kai-plan-card.expanded .plan-chevron {
+  transform: rotate(180deg);
+}
+
+/* Plan Card Content Container with Partial Height + Bottom Fade when collapsed */
+.kai-plan-content-wrapper {
+  position: relative;
+  max-height: 110px;
+  overflow: hidden;
+  transition: max-height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Bottom Fade Mask when collapsed */
+.kai-plan-content-wrapper::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 65px;
+  background: linear-gradient(to bottom, transparent, var(--app-bg, #1e1e1e));
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+/* Fully expanded state */
+.kai-plan-card.expanded .kai-plan-content-wrapper {
+  max-height: 2500px;
+}
+
+.kai-plan-card.expanded .kai-plan-content-wrapper::after {
+  opacity: 0;
+}
+
+/* Plan Card Body */
+.kai-plan-body {
+  padding: 10px 14px 14px 14px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--app-fg);
+  background: transparent;
+}
+
+.kai-plan-body h1,
+.kai-plan-body h2,
+.kai-plan-body h3,
+.kai-plan-body h4 {
+  margin-top: 8px;
+  margin-bottom: 4px;
+  font-size: 0.82rem;
+  color: var(--app-fg);
+}
+
+.kai-plan-body ul {
+  margin: 4px 0 6px 14px;
+  padding: 0;
+}
+
+.kai-plan-body li {
+  margin: 2px 0;
+}
+
+/* Plan Card Footer (Action Bar) */
+.kai-plan-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--app-surface);
+  border-top: 1px solid var(--app-border-subtle);
+  position: relative;
+  z-index: 2;
+}
+
+.plan-footer-hint {
+  font-size: 0.74rem;
+  color: var(--app-muted);
+}
+
+/* Proceed Action Button */
+.btn-proceed {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-accent);
+  color: #ffffff;
+  font-family: var(--app-font);
+  font-size: 0.78rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-proceed:hover:not(:disabled) {
+  background: var(--app-accent-hover);
+}
+
+.btn-proceed:disabled {
+  background: var(--app-surface-strong);
+  color: var(--app-muted);
+  border: 1px solid var(--app-border);
+  cursor: default;
 }
 
 /* ==========================================================================
