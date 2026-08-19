@@ -1,6 +1,6 @@
 /**
  * ModelSettingsController manages the dedicated model settings dropdown (Dropdown 2).
- * Handles the chevron trigger button, Thinking mode toggle switch, and Reasoning Effort pop-up submenu.
+ * Handles the chevron trigger button, standalone thinking lamp indicator, and settings menu.
  */
 class ModelSettingsController {
     /**
@@ -12,6 +12,7 @@ class ModelSettingsController {
         this.onSettingsChange = options.onSettingsChange || null;
         this.container = document.getElementById('model-settings-dropdown-container');
         this.triggerBtn = document.getElementById('model-settings-trigger-btn');
+        this.indicatorEl = document.getElementById('model-thinking-indicator');
         this.menu = document.getElementById('model-settings-menu');
         this.isReasoningFlyoutOpen = false;
         this.activeModelId = '';
@@ -49,15 +50,16 @@ class ModelSettingsController {
     }
 
     /**
-     * Updates visibility and content based on active model capabilities.
-     * Hides the dropdown button if the model does not support thinking or reasoning.
+     * Updates visibility, standalone lamp indicator, and content based on active model capabilities.
+     * Hides the container if the model does not support thinking or reasoning.
      * @param {string} modelId Active model identifier.
      */
     update(modelId) {
         this.activeModelId = modelId;
-        if (!this.container || !this.menu) {
+        if (!this.container || !this.menu || !this.indicatorEl) {
             this.container = document.getElementById('model-settings-dropdown-container');
             this.triggerBtn = document.getElementById('model-settings-trigger-btn');
+            this.indicatorEl = document.getElementById('model-thinking-indicator');
             this.menu = document.getElementById('model-settings-menu');
         }
         if (!this.container || !this.menu) return;
@@ -68,12 +70,41 @@ class ModelSettingsController {
         if (!hasCapabilities) {
             this.container.classList.add('hidden');
             this.menu.classList.add('hidden');
+            if (this.indicatorEl) this.indicatorEl.innerHTML = '';
             this.isReasoningFlyoutOpen = false;
             return;
         }
 
         this.container.classList.remove('hidden');
+        this.updateIndicatorBadge(caps);
         this.renderMenu(caps);
+    }
+
+    /**
+     * Updates the standalone lamp icon and reasoning level text placed to the right of the chevron.
+     * Renders yellow active lamp, gray slashed inactive lamp, and level label when applicable.
+     * @param {object} caps Capabilities state object.
+     */
+    updateIndicatorBadge(caps) {
+        if (!this.indicatorEl) return;
+        this.indicatorEl.innerHTML = '';
+
+        const isThinkingOn = caps.hasThinkingToggle 
+            ? caps.isThinkingOn 
+            : (caps.reasoningLevel !== 'off' && caps.reasoningLevel !== 'none');
+
+        const lampSvg = DOMUtils.createLightbulbIcon(isThinkingOn, 'thinking-lamp-icon');
+        this.indicatorEl.appendChild(lampSvg);
+
+        if (caps.hasReasoningEffort && isThinkingOn) {
+            const matchedOpt = caps.effortOptions.find(o => o.value === caps.reasoningLevel) || caps.effortOptions[0];
+            if (matchedOpt && matchedOpt.value !== 'off' && matchedOpt.value !== 'none') {
+                const levelSpan = document.createElement('span');
+                levelSpan.className = 'lamp-level-label';
+                levelSpan.textContent = matchedOpt.label;
+                this.indicatorEl.appendChild(levelSpan);
+            }
+        }
     }
 
     /**
@@ -89,7 +120,7 @@ class ModelSettingsController {
 
     /**
      * Renders thinking toggle switch and reasoning effort pop-up rows inside the menu.
-     * Populates DOM items with SVG battery icons and labels directly from capabilities.
+     * Populates DOM items with Lamp SVG icons and clean labels directly from capabilities.
      * @param {object} caps Capabilities state object.
      */
     renderMenu(caps) {
@@ -99,11 +130,6 @@ class ModelSettingsController {
 
         // 1. Thinking Toggle Switch
         if (caps.hasThinkingToggle) {
-            const header = document.createElement('div');
-            header.className = 'settings-section-title';
-            header.textContent = 'Thinking';
-            this.menu.appendChild(header);
-
             const toggleRow = document.createElement('div');
             toggleRow.className = 'toggle-switch-row';
             toggleRow.setAttribute('role', 'button');
@@ -112,10 +138,10 @@ class ModelSettingsController {
 
             const toggleLabel = document.createElement('div');
             toggleLabel.className = 'toggle-label';
-            const batterySvg = DOMUtils.createBatteryIcon(caps.isThinkingOn, 'thinking-battery-icon');
+            const lampSvg = DOMUtils.createLightbulbIcon(caps.isThinkingOn, 'thinking-lamp-icon');
             const labelSpan = document.createElement('span');
             labelSpan.textContent = 'Thinking';
-            toggleLabel.appendChild(batterySvg);
+            toggleLabel.appendChild(lampSvg);
             toggleLabel.appendChild(labelSpan);
             toggleRow.appendChild(toggleLabel);
 
@@ -135,8 +161,8 @@ class ModelSettingsController {
                     switchPill.classList.remove('active');
                 }
 
-                const newBattery = DOMUtils.createBatteryIcon(newState, 'thinking-battery-icon');
-                batterySvg.replaceWith(newBattery);
+                const newLamp = DOMUtils.createLightbulbIcon(newState, 'thinking-lamp-icon');
+                lampSvg.replaceWith(newLamp);
 
                 localStorage.setItem(`kai.lmStudioThinking.${rawModel}`, newState ? 'true' : 'false');
                 localStorage.setItem(`kai.mistralThinking.${rawModel}`, newState ? 'true' : 'false');
@@ -144,6 +170,9 @@ class ModelSettingsController {
                     const short = rawModel.split('/').pop();
                     localStorage.setItem(`kai.lmStudioThinking.${short}`, newState ? 'true' : 'false');
                 }
+
+                caps.isThinkingOn = newState;
+                this.updateIndicatorBadge(caps);
 
                 if (this.onSettingsChange) {
                     this.onSettingsChange({ modelId: this.activeModelId, type: 'thinking', value: newState });
@@ -163,12 +192,8 @@ class ModelSettingsController {
 
         // 2. Reasoning Effort Floating Pop-up Submenu
         if (caps.hasReasoningEffort && Array.isArray(caps.effortOptions) && caps.effortOptions.length > 0) {
-            const header = document.createElement('div');
-            header.className = 'settings-section-title';
-            header.textContent = caps.effortDisplayName || 'Reasoning Effort';
-            this.menu.appendChild(header);
-
             const matchedOpt = caps.effortOptions.find(o => o.value === caps.reasoningLevel) || caps.effortOptions[0];
+            const isEffortActive = matchedOpt.value !== 'off' && matchedOpt.value !== 'none';
 
             const flyoutRow = document.createElement('div');
             flyoutRow.className = `flyout-trigger-row ${this.isReasoningFlyoutOpen ? 'active' : ''}`;
@@ -177,10 +202,10 @@ class ModelSettingsController {
 
             const leftContent = document.createElement('div');
             leftContent.className = 'toggle-label';
-            const rowBattery = DOMUtils.createBatteryIcon(matchedOpt.value, 'thinking-battery-icon');
+            const rowLamp = DOMUtils.createLightbulbIcon(isEffortActive, 'thinking-lamp-icon');
             const rowLabel = document.createElement('span');
             rowLabel.textContent = matchedOpt.label;
-            leftContent.appendChild(rowBattery);
+            leftContent.appendChild(rowLamp);
             leftContent.appendChild(rowLabel);
             flyoutRow.appendChild(leftContent);
 
@@ -204,9 +229,6 @@ class ModelSettingsController {
                     itemLabel.textContent = opt.label;
                     item.appendChild(itemLabel);
 
-                    const itemBattery = DOMUtils.createBatteryIcon(opt.value, 'item-battery-icon');
-                    item.appendChild(itemBattery);
-
                     if (isSelected) {
                         const checkSvg = DOMUtils.createCheckIcon('check-icon');
                         item.appendChild(checkSvg);
@@ -226,6 +248,9 @@ class ModelSettingsController {
                                 localStorage.setItem(`kai.lmStudioReasoningLevel.${short}`, opt.value);
                             }
                         }
+
+                        caps.reasoningLevel = opt.value;
+                        this.updateIndicatorBadge(caps);
 
                         this.isReasoningFlyoutOpen = false;
                         this.close();

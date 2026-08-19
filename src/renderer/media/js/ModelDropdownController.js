@@ -44,10 +44,6 @@ class ModelDropdownController {
         }
         
         window.addEventListener('resize', () => this.updateTextOverflowMetrics());
-        window.addEventListener('kaiThinkingStyleChanged', () => {
-            this.setSelectedModel(this.selectedModelValue);
-            this.initDefaultDropdown();
-        });
         setTimeout(() => this.updateTextOverflowMetrics(), 50);
     }
 
@@ -278,18 +274,6 @@ class ModelDropdownController {
 
                 textContainer.appendChild(textSpan);
                 item.appendChild(textContainer);
-
-                // Battery icon in dropdown list for thinking/reasoning models
-                const thState = ThinkingStateFormatter.getThinkingState(itemData.value);
-                if (thState.isThinkingCapable) {
-                    const itemBattery = DOMUtils.createBatteryIcon(thState.isMultiLevel ? thState.level : thState.isOn, 'item-battery-icon');
-                    item.appendChild(itemBattery);
-                }
-
-                if (itemData.value === this.selectedModelValue) {
-                    const checkSvg = DOMUtils.createCheckIcon('check-icon');
-                    item.appendChild(checkSvg);
-                }
                 
                 const handleItemClick = (e) => {
                     e.stopPropagation();
@@ -439,7 +423,9 @@ class ModelDropdownController {
         }
 
         this.updateGeminiThinkingVisibility();
-        this.updateModelSettingsDropdown();
+        if (this.settingsController) {
+            this.settingsController.update(this.selectedModelValue);
+        }
     }
 
     /**
@@ -552,33 +538,12 @@ class ModelDropdownController {
     }
 
     /**
-     * Refreshes battery icons on model selector dropdown items after settings change.
-     * Updates icon elements in the primary model dropdown list.
+     * Cleans up any deprecated battery elements from dropdown list items.
      */
     updateModelDropdownItemBatteries() {
         if (!this.dropdownOptionsMenu) return;
-        const items = this.dropdownOptionsMenu.querySelectorAll('.dropdown-item');
-        items.forEach(item => {
-            const val = item.dataset.value;
-            if (!val) return;
-            const thState = ThinkingStateFormatter.getThinkingState(val);
-            const oldBattery = item.querySelector('.item-battery-icon');
-            if (thState.isThinkingCapable) {
-                const newBattery = DOMUtils.createBatteryIcon(thState.isMultiLevel ? thState.level : thState.isOn, 'item-battery-icon');
-                if (oldBattery) {
-                    oldBattery.replaceWith(newBattery);
-                } else {
-                    const check = item.querySelector('.check-icon');
-                    if (check) {
-                        item.insertBefore(newBattery, check);
-                    } else {
-                        item.appendChild(newBattery);
-                    }
-                }
-            } else if (oldBattery) {
-                oldBattery.remove();
-            }
-        });
+        const oldBatteries = this.dropdownOptionsMenu.querySelectorAll('.item-battery-icon, .thinking-lamp-icon');
+        oldBatteries.forEach(el => el.remove());
     }
 
     /**

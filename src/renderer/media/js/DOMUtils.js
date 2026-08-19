@@ -80,87 +80,20 @@ class DOMUtils {
     }
 
     /**
-     * Generates a 3-block vector battery SVG element representing thinking level.
-     * @param {string|boolean} level Reasoning level ('high', 'medium', 'low', 'minimal', 'off') or boolean (true/false).
-     * @param {string} className CSS class name.
-     * @returns {SVGElement} Battery SVG element.
-     */
-    static createBatteryIcon(level = 'high', className = 'thinking-battery-icon') {
-        let filledCount = 0;
-        if (typeof level === 'boolean') {
-            filledCount = level ? 3 : 0;
-        } else {
-            const normalized = String(level).toLowerCase();
-            if (normalized === 'xhigh' || normalized === 'high' || normalized === 'max' || normalized === 'full') {
-                filledCount = 3;
-            } else if (normalized === 'medium' || normalized === 'med') {
-                filledCount = 2;
-            } else if (normalized === 'low') {
-                filledCount = 1;
-            } else {
-                filledCount = 0;
-            }
-        }
-
-        const svg = DOMUtils.createSvg('svg', {
-            class: className,
-            width: '18',
-            height: '10',
-            viewBox: '0 0 22 11',
-            fill: 'none',
-            stroke: 'currentColor'
-        });
-
-        const body = DOMUtils.createSvg('rect', {
-            x: '1',
-            y: '1',
-            width: '16',
-            height: '9',
-            rx: '1.5',
-            ry: '1.5',
-            'stroke-width': '1.2',
-            fill: 'none'
-        });
-        svg.appendChild(body);
-
-        const tip = DOMUtils.createSvg('path', {
-            d: 'M18.5 3.5 V7.5',
-            'stroke-width': '1.2',
-            'stroke-linecap': 'round'
-        });
-        svg.appendChild(tip);
-
-        const blockPositions = ['2.5', '7.25', '12'];
-        for (let i = 0; i < 3; i++) {
-            const isFilled = i < filledCount;
-            const block = DOMUtils.createSvg('rect', {
-                x: blockPositions[i],
-                y: '2.5',
-                width: '3.25',
-                height: '6',
-                rx: '0.75',
-                ry: '0.75',
-                fill: isFilled ? 'currentColor' : 'none',
-                stroke: isFilled ? 'currentColor' : 'rgba(255, 255, 255, 0.2)',
-                'stroke-width': isFilled ? '0' : '0.5',
-                opacity: isFilled ? '1' : '0.25'
-            });
-            svg.appendChild(block);
-        }
-
-        return svg;
-    }
-
-    /**
-     * Creates a standard Lightbulb SVG element for Thinking toggle controls.
-     * @param {string} [className] Optional CSS class name.
+     * Creates a Lightbulb SVG element for Thinking state indicators.
+     * Renders vibrant yellow when active, or muted gray with a diagonal slash when inactive.
+     * @param {boolean} [isOn=true] Whether thinking is active.
+     * @param {string} [className='thinking-lamp-icon'] Optional CSS class name.
      * @returns {SVGElement} The created SVG element.
      */
-    static createLightbulbIcon(className = '') {
+    static createLightbulbIcon(isOn = true, className = 'thinking-lamp-icon') {
+        const stateClass = isOn ? 'lamp-on' : 'lamp-off';
+        const fullClassName = className ? `${className} ${stateClass}` : stateClass;
+
         const svg = DOMUtils.createSvg('svg', {
-            class: className,
-            width: '13',
-            height: '13',
+            class: fullClassName,
+            width: '14',
+            height: '14',
             viewBox: '0 0 24 24',
             fill: 'none',
             stroke: 'currentColor',
@@ -168,6 +101,7 @@ class DOMUtils {
             'stroke-linecap': 'round',
             'stroke-linejoin': 'round'
         });
+
         const path = DOMUtils.createSvg('path', {
             d: 'M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5'
         });
@@ -176,7 +110,33 @@ class DOMUtils {
         svg.appendChild(path);
         svg.appendChild(line1);
         svg.appendChild(line2);
+
+        if (!isOn) {
+            const slash = DOMUtils.createSvg('line', {
+                x1: '3',
+                y1: '3',
+                x2: '21',
+                y2: '21',
+                stroke: 'currentColor',
+                'stroke-width': '2',
+                'stroke-linecap': 'round'
+            });
+            svg.appendChild(slash);
+        }
+
         return svg;
+    }
+
+    /**
+     * Deprecated battery icon generator stub that returns a lightbulb icon.
+     * Maintained for backward-compatibility while migrating to lightbulb indicators.
+     * @param {*} [level] Ignored level.
+     * @param {string} [className] CSS class name.
+     * @returns {SVGElement} Lightbulb SVG element.
+     */
+    static createBatteryIcon(level = true, className = 'thinking-lamp-icon') {
+        const isOn = (typeof level === 'boolean') ? level : (level !== 'off' && level !== 'none' && level !== 0);
+        return DOMUtils.createLightbulbIcon(isOn, className);
     }
 
     /**

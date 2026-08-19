@@ -177,28 +177,7 @@ class SettingsController {
             });
         }
 
-        // 6. Thinking Display Style Custom Select Dropdown (Icon + Text / Icon Only / Text Only)
-        const styleContainer = document.getElementById('thinking-style-select-container');
-        if (styleContainer && typeof CustomSelectComponent !== 'undefined') {
-            const storedStyle = localStorage.getItem('kai.thinkingDisplayStyle') || 'both';
-            const styleOptions = [
-                { value: 'both', label: i18n.iconAndText || 'Icon + Text' },
-                { value: 'icon', label: i18n.iconOnly || 'Icon Only' },
-                { value: 'text', label: i18n.textOnly || 'Text Only' }
-            ];
-            this.thinkingStyleComponent = new CustomSelectComponent({
-                container: styleContainer,
-                id: 'thinking-display-style-input',
-                options: styleOptions,
-                value: storedStyle,
-                onChange: (selectedStyle) => {
-                    localStorage.setItem('kai.thinkingDisplayStyle', selectedStyle);
-                    window.dispatchEvent(new CustomEvent('kaiThinkingStyleChanged', { detail: { style: selectedStyle } }));
-                }
-            });
-        }
-
-        // 7. Thinking Process Max Height Custom Select Dropdown (50px to 400px in steps of 50px)
+        // 6. Thinking Process Max Height Custom Select Dropdown (50px to 400px in steps of 50px)
         const maxHeightContainer = document.getElementById('thinking-max-height-select-container');
         if (maxHeightContainer && typeof CustomSelectComponent !== 'undefined') {
             const storedHeight = localStorage.getItem('kai.thinkingMaxHeight') || '150px';

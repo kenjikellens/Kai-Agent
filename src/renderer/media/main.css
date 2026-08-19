@@ -1909,9 +1909,19 @@ button:disabled {
   min-width: 0;
 }
 
+/* Container for Model Selector dropdown */
 #model-dropdown-container {
   flex: 0 1 auto;
   max-width: max-content;
+}
+
+/* Container for Model Settings chevron dropdown and standalone thinking indicator */
+#model-settings-dropdown-container {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
 }
 
 /* Primary Model Selector Dropdown Trigger Button - Fits text length up to max-width */
@@ -2205,18 +2215,19 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 5px 8px;
+  padding: 6px 8px;
   border-radius: var(--app-radius-sm);
   background: transparent;
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 /* Hover state for toggle switch row */
 .toggle-switch-row:hover {
   background: var(--app-surface-hover);
+  color: var(--app-fg-bright, #ffffff);
 }
 
 /* Label container inside toggle switch row */
@@ -2227,6 +2238,12 @@ button:disabled {
   align-items: center;
   gap: 6px;
   white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+/* Hover state for label inside toggle switch row */
+.toggle-switch-row:hover .toggle-label {
+  color: var(--app-fg-bright, #ffffff);
 }
 
 /* Visual pill background for toggle switch */
@@ -2269,7 +2286,7 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 5px 8px;
+  padding: 6px 8px;
   border-radius: var(--app-radius-sm);
   background: transparent;
   color: var(--app-fg);
@@ -2284,7 +2301,13 @@ button:disabled {
 .flyout-trigger-row:hover,
 .flyout-trigger-row.active {
   background: var(--app-surface-hover);
-  color: var(--app-fg);
+  color: var(--app-fg-bright, #ffffff);
+}
+
+/* Hover state for label inside flyout trigger row */
+.flyout-trigger-row:hover .toggle-label,
+.flyout-trigger-row.active .toggle-label {
+  color: var(--app-fg-bright, #ffffff);
 }
 
 /* Floating popup submenu for multiple-choice options positioned next to the row */
@@ -2313,24 +2336,49 @@ button:disabled {
   justify-content: center;
   flex-shrink: 0;
   color: var(--app-muted);
+  transition: color 0.15s ease;
 }
 
-/* Battery icon inside model dropdown items */
-.item-battery-icon {
+/* Hover state for flyout chevron */
+.flyout-trigger-row:hover .flyout-chevron,
+.flyout-trigger-row.active .flyout-chevron {
+  color: var(--app-fg-bright, #ffffff);
+}
+
+/* Standalone thinking and reasoning effort indicator badge positioned to the right of the chevron button */
+.model-thinking-indicator {
   display: inline-flex;
   align-items: center;
-  margin-left: auto;
-  margin-right: 6px;
+  gap: 5px;
+  user-select: none;
   flex-shrink: 0;
-  color: var(--app-muted);
 }
 
-/* Battery icon inside model trigger and flyouts */
-.thinking-battery-icon {
+/* Lightbulb icon representing model thinking state */
+.thinking-lamp-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+/* Active thinking lamp state in vibrant yellow */
+.thinking-lamp-icon.lamp-on {
+  color: #f1c40f;
+}
+
+/* Inactive thinking lamp state in muted gray with diagonal strike */
+.thinking-lamp-icon.lamp-off {
+  color: var(--app-muted, #888888);
+}
+
+/* Reasoning effort level text label rendered beside the thinking lamp */
+.lamp-level-label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--app-fg);
+  white-space: nowrap;
 }
 
 .model-flyout-chevron {
