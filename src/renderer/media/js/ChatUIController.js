@@ -593,20 +593,30 @@ class ChatUIController {
             }
             this.resetAssistantStream();
             
-            appState.addUiEvent({
-                type: 'tool',
-                toolId: progress.toolId,
-                tool: progress.tool,
-                fileName: progress.fileName,
-                state: 'start'
-            });
+            let existingDiv = document.getElementById(progress.toolId);
+            if (existingDiv) {
+                existingDiv.innerHTML = this.getToolDescription(progress.tool, progress.fileName, 'start');
+                const evt = appState.uiEvents.find(e => e.type === 'tool' && e.toolId === progress.toolId);
+                if (evt) {
+                    evt.tool = progress.tool;
+                    evt.fileName = progress.fileName;
+                }
+            } else {
+                appState.addUiEvent({
+                    type: 'tool',
+                    toolId: progress.toolId,
+                    tool: progress.tool,
+                    fileName: progress.fileName,
+                    state: 'start'
+                });
 
-            const statusDiv = document.createElement('div');
-            statusDiv.id = progress.toolId;
-            statusDiv.className = 'tool-status-row in-progress';
-            statusDiv.innerHTML = this.getToolDescription(progress.tool, progress.fileName, 'start');
-            if (this.chatContainer) {
-                this.chatContainer.appendChild(statusDiv);
+                const statusDiv = document.createElement('div');
+                statusDiv.id = progress.toolId;
+                statusDiv.className = 'tool-status-row in-progress';
+                statusDiv.innerHTML = this.getToolDescription(progress.tool, progress.fileName, 'start');
+                if (this.chatContainer) {
+                    this.chatContainer.appendChild(statusDiv);
+                }
             }
         } else if (progress.progressType === 'tool_end') {
             const isError = progress.output && (
@@ -766,6 +776,55 @@ class ChatUIController {
         } else {
             this.showActivityStatus(statusText);
         }
+    }
+
+    /**
+     * Renders an interactive confirmation prompt requesting user approval to execute a shell command.
+     * @param {string} command Terminal command string.
+     * @returns {Promise<boolean>} Resolves to true if allowed, false if refused.
+     */
+    requestCommandApproval(command) {
+        return new Promise((resolve) => {
+            const card = document.createElement('div');
+            card.className = 'command-approval-card';
+            card.innerHTML = `
+                <div class="command-approval-header">
+                    <svg class="command-approval-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 2 22 22 22 12 2"></polygon>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    <span>Kai wants to execute a terminal command:</span>
+                </div>
+                <pre class="command-approval-code"><code>${this.formatter.escapeHtml(command)}</code></pre>
+                <div class="command-approval-actions">
+                    <button type="button" class="btn-allow" id="btn-allow-cmd">Allow</button>
+                    <button type="button" class="btn-refuse" id="btn-refuse-cmd">Refuse</button>
+                </div>
+            `;
+
+            if (this.chatContainer) {
+                this.chatContainer.appendChild(card);
+                this.scrollToBottom();
+            }
+
+            const allowBtn = card.querySelector('#btn-allow-cmd');
+            const refuseBtn = card.querySelector('#btn-refuse-cmd');
+
+            const handleChoice = (allowed) => {
+                allowBtn.disabled = true;
+                refuseBtn.disabled = true;
+                card.classList.add(allowed ? 'approved' : 'rejected');
+                const actionsDiv = card.querySelector('.command-approval-actions');
+                if (actionsDiv) {
+                    actionsDiv.innerHTML = `<span class="approval-badge ${allowed ? 'badge-allowed' : 'badge-refused'}">${allowed ? 'Allowed by user' : 'Refused by user'}</span>`;
+                }
+                resolve(allowed);
+            };
+
+            allowBtn.addEventListener('click', () => handleChoice(true));
+            refuseBtn.addEventListener('click', () => handleChoice(false));
+        });
     }
 
     /**

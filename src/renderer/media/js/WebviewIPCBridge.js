@@ -156,7 +156,7 @@ class WebviewIPCBridge {
                     }
                 } catch (e) {}
 
-                const savedWs = localStorage.getItem('kai.workspacePath') || '';
+                const savedWs = message.workspacePath || localStorage.getItem('kai.workspacePath') || '';
                 emit({
                     type: 'connectionStatus',
                     connected: lmConnected,
@@ -176,7 +176,8 @@ class WebviewIPCBridge {
                     },
                     lmStudioCapabilities: lmStudioCapabilities,
                     workspacePath: savedWs,
-                    workspaceName: savedWs ? savedWs.split(/[\\/]/).pop() : ''
+                    workspaceName: savedWs ? savedWs.split(/[\\/]/).pop() : '',
+                    isFolderPicked: !!message.isFolderPicked
                 });
                 break;
             }
@@ -339,6 +340,7 @@ class WebviewIPCBridge {
                     const maxIterations = 15;
                     let iteration = 0;
                     let lastFullText = '';
+                    const modifiedFiles = new Set();
 
                     while (iteration < maxIterations) {
                         iteration++;
@@ -403,6 +405,8 @@ class WebviewIPCBridge {
                         let fullText = '';
                         let buffer = '';
                         let isThinking = false;
+                        let toolStartEmitted = false;
+                        const activeToolId = `tool-${Date.now()}-${iteration}`;
                         const allowThinkingUI = !!message.thinking;
 
                         while (true) {
@@ -445,10 +449,26 @@ class WebviewIPCBridge {
                                                 }
                                                 fullText += textToAdd;
 
-                                                // Check if a tool call was initiated (e.g. <tool, <|tool, <|, ```json {)
+                                                // Early live tool detection as soon as filename/tool is typed by the model
                                                 const toolTagMatch = /<\||<tool|```json\s*\{/i.exec(fullText);
                                                 if (!toolTagMatch) {
                                                     emit({ type: 'agentProgress', progressType: 'token', output: textToAdd });
+                                                } else if (!toolStartEmitted) {
+                                                    const liveTool = this._parseToolCall(fullText);
+                                                    if (liveTool) {
+                                                        const targetName = this._getToolTarget(liveTool.name, liveTool.args);
+                                                        if (targetName || liveTool.name) {
+                                                            toolStartEmitted = true;
+                                                            emit({
+                                                                type: 'agentProgress',
+                                                                progressType: 'tool_start',
+                                                                tool: liveTool.name,
+                                                                query: liveTool.query,
+                                                                toolId: activeToolId,
+                                                                fileName: targetName
+                                                            });
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
@@ -468,28 +488,32 @@ class WebviewIPCBridge {
 
                         lastFullText = fullText;
 
-                        // Parse tool call from the streamed response
+                        // Parse tool call from the complete turn response (identical to AgentExecutor.ts)
                         const toolCall = this._parseToolCall(fullText);
 
                         if (!toolCall || abortController.signal.aborted) {
-                            // No tool call found — this is the final reply
+                            // No tools requested, agent loop finishes
                             break;
                         }
 
-                        // Tool call detected — emit tool_start BEFORE starting execution
                         messagesToSend.push({ role: 'assistant', content: fullText });
 
-                        const toolId = `tool-${Date.now()}-${iteration}`;
                         const targetName = this._getToolTarget(toolCall.name, toolCall.args);
 
-                        emit({
-                            type: 'agentProgress',
-                            progressType: 'tool_start',
-                            tool: toolCall.name,
-                            query: toolCall.query,
-                            toolId: toolId,
-                            fileName: targetName
-                        });
+                        // Report the tool invocation to the UI if not already emitted early
+                        if (!toolStartEmitted) {
+                            emit({
+                                type: 'agentProgress',
+                                progressType: 'tool_start',
+                                tool: toolCall.name,
+                                query: toolCall.query,
+                                toolId: activeToolId,
+                                fileName: targetName
+                            });
+                        }
+
+                        // Yield event loop so the UI flushes the tool_start card before blocking
+                        await new Promise(r => setTimeout(r, 0));
 
                         let toolResult = '';
                         try {
@@ -500,18 +524,19 @@ class WebviewIPCBridge {
                             toolResult = `[Error executing tool ${toolCall.name}]: ${toolErr.message || toolErr}`;
                         }
 
-                        if (abortController.signal.aborted) {
-                            break;
+                        if (['write_file', 'edit_file', 'replace_file_content', 'multi_replace_file_content', 'delete_item'].includes(toolCall.name) && !toolResult.startsWith('[Error')) {
+                            if (targetName) {
+                                modifiedFiles.add(targetName);
+                            }
                         }
 
-                        const isError = toolResult.startsWith('[Error');
-
+                        // Report results back to the UI (identical to AgentExecutor.ts)
                         emit({
                             type: 'agentProgress',
                             progressType: 'tool_end',
                             tool: toolCall.name,
                             output: toolResult,
-                            toolId: toolId,
+                            toolId: activeToolId,
                             fileName: targetName
                         });
 
@@ -530,7 +555,7 @@ class WebviewIPCBridge {
                     emit({
                         type: 'reply',
                         content: lastFullText,
-                        modifiedFiles: []
+                        modifiedFiles: Array.from(modifiedFiles)
                     });
 
                     // Trigger Background AI Chat Title Generation ONLY on the very first user message
@@ -648,7 +673,7 @@ class WebviewIPCBridge {
                 const data = await res.json();
                 if (!data.canceled && data.workspacePath) {
                     localStorage.setItem('kai.workspacePath', data.workspacePath);
-                    await this._handleClientSideIPC({ type: 'checkConnection' });
+                    await this._handleClientSideIPC({ type: 'checkConnection', isFolderPicked: true, workspacePath: data.workspacePath });
                 }
             }
         } catch (e) {
@@ -866,6 +891,8 @@ class WebviewIPCBridge {
 
         // Direct tool name matches
         switch (name) {
+            case 'run_command':
+                return this._toolExecuteRunCommand(args);
             case 'get_time':
                 return this._toolGetTime();
             case 'calculate':
@@ -887,6 +914,43 @@ class WebviewIPCBridge {
     }
 
     /**
+     * Executes run_command after obtaining interactive user approval.
+     * @param {object} args Command arguments.
+     * @returns {Promise<string>} Execution stdout/stderr or cancellation message.
+     */
+    async _toolExecuteRunCommand(args) {
+        const cmd = args.command || '';
+        if (this.onCommandApprovalRequest && typeof this.onCommandApprovalRequest === 'function') {
+            const allowed = await this.onCommandApprovalRequest(cmd);
+            if (!allowed) {
+                return `[Execution Cancelled]: User refused to execute the command: ${cmd}`;
+            }
+        }
+        return this._toolExecuteWorkspaceTool('run_command', args);
+    }
+
+    /**
+     * Rolls back all file modifications made during specified turn ID(s).
+     * @param {string|string[]} turnIds Turn identifier(s).
+     * @returns {Promise<object>} Rollback status object.
+     */
+    async rollbackTurnChanges(turnIds) {
+        try {
+            const ids = Array.isArray(turnIds) ? turnIds : [turnIds];
+            const res = await fetch('/api/tools/rollback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ turnIds: ids })
+            });
+            if (!res.ok) throw new Error(`Rollback HTTP error ${res.status}`);
+            return await res.json();
+        } catch (e) {
+            console.error('Error in rollbackTurnChanges:', e);
+            return { status: 'error', message: e.message };
+        }
+    }
+
+    /**
      * Executes a workspace filesystem/command tool via the /api/tools/execute backend endpoint.
      * @param {string} tool Tool identifier.
      * @param {object} args Arguments payload.
@@ -894,6 +958,7 @@ class WebviewIPCBridge {
      */
     async _toolExecuteWorkspaceTool(tool, args) {
         const savedWs = localStorage.getItem('kai.workspacePath') || '';
+        const currentTurnId = this._activeTurnId || localStorage.getItem('kai.activeChatId') || '';
         try {
             const res = await fetch('/api/tools/execute', {
                 method: 'POST',
@@ -901,7 +966,8 @@ class WebviewIPCBridge {
                 body: JSON.stringify({
                     tool: tool,
                     args: args,
-                    workspacePath: savedWs
+                    workspacePath: savedWs,
+                    turnId: currentTurnId
                 })
             });
             if (!res.ok) throw new Error(`Proxy error ${res.status}`);

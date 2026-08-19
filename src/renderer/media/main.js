@@ -31,12 +31,21 @@
         helpModalController
     );
 
-    // Wire Retry Callback (Retries from clicked assistant message)
-    chatUIController.onRetry = (assistantMsgElement) => {
+    // Wire Command Approval Request dialog
+    ipcBridge.onCommandApprovalRequest = async (command) => {
+        return await chatUIController.requestCommandApproval(command);
+    };
+
+    // Wire Retry Callback (Rolls back filesystem changes and retries from clicked assistant message)
+    chatUIController.onRetry = async (assistantMsgElement) => {
         if (appState.isWaitingForResponse) return;
 
+        // 1. Rollback any files created/edited/deleted during this turn on disk
+        if (appState.currentChatId) {
+            await ipcBridge.rollbackTurnChanges(appState.currentChatId);
+        }
+
         // Truncate messages and uiEvents: remove the assistant reply and re-send the prompt
-        // Find all message elements in chat container to determine position
         const allMessageNodes = Array.from(chatUIController.chatContainer.children).filter(el => 
             el.classList.contains('user-message-row') || 
             el.classList.contains('message') || 
@@ -46,7 +55,6 @@
         const targetIndex = allMessageNodes.indexOf(assistantMsgElement);
 
         if (targetIndex !== -1) {
-            // Remove DOM nodes from targetIndex onward
             const nodesToRemove = allMessageNodes.slice(targetIndex);
             nodesToRemove.forEach(node => node.remove());
         } else {
@@ -85,10 +93,15 @@
         }
     };
 
-    // Wire Edit Prompt Callback (Executes edited prompt from inline chat bubble)
-    chatUIController.onEditPrompt = (userMessageRowElement, editedText) => {
+    // Wire Edit Prompt Callback (Rolls back filesystem changes and executes edited prompt from inline chat bubble)
+    chatUIController.onEditPrompt = async (userMessageRowElement, editedText) => {
         if (appState.isWaitingForResponse) return;
         if (!editedText || !editedText.trim()) return;
+
+        // 1. Rollback any files created/edited/deleted during this turn on disk
+        if (appState.currentChatId) {
+            await ipcBridge.rollbackTurnChanges(appState.currentChatId);
+        }
 
         const textToSend = editedText.trim();
 
@@ -102,11 +115,9 @@
         const targetIndex = allMessageNodes.indexOf(userMessageRowElement);
 
         if (targetIndex !== -1) {
-            // Count how many user messages came before this one
             const precedingUserNodes = allMessageNodes.slice(0, targetIndex).filter(el => el.classList.contains('user-message-row'));
             const userIndex = precedingUserNodes.length;
 
-            // Find the userIndex-th user message in appState.messages
             let userMsgCount = 0;
             let msgCutoffIndex = -1;
             for (let i = 0; i < appState.messages.length; i++) {
@@ -123,7 +134,6 @@
                 appState.messages = appState.messages.slice(0, msgCutoffIndex);
             }
 
-            // Find matching cutoff in appState.uiEvents
             let uiUserCount = 0;
             let uiCutoffIndex = -1;
             for (let i = 0; i < appState.uiEvents.length; i++) {
@@ -140,7 +150,6 @@
                 appState.uiEvents = appState.uiEvents.slice(0, uiCutoffIndex);
             }
 
-            // Remove DOM nodes from targetIndex onward
             const nodesToRemove = allMessageNodes.slice(targetIndex);
             nodesToRemove.forEach(node => node.remove());
         }
@@ -303,11 +312,13 @@
     if (newChatBtn) {
         newChatBtn.addEventListener('click', handleNewChatClick);
     }
-    if (newChatIconBtn) {
-        newChatIconBtn.addEventListener('click', handleNewChatClick);
-    }
-
     // When user deletes the currently open chat from sidebar, reset to a clean new chat
+    historyManager.onDeleteActiveChat = (deletedChatId) => {
+        if (appState.currentChatId === deletedChatId) {
+            const newId = appState.generateChatId();
+            window.location.hash = `session-${newId}`;
+        }
+    };
     historyManager.onActiveChatDeleted = () => {
         const newId = appState.generateChatId();
         window.location.hash = `session-${newId}`;
@@ -625,8 +636,8 @@
             window.applyAllTranslations(message.translations);
         }
         
-        // If the user selected a new workspace folder via the picker, message.workspacePath has it
-        if (message.workspacePath && message.workspacePath !== appState.workspacePath) {
+        // Only update workspace if user explicitly picked a new one through the folder picker
+        if (message.isFolderPicked && message.workspacePath) {
             updateWorkspaceUi(message.workspacePath);
             saveCurrentChat();
         } else {

@@ -138,6 +138,10 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
             self._handle_tool_execute(raw_body)
             return
 
+        if self.path.startswith("/api/tools/rollback"):
+            self._handle_tool_rollback(raw_body)
+            return
+
         if self.path.startswith("/api/tools/web_search"):
             self._handle_web_search(raw_body)
             return
@@ -152,6 +156,76 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b'{"status":"ok"}')
 
+    # Global in-memory transaction undo log keyed by turnId/sessionId
+    _TRANSACTION_LOGS = {}
+
+    def _record_file_snapshot(self, turn_id, action_type, rel_path, full_path):
+        """Records the pre-modification state of a file for clean transactional rollback."""
+        if not turn_id:
+            return
+        if turn_id not in self._TRANSACTION_LOGS:
+            self._TRANSACTION_LOGS[turn_id] = []
+
+        # If file already recorded in this turn, keep the earliest original snapshot
+        for record in self._TRANSACTION_LOGS[turn_id]:
+            if record["path"] == rel_path:
+                return
+
+        original_content = None
+        file_existed = os.path.exists(full_path) and os.path.isfile(full_path)
+        if file_existed:
+            try:
+                with open(full_path, "r", encoding="utf-8", errors="replace") as f:
+                    original_content = f.read()
+            except Exception:
+                pass
+
+        self._TRANSACTION_LOGS[turn_id].append({
+            "action": action_type,
+            "path": rel_path,
+            "full_path": full_path,
+            "existed": file_existed,
+            "content": original_content
+        })
+
+    def _handle_tool_rollback(self, raw_body):
+        """Rolls back all file creations, edits, and deletions made during specified turn(s)."""
+        try:
+            body = json.loads(raw_body) if raw_body else {}
+        except Exception:
+            body = {}
+
+        turn_id = body.get("turnId", "")
+        turn_ids = body.get("turnIds") or ([turn_id] if turn_id else [])
+        rolled_back_files = []
+
+        for tid in reversed(turn_ids):
+            logs = self._TRANSACTION_LOGS.pop(tid, [])
+            for record in reversed(logs):
+                full_path = record["full_path"]
+                rel_path = record["path"]
+                try:
+                    if not record["existed"]:
+                        # File was created during this turn -> delete it
+                        if os.path.exists(full_path) and os.path.isfile(full_path):
+                            os.remove(full_path)
+                            rolled_back_files.append(f"Deleted {rel_path}")
+                    else:
+                        # File existed before -> restore original content
+                        if record["content"] is not None:
+                            os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                            with open(full_path, "w", encoding="utf-8") as f:
+                                f.write(record["content"])
+                            rolled_back_files.append(f"Restored {rel_path}")
+                except Exception as e:
+                    print(f"Error rolling back {rel_path}: {e}")
+
+        self._json_response(200, {
+            "status": "ok",
+            "rolledBack": rolled_back_files,
+            "count": len(rolled_back_files)
+        })
+
     def _handle_tool_execute(self, raw_body):
         """Executes local workspace tools (list_dir, read_file, write_file, replace_file_content, grep_search, run_command, delete_item)."""
         try:
@@ -162,6 +236,7 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
         tool_name = body.get("tool", "")
         args = body.get("args", {})
         workspace_path = body.get("workspacePath", "")
+        turn_id = body.get("turnId", "")
 
         def _resolve_safe_path(rel_path):
             if not workspace_path:
@@ -245,6 +320,7 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
                     self._json_response(200, {"result": "Error: Missing required parameter 'path'."})
                     return
                 target = _resolve_safe_path(rel)
+                self._record_file_snapshot(turn_id, "write_file", rel, target)
                 os.makedirs(os.path.dirname(target), exist_ok=True)
                 with open(target, "w", encoding="utf-8") as f:
                     f.write(content)
@@ -264,6 +340,7 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
                 replacement = args.get("replacementContent", "")
                 
                 if target_content in original:
+                    self._record_file_snapshot(turn_id, "replace_file_content", rel, target)
                     updated = original.replace(target_content, replacement, 1)
                     with open(target, "w", encoding="utf-8") as f:
                         f.write(updated)

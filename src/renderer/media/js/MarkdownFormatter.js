@@ -139,7 +139,7 @@ class MarkdownFormatter {
             }
         }
 
-        // 7. Clean up excessive blank lines
+        // Clean up excessive blank lines
         cleanText = cleanText.replace(/(\r?\n\s*){3,}/g, '\n\n');
 
         let escaped = this.escapeHtml(cleanText);
@@ -160,37 +160,38 @@ class MarkdownFormatter {
             if (showThinking) {
                 // Completed thinking block
                 if (escaped.includes('&lt;/think&gt;')) {
-                    escaped = escaped.replace(/&lt;think&gt;([\s\S]*?)&lt;\/think&gt;/g, (match, p1) => {
+                    escaped = escaped.replace(/&lt;think&gt;([\s\S]*?)&lt;\/think&gt;(\r?\n)?/g, (match, p1) => {
                         const cleanedContent = p1.trim().replace(/(\r?\n\s*){3,}/g, '\n');
                         const shouldRespectExistingState = forceThinkingCollapsed !== null && keepThinkingFinishedExpanded;
                         const isCollapsed = shouldRespectExistingState ? forceThinkingCollapsed : !keepThinkingFinishedExpanded;
                         const activeChevron = isCollapsed ? chevronDown : chevronUp;
                         const activeCollapsedClass = isCollapsed ? ' collapsed' : '';
-                        return `<div class="thinking-block"><div class="thinking-header">${thinkingProcessTitle}${activeChevron}</div><div class="thinking-content${activeCollapsedClass}"><em>${cleanedContent}</em></div></div>`;
+                        return `<div class="thinking-block"><div class="thinking-header">${thinkingProcessTitle}${activeChevron}</div><div class="thinking-content${activeCollapsedClass}"><em>${cleanedContent}</em></div></div>\n\n`;
                     });
                 }
                 // Streaming thinking block
-                else if (escaped.includes('&lt;think&gt;')) {
+                if (escaped.includes('&lt;think&gt;')) {
                     escaped = escaped.replace(/&lt;think&gt;([\s\S]*)$/g, (match, p1) => {
                         const cleanedContent = p1.trim().replace(/(\r?\n\s*){3,}/g, '\n');
                         const shouldRespectExistingState = forceThinkingCollapsed !== null && keepThinkingExpanded;
                         const isCollapsed = shouldRespectExistingState ? forceThinkingCollapsed : !keepThinkingExpanded;
                         const activeChevron = isCollapsed ? chevronDown : chevronUp;
                         const activeCollapsedClass = isCollapsed ? ' collapsed' : '';
-                        return `<div class="thinking-block"><div class="thinking-header"><span class="thinking-spinner"></span>${thinkingTextTitle}${activeChevron}</div><div class="thinking-content${activeCollapsedClass}"><em>${cleanedContent}</em></div></div>`;
+                        return `<div class="thinking-block"><div class="thinking-header"><span class="thinking-spinner"></span>${thinkingTextTitle}${activeChevron}</div><div class="thinking-content${activeCollapsedClass}"><em>${cleanedContent}</em></div></div>\n\n`;
                     });
                 }
             } else {
                 if (escaped.includes('&lt;/think&gt;')) {
-                    escaped = escaped.replace(/&lt;think&gt;([\s\S]*?)&lt;\/think&gt;/g, '');
-                } else if (escaped.includes('&lt;think&gt;')) {
+                    escaped = escaped.replace(/&lt;think&gt;([\s\S]*?)&lt;\/think&gt;(\r?\n)?/g, '');
+                }
+                if (escaped.includes('&lt;think&gt;')) {
                     escaped = escaped.replace(/&lt;think&gt;([\s\S]*)$/g, () => {
-                        return `<div class="thinking-loader"><span class="thinking-spinner"></span>${thinkingTextTitle}</div>`;
+                        return `<div class="thinking-loader"><span class="thinking-spinner"></span>${thinkingTextTitle}</div>\n\n`;
                     });
                 }
             }
         } else {
-            escaped = escaped.replace(/&lt;think&gt;([\s\S]*?)&lt;\/think&gt;/g, '');
+            escaped = escaped.replace(/&lt;think&gt;([\s\S]*?)&lt;\/think&gt;(\r?\n)?/g, '');
             escaped = escaped.replace(/&lt;think&gt;([\s\S]*)$/g, '');
         }
 
@@ -209,7 +210,7 @@ class MarkdownFormatter {
             const blockHtml = `<div class="code-block-wrapper"><div class="code-block-header"><span class="code-lang-label">${this.escapeHtml(languageLabel)}</span><div class="code-block-actions"><button type="button" class="copy-code-btn" title="Copy code" aria-label="Copy code">${copyIconSvg}</button><button type="button" class="download-code-btn" title="Download snippet" aria-label="Download snippet" data-lang="${this.escapeHtml(languageLabel)}">${downloadIconSvg}</button></div></div><pre><code class="language-${this.escapeHtml(languageLabel)}">${highlighted}</code></pre></div>`;
             const idx = codeBlocks.length;
             codeBlocks.push(blockHtml);
-            return `\n___CODE_BLOCK_${idx}___\n`;
+            return `\n%%CBLOCK${idx}%%\n`;
         });
 
         // Streaming unclosed code blocks at end
@@ -219,7 +220,7 @@ class MarkdownFormatter {
             const blockHtml = `<div class="code-block-wrapper"><div class="code-block-header"><span class="code-lang-label">${this.escapeHtml(languageLabel)}</span><div class="code-block-actions"><button type="button" class="copy-code-btn" title="Copy code" aria-label="Copy code">${copyIconSvg}</button><button type="button" class="download-code-btn" title="Download snippet" aria-label="Download snippet" data-lang="${this.escapeHtml(languageLabel)}">${downloadIconSvg}</button></div></div><pre><code class="language-${this.escapeHtml(languageLabel)}">${highlighted}</code></pre></div>`;
             const idx = codeBlocks.length;
             codeBlocks.push(blockHtml);
-            return `\n___CODE_BLOCK_${idx}___\n`;
+            return `\n%%CBLOCK${idx}%%\n`;
         });
 
         // 2. Extract inline code into isolated placeholders
@@ -227,24 +228,35 @@ class MarkdownFormatter {
         escaped = escaped.replace(/`([^`\r\n]+)`/g, (match, inline) => {
             const idx = inlineCodes.length;
             inlineCodes.push(`<code>${inline}</code>`);
-            return `___INLINE_CODE_${idx}___`;
+            return `%%INLCODE${idx}%%`;
         });
 
-        // 3. Bold formatting
-        escaped = escaped.replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>');
+        // 3. Horizontal rules
+        escaped = escaped.replace(/(?:^|\r?\n)(?:[\*\-_][ \t]*){3,}(?:\r?\n|$)/g, '\n<hr class="md-divider" />\n');
 
-        // 4. Italic formatting
-        escaped = escaped.replace(/\*([\s\S]+?)\*/g, '<em>$1</em>');
+        // 4. Links [text](url)
+        escaped = escaped.replace(/\[([^\]\r\n]+)\]\((https?:\/\/[^\s\)\"]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="md-link">$1</a>');
 
-        // 5. Headers formatting
-        escaped = escaped.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
-        escaped = escaped.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
-        escaped = escaped.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
+        // 5. Bold formatting
+        escaped = escaped.replace(/\*\*([^\*\r\n]+?)\*\*/g, '<strong>$1</strong>');
+        escaped = escaped.replace(/__([^_\r\n]+?)__/g, '<strong>$1</strong>');
 
-        // 6. Blockquotes
+        // 6. Italic formatting
+        escaped = escaped.replace(/(?<!\*)\*([^\*\s\r\n](?:[^\*\r\n]*?[^\*\s\r\n])?)\*(?!\*)/g, '<em>$1</em>');
+        escaped = escaped.replace(/(?<!_)_([^_\s\r\n](?:[^_\r\n]*?[^_\s\r\n])?)_(?!_)/g, '<em>$1</em>');
+
+        // 7. Headers formatting (support # up to ###### across start of text, newlines, and carriage returns)
+        escaped = escaped.replace(/(?:^|\r?\n)######[ \t]+([^\r\n]+)/g, '\n<h6>$1</h6>');
+        escaped = escaped.replace(/(?:^|\r?\n)#####[ \t]+([^\r\n]+)/g, '\n<h5>$1</h5>');
+        escaped = escaped.replace(/(?:^|\r?\n)####[ \t]+([^\r\n]+)/g, '\n<h4>$1</h4>');
+        escaped = escaped.replace(/(?:^|\r?\n)###[ \t]+([^\r\n]+)/g, '\n<h3>$1</h3>');
+        escaped = escaped.replace(/(?:^|\r?\n)##[ \t]+([^\r\n]+)/g, '\n<h2>$1</h2>');
+        escaped = escaped.replace(/(?:^|\r?\n)#[ \t]+([^\r\n]+)/g, '\n<h1>$1</h1>');
+
+        // 8. Blockquotes
         escaped = escaped.replace(/^&gt;\s*(.+)$/gm, '<blockquote>$1</blockquote>');
 
-        // 7. Markdown Tables
+        // 9. Markdown Tables
         escaped = escaped.replace(/((?:\|[^\n]+\|\r?\n)+)/g, (tableMatch) => {
             const lines = tableMatch.trim().split(/\r?\n/);
             if (lines.length < 2) return tableMatch;
@@ -282,15 +294,15 @@ class MarkdownFormatter {
             return tableHtml;
         });
 
-        // 8. Bullet lists
+        // 10. Bullet lists
         escaped = escaped.replace(/(^[-\*]\s+.+(?:\r?\n^[-\*]\s+.+)*)/gm, (listMatch) => {
             const items = listMatch.split(/\r?\n/).map(line => line.replace(/^[-\*]\s+/, '').trim());
             return `<ul class="md-list">${items.map(item => `<li>${item}</li>`).join('')}</ul>`;
         });
 
-        // 9. Restore inline code and code block placeholders in proper order
-        escaped = escaped.replace(/___INLINE_CODE_(\d+)___/g, (match, idx) => inlineCodes[Number(idx)] || '');
-        escaped = escaped.replace(/___CODE_BLOCK_(\d+)___/g, (match, idx) => codeBlocks[Number(idx)] || '');
+        // 11. Restore inline code and code block placeholders in proper order
+        escaped = escaped.replace(/%%INLCODE(\d+)%%/g, (match, idx) => inlineCodes[Number(idx)] || '');
+        escaped = escaped.replace(/%%CBLOCK(\d+)%%/g, (match, idx) => codeBlocks[Number(idx)] || '');
 
         return escaped;
     }
