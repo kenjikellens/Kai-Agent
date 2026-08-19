@@ -436,7 +436,21 @@ class ChatUIController {
         const effectiveMode = mode || meta.mode || 'chat';
         const modeLabel = effectiveMode === 'planning' ? 'Plan' : (effectiveMode.charAt(0).toUpperCase() + effectiveMode.slice(1));
         const modelName = meta.model || (this.settingsController ? this.settingsController.getSelectedModel() : '') || localStorage.getItem('kai.selectedModel') || 'Local Model';
-        const thinkingState = meta.thinking !== undefined ? (meta.thinking ? `On (${meta.geminiThinkingLevel || 'default'})` : 'Off') : (localStorage.getItem('kai.showThinking') !== 'false' ? 'On' : 'Off');
+
+        // Check if model actually supports thinking / reasoning capabilities
+        const thinkingCapability = ThinkingStateFormatter.getThinkingState(meta.model || modelName);
+        let thinkingState = 'Not supported';
+        if (thinkingCapability && thinkingCapability.isThinkingCapable) {
+            if (meta.thinking !== undefined) {
+                const effort = meta.geminiThinkingLevel || meta.reasoningEffort || thinkingCapability.level || '';
+                const effortDisplay = (effort && effort !== 'none' && effort !== 'off') ? ` (${effort})` : '';
+                thinkingState = meta.thinking ? `On${effortDisplay}` : 'Off';
+            } else {
+                thinkingState = thinkingCapability.isOn ? `On (${thinkingCapability.level || 'on'})` : 'Off';
+            }
+        } else if (meta.thinking === false && (!meta.reasoningEffort || meta.reasoningEffort === 'none')) {
+            thinkingState = 'Not supported';
+        }
 
         bar.innerHTML = `
             <button type="button" class="msg-action-btn copy-response-btn" title="Copy response">

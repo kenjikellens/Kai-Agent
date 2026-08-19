@@ -737,49 +737,27 @@ class ModelDropdownController {
         if (raw.endsWith(' (thinking)')) {
             return {
                 model: raw.slice(0, -11),
-                thinking: true
-            };
-        }
-
-        const lowerRaw = raw.toLowerCase();
-        if (lowerRaw.includes('gemini')) {
-            const geminiLevel = localStorage.getItem(`kai.geminiThinkingLevel.${raw}`) ||
-                                localStorage.getItem('kai.geminiThinkingLevel') || 'high';
-            return {
-                model: raw,
-                thinking: geminiLevel !== 'minimal' && geminiLevel !== 'off',
-                reasoningEffort: geminiLevel
-            };
-        }
-
-        if (lowerRaw.includes('muse') || lowerRaw.includes('glimmer')) {
-            return {
-                model: raw,
                 thinking: true,
-                reasoningEffort: 'xhigh'
+                isThinkingCapable: true,
+                reasoningEffort: 'on'
             };
         }
 
-        if (lowerRaw.includes('mistral') || lowerRaw.includes('codestral') || lowerRaw.includes('pixtral')) {
-            const mistralThinkingSaved = localStorage.getItem(`kai.mistralThinking.${raw}`);
-            const thinking = mistralThinkingSaved !== null ? mistralThinkingSaved === 'true' : true;
+        const thinkingState = ThinkingStateFormatter.getThinkingState(raw);
+        if (!thinkingState.isThinkingCapable) {
             return {
                 model: raw,
-                thinking: thinking,
-                reasoningEffort: 'xhigh'
+                thinking: false,
+                isThinkingCapable: false,
+                reasoningEffort: 'none'
             };
         }
-
-        // Read model thinking toggle state and reasoning level from localStorage for LM Studio models
-        const lmThinkingSaved = localStorage.getItem(`kai.lmStudioThinking.${raw}`);
-        const thinking = lmThinkingSaved !== null ? lmThinkingSaved === 'true' : true;
-        const reasoningEffort = localStorage.getItem(`kai.lmStudioReasoningLevel.${raw}`) ||
-                                localStorage.getItem('kai.lmStudioReasoningLevel') || 'xhigh';
 
         return {
             model: raw,
-            thinking: thinking,
-            reasoningEffort: reasoningEffort
+            thinking: thinkingState.isOn,
+            isThinkingCapable: true,
+            reasoningEffort: thinkingState.level || 'on'
         };
     }
 
