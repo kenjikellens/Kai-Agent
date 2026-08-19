@@ -315,9 +315,9 @@ class WebviewIPCBridge {
                     systemPrompt += workspaceInfo;
                 }
 
-                // Append current day, date, and time automatically
+                // Append current temporal context and strict cutoff directives
                 const nowObj = new Date();
-                const currentDayTimeStr = `[Current Day and Time: ${nowObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}, ${nowObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}]`;
+                const currentDayTimeStr = `[Temporal Context & Knowledge Cutoff]\n- Current Date and Time: ${nowObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}, ${nowObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}\n- Your internal training cutoff is in the past. Events, releases, and information dated prior to the current date are historical facts, not future speculation.\n- NEVER state that an event, product, or topic prior to the current date is unreleased or speculative based on training cutoff limitations. Use available search tools if current details are required.`;
                 systemPrompt += `\n\n${currentDayTimeStr}\n`;
 
                 const messagesToSend = [...rawMessages];

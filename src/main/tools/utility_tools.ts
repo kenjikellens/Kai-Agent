@@ -1,4 +1,4 @@
-import { Tool, ToolExecutionContext } from './Tool';
+import { Tool, ToolContext, FunctionDeclaration } from './Tool';
 
 /**
  * UtilityToolsTool bundles helpful daily utility operations:
@@ -7,6 +7,8 @@ import { Tool, ToolExecutionContext } from './Tool';
 export class UtilityToolsTool extends Tool {
     public readonly name = 'utility_tools';
     public readonly description = 'Executes essential utility actions: get current time/date, perform math calculations, convert units, compute text statistics, or generate random UUIDs/tokens.';
+    protected readonly maxOutputLines = 100;
+    protected readonly maxOutputBytes = 6000;
 
     public readonly parameterSchema = {
         type: 'object',
@@ -50,12 +52,26 @@ export class UtilityToolsTool extends Tool {
     };
 
     /**
+     * Returns the OpenAI-compatible function declaration schema for utility operations.
+     */
+    public getFunctionDeclaration(): FunctionDeclaration {
+        return {
+            type: 'function',
+            function: {
+                name: this.name,
+                description: this.description,
+                parameters: this.parameterSchema
+            }
+        };
+    }
+
+    /**
      * Executes the requested utility action.
      * @param args Tool arguments.
      * @param context Execution context.
      * @returns Result string of the operation.
      */
-    public async execute(args: any, context?: ToolExecutionContext): Promise<string> {
+    public async execute(args: any, context?: ToolContext): Promise<string> {
         const action = args.action;
 
         switch (action) {

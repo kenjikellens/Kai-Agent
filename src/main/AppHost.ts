@@ -60,7 +60,8 @@ export class AppHost {
                     data.thinking,
                     data.geminiThinkingLevel || 'high',
                     data.planningMode || false,
-                    data.attachedFiles || []
+                    data.attachedFiles || [],
+                    data.mode || 'agent'
                 );
                 break;
             }
@@ -186,7 +187,8 @@ export class AppHost {
         thinking: boolean = true,
         geminiThinkingLevel: string = 'high',
         planningMode: boolean = false,
-        attachedFiles: any[] = []
+        attachedFiles: any[] = [],
+        mode: string = 'agent'
     ): Promise<void> {
         const workspacePath = this.workspaceManager.getWorkspacePath();
         const appPath = path.resolve(__dirname, '../..');
@@ -221,7 +223,7 @@ export class AppHost {
             const userPrompt = messages.length > 0 ? messages[messages.length - 1].content : '';
             const history = messages.slice(0, -1);
 
-            const mode = message.mode || (message.planningMode ? 'planning' : 'agent');
+            const effectiveMode = (mode as 'chat' | 'agent' | 'planning') || (planningMode ? 'planning' : 'agent');
             const result = await executor.run(
                 userPrompt,
                 history,
@@ -233,14 +235,14 @@ export class AppHost {
                 planningMode,
                 attachedFiles,
                 16000,
-                mode
+                effectiveMode
             );
 
             this.postMessage({
                 type: 'reply',
                 content: result.reply,
                 modifiedFiles: result.modifiedFiles,
-                mode: mode
+                mode: effectiveMode
             });
         } catch (error: any) {
             if (error.name === 'AbortError') {

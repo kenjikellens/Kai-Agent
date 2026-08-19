@@ -75,7 +75,7 @@ export class AgentExecutor {
 
         let systemContent = this.getSystemPrompt(effectiveMode, hasWorkspace, useNativeFunctionCalling);
         const now = new Date();
-        const currentDayTimeStr = `[Current Day and Time: ${now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}, ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}]`;
+        const currentDayTimeStr = `[Temporal Context & Knowledge Cutoff]\n- Current Date and Time: ${now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}, ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}\n- Your internal training cutoff is in the past. Events, releases, and information dated prior to the current date are historical facts, not future speculation.\n- NEVER state that an event, product, or topic prior to the current date is unreleased or speculative based on training cutoff limitations. Use available search tools if current details are required.`;
         systemContent += `\n\n${currentDayTimeStr}\n`;
 
         const existingSystemIndex = messages.findIndex((m) => m.role === 'system');
