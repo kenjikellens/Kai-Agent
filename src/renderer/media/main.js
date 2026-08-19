@@ -3,13 +3,14 @@
  * Instantiates and orchestrates ES6 OOP modules with collapsible Left Sidebar.
  */
 (function () {
-    // 1. Instantiate Core State and Utility Modules
+    // 1. Core State & Data Repositories
     const appState = new AppState();
     const formatter = new MarkdownFormatter();
     const ipcBridge = new WebviewIPCBridge();
     const fileSummaryWidget = new FileSummaryWidget();
+    const sessionRepository = new SessionRepository(ipcBridge);
 
-    // 2. Instantiate Feature and View Controllers
+    // 2. Feature & Settings Controllers
     const settingsController = new SettingsController(ipcBridge);
     const fileUploadController = new FileUploadController(ipcBridge, appState);
     const helpModalController = new HelpModalController(ipcBridge);
@@ -17,20 +18,13 @@
     const modelDropdownController = new ModelDropdownController(formatter, (selectedModel) => {
         appState.selectedModelValue = selectedModel;
         saveCurrentChat();
-
-        // Automatically unload previous models and load selected LM Studio model in memory
-        if (selectedModel && !selectedModel.toLowerCase().startsWith('gemini') && selectedModel !== 'local-model') {
-            const freeProviders = (typeof KAI_CONSTANTS !== 'undefined' && KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS) || [];
-            const isFreeProvider = freeProviders.some(p => (p.models || []).includes(selectedModel));
-            if (!isFreeProvider) {
-                ipcBridge.switchLMStudioModel(selectedModel);
-            }
-        }
     });
 
-    const historyManager = new HistoryManager(ipcBridge, (viewName) => {
-        chatUIController.showView(viewName);
-    });
+    const historyManager = new HistoryManager(
+        ipcBridge,
+        (viewName) => { chatUIController.showView(viewName); },
+        (chatId) => { openSessionById(chatId); }
+    );
 
     const chatUIController = new ChatUIController(
         formatter,
@@ -41,219 +35,61 @@
         modelDropdownController
     );
 
+    // 3. Mode Manager (4 modes in Desktop App: chat, ask, agent, planning)
+    const modeManager = new ModeManager({
+        appState: appState,
+        contextModeSelector: document.getElementById('context-mode-selector'),
+        atMentionTriggerBtn: document.getElementById('at-mention-trigger-btn'),
+        contextOptionsMenu: document.getElementById('context-options-menu'),
+        messageInput: document.getElementById('message-input'),
+        onModeChange: (newMode) => {
+            saveCurrentChat();
+        }
+    });
+
+    // 4. Prompt Submission Orchestrator
+    const promptOrchestrator = new PromptSubmissionOrchestrator({
+        appState: appState,
+        chatUIController: chatUIController,
+        modelDropdownController: modelDropdownController,
+        fileUploadController: fileUploadController,
+        settingsController: settingsController,
+        ipcBridge: ipcBridge,
+        sessionRepository: sessionRepository
+    });
+
     // Wire Command Approval Request dialog
     ipcBridge.onCommandApprovalRequest = async (command) => {
         return await chatUIController.requestCommandApproval(command);
     };
 
-    // Helper to identify real human user prompts vs intermediate tool results
-    const isRealUserPrompt = (m) => m && m.role === 'user' && typeof m.content === 'string' && !m.content.startsWith('[Tool Result for ');
-
     // Wire Retry Callback (Rolls back filesystem changes and retries from clicked assistant message)
     chatUIController.onRetry = async (assistantMsgElement) => {
         if (appState.isWaitingForResponse) return;
-
-        // 1. Rollback any files created/edited/deleted during this turn on disk
         if (appState.currentChatId) {
             await ipcBridge.rollbackTurnChanges(appState.currentChatId);
         }
-
-        // Find position of this assistant message among all rows
-        const allMessageNodes = Array.from(chatUIController.chatContainer.children).filter(el => 
-            el.classList.contains('user-message-row') || 
-            el.classList.contains('message') || 
-            el.classList.contains('tool-status-row') ||
-            el.classList.contains('file-summary-card')
-        );
-        const targetIndex = allMessageNodes.indexOf(assistantMsgElement);
-
-        if (targetIndex !== -1) {
-            // Count how many real user messages came before this assistant reply
-            const precedingUserNodes = allMessageNodes.slice(0, targetIndex).filter(el => el.classList.contains('user-message-row'));
-            const userIndex = precedingUserNodes.length; // 1-based count of user prompts up to this turn
-
-            if (userIndex > 0) {
-                // Find cutoff index in appState.messages: keep messages up to the userIndex-th real user prompt
-                let userMsgCount = 0;
-                let msgCutoffIndex = -1;
-                for (let i = 0; i < appState.messages.length; i++) {
-                    if (isRealUserPrompt(appState.messages[i])) {
-                        userMsgCount++;
-                        if (userMsgCount === userIndex) {
-                            msgCutoffIndex = i + 1; // include this user message, discard all tool calls/results/replies of this turn
-                            break;
-                        }
-                    }
-                }
-                if (msgCutoffIndex !== -1) {
-                    appState.messages = appState.messages.slice(0, msgCutoffIndex);
-                }
-
-                // Find matching cutoff in appState.uiEvents
-                let uiUserCount = 0;
-                let uiCutoffIndex = -1;
-                for (let i = 0; i < appState.uiEvents.length; i++) {
-                    if (appState.uiEvents[i].type === 'user') {
-                        uiUserCount++;
-                        if (uiUserCount === userIndex) {
-                            uiCutoffIndex = i + 1; // include this user event, discard everything after
-                            break;
-                        }
-                    }
-                }
-                if (uiCutoffIndex !== -1) {
-                    appState.uiEvents = appState.uiEvents.slice(0, uiCutoffIndex);
-                }
-
-                // Remove all DOM nodes after the preceding user message node (including tool-status-row cards and assistantMsgElement)
-                const lastPrecedingUserNode = precedingUserNodes[precedingUserNodes.length - 1];
-                const userNodeIndex = allMessageNodes.indexOf(lastPrecedingUserNode);
-                if (userNodeIndex !== -1) {
-                    const nodesToRemove = allMessageNodes.slice(userNodeIndex + 1);
-                    nodesToRemove.forEach(node => node.remove());
-                } else {
-                    const nodesToRemove = allMessageNodes.slice(targetIndex);
-                    nodesToRemove.forEach(node => node.remove());
-                }
-            } else {
-                const nodesToRemove = allMessageNodes.slice(targetIndex);
-                nodesToRemove.forEach(node => node.remove());
-            }
-        } else {
-            assistantMsgElement.remove();
-            while (appState.messages.length > 0 && !isRealUserPrompt(appState.messages[appState.messages.length - 1])) {
-                appState.messages.pop();
-            }
-            while (appState.uiEvents.length > 0 && appState.uiEvents[appState.uiEvents.length - 1].type !== 'user') {
-                appState.uiEvents.pop();
-            }
-        }
-
-        // If we have messages left and the last is user, re-send it
-        if (appState.messages.length > 0) {
-            chatUIController.resetAssistantStream();
-            chatUIController.setUiLoading(true, appState);
-            saveCurrentChat();
-
-            const modelDetails = modelDropdownController.getSelectedModelDetails();
-            const geminiThinkingLevel = modelDetails.reasoningEffort || settingsController.getGeminiThinkingLevel(modelDetails.model);
-            const attachedFilesCopy = fileUploadController.getAttachedFiles();
-
-            ipcBridge.sendUserPrompt(
-                appState.messages,
-                modelDetails.model,
-                modelDetails.thinking,
-                geminiThinkingLevel,
-                appState.activeMode === 'planning',
-                attachedFilesCopy,
-                appState.currentChatId,
-                appState.activeMode,
-                appState.workspacePath || ''
-            );
-        }
+        await promptOrchestrator.retryLastTurn(assistantMsgElement);
     };
 
-    // Wire Edit Prompt Callback (Rolls back filesystem changes and executes edited prompt from inline chat bubble)
+    // Wire Edit Prompt Callback (Rolls back filesystem changes and executes edited prompt)
     chatUIController.onEditPrompt = async (userMessageRowElement, editedText) => {
         if (appState.isWaitingForResponse) return;
         if (!editedText || !editedText.trim()) return;
-
-        // 1. Rollback any files created/edited/deleted during this turn on disk
         if (appState.currentChatId) {
             await ipcBridge.rollbackTurnChanges(appState.currentChatId);
         }
-
-        const textToSend = editedText.trim();
-
-        // Find index of this user message among rows
-        const allMessageNodes = Array.from(chatUIController.chatContainer.children).filter(el => 
-            el.classList.contains('user-message-row') || 
-            el.classList.contains('message') || 
-            el.classList.contains('tool-status-row') ||
-            el.classList.contains('file-summary-card')
-        );
-        const targetIndex = allMessageNodes.indexOf(userMessageRowElement);
-
-        if (targetIndex !== -1) {
-            const precedingUserNodes = allMessageNodes.slice(0, targetIndex).filter(el => el.classList.contains('user-message-row'));
-            const userIndex = precedingUserNodes.length;
-
-            let userMsgCount = 0;
-            let msgCutoffIndex = -1;
-            for (let i = 0; i < appState.messages.length; i++) {
-                if (isRealUserPrompt(appState.messages[i])) {
-                    if (userMsgCount === userIndex) {
-                        msgCutoffIndex = i;
-                        break;
-                    }
-                    userMsgCount++;
-                }
-            }
-
-            if (msgCutoffIndex !== -1) {
-                appState.messages = appState.messages.slice(0, msgCutoffIndex);
-            }
-
-            let uiUserCount = 0;
-            let uiCutoffIndex = -1;
-            for (let i = 0; i < appState.uiEvents.length; i++) {
-                if (appState.uiEvents[i].type === 'user') {
-                    if (uiUserCount === userIndex) {
-                        uiCutoffIndex = i;
-                        break;
-                    }
-                    uiUserCount++;
-                }
-            }
-
-            if (uiCutoffIndex !== -1) {
-                appState.uiEvents = appState.uiEvents.slice(0, uiCutoffIndex);
-            }
-
-            const nodesToRemove = allMessageNodes.slice(targetIndex);
-            nodesToRemove.forEach(node => node.remove());
-        }
-
-        // Add the new edited prompt to state & UI
-        appState.addMessage({ role: 'user', content: textToSend });
-        appState.addUiEvent({ type: 'user', text: textToSend });
-        chatUIController.appendMessage('user', textToSend);
-
-        chatUIController.resetAssistantStream();
-        chatUIController.setUiLoading(true, appState);
-        saveCurrentChat();
-
-        const modelDetails = modelDropdownController.getSelectedModelDetails();
-        const reasoningLevel = modelDetails.reasoningEffort || 'none';
-        const attachedFilesCopy = fileUploadController.getAttachedFiles();
-        fileUploadController.clear();
-
-        ipcBridge.sendUserPrompt(
-            appState.messages,
-            modelDetails.model,
-            modelDetails.thinking,
-            reasoningLevel,
-            appState.activeMode === 'planning',
-            attachedFilesCopy,
-            appState.currentChatId,
-            appState.activeMode,
-            appState.workspacePath || ''
-        );
+        await promptOrchestrator.editPrompt(userMessageRowElement, editedText);
     };
 
     // DOM Element References for Input Orchestration
     const messageInput = document.getElementById('message-input');
     const sendBtn = document.getElementById('send-btn');
     const newChatBtn = document.getElementById('new-chat-btn');
-    const atMentionTriggerBtn = document.getElementById('at-mention-trigger-btn');
-    const contextOptionsMenu = document.getElementById('context-options-menu');
-    const contextModeSelector = document.getElementById('context-mode-selector');
-    const modeOptChat = document.getElementById('mode-opt-chat');
-    const modeOptAgent = document.getElementById('mode-opt-agent');
-    const modeOptPlanning = document.getElementById('mode-opt-planning');
     const sidebar = document.getElementById('app-sidebar');
     const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
     const workspaceBadgeBtn = document.getElementById('workspace-badge-btn');
+    const topWorkspaceBtn = document.getElementById('top-workspace-btn');
 
     // Sidebar Collapse / Expand Toggle
     if (sidebar && sidebarToggleBtn) {
@@ -267,14 +103,12 @@
         });
     }
 
-    const topWorkspaceBtn = document.getElementById('top-workspace-btn');
     if (topWorkspaceBtn) {
         topWorkspaceBtn.addEventListener('click', () => {
             ipcBridge.browseWorkspaceFolder();
         });
     }
 
-    // Workspace Selector Click Handler
     if (workspaceBadgeBtn) {
         workspaceBadgeBtn.addEventListener('click', () => {
             ipcBridge.browseWorkspaceFolder();
@@ -302,33 +136,11 @@
         if (topWsText) {
             topWsText.textContent = hasWs ? workspacePath : 'No Workspace Selected';
         }
-        const topWsBtn = document.getElementById('top-workspace-btn');
-        if (topWsBtn) {
-            topWsBtn.title = hasWs ? `Active Workspace: ${workspacePath} (Click to change)` : 'Click to Select Workspace Folder';
+        if (topWorkspaceBtn) {
+            topWorkspaceBtn.title = hasWs ? `Active Workspace: ${workspacePath} (Click to change)` : 'Click to Select Workspace Folder';
         }
 
-        // Without a folder attached, only 1 mode (Chat) exists -> hide mode selector button entirely
-        const modeContainer = document.getElementById('context-options-dropdown-container');
-        if (modeContainer) {
-            modeContainer.classList.toggle('hidden', !hasWs);
-        }
-
-        if (modeOptAgent) {
-            modeOptAgent.disabled = !hasWs;
-            modeOptAgent.classList.toggle('disabled', !hasWs);
-            modeOptAgent.title = hasWs ? 'Autonomous code edits and terminal execution' : 'Select a workspace folder first to use Agent Mode';
-        }
-        if (modeOptPlanning) {
-            modeOptPlanning.disabled = !hasWs;
-            modeOptPlanning.classList.toggle('disabled', !hasWs);
-            modeOptPlanning.title = hasWs ? 'Structured plan-first protocol before code edits' : 'Select a workspace folder first to use Plan Mode';
-        }
-
-        if (!hasWs) {
-            setActiveMode('chat');
-        } else if (appState.activeMode === 'chat') {
-            setActiveMode('ask');
-        }
+        modeManager.setWorkspaceState(hasWs);
     }
 
     /**
@@ -360,7 +172,6 @@
     }
 
     // New Chat Click Handlers
-    const newChatIconBtn = document.getElementById('new-chat-icon-btn');
     const handleNewChatClick = () => {
         if (appState.messages.length > 0) {
             saveCurrentChat();
@@ -372,17 +183,16 @@
     if (newChatBtn) {
         newChatBtn.addEventListener('click', handleNewChatClick);
     }
+
     // When user deletes the currently open chat from sidebar, reset to a clean new chat
     historyManager.onDeleteActiveChat = (deletedChatId) => {
         if (appState.currentChatId === deletedChatId) {
-            isDirty = false;
             const newId = appState.generateChatId();
             window.location.hash = `session-${newId}`;
             createNewChat(newId);
         }
     };
     historyManager.onActiveChatDeleted = () => {
-        isDirty = false;
         const newId = appState.generateChatId();
         window.location.hash = `session-${newId}`;
         createNewChat(newId);
@@ -401,122 +211,17 @@
     }
 
     /**
-     * Updates active mode UI selection and input placeholder accordingly.
-     * @param {'chat'|'ask'|'agent'|'planning'} mode New active mode.
-     */
-    function setActiveMode(mode) {
-        if (!appState.hasActiveWorkspace) {
-            mode = 'chat';
-        } else if (mode === 'chat') {
-            mode = 'ask';
-        }
-        appState.activeMode = mode;
-        localStorage.setItem('kai.activeMode', mode);
-
-        if (contextModeSelector) {
-            contextModeSelector.querySelectorAll('.context-mode-item').forEach(btn => {
-                const itemMode = btn.dataset.mode;
-                btn.classList.toggle('active', itemMode === mode || (itemMode === 'ask' && mode === 'ask'));
-            });
-        }
-
-        if (atMentionTriggerBtn) {
-            atMentionTriggerBtn.dataset.mode = mode;
-            const modeLabels = { chat: 'Chat', ask: 'Ask', agent: 'Agent', planning: 'Plan' };
-            const modeIcons = {
-                chat: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
-                ask: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
-                agent: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>',
-                planning: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>'
-            };
-            
-            const iconEl = document.getElementById('active-mode-icon');
-            if (iconEl && modeIcons[mode]) {
-                iconEl.innerHTML = modeIcons[mode];
-            }
-            const textEl = document.getElementById('active-mode-text');
-            if (textEl) {
-                textEl.textContent = modeLabels[mode] || 'Ask';
-            }
-            atMentionTriggerBtn.title = `Mode: ${modeLabels[mode] || 'Ask'} (@)`;
-        }
-
-        if (messageInput) {
-            if (mode === 'chat') {
-                messageInput.placeholder = 'Ask Kai anything, calculate, convert, or search the web...';
-            } else if (mode === 'ask') {
-                messageInput.placeholder = 'Ask questions about your workspace codebase...';
-            } else if (mode === 'agent') {
-                messageInput.placeholder = 'Ask Kai to edit code, execute tasks, or run commands...';
-            } else if (mode === 'planning') {
-                messageInput.placeholder = 'Describe a project task to generate an implementation plan...';
-            }
-        }
-    }
-
-    // Set initial active mode on startup
-    setActiveMode(appState.activeMode || 'chat');
-
-    // Context Mode Selector Items Click Handlers
-    if (contextModeSelector) {
-        contextModeSelector.addEventListener('click', (e) => {
-            const item = e.target.closest('.context-mode-item');
-            if (!item || !item.dataset.mode) return;
-
-            const targetMode = item.dataset.mode;
-            // Block selection completely if item is disabled or no active workspace is open
-            if (item.disabled || item.classList.contains('disabled') || (!appState.hasActiveWorkspace && targetMode !== 'chat')) {
-                e.preventDefault();
-                e.stopPropagation();
-                return;
-            }
-
-            setActiveMode(targetMode);
-            if (contextOptionsMenu) contextOptionsMenu.classList.add('hidden');
-            saveCurrentChat();
-        });
-    }
-
-    let isDirty = false;
-
-    /**
-     * Marks state as changed so the 500ms debounced timer will persist it.
-     */
-    function markDirty() {
-        isDirty = true;
-    }
-
-    /**
-     * Persists current active chat session to storage.
+     * Persists current active chat session to storage via SessionRepository.
      */
     function saveCurrentChat() {
+        if (!appState.messages || appState.messages.length === 0) {
+            return;
+        }
         const details = modelDropdownController.getSelectedModelDetails();
         const payload = appState.toChatPayload(details.thinking);
-        ipcBridge.saveChat(payload);
+        sessionRepository.saveSession(payload);
         historyManager.setActiveChatId(appState.currentChatId);
-
-        // Update localStorage cache of savedChats so history is instantly updated
-        try {
-            let saved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
-            const idx = saved.findIndex(c => c.id === payload.id);
-            if (idx !== -1) {
-                saved[idx] = { id: payload.id, title: payload.title, timestamp: payload.timestamp, messages: payload.messages, uiEvents: payload.uiEvents, model: payload.model, mode: payload.mode, workspacePath: payload.workspacePath };
-            } else {
-                saved.unshift({ id: payload.id, title: payload.title, timestamp: payload.timestamp, messages: payload.messages, uiEvents: payload.uiEvents, model: payload.model, mode: payload.mode, workspacePath: payload.workspacePath });
-            }
-            localStorage.setItem('kai.savedChats', JSON.stringify(saved));
-            historyManager.renderHistoryList(saved, appState.isWaitingForResponse);
-        } catch (e) {}
-
-        isDirty = false;
     }
-
-    // Auto-save interval checking every 500ms if there are unsaved state changes
-    setInterval(() => {
-        if (isDirty && appState.currentChatId) {
-            saveCurrentChat();
-        }
-    }, 500);
 
     /**
      * Sends user prompt input to extension host or aborts ongoing generation.
@@ -535,19 +240,11 @@
             return;
         }
 
-        chatUIController.resetAssistantStream();
-
         let userPrompt = '';
         if (appState.selectedCodeContext) {
             userPrompt += `Here is the selected code context from the editor:\n\`\`\`\n${appState.selectedCodeContext}\n\`\`\`\n\n`;
         }
         userPrompt += text;
-
-        appState.addMessage({ role: 'user', content: userPrompt });
-        const userDisplayText = text || 'Sent selected code context';
-        appState.addUiEvent({ type: 'user', text: userDisplayText });
-
-        chatUIController.appendMessage('user', userDisplayText);
 
         if (messageInput) {
             messageInput.value = '';
@@ -555,26 +252,37 @@
         }
         appState.selectedCodeContext = '';
 
-        chatUIController.setUiLoading(true, appState);
-        saveCurrentChat();
+        promptOrchestrator.submitPrompt(userPrompt);
+    }
 
-        const modelDetails = modelDropdownController.getSelectedModelDetails();
-        const reasoningLevel = modelDetails.reasoningEffort || 'none';
+    /**
+     * Opens and displays a specific chat session by its unique ID.
+     * Checks localStorage cache first and falls back to IPC loadChat.
+     * @param {string} targetSessionId The target chat session ID to open.
+     */
+    function openSessionById(targetSessionId) {
+        if (!targetSessionId) return;
 
-        const attachedFilesCopy = fileUploadController.getAttachedFiles();
-        fileUploadController.clear();
+        if (helpModalController && typeof helpModalController.close === 'function') {
+            helpModalController.close(false);
+        }
 
-        ipcBridge.sendUserPrompt(
-            appState.messages,
-            modelDetails.model,
-            modelDetails.thinking,
-            reasoningLevel,
-            appState.activeMode === 'planning',
-            attachedFilesCopy,
-            appState.currentChatId,
-            appState.activeMode,
-            appState.workspacePath || ''
-        );
+        if (appState.messages.length > 0 && appState.currentChatId && appState.currentChatId !== targetSessionId) {
+            saveCurrentChat();
+        }
+
+        const cached = sessionRepository.getSession(targetSessionId);
+        if (cached) {
+            loadChatSession(cached);
+            return;
+        }
+
+        const isExistingChat = historyManager.cachedChats && historyManager.cachedChats.some(c => c.id === targetSessionId);
+        if (isExistingChat) {
+            ipcBridge.loadChat(targetSessionId);
+        } else {
+            createNewChat(targetSessionId);
+        }
     }
 
     /**
@@ -587,7 +295,7 @@
         appState.loadSession(chat);
 
         updateWorkspaceUi(appState.workspacePath || '');
-        setActiveMode(appState.activeMode || 'chat');
+        modeManager.setActiveMode(appState.activeMode || 'chat');
         chatUIController.renderUiEvents(appState.uiEvents, appState.messages);
         modelDropdownController.setSelectedModel(appState.selectedModelValue);
         historyManager.setActiveChatId(chat.id);
@@ -602,37 +310,14 @@
         sendBtn.addEventListener('click', sendMessage);
     }
 
-    if (atMentionTriggerBtn && contextOptionsMenu) {
-        atMentionTriggerBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (!appState.hasActiveWorkspace) {
-                contextOptionsMenu.classList.add('hidden');
-                return;
-            }
-            contextOptionsMenu.classList.toggle('hidden');
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!contextOptionsMenu.contains(e.target) && !atMentionTriggerBtn.contains(e.target)) {
-                contextOptionsMenu.classList.add('hidden');
-            }
-        });
-    }
-
-
-
-    // 10. Handle Proceed with Plan clicks inside implementation plan cards
+    // Handle Proceed with Plan clicks inside implementation plan cards
     document.addEventListener('click', (e) => {
         const proceedBtn = e.target.closest('.plan-proceed-btn');
         if (proceedBtn && !proceedBtn.disabled) {
-            // Disable button & update UI label
             proceedBtn.disabled = true;
             proceedBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"></path></svg><span>Plan Approved</span>`;
-            
-            // Switch mode to Agent automatically
-            setActiveMode('agent');
+            modeManager.setActiveMode('agent');
 
-            // Send confirmation prompt to start agent execution
             if (messageInput) {
                 messageInput.value = 'Please proceed with executing the approved implementation plan.';
                 sendMessage();
@@ -658,7 +343,6 @@
         if (!translations) return;
         window.KAI_I18N = translations;
 
-        // 1. All data-i18n text nodes
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
             if (translations[key]) {
@@ -666,7 +350,6 @@
             }
         });
 
-        // 2. All data-i18n-title attributes
         document.querySelectorAll('[data-i18n-title]').forEach(el => {
             const key = el.getAttribute('data-i18n-title');
             if (translations[key]) {
@@ -674,19 +357,16 @@
             }
         });
 
-        // 3. Message input placeholder
         const msgInput = document.getElementById('message-input');
         if (msgInput && translations.messagePlaceholder) {
             msgInput.placeholder = translations.messagePlaceholder;
         }
 
-        // 4. Thinking toggle label
         const thinkingLabel = document.getElementById('thinking-toggle-label');
         if (thinkingLabel && translations.thinkingToggle) {
             thinkingLabel.textContent = translations.thinkingToggle;
         }
 
-        // 5. Settings controller
         if (settingsController && typeof settingsController.applyTranslations === 'function') {
             settingsController.applyTranslations(translations);
         }
@@ -734,7 +414,6 @@
             window.applyAllTranslations(message.translations);
         }
         
-        // Only update workspace if user explicitly picked a new one through the folder picker
         if (message.isFolderPicked && message.workspacePath) {
             updateWorkspaceUi(message.workspacePath);
             saveCurrentChat();
@@ -759,7 +438,7 @@
             payload.progressType = payload.type;
         }
         chatUIController.handleAgentProgress(payload, appState);
-        markDirty();
+        sessionRepository.markDirty(appState.toChatPayload(modelDropdownController.getSelectedModelDetails().thinking));
     };
 
     ipcBridge.on('agentProgress', handleAgentProgress);
@@ -888,72 +567,27 @@
     ipcBridge.checkConnection();
     setInterval(() => ipcBridge.checkConnection(), 15000);
 
-    /**
-     * Central Hash Router for Client-Side SPA Navigation.
-     * Routes:
-     * - #settings -> Opens Settings view
-     * - #help -> Opens Help modal view
-     * - #session-<chatId> -> Loads the specified chat session or initializes a new one
-     */
-    function handleHashRouting() {
-        const rawHash = (window.location.hash || '').replace(/^#/, '').trim();
-
-        if (rawHash === 'settings') {
+    // 5. Hash Router Initialization
+    const hashRouter = new HashRouter({
+        onSettingsRoute: () => {
             chatUIController.showView('settings');
             if (helpModalController && typeof helpModalController.close === 'function') {
                 helpModalController.close(false);
             }
-            return;
-        }
-
-        if (rawHash === 'help') {
+        },
+        onHelpRoute: () => {
             if (helpModalController && typeof helpModalController.open === 'function') {
                 helpModalController.open(false);
             }
-            return;
+        },
+        onSessionRoute: (sessionId) => {
+            openSessionById(sessionId);
+        },
+        onDefaultRoute: () => {
+            const activeId = appState.currentChatId || appState.generateChatId();
+            window.location.hash = `session-${activeId}`;
         }
-
-        if (rawHash.startsWith('session-')) {
-            const targetSessionId = rawHash.substring(8);
-            if (helpModalController && typeof helpModalController.close === 'function') {
-                helpModalController.close(false);
-            }
-
-            if (appState.currentChatId === targetSessionId) {
-                chatUIController.showView('chat');
-                return;
-            }
-
-            // Save ongoing chat if dirty before switching
-            if (appState.messages.length > 0 && appState.currentChatId && appState.currentChatId !== targetSessionId) {
-                saveCurrentChat();
-            }
-
-            // Check localStorage cache for session
-            try {
-                const saved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
-                const found = saved.find(c => c.id === targetSessionId);
-                if (found) {
-                    loadChatSession(found);
-                    return;
-                }
-            } catch (e) {}
-
-            // Check if this ID is in the cached chat history list from backend
-            const isExistingChat = historyManager.cachedChats && historyManager.cachedChats.some(c => c.id === targetSessionId);
-            if (isExistingChat) {
-                ipcBridge.loadChat(targetSessionId);
-            } else {
-                // Initialize as a brand new empty chat session
-                createNewChat(targetSessionId);
-            }
-            return;
-        }
-
-        // Default: If hash is empty, assign current active chat session hash
-        const activeId = appState.currentChatId || appState.generateChatId();
-        window.location.hash = `session-${activeId}`;
-    }
+    });
 
     // Help modal hash sync hooks
     if (helpModalController) {
@@ -970,9 +604,5 @@
         };
     }
 
-    // Listen for hash navigation (back/forward, history click, link navigation)
-    window.addEventListener('hashchange', handleHashRouting);
-
-    // Run router on initial startup
-    handleHashRouting();
+    hashRouter.handleRoute();
 })();

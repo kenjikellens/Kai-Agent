@@ -1040,4 +1040,31 @@ class ChatUIController {
             if (this.settingsContainer) this.settingsContainer.classList.remove('hidden');
         }
     }
+
+    /**
+     * Renders a styled alert card in the chat view informing the user that an API key is required.
+     * Directs the user to provider registration URLs and opens Settings focused on target input.
+     * @param {object} info Provider requirement information.
+     * @param {string} info.providerName Provider display name.
+     * @param {string} info.modelName Model display name.
+     * @param {string} [info.url] External link to obtain free API key.
+     * @param {string} [info.keyHint] Guidance hint.
+     * @param {string} [info.configKey] Storage key name for input focus.
+     */
+    /**
+     * Renders a styled alert card in the chat view informing the user that an API key is required.
+     * Directs the user to provider registration URLs and opens Settings focused on target input.
+     * @param {object} info Provider requirement information.
+     */
+    showApiKeyRequiredNotice(info) {
+        if (!this.chatContainer) return;
+        const oldNotice = document.getElementById('api-key-required-notice');
+        if (oldNotice) oldNotice.remove();
+
+        const noticeDiv = typeof ApiKeyNoticeCard !== 'undefined'
+            ? ApiKeyNoticeCard.render(info, this.ipcBridge)
+            : document.createElement('div');
+        this.chatContainer.appendChild(noticeDiv);
+        this.scrollToBottom();
+    }
 }

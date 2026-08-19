@@ -7,10 +7,12 @@ class HistoryManager {
      * Initializes history DOM references and listeners.
      * @param {WebviewIPCBridge} ipcBridge IPC bridge instance.
      * @param {Function} onViewSwitch Callback to switch active content view.
+     * @param {Function} [onSelectChat] Callback invoked when a chat session is selected.
      */
-    constructor(ipcBridge, onViewSwitch) {
+    constructor(ipcBridge, onViewSwitch, onSelectChat = null) {
         this.ipcBridge = ipcBridge;
         this.onViewSwitch = onViewSwitch;
+        this.onSelectChat = onSelectChat;
         this.onDeleteActiveChat = null;
         this.activeChatId = null;
 
@@ -131,10 +133,24 @@ class HistoryManager {
             
             deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const wasActive = (this.activeChatId === chat.id);
-                this.ipcBridge.deleteChat(chat.id);
+                const chatIdToDelete = chat.id;
+                const wasActive = (this.activeChatId === chatIdToDelete);
+
+                try {
+                    let localSaved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
+                    localSaved = localSaved.filter(c => c.id !== chatIdToDelete);
+                    localStorage.setItem('kai.savedChats', JSON.stringify(localSaved));
+                    this.renderHistoryList(localSaved.map(c => ({
+                        id: c.id,
+                        title: c.title || 'New Chat',
+                        timestamp: c.timestamp || Date.now()
+                    })));
+                } catch (err) {}
+
+                this.ipcBridge.deleteChat(chatIdToDelete);
+
                 if (wasActive && typeof this.onDeleteActiveChat === 'function') {
-                    this.onDeleteActiveChat(chat.id);
+                    this.onDeleteActiveChat(chatIdToDelete);
                 }
             });
             
@@ -142,7 +158,13 @@ class HistoryManager {
                 if (typeof isWaitingForResponse !== 'undefined' && isWaitingForResponse) {
                     this.ipcBridge.abort();
                 }
+                this.setActiveChatId(chat.id);
                 window.location.hash = 'session-' + chat.id;
+                if (typeof this.onSelectChat === 'function') {
+                    this.onSelectChat(chat.id);
+                } else {
+                    this.ipcBridge.loadChat(chat.id);
+                }
             });
             
             item.appendChild(content);

@@ -269,6 +269,13 @@ class SettingsController {
         }
 
         if (this.geminiKeyInput) {
+            this.geminiKeyInput.addEventListener('input', () => {
+                const keyVal = this.geminiKeyInput.value.trim();
+                localStorage.setItem('kai.geminiApiKey', keyVal);
+                localStorage.setItem('kai.apiKey', keyVal);
+                if (this.settingsRepo) this.settingsRepo.setProviderKey('geminiApiKey', keyVal);
+                window.dispatchEvent(new CustomEvent('kaiProviderKeysUpdated'));
+            });
             this.geminiKeyInput.addEventListener('change', () => {
                 this.saveAllSettings();
             });
@@ -419,6 +426,15 @@ class SettingsController {
                 const isPassword = input.type === 'password';
                 input.type = isPassword ? 'text' : 'password';
                 toggleBtn.innerHTML = isPassword ? eyeOffSvg : eyeSvg;
+            });
+
+            input.addEventListener('input', () => {
+                provider.apiKey = input.value.trim();
+                if (provider.configKey) {
+                    localStorage.setItem(`kai.${provider.configKey}`, provider.apiKey);
+                    if (this.settingsRepo) this.settingsRepo.setProviderKey(provider.configKey, provider.apiKey);
+                    window.dispatchEvent(new CustomEvent('kaiProviderKeysUpdated'));
+                }
             });
 
             input.addEventListener('change', () => {

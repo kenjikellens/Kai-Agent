@@ -217,10 +217,14 @@ class WebviewIPCBridge {
                 await this._openBrowserFolderPicker();
                 break;
             }
+            case 'browseLMStudioFolder': {
+                await this._openBrowserLMStudioPicker();
+                break;
+            }
             case 'saveChat': {
                 try {
                     const chat = message.chat;
-                    if (chat && (chat.messages?.length > 0 || chat.uiEvents?.length > 0)) {
+                    if (chat && chat.messages && chat.messages.length > 0) {
                         const saved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
                         const idx = saved.findIndex(c => c.id === chat.id);
                         if (idx !== -1) {
@@ -348,7 +352,12 @@ class WebviewIPCBridge {
                 try {
                     const modelLower = (model || '').toLowerCase();
                     const isGemini = modelLower.includes('gemini');
-                    const isMistral = !isGemini && (modelLower.includes('mistral') || modelLower.includes('codestral') || modelLower.includes('ministral')) && !modelLower.includes('gguf');
+                    const isMistral = !isGemini && (modelLower.includes('mistral') || modelLower.includes('codestral') || modelLower.includes('magistral')) && !modelLower.includes('gguf');
+                    const isZhipu = !isGemini && !isMistral && (modelLower.includes('zhipu') || modelLower.includes('glm')) && !modelLower.includes('gguf');
+                    const isCohere = !isGemini && !isMistral && !isZhipu && (modelLower.includes('cohere') || modelLower.includes('command-r')) && !modelLower.includes('gguf');
+                    const isCerebras = !isGemini && !isMistral && !isZhipu && !isCohere && modelLower.includes('cerebras') && !modelLower.includes('gguf');
+                    const isOmniRoute = !isGemini && !isMistral && !isZhipu && !isCohere && !isCerebras && modelLower.includes('omniroute');
+
                     const effortVal = message.geminiThinkingLevel || 'high';
                     const caps = (typeof ThinkingStateFormatter !== 'undefined' && ThinkingStateFormatter._capabilities)
                         ? (ThinkingStateFormatter._capabilities[model] || ThinkingStateFormatter._capabilities[modelLower])
@@ -370,6 +379,15 @@ class WebviewIPCBridge {
                         if (isGemini) {
                             const geminiKey = (localStorage.getItem('kai.geminiApiKey') || localStorage.getItem('kai.apiKey') || '').trim();
                             if (!geminiKey) {
+                                if (window.chatUIController && typeof window.chatUIController.showApiKeyRequiredNotice === 'function') {
+                                    window.chatUIController.showApiKeyRequiredNotice({
+                                        providerName: 'Google Gemini',
+                                        modelName: model,
+                                        configKey: 'geminiApiKey',
+                                        url: 'https://aistudio.google.com/app/apikey',
+                                        keyHint: 'Get free key at aistudio.google.com/app/apikey'
+                                    });
+                                }
                                 emit({
                                     type: 'error',
                                     error: 'Google Gemini API-sleutel is niet ingesteld! Voer je Gemini API key in via Instellingen.'
@@ -416,6 +434,15 @@ class WebviewIPCBridge {
                         } else if (isMistral) {
                             const mistralKey = (localStorage.getItem('kai.mistralApiKey') || '').trim();
                             if (!mistralKey) {
+                                if (window.chatUIController && typeof window.chatUIController.showApiKeyRequiredNotice === 'function') {
+                                    window.chatUIController.showApiKeyRequiredNotice({
+                                        providerName: 'Mistral AI',
+                                        modelName: model,
+                                        configKey: 'mistralApiKey',
+                                        url: 'https://console.mistral.ai',
+                                        keyHint: 'Get free key at console.mistral.ai'
+                                    });
+                                }
                                 emit({
                                     type: 'error',
                                     error: 'Mistral API-sleutel is niet ingesteld! Voer je Mistral API key in via Instellingen.'
@@ -426,12 +453,108 @@ class WebviewIPCBridge {
                             targetUrl = 'https://api.mistral.ai/v1/chat/completions';
                             fetchHeaders['Authorization'] = `Bearer ${mistralKey}`;
                             payload = {
-                                model: model,
+                                model: model.replace(/^mistral\//i, ''),
+                                messages: messagesToSend.map(m => ({ role: m.role, content: m.content })),
+                                stream: true
+                            };
+                        } else if (isZhipu) {
+                            const zhipuKey = (localStorage.getItem('kai.zhipuApiKey') || '').trim();
+                            if (!zhipuKey) {
+                                if (window.chatUIController && typeof window.chatUIController.showApiKeyRequiredNotice === 'function') {
+                                    window.chatUIController.showApiKeyRequiredNotice({
+                                        providerName: 'Zhipu AI (GLM)',
+                                        modelName: model,
+                                        configKey: 'zhipuApiKey',
+                                        url: 'https://open.bigmodel.cn',
+                                        keyHint: 'Get API key at open.bigmodel.cn'
+                                    });
+                                }
+                                emit({
+                                    type: 'error',
+                                    error: 'Zhipu AI API-sleutel is niet ingesteld! Voer je Zhipu API key in via Instellingen.'
+                                });
+                                emit({ type: 'streamEnd' });
+                                return;
+                            }
+                            targetUrl = 'https://open.bigmodel.cn/api/paas/v4/chat/completions';
+                            fetchHeaders['Authorization'] = `Bearer ${zhipuKey}`;
+                            payload = {
+                                model: model.replace(/^zhipu\//i, ''),
+                                messages: messagesToSend.map(m => ({ role: m.role, content: m.content })),
+                                stream: true
+                            };
+                        } else if (isCohere) {
+                            const cohereKey = (localStorage.getItem('kai.cohereApiKey') || '').trim();
+                            if (!cohereKey) {
+                                if (window.chatUIController && typeof window.chatUIController.showApiKeyRequiredNotice === 'function') {
+                                    window.chatUIController.showApiKeyRequiredNotice({
+                                        providerName: 'Cohere',
+                                        modelName: model,
+                                        configKey: 'cohereApiKey',
+                                        url: 'https://dashboard.cohere.com',
+                                        keyHint: 'Get free key at dashboard.cohere.com'
+                                    });
+                                }
+                                emit({
+                                    type: 'error',
+                                    error: 'Cohere API-sleutel is niet ingesteld! Voer je Cohere API key in via Instellingen.'
+                                });
+                                emit({ type: 'streamEnd' });
+                                return;
+                            }
+                            targetUrl = 'https://api.cohere.com/v1/chat';
+                            fetchHeaders['Authorization'] = `Bearer ${cohereKey}`;
+                            payload = {
+                                model: model.replace(/^cohere\//i, ''),
+                                message: messagesToSend[messagesToSend.length - 1]?.content || '',
+                                stream: true
+                            };
+                        } else if (isCerebras) {
+                            const cerebrasKey = (localStorage.getItem('kai.cerebrasApiKey') || '').trim();
+                            if (!cerebrasKey) {
+                                if (window.chatUIController && typeof window.chatUIController.showApiKeyRequiredNotice === 'function') {
+                                    window.chatUIController.showApiKeyRequiredNotice({
+                                        providerName: 'Cerebras',
+                                        modelName: model,
+                                        configKey: 'cerebrasApiKey',
+                                        url: 'https://cloud.cerebras.ai',
+                                        keyHint: 'Get free key at cloud.cerebras.ai'
+                                    });
+                                }
+                                emit({
+                                    type: 'error',
+                                    error: 'Cerebras API-sleutel is niet ingesteld! Voer je Cerebras API key in via Instellingen.'
+                                });
+                                emit({ type: 'streamEnd' });
+                                return;
+                            }
+                            targetUrl = 'https://api.cerebras.ai/v1/chat/completions';
+                            fetchHeaders['Authorization'] = `Bearer ${cerebrasKey}`;
+                            payload = {
+                                model: model.replace(/^cerebras\//i, ''),
+                                messages: messagesToSend.map(m => ({ role: m.role, content: m.content })),
+                                stream: true
+                            };
+                        } else if (isOmniRoute) {
+                            targetUrl = 'http://127.0.0.1:8000/v1/chat/completions';
+                            const omniKey = (localStorage.getItem('kai.omnirouteApiKey') || '').trim();
+                            if (omniKey) fetchHeaders['Authorization'] = `Bearer ${omniKey}`;
+                            payload = {
+                                model: model.replace(/^omniroute\//i, ''),
                                 messages: messagesToSend.map(m => ({ role: m.role, content: m.content })),
                                 stream: true
                             };
                         } else {
-                            // Local LM Studio
+                            // Local LM Studio: ensure model is loaded into LM Studio on send
+                            if (iteration === 1 && model && model !== 'local-model') {
+                                try {
+                                    await fetch('/api/lmstudio/switch', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ model: model, unloadPrevious: true })
+                                    });
+                                } catch (e) {}
+                            }
                             targetUrl = serverUrl.replace(/\/$/, '') + '/chat/completions';
                             payload = {
                                 model: model,
@@ -784,6 +907,9 @@ class WebviewIPCBridge {
         });
     }
 
+    /**
+     * Opens native folder picker dialog for active workspace directory in browser preview mode.
+     */
     async _openBrowserFolderPicker() {
         try {
             const res = await fetch('/api/workspace/pick', { method: 'POST' });
@@ -796,6 +922,28 @@ class WebviewIPCBridge {
             }
         } catch (e) {
             console.error('Error selecting workspace folder:', e);
+        }
+    }
+
+    /**
+     * Opens native folder picker dialog for LM Studio directory in browser preview mode.
+     */
+    async _openBrowserLMStudioPicker() {
+        try {
+            const res = await fetch('/api/lmstudio/pick', { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                if (!data.canceled && data.lmStudioCacheDir) {
+                    localStorage.setItem('kai.lmStudioCacheDir', data.lmStudioCacheDir);
+                    const inputEl = document.getElementById('settings-lmstudio-path');
+                    if (inputEl) {
+                        inputEl.value = data.lmStudioCacheDir;
+                    }
+                    await this._handleClientSideIPC({ type: 'checkConnection' });
+                }
+            }
+        } catch (e) {
+            console.error('Error selecting LM Studio directory:', e);
         }
     }
 

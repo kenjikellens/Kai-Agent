@@ -4368,4 +4368,118 @@ details[open]>summary>.custom-chevron {
   display: none !important;
 }
 
+/* Card container for missing API key warning notifications in chat */
+.api-key-notice-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 14px 16px;
+  background: var(--app-surface-hover, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--app-border-strong, #333333);
+  border-left: 3px solid var(--app-accent, #e5a50a);
+  border-radius: var(--app-radius-md, 8px);
+  box-sizing: border-box;
+}
+
+/* Icon container with warning tint for missing key notices */
+.api-key-notice-icon {
+  flex-shrink: 0;
+  color: var(--app-accent, #e5a50a);
+  display: flex;
+  align-items: center;
+  margin-top: 2px;
+}
+
+/* Content body containing title, description and actions */
+.api-key-notice-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Header title for API key notice */
+.api-key-notice-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--app-fg, #ffffff);
+}
+
+/* Description paragraph explaining missing key and target model */
+.api-key-notice-desc {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--app-muted, #a0a0a0);
+}
+
+/* Hint text with secondary styling inside description */
+.api-key-notice-hint {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--app-muted, #888888);
+}
+
+/* Flex container for action buttons inside notice card */
+.api-key-notice-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+/* Base button styling for notice action buttons */
+.api-key-notice-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--app-radius-sm, 6px);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+/* Primary action button for opening settings */
+.api-key-notice-primary {
+  background: var(--app-accent, #007acc);
+  color: #ffffff;
+  border-color: var(--app-accent, #007acc);
+}
+
+/* Hover state for primary action button */
+.api-key-notice-primary:hover {
+  filter: brightness(1.15);
+}
+
+/* Secondary action button for external link to get API key */
+.api-key-notice-secondary {
+  background: var(--app-surface-hover, rgba(255, 255, 255, 0.08));
+  color: var(--app-fg, #ffffff);
+  border-color: var(--app-border, rgba(255, 255, 255, 0.12));
+}
+
+/* Hover state for secondary action button */
+.api-key-notice-secondary:hover {
+  background: var(--app-surface-strong, rgba(255, 255, 255, 0.14));
+}
+
+/* Dismiss button styling */
+.api-key-notice-dismiss {
+  background: transparent;
+  color: var(--app-muted, #888888);
+  border-color: transparent;
+}
+
+/* Hover state for dismiss button */
+.api-key-notice-dismiss:hover {
+  color: var(--app-fg, #ffffff);
+}
+
 

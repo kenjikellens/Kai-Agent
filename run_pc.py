@@ -135,6 +135,10 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
             self._handle_workspace_pick()
             return
 
+        if self.path.startswith("/api/lmstudio/pick") or self.path.startswith("/api/lmstudio/browse"):
+            self._handle_lmstudio_folder_pick()
+            return
+
         if self.path.startswith("/api/tools/execute"):
             self._handle_tool_execute(raw_body)
             return
@@ -193,8 +197,7 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
                     subprocess.run(
                         [str(lms_path), "unload", "--all"],
                         capture_output=True,
-                        timeout=15,
-                        text=True
+                        timeout=15
                     )
                 except Exception:
                     pass
@@ -203,8 +206,7 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
                     subprocess.run(
                         [str(lms_path), "load", model, "-y"],
                         capture_output=True,
-                        timeout=30,
-                        text=True
+                        timeout=30
                     )
                 except Exception:
                     pass
@@ -455,12 +457,14 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
                     return
                 import subprocess
                 cwd = workspace_path if (workspace_path and os.path.isdir(workspace_path)) else str(APP_DIR)
-                res = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True, timeout=30)
+                res = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, timeout=30)
                 output = ""
-                if res.stdout:
-                    output += f"[Stdout]:\n{res.stdout}\n"
-                if res.stderr:
-                    output += f"[Stderr]:\n{res.stderr}\n"
+                stdout_str = res.stdout.decode("utf-8", errors="replace") if res.stdout else ""
+                stderr_str = res.stderr.decode("utf-8", errors="replace") if res.stderr else ""
+                if stdout_str:
+                    output += f"[Stdout]:\n{stdout_str}\n"
+                if stderr_str:
+                    output += f"[Stderr]:\n{stderr_str}\n"
                 if res.returncode != 0:
                     output += f"[Exit Code]: {res.returncode}\n"
                 if not output.strip():
@@ -540,9 +544,41 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
         if result["error"]:
             self._json_response(500, {"error": result["error"]})
         elif result["path"]:
-            self._json_response(200, {"workspacePath": result["path"], "workspaceName": result["name"]})
+            self._json_response(200, {"workspacePath": result["path"], "workspaceName": result["name"], "canceled": False})
         else:
             self._json_response(200, {"workspacePath": "", "workspaceName": "", "canceled": True})
+
+    def _handle_lmstudio_folder_pick(self):
+        """Opens native OS folder picker dialog to select LM Studio cache directory."""
+        import threading
+        result = {"path": "", "canceled": False, "error": None}
+
+        def _ask():
+            try:
+                import tkinter
+                import tkinter.filedialog
+                root = tkinter.Tk()
+                root.withdraw()
+                root.wm_attributes('-topmost', 1)
+                folder_path = tkinter.filedialog.askdirectory(title="Select LM Studio Directory")
+                root.destroy()
+                if folder_path:
+                    result["path"] = os.path.normpath(folder_path)
+                else:
+                    result["canceled"] = True
+            except Exception as e:
+                result["error"] = str(e)
+
+        thread = threading.Thread(target=_ask)
+        thread.start()
+        thread.join(timeout=60)
+
+        if result["error"]:
+            self._json_response(500, {"error": result["error"]})
+        elif result["path"]:
+            self._json_response(200, {"lmStudioCacheDir": result["path"], "canceled": False})
+        else:
+            self._json_response(200, {"lmStudioCacheDir": "", "canceled": True})
 
     def _handle_web_search(self, raw_body):
         """Proxies a web search query via the bundled web-search-mcp server (Playwright-based)."""

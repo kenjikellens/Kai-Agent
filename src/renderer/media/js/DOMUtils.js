@@ -150,4 +150,82 @@ class DOMUtils {
 
         return svg;
     }
+
+    /**
+     * Creates a debounced function that delays invocation until after wait milliseconds.
+     * @param {Function} func The target function to debounce.
+     * @param {number} wait Delay in milliseconds.
+     * @returns {Function} Debounced function.
+     */
+    static debounce(func, wait = 250) {
+        let timeout = null;
+        return function (...args) {
+            const context = this;
+            if (timeout) clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                timeout = null;
+                func.apply(context, args);
+            }, wait);
+        };
+    }
+
+    /**
+     * Creates a throttled function that limits invocation to at most once per wait window.
+     * @param {Function} func The target function to throttle.
+     * @param {number} limit Window size in milliseconds.
+     * @returns {Function} Throttled function.
+     */
+    static throttle(func, limit = 50) {
+        let inThrottle = false;
+        let lastArgs = null;
+        let lastContext = null;
+        return function (...args) {
+            if (!inThrottle) {
+                func.apply(this, args);
+                inThrottle = true;
+                setTimeout(() => {
+                    inThrottle = false;
+                    if (lastArgs) {
+                        func.apply(lastContext, lastArgs);
+                        lastArgs = null;
+                        lastContext = null;
+                    }
+                }, limit);
+            } else {
+                lastArgs = args;
+                lastContext = this;
+            }
+        };
+    }
+
+    /**
+     * Batches execution of a callback using requestAnimationFrame to eliminate layout thrashing.
+     * @param {Function} callback Function to execute on next animation frame.
+     * @returns {Function} Wrapped batched trigger function.
+     */
+    static rafBatch(callback) {
+        let rafId = null;
+        return function (...args) {
+            if (rafId !== null) return;
+            rafId = requestAnimationFrame(() => {
+                rafId = null;
+                callback.apply(this, args);
+            });
+        };
+    }
+
+    /**
+     * Escapes unsafe HTML characters in a string to prevent XSS vulnerabilities.
+     * @param {string} text Raw string input.
+     * @returns {string} Escaped safe HTML string.
+     */
+    static escapeHtml(text) {
+        if (!text) return '';
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
 }
