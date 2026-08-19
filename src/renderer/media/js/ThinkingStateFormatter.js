@@ -61,23 +61,23 @@ class ThinkingStateFormatter {
                     return {
                         isThinkingCapable: true,
                         isMultiLevel: false,
-                        level: isLmThinkingOn ? 'high' : 'minimal',
+                        level: isLmThinkingOn ? 'on' : 'off',
                         isOn: isLmThinkingOn,
-                        labelText: isLmThinkingOn ? 'thinking' : '',
+                        labelText: isLmThinkingOn ? 'on' : '',
                         rawModel: rawModel
                     };
                 }
             }
         }
 
-        // 2. Gemini Multi-level models
+        // 2. Gemini Multi-level models (Thinking budget: high, medium, low, off)
         if (lowerRaw.includes('gemini')) {
             const level = localStorage.getItem(`kai.geminiThinkingLevel.${modelId}`) ||
                 localStorage.getItem(`kai.geminiThinkingLevel.${rawModel}`) ||
                 localStorage.getItem('kai.geminiThinkingLevel') || 'high';
-            const levelLabels = { high: 'high', medium: 'medium', low: 'low', minimal: 'off' };
+            const levelLabels = { high: 'high', medium: 'medium', low: 'low', minimal: 'off', off: 'off' };
             const labelText = levelLabels[level] || 'high';
-            const isOn = level !== 'minimal' && level !== 'off';
+            const isOn = labelText !== 'off';
 
             return {
                 isThinkingCapable: true,
@@ -115,14 +115,14 @@ class ThinkingStateFormatter {
             return {
                 isThinkingCapable: true,
                 isMultiLevel: false,
-                level: isLmThinkingOn ? 'high' : 'minimal',
+                level: isLmThinkingOn ? 'on' : 'off',
                 isOn: isLmThinkingOn,
-                labelText: isLmThinkingOn ? 'thinking' : '',
+                labelText: isLmThinkingOn ? 'on' : '',
                 rawModel: rawModel
             };
         }
 
-        // 5. Mistral Reasoning models (Binary On/Off)
+        // 5. Mistral Reasoning models (Thinking Toggle: on/off)
         const isMistralReasoning = lowerRaw.includes('magistral') || lowerRaw.includes('mistral-small') || lowerRaw.includes('mistral-medium') || lowerRaw.includes('codestral');
         if (isMistralReasoning) {
             const stored = localStorage.getItem(`kai.mistralThinking.${rawModel}`);
@@ -130,9 +130,9 @@ class ThinkingStateFormatter {
             return {
                 isThinkingCapable: true,
                 isMultiLevel: false,
-                level: isOn ? 'high' : 'minimal',
+                level: isOn ? 'on' : 'off',
                 isOn: isOn,
-                labelText: isOn ? 'thinking' : '',
+                labelText: isOn ? 'on' : '',
                 rawModel: rawModel
             };
         }
@@ -150,7 +150,7 @@ class ThinkingStateFormatter {
             };
         }
 
-        return { isThinkingCapable: false, isMultiLevel: false, level: 'minimal', isOn: false, labelText: '', rawModel: rawModel };
+        return { isThinkingCapable: false, isMultiLevel: false, level: 'off', isOn: false, labelText: '', rawModel: rawModel };
     }
 
     /**
