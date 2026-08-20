@@ -340,12 +340,6 @@ class ModelDropdownController {
                         });
 
                         flyoutInner.appendChild(toggleRow);
-
-                        if (caps.hasReasoningEffort && caps.effortOptions.length > 0) {
-                            const divider = document.createElement('div');
-                            divider.className = 'flyout-divider';
-                            flyoutInner.appendChild(divider);
-                        }
                     }
 
                     // 2. Reasoning Effort Option Rows (if supported)
