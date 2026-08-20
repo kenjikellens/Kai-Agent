@@ -490,31 +490,45 @@ class ModelDropdownController {
     }
 
     /**
-     * Populates initial default cloud and free models so user never sees empty dropdown.
+     * Populates initial connected cloud and free models so user only sees connected providers.
      */
     initDefaultDropdown() {
         if (!this.dropdownOptionsMenu) return;
         this.dropdownOptionsMenu.innerHTML = '';
 
-        const i18n = window.KAI_I18N || {};
         const defaultGemini = KAI_CONSTANTS.DEFAULT_GEMINI_MODELS;
-        const defaultProviders = KAI_CONSTANTS.DEFAULT_PROVIDERS_WITH_MODELS;
+        const defaultProviders = KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS || [];
 
-        const lmTitle = `${i18n.lmStudioHeader || 'LM Studio'} (${i18n.checkingServer || 'Checking...'})`;
-        const geminiTitle = 'Gemini';
+        let addedAny = false;
 
-        const showGeminiExpanded = this.selectedModelValue && this.selectedModelValue.toLowerCase().startsWith('gemini');
-        this.createAccordionGroup(lmTitle, [], !showGeminiExpanded, null, true);
-        this.createAccordionGroup(geminiTitle, defaultGemini, showGeminiExpanded);
+        const geminiKey = (localStorage.getItem('kai.geminiApiKey') || localStorage.getItem('kai.apiKey') || '').trim();
+        if (geminiKey) {
+            const showGeminiExpanded = this.selectedModelValue && this.selectedModelValue.toLowerCase().startsWith('gemini');
+            this.createAccordionGroup('Gemini', defaultGemini, showGeminiExpanded);
+            addedAny = true;
+        }
 
         defaultProviders.forEach(p => {
-            const isExpanded = this.selectedModelValue && p.models.includes(this.selectedModelValue);
-            this.createAccordionGroup(p.name, p.models, isExpanded);
+            const key = (localStorage.getItem(`kai.${p.configKey}`) || '').trim();
+            if (key) {
+                const isExpanded = this.selectedModelValue && p.models.includes(this.selectedModelValue);
+                const cleanName = p.name.replace(/\s*\([^)]*\)/g, '').trim();
+                this.createAccordionGroup(cleanName, p.models, isExpanded);
+                addedAny = true;
+            }
         });
+
+        if (!addedAny) {
+            const placeholder = document.createElement('div');
+            placeholder.className = 'dropdown-item-placeholder';
+            placeholder.textContent = 'No connected models. Add API key in Settings.';
+            this.dropdownOptionsMenu.appendChild(placeholder);
+        }
     }
 
     /**
      * Updates model dropdown options and connection dots when extension connectionStatus event arrives.
+     * Only renders providers and APIs that are active and connected.
      * @param {object} message Connection status payload from extension host.
      */
     updateConnectionStatus(message) {
@@ -529,7 +543,9 @@ class ModelDropdownController {
             lm: message.lmStudioModels,
             gm: message.geminiModels,
             ld: message.loadedModels,
-            caps: Object.keys(message.lmStudioCapabilities || {}).length
+            caps: Object.keys(message.lmStudioCapabilities || {}).length,
+            ak: message.apiKey,
+            fp: (message.freeProviders || []).map(p => ({ k: p.configKey, has: !!p.apiKey }))
         });
         if (this._lastFingerprint && this._lastFingerprint === fingerprint) {
             return;
@@ -541,31 +557,69 @@ class ModelDropdownController {
             const bare = m.endsWith(' (thinking)') ? m.slice(0, -11) : m;
             const lowerM = bare.toLowerCase();
             if (lowerM.startsWith('gemini')) {
-                return !!message.apiKey;
+                const key = (localStorage.getItem('kai.geminiApiKey') || localStorage.getItem('kai.apiKey') || '').trim();
+                return !!(message.apiKey || key);
             }
             const freeProviders = message.freeProviders || [];
             for (const provider of freeProviders) {
                 if (provider.models.includes(bare)) {
-                    return !!provider.apiKey;
+                    const key = (localStorage.getItem(`kai.${provider.configKey}`) || '').trim();
+                    return !!(provider.apiKey || key);
                 }
             }
-            return message.connected && message.loadedModels && message.loadedModels.includes(bare);
+            return Boolean(message.connected && message.loadedModels && message.loadedModels.includes(bare));
         };
 
         const lmStudioModels = message.lmStudioModels || [];
         this.lmStudioRawModels = lmStudioModels;
         const geminiModels = message.geminiModels || [];
-        const combinedModels = [...lmStudioModels, ...geminiModels];
+
+        this.dropdownOptionsMenu.innerHTML = '';
+
+        let addedCategories = 0;
+
+        // 1. LM Studio local models - ONLY if connected with loaded models
+        const isLMConnected = Boolean(message.connected && lmStudioModels.length > 0);
+        if (isLMConnected) {
+            const i18n = window.KAI_I18N || {};
+            const lmStudioStatus = i18n.connected || 'Connected';
+            const headerTitle = i18n.lmStudioHeader || 'LM Studio';
+            const lmTitle = `${headerTitle} (${lmStudioStatus})`;
+            const isExpanded = this.selectedModelValue && !this.selectedModelValue.toLowerCase().startsWith('gemini');
+            this.createAccordionGroup(lmTitle, lmStudioModels, isExpanded, isModelConnected, true);
+            addedCategories++;
+        }
+
+        // 2. Google Gemini - ONLY if API key is configured
+        const hasGeminiKey = Boolean(message.apiKey || (localStorage.getItem('kai.geminiApiKey') || localStorage.getItem('kai.apiKey') || '').trim());
+        if (hasGeminiKey) {
+            const geminiTitle = 'Gemini';
+            const showGeminiExpanded = this.selectedModelValue && this.selectedModelValue.toLowerCase().startsWith('gemini');
+            this.createAccordionGroup(geminiTitle, geminiModels.length > 0 ? geminiModels : KAI_CONSTANTS.DEFAULT_GEMINI_MODELS, showGeminiExpanded, isModelConnected);
+            addedCategories++;
+        }
+
+        // 3. Free Cloud Providers - ONLY if API key is configured
+        const freeProviders = message.freeProviders || [];
+        this.freeProvidersConfig = freeProviders;
+        for (const provider of freeProviders) {
+            const hasProviderKey = Boolean(provider.apiKey || (localStorage.getItem(`kai.${provider.configKey}`) || '').trim());
+            if (hasProviderKey) {
+                const isExpanded = this.selectedModelValue && provider.models.includes(this.selectedModelValue);
+                const cleanName = provider.name.replace(/\s*\([^)]*\)/g, '').trim();
+                this.createAccordionGroup(cleanName, provider.models, isExpanded, isModelConnected);
+                addedCategories++;
+            }
+        }
+
+        if (addedCategories === 0) {
+            const placeholder = document.createElement('div');
+            placeholder.className = 'dropdown-item-placeholder';
+            placeholder.textContent = 'No connected models. Add API key in Settings.';
+            this.dropdownOptionsMenu.appendChild(placeholder);
+        }
 
         if (this.selectedModelValue && this.selectedModelValue !== 'local-model' && this.selectedModelValue !== 'No Models Loaded') {
-            ThinkingStateFormatter.renderTriggerLabel({
-                modelId: this.selectedModelValue,
-                container: this.selectedModelText,
-                formatter: this.formatter
-            });
-            this.statusDot.className = isModelConnected(this.selectedModelValue) ? 'status-dot status-connected' : 'status-dot status-disconnected';
-        } else if (combinedModels.length > 0) {
-            this.selectedModelValue = combinedModels[0];
             ThinkingStateFormatter.renderTriggerLabel({
                 modelId: this.selectedModelValue,
                 container: this.selectedModelText,
@@ -576,29 +630,6 @@ class ModelDropdownController {
             this.selectedModelValue = 'local-model';
             this.selectedModelText.textContent = 'local-model';
             this.statusDot.className = isModelConnected('local-model') ? 'status-dot status-connected' : 'status-dot status-disconnected';
-        }
-
-        this.dropdownOptionsMenu.innerHTML = '';
-
-        const i18n = window.KAI_I18N || {};
-        const isConnected = Boolean(message.connected && lmStudioModels.length > 0);
-        const lmStudioStatus = isConnected 
-            ? (i18n.connected || 'Connected') 
-            : (i18n.offline || 'Offline');
-        const headerTitle = i18n.lmStudioHeader || 'LM Studio';
-        const lmTitle = `${headerTitle} (${lmStudioStatus})`;
-        const geminiTitle = 'Gemini';
-
-        const showGeminiExpanded = this.selectedModelValue && this.selectedModelValue.toLowerCase().startsWith('gemini');
-        this.createAccordionGroup(lmTitle, lmStudioModels, !showGeminiExpanded, isModelConnected, true);
-        this.createAccordionGroup(geminiTitle, geminiModels.length > 0 ? geminiModels : KAI_CONSTANTS.DEFAULT_GEMINI_MODELS, showGeminiExpanded, isModelConnected);
-
-        const freeProviders = message.freeProviders || [];
-        this.freeProvidersConfig = freeProviders;
-        for (const provider of freeProviders) {
-            const isExpanded = this.selectedModelValue && provider.models.includes(this.selectedModelValue);
-            const cleanName = provider.name.replace(/\s*\([^)]*\)/g, '').trim();
-            this.createAccordionGroup(cleanName, provider.models, isExpanded, isModelConnected);
         }
 
         this.updateGeminiThinkingVisibility();
