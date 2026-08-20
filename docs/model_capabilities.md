@@ -8,8 +8,8 @@ Dit document beschrijft de werking van **Thinking** en **Reasoning Effort** in K
 
 | Provider | Model ID | Thinking Opties | Reasoning Opties | Werking |
 | :--- | :--- | :--- | :--- | :--- |
-| **Google Gemini** | `gemini-3.7-flash`<br>`gemini-3.6-flash`<br>`gemini-3.5-flash`<br>`gemini-3.5-flash-lite`<br>`gemini-3-flash-preview`<br>`gemini-3.1-pro-preview`<br>`gemini-3.1-flash-lite` | `high`, `medium`, `low`, `off` | Geen | Gemini denkbudget niveaus direct instelbaar via flyout. |
-| **Mistral AI** | `mistral/magistral-small-latest`<br>`mistral/magistral-medium-latest`<br>`mistral/mistral-small-latest`<br>`mistral/mistral-medium-3-5`<br>`mistral/codestral-latest` | `on` / `off` | Geen | Thinking toggle via flyout menu (`(thinking)`). |
+| **Google Gemini** | `gemini-3.7-flash`<br>`gemini-3.6-flash`<br>`gemini-3.5-flash`<br>`gemini-3.5-flash-lite`<br>`gemini-3-flash-preview`<br>`gemini-3.1-pro-preview`<br>`gemini-3.1-flash-lite` | `High`, `Medium`, `Low`, `Off` | Geen | Gemini denkbudget niveaus direct instelbaar via geïntegreerd flyout menu. |
+| **Mistral AI** | `mistral/magistral-small-latest`<br>`mistral/magistral-medium-latest`<br>`mistral/mistral-small-latest`<br>`mistral/mistral-medium-3-5`<br>`mistral/codestral-latest` | `Thinking: On` / `Thinking: Off` | Geen | Thinking toggle via geïntegreerd flyout menu (`(thinking)`). |
 | **Mistral AI** | `mistral/open-mixtral-8x22b` | `off` | Geen | Standaard model zonder thinking. |
 | **Cerebras** | `cerebras/llama-3.3-70b`<br>`cerebras/llama-3.1-8b` | `off` | Geen | Standaard snelle inferentie. |
 | **Cohere** | `cohere/command-r-plus`<br>`cohere/command-r` | `off` | Geen | Standaard chat/agent modellen. |
@@ -31,11 +31,12 @@ De lijst met lokale modellen en hun capabilities wordt dynamisch geladen uit `mo
 
 ---
 
-## 3. UI Display & Label Contexten
+## 3. UI Display & Label Contexten (Geen Icons, Zuiver Tekst + Flyouts)
 
-| Context | Gemma (Thinking Aan) | Gemma (Thinking Uit) | Qwen (xhigh) | Bonsai / Standaard |
-| :--- | :--- | :--- | :--- | :--- |
-| **Trigger Knop (Toolbar)** | `Gemma (thinking)` + 🔋 | `Gemma` (geen suffix) | `Qwen (xhigh)` + 🔋 | *(geen suffix)* |
-| **Dropdown Item (Selector)** | `Gemma (thinking)` | `Gemma` (geen suffix) | `Qwen (xhigh)` | *(geen suffix)* |
-| **Info Modus ('i') - Thinking** | `on` | `off` | `on` | *(geen info)* |
-| **Info Modus ('i') - Reasoning** | *(niet aanwezig)* | *(niet aanwezig)* | `xhigh` | *(geen info)* |
+| Context | Gemma (Thinking Aan) | Gemma (Thinking Uit) | Qwen (xhigh) | Gemini (High) | Bonsai / Standaard |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Trigger Knop (Toolbar)** | `Gemma (thinking)` | `Gemma` | `Qwen (xhigh)` | `Gemini 3.7 Flash (High)` | *(geen suffix)* |
+| **Dropdown Item (Selector)** | `Gemma` + `›` (Flyout) | `Gemma` + `›` (Flyout) | `Qwen` + `›` (Flyout) | `Gemini 3.7 Flash` + `›` (Flyout) | *(geen flyout chevron)* |
+| **Flyout Submenu (Hover)** | `Thinking: On` ✓<br>`Thinking: Off` | `Thinking: On`<br>`Thinking: Off` ✓ | `xhigh` ✓<br>`medium`<br>`low` | `High` ✓<br>`Medium`<br>`Low`<br>`Off` | *(geen flyout)* |
+| **Info Modus ('i') - Thinking** | `on` | `off` | `on` | `on` | *(geen info)* |
+| **Info Modus ('i') - Reasoning** | *(niet aanwezig)* | *(niet aanwezig)* | `xhigh` | `high` | *(geen info)* |

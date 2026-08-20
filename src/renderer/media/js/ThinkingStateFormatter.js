@@ -1,6 +1,6 @@
 /**
- * ThinkingStateFormatter provides a clean OOP service for inspecting model reasoning states
- * and rendering thinking labels & battery SVG icons in the order requested (Text first, Icon second).
+ * ThinkingStateFormatter provides an OOP service for inspecting model reasoning states
+ * and rendering clean text labels without icons.
  * Dynamically utilizes LM Studio ModelCapabilities manifest definitions.
  */
 class ThinkingStateFormatter {
@@ -122,7 +122,7 @@ class ThinkingStateFormatter {
             };
         }
 
-        // 4. Standard non-thinking models (no hardcoded fallback assumptions)
+        // 4. Standard non-thinking models (no fallback assumptions)
         return {
             rawModel: rawModel,
             hasThinkingToggle: false,
@@ -182,7 +182,7 @@ class ThinkingStateFormatter {
 
     /**
      * Renders clean base model display text into the model selector trigger button.
-     * Suffixes and icons are omitted since dedicated toolbar capability buttons are active.
+     * Appends clean text reasoning suffix when active without any icons.
      * @param {object} params Rendering parameters.
      * @param {string} params.modelId Active model ID.
      * @param {HTMLElement} params.container Target DOM container element.
@@ -196,17 +196,14 @@ class ThinkingStateFormatter {
         container.innerHTML = '';
 
         const baseSpan = document.createElement('span');
-        baseSpan.textContent = formattedBaseName;
+        if (state.labelText) {
+            baseSpan.textContent = `${formattedBaseName} (${state.labelText})`;
+        } else {
+            baseSpan.textContent = formattedBaseName;
+        }
         container.appendChild(baseSpan);
     }
 
-    /**
-     * Appends text label and battery SVG icon to flyout option elements in user-specified order.
-     * Order specified by user: Text label first -> Battery SVG icon second.
-     * @param {HTMLElement} element Flyout option button or row element.
-     * @param {string} labelText Option display text.
-     * @param {string|boolean} level Reasoning level string or boolean.
-     * @param {string} [displayStyle] User display preference ('both', 'icon', 'text').
     /**
      * Renders clean label text inside flyout option elements.
      * @param {HTMLElement} element Target container element.

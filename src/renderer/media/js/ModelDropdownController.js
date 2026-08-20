@@ -1,12 +1,12 @@
 /**
  * ModelDropdownController manages model status dots, provider accordions,
- * and active model selection state in the dropdown menu.
+ * active model selection state, and integrated flyout settings submenus in the dropdown menu.
  * 
- * ARCHITECTURAL DISTINCTION:
+ * ARCHITECTURAL DESIGN:
  * - MODEL SELECTOR DROPDOWN: The primary dropdown menu (#dropdown-options-menu) where users
  *   choose which AI Provider and Model to interact with (LM Studio, Gemini, Mistral, etc.).
- * - THINKING DROPDOWN / FLYOUT MENU: The sub-dropdown menu (.thinking-flyout-menu) where users
- *   configure the thinking/reasoning budget/level (High, Medium, Low, Minimal) for thinking models.
+ * - THINKING / REASONING FLYOUT MENU: The integrated sub-dropdown (.thinking-flyout-menu) attached
+ *   directly to capable models for configuring thinking toggle and reasoning effort levels without icons.
  */
 class ModelDropdownController {
     /**
@@ -29,20 +29,17 @@ class ModelDropdownController {
         this.selectedModelText = document.getElementById('selected-model-text');
         this.statusDot = document.getElementById('status-dot');
 
-        this.settingsController = new ModelSettingsController({
-            onSettingsChange: () => this.updateModelDropdownItemBatteries()
-        });
-
         if (this.selectedModelText && this.selectedModelValue && this.selectedModelValue !== 'local-model') {
-            this.selectedModelText.textContent = this.formatter.formatModelName(this.selectedModelValue);
+            ThinkingStateFormatter.renderTriggerLabel({
+                modelId: this.selectedModelValue,
+                container: this.selectedModelText,
+                formatter: this.formatter
+            });
         }
 
         this.initEventListeners();
         this.initDefaultDropdown();
-        if (this.settingsController) {
-            this.settingsController.update(this.selectedModelValue);
-        }
-        
+
         window.addEventListener('resize', () => this.updateTextOverflowMetrics());
         setTimeout(() => this.updateTextOverflowMetrics(), 50);
     }
@@ -53,12 +50,11 @@ class ModelDropdownController {
      */
     updateTextOverflowMetrics() {
         const containers = document.querySelectorAll('.model-text-container');
-        
+
         containers.forEach(container => {
             const innerSpan = container.querySelector('.model-text-inner');
             if (!innerSpan) return;
 
-            // Ensure innerSpan doesn't shrink so scrollWidth gives true content width
             innerSpan.style.flexShrink = '0';
 
             const containerWidth = container.clientWidth;
@@ -66,21 +62,13 @@ class ModelDropdownController {
             const overflowAmount = contentWidth - containerWidth;
 
             if (overflowAmount > 2) {
-                // Content overflows container boundary
                 container.classList.add('has-overflow');
-                
-                // Add safety padding (8px) so the end of text is comfortably visible
                 const targetOffset = -(overflowAmount + 8);
-                
-                // Calculate dynamic animation duration proportional to scroll distance
-                // Base pause time at end = 1.2s
-                // In-between travel speed = 22px per second
                 const basePauseTime = 1.2;
                 const travelSpeed = 22;
                 const travelTime = (2 * Math.abs(targetOffset)) / travelSpeed;
-                
                 const duration = Math.min(24, Math.max(4.5, basePauseTime + travelTime)).toFixed(2);
-                
+
                 container.style.setProperty('--scroll-offset', `${targetOffset}px`);
                 container.style.setProperty('--scroll-duration', `${duration}s`);
             } else {
@@ -119,9 +107,6 @@ class ModelDropdownController {
             this.dropdownTriggerBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.closeActiveFlyoutImmediately();
-                if (this.settingsController) {
-                    this.settingsController.close();
-                }
                 if (this.dropdownOptionsMenu) {
                     this.dropdownOptionsMenu.classList.toggle('hidden');
                 }
@@ -169,8 +154,8 @@ class ModelDropdownController {
 
     /**
      * Creates and appends an accordion category group to the Model Selector Dropdown menu.
-     * Each model option is rendered as an explicit interactive button element (role="button").
-     * For reasoning models (e.g. Gemini), an attached sub-menu (Thinking Dropdown) is rendered.
+     * Each model option is rendered as an interactive button element.
+     * Capable models render an integrated flyout submenu for thinking & reasoning settings without icons.
      * 
      * @param {string} title Category title string.
      * @param {Array<string>} modelsList List of model IDs under this category.
@@ -189,7 +174,7 @@ class ModelDropdownController {
         headerDiv.setAttribute('role', 'button');
         headerDiv.setAttribute('tabindex', '0');
         headerDiv.setAttribute('aria-label', `Toggle category ${title}`);
-        
+
         const titleSpan = document.createElement('span');
         titleSpan.textContent = title;
         headerDiv.appendChild(titleSpan);
@@ -199,7 +184,7 @@ class ModelDropdownController {
 
         const contentDiv = document.createElement('div');
         contentDiv.className = 'dropdown-category-content';
-        
+
         let isExpanded = this.accordionStates[title];
         if (isExpanded === undefined || isExpanded === null) {
             isExpanded = isInitiallyExpanded;
@@ -247,20 +232,25 @@ class ModelDropdownController {
             });
 
             displayItems.forEach(itemData => {
-                // Model Selector Dropdown Button Item (Interactive button element)
+                const caps = ThinkingStateFormatter.getCapabilitiesState(itemData.rawModel);
+                const hasFlyout = caps.hasThinkingToggle || (caps.hasReasoningEffort && Array.isArray(caps.effortOptions) && caps.effortOptions.length > 0);
+
                 const item = document.createElement('div');
                 item.className = 'dropdown-item';
+                if (hasFlyout) {
+                    item.classList.add('model-hover-item');
+                }
                 item.setAttribute('role', 'button');
                 item.setAttribute('tabindex', '0');
                 item.setAttribute('aria-label', `Select model ${itemData.label}`);
-                
+
                 if (itemData.value === this.selectedModelValue) {
                     item.classList.add('selected');
                 }
                 item.dataset.value = itemData.value;
                 const isLoaded = isModelConnectedFn ? isModelConnectedFn(itemData.rawModel) : false;
                 const dotClass = isLoaded ? 'status-connected' : 'status-disconnected';
-                
+
                 const statusDotSpan = document.createElement('span');
                 statusDotSpan.className = `status-dot ${dotClass}`;
                 item.appendChild(statusDotSpan);
@@ -274,19 +264,209 @@ class ModelDropdownController {
 
                 textContainer.appendChild(textSpan);
                 item.appendChild(textContainer);
-                
+
+                if (hasFlyout) {
+                    const flyoutChevron = document.createElement('span');
+                    flyoutChevron.className = 'model-flyout-chevron';
+                    flyoutChevron.textContent = '›';
+                    item.appendChild(flyoutChevron);
+
+                    // Build integrated flyout submenu (no icons)
+                    const flyoutMenu = document.createElement('div');
+                    flyoutMenu.className = 'thinking-flyout-menu';
+
+                    const flyoutInner = document.createElement('div');
+                    flyoutInner.className = 'thinking-flyout-menu-inner';
+
+                    const rawModel = itemData.rawModel;
+
+                    // 1. Thinking Toggle Switch (Boolean soft-coded)
+                    if (caps.hasThinkingToggle) {
+                        const toggleRow = document.createElement('div');
+                        toggleRow.className = 'toggle-switch-row';
+                        toggleRow.setAttribute('role', 'button');
+                        toggleRow.setAttribute('tabindex', '0');
+                        toggleRow.setAttribute('aria-label', `Toggle thinking ${caps.isThinkingOn ? 'off' : 'on'}`);
+
+                        const toggleLabel = document.createElement('span');
+                        toggleLabel.className = 'toggle-label';
+                        toggleLabel.textContent = 'Thinking';
+                        toggleRow.appendChild(toggleLabel);
+
+                        const switchPill = document.createElement('div');
+                        switchPill.className = `switch-pill ${caps.isThinkingOn ? 'active' : ''}`;
+                        const switchHandle = document.createElement('div');
+                        switchHandle.className = 'switch-handle';
+                        switchPill.appendChild(switchHandle);
+                        toggleRow.appendChild(switchPill);
+
+                        const handleToggleClick = (e) => {
+                            e.stopPropagation();
+                            const newState = !switchPill.classList.contains('active');
+                            if (newState) {
+                                switchPill.classList.add('active');
+                            } else {
+                                switchPill.classList.remove('active');
+                            }
+
+                            localStorage.setItem(`kai.lmStudioThinking.${rawModel}`, newState ? 'true' : 'false');
+                            localStorage.setItem(`kai.mistralThinking.${rawModel}`, newState ? 'true' : 'false');
+                            if (rawModel.includes('/')) {
+                                const short = rawModel.split('/').pop();
+                                localStorage.setItem(`kai.lmStudioThinking.${short}`, newState ? 'true' : 'false');
+                            }
+                            caps.isThinkingOn = newState;
+
+                            this.selectedModelValue = itemData.value;
+                            localStorage.setItem('kai.selectedModel', itemData.value);
+                            this.setSelectedModel(itemData.value);
+
+                            if (this.statusDot) {
+                                this.statusDot.className = (isModelConnectedFn && isModelConnectedFn(itemData.rawModel)) ? 'status-dot status-connected' : 'status-dot status-disconnected';
+                            }
+
+                            if (this.onSelect) {
+                                this.onSelect(itemData.value);
+                            }
+                        };
+
+                        toggleRow.addEventListener('click', handleToggleClick);
+                        toggleRow.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                handleToggleClick(e);
+                            }
+                        });
+
+                        flyoutInner.appendChild(toggleRow);
+
+                        if (caps.hasReasoningEffort && caps.effortOptions.length > 0) {
+                            const divider = document.createElement('div');
+                            divider.className = 'flyout-divider';
+                            flyoutInner.appendChild(divider);
+                        }
+                    }
+
+                    // 2. Reasoning Effort Option Rows (if supported)
+                    if (caps.hasReasoningEffort && Array.isArray(caps.effortOptions)) {
+                        caps.effortOptions.forEach(opt => {
+                            const optItem = document.createElement('div');
+                            const isSelected = opt.value === caps.reasoningLevel;
+                            optItem.className = `flyout-option ${isSelected ? 'selected' : ''}`;
+                            optItem.setAttribute('role', 'button');
+                            optItem.setAttribute('tabindex', '0');
+
+                            ThinkingStateFormatter.renderFlyoutOptionContent(optItem, opt.label);
+
+                            if (isSelected) {
+                                optItem.appendChild(DOMUtils.createCheckIcon('check-icon'));
+                            }
+
+                            const handleEffortClick = (e) => {
+                                e.stopPropagation();
+                                if (rawModel.toLowerCase().includes('gemini')) {
+                                    localStorage.setItem(`kai.geminiThinkingLevel.${itemData.value}`, opt.value);
+                                    localStorage.setItem(`kai.geminiThinkingLevel.${rawModel}`, opt.value);
+                                    localStorage.setItem('kai.geminiThinkingLevel', opt.value);
+                                } else {
+                                    localStorage.setItem(`kai.lmStudioReasoningLevel.${rawModel}`, opt.value);
+                                    localStorage.setItem(`kai.lmStudioReasoningLevel.${itemData.value}`, opt.value);
+                                    if (rawModel.includes('/')) {
+                                        const short = rawModel.split('/').pop();
+                                        localStorage.setItem(`kai.lmStudioReasoningLevel.${short}`, opt.value);
+                                    }
+                                }
+
+                                caps.reasoningLevel = opt.value;
+                                this.selectedModelValue = itemData.value;
+                                localStorage.setItem('kai.selectedModel', itemData.value);
+                                this.setSelectedModel(itemData.value);
+
+                                if (this.statusDot) {
+                                    this.statusDot.className = (isModelConnectedFn && isModelConnectedFn(itemData.rawModel)) ? 'status-dot status-connected' : 'status-dot status-disconnected';
+                                }
+                                this.closeActiveFlyoutImmediately();
+                                this.dropdownOptionsMenu.classList.add('hidden');
+
+                                if (this.onSelect) {
+                                    this.onSelect(itemData.value);
+                                }
+                            };
+
+                            optItem.addEventListener('click', handleEffortClick);
+                            optItem.addEventListener('keydown', (e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    handleEffortClick(e);
+                                }
+                            });
+
+                            flyoutInner.appendChild(optItem);
+                        });
+                    }
+
+                    flyoutMenu.appendChild(flyoutInner);
+                    item.appendChild(flyoutMenu);
+
+                    // Dynamic positioning and hover handlers
+                    const openFlyout = () => {
+                        if (this.flyoutCloseTimer) {
+                            clearTimeout(this.flyoutCloseTimer);
+                            this.flyoutCloseTimer = null;
+                        }
+                        if (this.activeFlyoutItem && this.activeFlyoutItem !== item) {
+                            this.activeFlyoutItem.classList.remove('flyout-open');
+                        }
+                        item.classList.add('flyout-open');
+                        this.activeFlyoutItem = item;
+
+                        const rect = item.getBoundingClientRect();
+                        flyoutMenu.style.position = 'fixed';
+                        flyoutMenu.style.top = `${rect.top}px`;
+
+                        let leftPos = rect.right + 4;
+                        const flyoutWidth = 160;
+                        if (leftPos + flyoutWidth > window.innerWidth) {
+                            leftPos = Math.max(10, rect.left - flyoutWidth - 4);
+                        }
+                        flyoutMenu.style.left = `${leftPos}px`;
+                    };
+
+                    const scheduleCloseFlyout = () => {
+                        this.flyoutCloseTimer = setTimeout(() => {
+                            if (this.activeFlyoutItem === item) {
+                                item.classList.remove('flyout-open');
+                                this.activeFlyoutItem = null;
+                            }
+                        }, 150);
+                    };
+
+                    item.addEventListener('mouseenter', openFlyout);
+                    item.addEventListener('mouseleave', scheduleCloseFlyout);
+                    flyoutMenu.addEventListener('mouseenter', () => {
+                        if (this.flyoutCloseTimer) {
+                            clearTimeout(this.flyoutCloseTimer);
+                            this.flyoutCloseTimer = null;
+                        }
+                    });
+                    flyoutMenu.addEventListener('mouseleave', scheduleCloseFlyout);
+                }
+
+                // Base Model Item Click
                 const handleItemClick = (e) => {
+                    if (e.target.closest('.thinking-flyout-menu')) return;
                     e.stopPropagation();
                     this.selectedModelValue = itemData.value;
                     localStorage.setItem('kai.selectedModel', itemData.value);
-                    
+
                     this.setSelectedModel(itemData.value);
 
                     if (this.statusDot) {
                         this.statusDot.className = (isModelConnectedFn && isModelConnectedFn(itemData.rawModel)) ? 'status-dot status-connected' : 'status-dot status-disconnected';
                     }
+                    this.closeActiveFlyoutImmediately();
                     this.dropdownOptionsMenu.classList.add('hidden');
-                    
+
                     if (this.onSelect) {
                         this.onSelect(itemData.value);
                     }
@@ -315,7 +495,7 @@ class ModelDropdownController {
     initDefaultDropdown() {
         if (!this.dropdownOptionsMenu) return;
         this.dropdownOptionsMenu.innerHTML = '';
-        
+
         const i18n = window.KAI_I18N || {};
         const defaultGemini = KAI_CONSTANTS.DEFAULT_GEMINI_MODELS;
         const defaultProviders = KAI_CONSTANTS.DEFAULT_PROVIDERS_WITH_MODELS;
@@ -344,7 +524,6 @@ class ModelDropdownController {
             ThinkingStateFormatter.setLMStudioCapabilities(message.lmStudioCapabilities);
         }
 
-        /* Skip rebuild if nothing changed to prevent LM Studio Offline/Connected flicker */
         const fingerprint = JSON.stringify({
             c: message.connected,
             lm: message.lmStudioModels,
@@ -423,9 +602,6 @@ class ModelDropdownController {
         }
 
         this.updateGeminiThinkingVisibility();
-        if (this.settingsController) {
-            this.settingsController.update(this.selectedModelValue);
-        }
     }
 
     /**
@@ -498,7 +674,7 @@ class ModelDropdownController {
     }
 
     /**
-     * Sets active model ID and updates UI elements, settings dropdown, and connection status indicators.
+     * Sets active model ID and updates UI elements, dropdown list highlights, and connection status indicators.
      * @param {string} modelId Model ID.
      */
     setSelectedModel(modelId) {
@@ -532,22 +708,19 @@ class ModelDropdownController {
             });
         }
         this.updateGeminiThinkingVisibility();
-        if (this.settingsController) {
-            this.settingsController.update(modelId);
-        }
     }
 
     /**
-     * Cleans up any deprecated battery elements from dropdown list items.
+     * Cleans up any deprecated icon elements from dropdown list items.
      */
     updateModelDropdownItemBatteries() {
         if (!this.dropdownOptionsMenu) return;
-        const oldBatteries = this.dropdownOptionsMenu.querySelectorAll('.item-battery-icon, .thinking-lamp-icon');
-        oldBatteries.forEach(el => el.remove());
+        const oldIcons = this.dropdownOptionsMenu.querySelectorAll('.item-battery-icon, .thinking-lamp-icon, .flyout-battery-icon');
+        oldIcons.forEach(el => el.remove());
     }
 
     /**
-     * Updates visibility of reasoning sub-settings.
+     * Updates visibility of reasoning sub-settings in settings panel if present.
      */
     updateGeminiThinkingVisibility() {
         const container = document.getElementById('gemini-thinking-level-container');

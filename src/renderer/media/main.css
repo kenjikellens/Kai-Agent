@@ -1915,15 +1915,6 @@ button:disabled {
   max-width: max-content;
 }
 
-/* Container for Model Settings chevron dropdown and standalone thinking indicator */
-#model-settings-dropdown-container {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  position: relative;
-}
-
 /* Primary Model Selector Dropdown Trigger Button - Fits text length up to max-width */
 .dropdown-trigger {
   height: 32px;
@@ -2157,59 +2148,7 @@ button:disabled {
   color: var(--app-accent);
 }
 
-.dropdown-item.model-hover-item {
-  position: relative;
-}
-
-/* Chevron-only trigger button for Model Settings in input toolbar */
-.chevron-only-btn {
-  height: 32px;
-  width: 28px;
-  min-width: 28px;
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: 0 !important;
-  outline: none;
-  border-radius: var(--app-radius-md);
-  background: var(--app-surface-strong);
-  color: var(--app-muted);
-  cursor: pointer;
-  user-select: none;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
-}
-
-/* Hover state for chevron-only trigger button */
-.chevron-only-btn:hover,
-.chevron-only-btn:focus {
-  background: var(--app-surface-hover);
-  color: var(--app-fg);
-  box-shadow: 0 0 0 1px var(--app-surface-hover);
-}
-
-/* Settings dropdown popup menu with compact width and visible overflow for submenus */
-#model-settings-menu {
-  width: max-content;
-  min-width: max-content;
-  max-width: 320px;
-  padding: 4px;
-  overflow: visible;
-}
-
-/* Category section title inside settings dropdown */
-.settings-section-title {
-  padding: 4px 8px 2px 8px;
-  font-size: 0.68rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--app-muted);
-  white-space: nowrap;
-}
-
-/* Toggle switch row component inside model settings dropdown */
+/* Interactive toggle switch row inside flyout submenu */
 .toggle-switch-row {
   display: flex;
   align-items: center;
@@ -2224,13 +2163,13 @@ button:disabled {
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-/* Hover state for toggle switch row */
+/* Hover state for toggle switch row inside flyout */
 .toggle-switch-row:hover {
   background: var(--app-surface-hover);
   color: var(--app-fg-bright, #ffffff);
 }
 
-/* Label container inside toggle switch row */
+/* Label text container inside toggle switch row */
 .toggle-label {
   font-size: 0.8rem;
   color: var(--app-fg);
@@ -2238,15 +2177,9 @@ button:disabled {
   align-items: center;
   gap: 6px;
   white-space: nowrap;
-  transition: color 0.15s ease;
 }
 
-/* Hover state for label inside toggle switch row */
-.toggle-switch-row:hover .toggle-label {
-  color: var(--app-fg-bright, #ffffff);
-}
-
-/* Visual pill background for toggle switch */
+/* Visual pill background container for boolean toggle switch */
 .switch-pill {
   width: 32px;
   height: 18px;
@@ -2257,12 +2190,12 @@ button:disabled {
   flex-shrink: 0;
 }
 
-/* Active state for toggle switch pill */
+/* Active background color for toggle switch pill */
 .switch-pill.active {
   background: var(--app-accent);
 }
 
-/* Circular handle inside toggle switch */
+/* Circular handle inside boolean toggle switch pill */
 .switch-handle {
   width: 14px;
   height: 14px;
@@ -2274,113 +2207,12 @@ button:disabled {
   transition: left 0.15s ease;
 }
 
-/* Active position for toggle switch handle */
+/* Active position for circular handle inside toggle switch */
 .switch-pill.active .switch-handle {
   left: 16px;
 }
 
-/* Flyout trigger row inside settings menu for multiple-choice options */
-.flyout-trigger-row {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 6px 8px;
-  border-radius: var(--app-radius-sm);
-  background: transparent;
-  color: var(--app-fg);
-  font-size: 0.8rem;
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
-  transition: background-color 0.15s ease, color 0.15s ease;
-}
-
-/* Hover and active state for flyout trigger row */
-.flyout-trigger-row:hover,
-.flyout-trigger-row.active {
-  background: var(--app-surface-hover);
-  color: var(--app-fg-bright, #ffffff);
-}
-
-/* Hover state for label inside flyout trigger row */
-.flyout-trigger-row:hover .toggle-label,
-.flyout-trigger-row.active .toggle-label {
-  color: var(--app-fg-bright, #ffffff);
-}
-
-/* Floating popup submenu for multiple-choice options positioned next to the row */
-.flyout-popup-menu {
-  position: absolute;
-  left: calc(100% + 4px);
-  top: 0;
-  z-index: 1002;
-  width: max-content;
-  min-width: max-content;
-  padding: 4px;
-  box-sizing: border-box;
-  background: var(--app-dropdown-bg);
-  border: 1px solid var(--app-border-strong);
-  border-radius: var(--app-radius-md);
-  box-shadow: var(--app-dropdown-shadow);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-/* Chevron indicator icon inside flyout trigger row */
-.flyout-chevron {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  color: var(--app-muted);
-  transition: color 0.15s ease;
-}
-
-/* Hover state for flyout chevron */
-.flyout-trigger-row:hover .flyout-chevron,
-.flyout-trigger-row.active .flyout-chevron {
-  color: var(--app-fg-bright, #ffffff);
-}
-
-/* Standalone thinking and reasoning effort indicator badge positioned to the right of the chevron button */
-.model-thinking-indicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  user-select: none;
-  flex-shrink: 0;
-}
-
-/* Lightbulb icon representing model thinking state */
-.thinking-lamp-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: color 0.15s ease;
-}
-
-/* Active thinking lamp state in vibrant yellow */
-.thinking-lamp-icon.lamp-on {
-  color: #f1c40f;
-}
-
-/* Inactive thinking lamp state in muted gray with diagonal strike */
-.thinking-lamp-icon.lamp-off {
-  color: var(--app-muted, #888888);
-}
-
-/* Reasoning effort level text label rendered beside the thinking lamp */
-.lamp-level-label {
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--app-fg);
-  white-space: nowrap;
-}
-
+/* Flyout submenu indicator chevron inside model item */
 .model-flyout-chevron {
   font-size: 0.85rem;
   color: var(--app-muted);
