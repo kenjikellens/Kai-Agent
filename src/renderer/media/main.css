@@ -2054,8 +2054,8 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px 4px 12px;
+  gap: 10px;
+  padding: 9px 14px 7px 14px;
   margin: 0;
   background: transparent !important;
   color: var(--app-muted);
