@@ -37,6 +37,6 @@ De lijst met lokale modellen en hun capabilities wordt dynamisch geladen uit `mo
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Trigger Knop (Toolbar)** | `Gemma (thinking)` | `Gemma` | `Qwen (xhigh)` | `Gemini 3.7 Flash (High)` | *(geen suffix)* |
 | **Dropdown Item (Selector)** | `Gemma` + `›` (Flyout) | `Gemma` + `›` (Flyout) | `Qwen` + `›` (Flyout) | `Gemini 3.7 Flash` + `›` (Flyout) | *(geen flyout chevron)* |
-| **Flyout Submenu (Hover)** | `Thinking: On` ✓<br>`Thinking: Off` | `Thinking: On`<br>`Thinking: Off` ✓ | `xhigh` ✓<br>`medium`<br>`low` | `High` ✓<br>`Medium`<br>`Low`<br>`Off` | *(geen flyout)* |
+| **Flyout Submenu (Hover)** | `Thinking` [🔘 Toggle Aan] | `Thinking` [⚪ Toggle Uit] | `xhigh` ✓<br>`medium`<br>`low` | `High` ✓<br>`Medium`<br>`Low`<br>`Off` | *(geen flyout)* |
 | **Info Modus ('i') - Thinking** | `on` | `off` | `on` | `on` | *(geen info)* |
 | **Info Modus ('i') - Reasoning** | *(niet aanwezig)* | *(niet aanwezig)* | `xhigh` | `high` | *(geen info)* |
