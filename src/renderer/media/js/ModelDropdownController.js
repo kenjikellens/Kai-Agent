@@ -170,16 +170,17 @@ class ModelDropdownController {
         groupDiv.className = 'dropdown-category';
 
         const headerDiv = document.createElement('div');
-        headerDiv.className = 'dropdown-category-header';
+        headerDiv.className = 'category-header-btn dropdown-category-header';
         headerDiv.setAttribute('role', 'button');
         headerDiv.setAttribute('tabindex', '0');
         headerDiv.setAttribute('aria-label', `Toggle category ${title}`);
 
         const titleSpan = document.createElement('span');
+        titleSpan.className = 'category-title';
         titleSpan.textContent = title;
         headerDiv.appendChild(titleSpan);
 
-        const chevronSvg = DOMUtils.createChevronIcon('chevron-icon');
+        const chevronSvg = DOMUtils.createChevronIcon('category-chevron chevron-icon');
         headerDiv.appendChild(chevronSvg);
 
         const contentDiv = document.createElement('div');

@@ -40,3 +40,30 @@ De lijst met lokale modellen en hun capabilities wordt dynamisch geladen uit `mo
 | **Flyout Submenu (Hover)** | `Thinking` [🔘 Toggle Aan] | `Thinking` [⚪ Toggle Uit] | `xhigh` ✓<br>`medium`<br>`low` | `High` ✓<br>`Medium`<br>`Low`<br>`Off` | *(geen flyout)* |
 | **Info Modus ('i') - Thinking** | `on` | `off` | `on` | `on` | *(geen info)* |
 | **Info Modus ('i') - Reasoning** | *(niet aanwezig)* | *(niet aanwezig)* | `xhigh` | `high` | *(geen info)* |
+
+---
+
+## 4. UI Architectuur & Styling Specificaties
+
+### A. Geconnecteerde Filterlogica (Dynamic Connection Filtering)
+- **LM Studio**: Wordt uitsluitend weergegeven in de selector als de lokale server actief is én er minstens 1 model is geladen (`connected && lmStudioModels.length > 0`).
+- **Cloud Providers (Gemini, Mistral, Cohere, Cerebras, Zhipu)**: Worden alleen getoond als een geldige API-sleutel is opgeslagen in de instellingen of ontvangen van de host.
+- **Empty State**: Als er geen enkele API of lokaal model geconnecteerd is, toont de dropdown een duidelijke placeholder (*"No connected models. Add API key in Settings."*).
+
+### B. Gestandaardiseerde Categorie Headers (`.category-header-btn`)
+De categorietitels in de **Model Dropdown**, **Settings** en **Help pagina** zijn 100% uniform:
+- **Typografie**: Hoofdletters (`text-transform: uppercase`), `0.78rem`, `font-weight: 600`, `letter-spacing: 0.5px`.
+- **Achtergrond**: Volledig transparant (`background: transparent !important`).
+- **Padding**: `10px 10px` voor strakke uitlijning.
+- **Chevron**: Roterend chevron-icoon dat bij openen/sluiten meedraait (`transform: rotate(-90deg)` bij collapsed).
+
+### C. Vloeiende Pill-naar-Kaart Animatie (250ms Smooth Unroll)
+In het instellingenmenu en helpvenster (`.settings-category`):
+- **Ingeklapt (`.collapsed`)**: Volledig ronde pil (`border-radius: 22px;`) met ingeklapte inhoud (`max-height: 0; opacity: 0;`).
+- **Uitgeklapt**: Afgerond kaartje (`border-radius: 12px;`) met soepel uitrollende inhoud (`max-height: 400px; opacity: 1;`).
+- **Transitie**: `250ms cubic-bezier(0.4, 0, 0.2, 1)` zonder flikkeringen of verspringende titels (top-anchored reveal).
+- **Meervoudige Selectie**: Categorieën kunnen onafhankelijk van elkaar gelijktijdig geopend zijn (`classList.toggle('collapsed')`).
+
+### D. 1px Grijze Hover Rand
+Model- en flyout-knoppen (`.dropdown-item`, `.flyout-option`, `.toggle-switch-row`):
+- Hebben standaard een transparante rand en krijgen bij `:hover` een subtiele `1px solid var(--app-border-strong, #444444)` rand zonder achtergrondvlak, met behoud van `border-radius: 4px`.
