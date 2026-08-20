@@ -73,7 +73,12 @@ class ChatUIController {
                 // 2. Welcome README button (Opens GitHub repository README in default browser)
                 const readmeBtn = e.target.closest('#welcome-readme-btn');
                 if (readmeBtn) {
-                    this.ipcBridge.openExternalUrl('https://github.com/kenjikellens/Kai-Agent#readme');
+                    const url = 'https://github.com/kenjikellens/Kai-Agent#readme';
+                    if (this.ipcBridge && typeof this.ipcBridge.openExternalUrl === 'function') {
+                        this.ipcBridge.openExternalUrl(url);
+                    } else {
+                        window.open(url, '_blank', 'noopener,noreferrer');
+                    }
                     return;
                 }
 

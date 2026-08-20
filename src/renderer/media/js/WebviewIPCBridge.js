@@ -1537,6 +1537,17 @@ class WebviewIPCBridge {
      * @param {string} url External URL string.
      */
     openExternalUrl(url) {
-        this.postMessage({ type: 'openExternal', url });
+        if (!url) return;
+        try {
+            if (this._isElectron && window.electronAPI) {
+                this.postMessage({ type: 'openExternal', url });
+            } else if (this.vscode) {
+                this.postMessage({ type: 'openExternal', url });
+            } else {
+                window.open(url, '_blank', 'noopener,noreferrer');
+            }
+        } catch (e) {
+            window.open(url, '_blank', 'noopener,noreferrer');
+        }
     }
 }

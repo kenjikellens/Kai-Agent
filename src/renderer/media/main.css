@@ -1563,7 +1563,7 @@ button:disabled {
   flex-shrink: 0;
 }
 
-/* Send & stop generation button */
+/* Send & stop generation button - Full circle pill */
 #send-btn,
 #stop-btn {
   display: inline-flex;
@@ -1577,7 +1577,7 @@ button:disabled {
   padding: 0;
   border: 0 !important;
   outline: none;
-  border-radius: var(--app-radius-md);
+  border-radius: 999px;
   background: var(--app-accent, #007acc);
   color: var(--vscode-button-foreground, #ffffff);
   cursor: pointer;
@@ -1603,16 +1603,16 @@ button:disabled {
   box-shadow: none !important;
 }
 
-/* Toolbar Mode Selector Button (Shows active mode icon + label text + chevron) */
+/* Toolbar Mode Selector Button (Shows active mode icon + label text + chevron) - Full rounded pill */
 .toolbar-mode-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   height: 32px;
-  padding: 0 8px 0 9px;
+  padding: 0 12px;
   border: 0 !important;
   outline: none;
-  border-radius: var(--app-radius-md);
+  border-radius: 999px;
   background: var(--app-surface-strong);
   color: var(--app-fg);
   font-size: 0.78rem;
@@ -1666,7 +1666,7 @@ button:disabled {
   color: var(--app-muted);
 }
 
-/* Compact icon buttons for file upload (+) and capabilities (@) */
+/* Compact icon buttons for file upload (+) and capabilities (@) - Full circle pill */
 .toolbar-icon-btn {
   display: inline-flex;
   align-items: center;
@@ -1679,7 +1679,7 @@ button:disabled {
   padding: 0;
   border: 0 !important;
   outline: none;
-  border-radius: var(--app-radius-md);
+  border-radius: 999px;
   background: var(--app-surface-strong);
   color: var(--app-muted);
   cursor: pointer;
@@ -1718,7 +1718,7 @@ button:disabled {
   box-sizing: border-box;
   background: var(--app-input-bg, #252526);
   border: 1px solid var(--app-border-strong, rgba(255, 255, 255, 0.12));
-  border-radius: var(--app-radius-md, 6px);
+  border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
 
@@ -1746,8 +1746,8 @@ button:disabled {
   justify-content: space-between;
   gap: 8px;
   width: 100%;
-  padding: 6px 8px;
-  border-radius: var(--app-radius-sm, 4px);
+  padding: 6px 12px;
+  border-radius: 999px;
   background: transparent;
   color: var(--app-muted, #888888);
   border: 0 !important;
@@ -1915,7 +1915,7 @@ button:disabled {
   max-width: max-content;
 }
 
-/* Primary Model Selector Dropdown Trigger Button - Fits text length up to max-width */
+/* Primary Model Selector Dropdown Trigger Button - Full rounded pill */
 .dropdown-trigger {
   height: 32px;
   box-sizing: border-box;
@@ -1925,10 +1925,10 @@ button:disabled {
   align-items: center;
   justify-content: flex-start;
   gap: 8px;
-  padding: 0 12px;
+  padding: 0 14px;
   border: 0 !important;
   outline: none;
-  border-radius: var(--app-radius-md);
+  border-radius: 999px;
   background: var(--app-surface-strong);
   color: var(--app-muted);
   font-size: 0.86rem;
@@ -4371,14 +4371,14 @@ details[open]>summary>.custom-chevron {
   padding: 10px 14px 16px 14px;
 }
 
-/* Settings category wrapper - Smooth 250ms morph between pill and card with 2px border and subtle darker tint */
+/* Settings category wrapper - Smooth 250ms morph with ultra-subtle darker background (#1b1b1b) and 2px border */
 .settings-category {
   position: relative;
   margin: 0;
   padding: 0;
-  border: 2px solid var(--app-border-subtle, rgba(255, 255, 255, 0.08));
+  border: 2px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
-  background: rgba(0, 0, 0, 0.25);
+  background: #1b1b1b;
   box-sizing: border-box;
   width: 100%;
   overflow: hidden;
