@@ -419,10 +419,15 @@ class ModelDropdownController {
                         flyoutMenu.style.position = 'fixed';
                         flyoutMenu.style.top = `${rect.top}px`;
 
+                        const flyoutWidth = flyoutMenu.offsetWidth || 160;
                         let leftPos = rect.right + 4;
-                        const flyoutWidth = 160;
-                        if (leftPos + flyoutWidth > window.innerWidth) {
-                            leftPos = Math.max(10, rect.left - flyoutWidth - 4);
+                        if (leftPos + flyoutWidth > window.innerWidth - 6) {
+                            const leftCandidate = rect.left - flyoutWidth - 4;
+                            if (leftCandidate >= 6) {
+                                leftPos = leftCandidate;
+                            } else {
+                                leftPos = Math.max(6, window.innerWidth - flyoutWidth - 6);
+                            }
                         }
                         flyoutMenu.style.left = `${leftPos}px`;
                     };

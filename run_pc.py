@@ -20,145 +20,20 @@ RENDERER_DIR = APP_DIR / "src" / "renderer"
 
 
 def get_lmstudio_capabilities():
-    """Extracts model capabilities using GGUF chat templates as primary ground truth, supplemented by LM Studio virtual presets and pattern matching."""
-    gguf_meta = {}
-    gguf_candidates = [
-        Path.home() / ".lmstudio" / ".internal" / "gguf-metadata-cache.json",
-        Path.home() / ".cache" / "lm-studio" / ".internal" / "gguf-metadata-cache.json",
+    """Extracts model capabilities by invoking the TypeScript LMStudioManifestParser class via Node.js as the Single Source of Truth."""
+    candidates = [
+        APP_DIR.parent / "KAI Agent extension" / "code" / "out" / "providers" / "LMStudioManifestParser.js",
+        APP_DIR / "dist" / "main" / "providers" / "LMStudioManifestParser.js",
     ]
-    for gp in gguf_candidates:
-        if gp.exists():
-            try:
-                with open(gp, "r", encoding="utf-8") as f:
-                    gd = json.load(f)
-                for item in gd.get("json", {}).get("map", []):
-                    fpath = str(item[0]).replace("\\", "/").lower()
-                    meta = item[1].get("metadata", {})
-                    tmpl = (meta.get("chatTemplate") or meta.get("tokenizer.chat_template") or "").lower()
-                    has_thinking = any(k in tmpl for k in ["enable_thinking", "<think>", "<|thought|>", "reasoning_content", "thought"])
-                    gguf_meta[fpath] = {"has_thinking": has_thinking, "chatTemplate": tmpl}
-                    fname = Path(fpath).name.lower()
-                    gguf_meta[fname] = {"has_thinking": has_thinking, "chatTemplate": tmpl}
-            except Exception:
-                pass
-
-    index_candidates = [
-        Path.home() / ".lmstudio" / ".internal" / "model-index-cache.json",
-        Path.home() / ".cache" / "lm-studio" / ".internal" / "model-index-cache.json",
-    ]
-    caps = {}
-    for p in index_candidates:
-        if p.exists():
-            try:
-                with open(p, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                for m in data.get("models", []):
-                    model_id = m.get("indexedModelIdentifier") or m.get("displayName") or ""
-                    virt = m.get("virtual", {})
-                    fields = []
-                    for cf in virt.get("customFieldDefinitions", []) or []:
-                        effects = cf.get("effects", [])
-                        eff = effects[0] if effects else {}
-                        var = eff.get("variable", "")
-                        if not var or "preserve" in var.lower():
-                            continue
-                        field_type = "select" if cf.get("type") == "select" else "boolean"
-                        opts = []
-                        if field_type == "select":
-                            opts = [{"label": o.get("value", o.get("label", "")), "value": o.get("value", "")} for o in cf.get("options", [])]
-                        fields.append({
-                            "displayName": cf.get("displayName", var),
-                            "type": field_type,
-                            "variable": var,
-                            "options": opts,
-                            "defaultValue": cf.get("defaultValue", True if field_type == "boolean" else "xhigh")
-                        })
-
-                    # Collect all model aliases including concrete and virtual links
-                    aliases = [
-                        m.get("indexedModelIdentifier"),
-                        m.get("defaultIdentifier"),
-                        m.get("originalIndexedModelIdentifier"),
-                        m.get("altIndexedModelIdentifier"),
-                        m.get("displayName"),
-                        virt.get("concreteModelIndexedModelIdentifier"),
-                    ]
-                    for co in virt.get("concreteModelOptions", []) or []:
-                        aliases.append(co)
-
-                    # Layer 1 (GGUF chat template) & Layer 3 (Pattern matching) if fields not in manifest
-                    if not fields:
-                        has_tmpl_thinking = False
-                        for a in list(aliases):
-                            if not a:
-                                continue
-                            a_lower = str(a).lower().replace("\\", "/")
-                            a_fname = Path(a_lower).name
-                            if a_lower in gguf_meta and gguf_meta[a_lower]["has_thinking"]:
-                                has_tmpl_thinking = True
-                                break
-                            if a_fname in gguf_meta and gguf_meta[a_fname]["has_thinking"]:
-                                has_tmpl_thinking = True
-                                break
-
-                        name_str = " ".join(filter(None, [str(a).lower() for a in aliases]))
-                        is_pattern_thinking = any(k in name_str for k in ["qwen", "ornith", "deepseek", "r1", "qwq", "gemma-4", "thinking", "reasoning", "thought", "glm-4"])
-
-                        if has_tmpl_thinking or is_pattern_thinking or virt.get("metadataOverridesReasoning"):
-                            fields = [
-                                {
-                                    "displayName": "Enable Thinking",
-                                    "type": "boolean",
-                                    "variable": "enable_thinking",
-                                    "options": [],
-                                    "defaultValue": True
-                                },
-                                {
-                                    "displayName": "Reasoning Effort",
-                                    "type": "select",
-                                    "variable": "reasoning_effort",
-                                    "options": [
-                                        {"label": "xhigh", "value": "xhigh"},
-                                        {"label": "high", "value": "high"},
-                                        {"label": "medium", "value": "medium"},
-                                        {"label": "low", "value": "low"},
-                                        {"label": "off", "value": "off"}
-                                    ],
-                                    "defaultValue": "xhigh"
-                                }
-                            ]
-
-                    cap_obj = {
-                        "modelId": model_id,
-                        "displayName": m.get("displayName", model_id),
-                        "domain": m.get("domain", "llm"),
-                        "fields": fields,
-                        "isReasoning": len(fields) > 0
-                    }
-
-                    if model_id:
-                        aliases.append(model_id)
-                        if "@" in model_id:
-                            no_at = model_id.split("@")[0]
-                            aliases.append(no_at)
-                            aliases.append(no_at.split("/")[-1])
-                        if "/" in model_id:
-                            aliases.append(model_id.split("/")[-1])
-                    disp = m.get("displayName")
-                    if disp:
-                        aliases.append(disp.lower().replace(" ", "-"))
-                        aliases.append(disp.lower().replace(" ", "."))
-
-                    for a in filter(None, aliases):
-                        caps[a] = cap_obj
-                        caps[a.lower()] = cap_obj
-                        if "/" in str(a):
-                            sub_name = str(a).split("/")[-1]
-                            caps[sub_name] = cap_obj
-                            caps[sub_name.lower()] = cap_obj
-                return caps
-            except Exception:
-                pass
+    parser_js = next((p for p in candidates if p.exists()), None)
+    if parser_js:
+        try:
+            script = f"const {{ LMStudioManifestParser }} = require({json.dumps(str(parser_js))}); console.log(JSON.stringify(LMStudioManifestParser.parseModelCapabilities()));"
+            res = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=5)
+            if res.returncode == 0 and res.stdout.strip():
+                return json.loads(res.stdout.strip())
+        except Exception:
+            pass
     return {}
 
 
