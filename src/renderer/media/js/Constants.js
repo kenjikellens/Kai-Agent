@@ -12,11 +12,12 @@ const KAI_CONSTANTS = {
         'gemini-3.1-flash-lite',
     ],
     DEFAULT_FREE_PROVIDERS: [
-        { name: 'Mistral AI', configKey: 'mistralApiKey', keyHint: 'Get free key at console.mistral.ai' },
-        { name: 'Cohere', configKey: 'cohereApiKey', keyHint: 'Get free key at dashboard.cohere.com' },
-        { name: 'Cerebras', configKey: 'cerebrasApiKey', keyHint: 'Get free key at cloud.cerebras.ai' },
-        { name: 'Zhipu AI', configKey: 'zhipuApiKey', keyHint: 'Get free key at open.bigmodel.cn' },
-        { name: 'OmniRoute Gateway', configKey: 'omnirouteApiKey', keyHint: 'Run OmniRoute via npm: npx omniroute' }
+        { name: 'Google Gemini', configKey: 'geminiApiKey', keyHint: 'Get free key at aistudio.google.com', docUrl: 'https://aistudio.google.com/app/apikey' },
+        { name: 'Mistral AI', configKey: 'mistralApiKey', keyHint: 'Get free key at console.mistral.ai', docUrl: 'https://console.mistral.ai/api-keys/' },
+        { name: 'Cohere', configKey: 'cohereApiKey', keyHint: 'Get free key at dashboard.cohere.com', docUrl: 'https://dashboard.cohere.com/api-keys' },
+        { name: 'Cerebras', configKey: 'cerebrasApiKey', keyHint: 'Get free key at cloud.cerebras.ai', docUrl: 'https://cloud.cerebras.ai/' },
+        { name: 'Zhipu AI', configKey: 'zhipuApiKey', keyHint: 'Get free key at open.bigmodel.cn', docUrl: 'https://open.bigmodel.cn/usercenter/apikeys' },
+        { name: 'OmniRoute Gateway', configKey: 'omnirouteApiKey', keyHint: 'Run OmniRoute via npm: npx omniroute', docUrl: 'https://github.com/omniroute/omniroute' }
     ],
     DEFAULT_PROVIDERS_WITH_MODELS: [
         { name: 'OmniRoute Gateway', models: ['omniroute/auto'] },
@@ -46,6 +47,8 @@ const KAI_CONSTANTS = {
         'unit_converter': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>',
         'text_stats': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>',
         'uuid_random': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 8h.01"></path><path d="M8 8h.01"></path><path d="M8 16h.01"></path><path d="M16 16h.01"></path><path d="M12 12h.01"></path></svg>',
+        'external_link': '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>',
+        'refresh': '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>',
         'default_tool': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>',
         'spinner': '<span class="thinking-spinner"></span>',
         'success': '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>',

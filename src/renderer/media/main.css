@@ -10,6 +10,18 @@
    Theme tokens / defaults
 ------------------------------ */
 :root {
+  /* Centralized Global Theme & Link Color Tokens */
+  --main-link-color: #3794ff;
+  --main-link-hover: #58a6ff;
+  --main-accent-blue: #007acc;
+  --main-accent-blue-hover: #0062a3;
+  --main-success-color: #4ec9b0;
+  --main-danger-color: #f44747;
+  --main-warning-color: #e5a50a;
+  --main-surface-card: #1b1b1b;
+  --main-surface-input: #252526;
+  --main-border-subtle: rgba(255, 255, 255, 0.08);
+
   --app-bg: var(--vscode-sideBar-background, #1e1e1e);
   --app-fg: var(--vscode-editor-foreground, var(--vscode-foreground, #cccccc));
   --app-muted: var(--vscode-descriptionForeground, #888888);
@@ -3028,7 +3040,9 @@ button:disabled {
 
 .setting-info {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
   flex: 1;
   min-width: 0;
   cursor: default !important;
@@ -3043,6 +3057,17 @@ button:disabled {
   cursor: default !important;
   user-select: text;
   pointer-events: auto;
+}
+
+.setting-subtitle,
+.setting-description {
+  font-family: var(--app-font);
+  font-size: 0.78rem;
+  color: var(--app-muted, #888888);
+  line-height: 1.35;
+  margin-top: 1px;
+  cursor: default !important;
+  user-select: text;
 }
 
 .provider-name {
@@ -3164,6 +3189,38 @@ button:disabled {
   flex-shrink: 0;
 }
 
+/* Provider Label Link with External Top-Right Arrow */
+.provider-label-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: var(--app-fg);
+  cursor: pointer;
+  user-select: text;
+  transition: color 0.15s ease;
+}
+
+.provider-label-link:hover {
+  color: var(--main-link-hover, #58a6ff);
+  text-decoration: underline;
+}
+
+.provider-label-link:hover .setting-label {
+  color: var(--main-link-hover, #58a6ff) !important;
+  text-decoration: underline;
+}
+
+.provider-doc-icon {
+  flex-shrink: 0;
+  color: var(--app-muted, #888888);
+  transition: color 0.15s ease;
+}
+
+.provider-label-link:hover .provider-doc-icon {
+  color: var(--main-link-hover, #58a6ff);
+}
+
 .password-input-wrapper {
   position: relative;
   display: flex;
@@ -3172,12 +3229,12 @@ button:disabled {
 }
 
 .password-input-wrapper .setting-input-text {
-  padding-right: 34px;
+  padding-right: 64px;
 }
 
 .toggle-password-btn {
   position: absolute;
-  right: 5px;
+  right: 33px;
   height: 26px;
   width: 26px;
   aspect-ratio: 1 / 1;
@@ -3196,6 +3253,43 @@ button:disabled {
 .toggle-password-btn:hover {
   color: var(--app-fg);
   background: var(--app-surface-hover);
+}
+
+/* Reload & Test Connection Button beside Password Toggle */
+.reload-key-btn {
+  position: absolute;
+  right: 5px;
+  height: 26px;
+  width: 26px;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--app-muted);
+  cursor: pointer;
+  border-radius: var(--app-radius-sm);
+  border: 0 !important;
+  font-size: 0.85rem;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.reload-key-btn:hover {
+  color: var(--app-fg);
+  background: var(--app-surface-hover);
+}
+
+.reload-key-btn.testing svg {
+  animation: kai-spin 0.8s linear infinite;
+  color: var(--main-link-color, #3794ff);
+}
+
+.reload-key-btn.success {
+  color: var(--main-success-color, #4ec9b0) !important;
+}
+
+.reload-key-btn.error {
+  color: var(--main-danger-color, #f44747) !important;
 }
 
 
@@ -4468,7 +4562,7 @@ details[open]>summary>.custom-chevron {
   flex-direction: column;
   justify-content: flex-start;
   gap: 8px;
-  max-height: 260px;
+  max-height: 1000px;
   opacity: 1;
   padding: 4px 16px 14px 16px;
   box-sizing: border-box;

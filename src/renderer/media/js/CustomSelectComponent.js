@@ -73,10 +73,15 @@ class CustomSelectComponent {
     }
 
     /**
-     * Scroll event handler to close popup on container scroll.
+     * Scroll event handler to close popup on outer container scroll,
+     * while allowing scrolling inside the dropdown menu itself.
+     * @param {Event} [e] Scroll event.
      */
-    handleScroll() {
+    handleScroll(e) {
         if (this.isOpen) {
+            if (e && e.target && this.menuEl && (this.menuEl === e.target || this.menuEl.contains(e.target))) {
+                return;
+            }
             this.close();
         }
     }

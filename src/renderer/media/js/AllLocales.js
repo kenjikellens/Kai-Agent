@@ -46,7 +46,16 @@ window.KAI_ALL_LOCALES = {
     "welcomePromptHint": "اطرح سؤالاً أو حرر التعليمات البرمجية أو أرفق ملفات للبدء",
     "help": "مساعدة",
     "readme": "README",
-    "thinkingMaxHeight": "أقصى ارتفاع لعملية التفكير"
+    "thinkingMaxHeight": "أقصى ارتفاع لعملية التفكير",
+    "uiScale": "UI Scale",
+    "uiScaleDesc": "Adjusts the overall display scale for text, buttons, and panels",
+    "showThinkingDesc": "Displays internal reasoning traces for supported models",
+    "keepThinkingGeneratingDesc": "Keeps the reasoning block open while the response is streaming",
+    "keepThinkingFinishedDesc": "Leaves the reasoning card expanded after generation completes",
+    "thinkingMaxHeightDesc": "Sets the maximum height limit of the scrollable reasoning block in chat messages",
+    "thinkingDisplayStyleDesc": "Choose between a collapsible card or inline text",
+    "serverUrlDesc": "Local endpoint of the LM Studio API server (default http://localhost:1234/v1)",
+    "lmStudioDirectoryDesc": "Path to the local LM Studio cache directory for automatic model and thinking detection"
   },
   "cs": {
     "newChat": "Nový chat",
@@ -95,7 +104,16 @@ window.KAI_ALL_LOCALES = {
     "welcomePromptHint": "Položte otázku, upravte kód nebo připojte soubory a začněte",
     "help": "Nápověda",
     "readme": "README",
-    "thinkingMaxHeight": "Maximální výška procesu myšlení"
+    "thinkingMaxHeight": "Maximální výška procesu myšlení",
+    "uiScale": "UI Scale",
+    "uiScaleDesc": "Adjusts the overall display scale for text, buttons, and panels",
+    "showThinkingDesc": "Displays internal reasoning traces for supported models",
+    "keepThinkingGeneratingDesc": "Keeps the reasoning block open while the response is streaming",
+    "keepThinkingFinishedDesc": "Leaves the reasoning card expanded after generation completes",
+    "thinkingMaxHeightDesc": "Sets the maximum height limit of the scrollable reasoning block in chat messages",
+    "thinkingDisplayStyleDesc": "Choose between a collapsible card or inline text",
+    "serverUrlDesc": "Local endpoint of the LM Studio API server (default http://localhost:1234/v1)",
+    "lmStudioDirectoryDesc": "Path to the local LM Studio cache directory for automatic model and thinking detection"
   },
   "de": {
     "newChat": "Neuer Chat",
@@ -144,7 +162,16 @@ window.KAI_ALL_LOCALES = {
     "welcomePromptHint": "Stellen Sie eine Frage, bearbeiten Sie Code oder fügen Sie Dateien an, um zu beginnen",
     "help": "Hilfe",
     "readme": "README",
-    "thinkingMaxHeight": "Maximale Höhe des Denkprozesses"
+    "thinkingMaxHeight": "Maximale Höhe des Denkprozesses",
+    "uiScale": "UI-Skalierung",
+    "uiScaleDesc": "Passt die Anzeigegröße für Text, Schaltflächen und Fenster an",
+    "showThinkingDesc": "Zeigt interne Denkprozesse für unterstützte Modelle an",
+    "keepThinkingGeneratingDesc": "Hält den Denkblock während des Streamings geöffnet",
+    "keepThinkingFinishedDesc": "Lässt die Denkkarte nach Abschluss der Antwort geöffnet",
+    "thinkingMaxHeightDesc": "Legt die maximale Höhe des scrollbaren Denkbereichs fest",
+    "thinkingDisplayStyleDesc": "Wählen Sie zwischen einer ausklappbaren Karte oder Inline-Text",
+    "serverUrlDesc": "Lokaler Endpunkt des LM Studio API-Servers (Standard http://localhost:1234/v1)",
+    "lmStudioDirectoryDesc": "Pfad zum lokalen LM Studio Cache-Verzeichnis zur Modellerkennung"
   },
   "en": {
     "newChat": "New Chat",
@@ -193,7 +220,18 @@ window.KAI_ALL_LOCALES = {
     "welcomePromptHint": "Ask a question, edit code, or attach files to begin",
     "help": "Help",
     "readme": "README",
-    "thinkingMaxHeight": "Thinking Process Max Height"
+    "thinkingMaxHeight": "Thinking Process Max Height",
+    "uiScale": "UI Scale",
+    "uiScaleDesc": "Adjusts the overall display scale for text, buttons, and panels",
+    "showThinkingDesc": "Displays internal reasoning traces for supported models",
+    "keepThinkingGeneratingDesc": "Keeps the reasoning block open while the response is streaming",
+    "keepThinkingFinishedDesc": "Leaves the reasoning card expanded after generation completes",
+    "thinkingMaxHeightDesc": "Sets the maximum height limit of the scrollable reasoning block in chat messages",
+    "thinkingDisplayStyleDesc": "Choose between a collapsible card or inline text",
+    "serverUrlDesc": "Local endpoint of the LM Studio API server (default http://localhost:1234/v1)",
+    "lmStudioDirectoryDesc": "Path to the local LM Studio cache directory for automatic model and thinking detection",
+        "apiKeysSettingsDesc": "Manage API keys and test live connections for cloud models",
+        "testConnection": "Test connection"
   },
   "es": {
     "newChat": "Nuevo Chat",
@@ -242,7 +280,16 @@ window.KAI_ALL_LOCALES = {
     "welcomePromptHint": "Haga una pregunta, edite código o adjunte archivos para comenzar",
     "help": "Ayuda",
     "readme": "README",
-    "thinkingMaxHeight": "Altura máxima del proceso de pensamiento"
+    "thinkingMaxHeight": "Altura máxima del proceso de pensamiento",
+    "uiScale": "Escala de interfaz",
+    "uiScaleDesc": "Ajusta la escala de visualización general para texto, botones y paneles",
+    "showThinkingDesc": "Muestra los pasos de razonamiento interno para los modelos compatibles",
+    "keepThinkingGeneratingDesc": "Mantiene el bloque de pensamiento abierto mientras se genera la respuesta",
+    "keepThinkingFinishedDesc": "Deja la tarjeta de razonamiento expandida tras completar la respuesta",
+    "thinkingMaxHeightDesc": "Establece el límite de altura máxima del bloque de pensamiento",
+    "thinkingDisplayStyleDesc": "Elija entre una tarjeta plegable o texto en línea",
+    "serverUrlDesc": "Punto de conexión local del servidor LM Studio API (predeterminado http://localhost:1234/v1)",
+    "lmStudioDirectoryDesc": "Ruta al directorio de caché local de LM Studio para la detección de modelos"
   },
   "fr": {
     "newChat": "Nouvelle Discussion",
@@ -291,7 +338,16 @@ window.KAI_ALL_LOCALES = {
     "welcomePromptHint": "Posez une question, modifiez du code ou joignez des fichiers pour commencer",
     "help": "Aide",
     "readme": "README",
-    "thinkingMaxHeight": "Hauteur maximale du processus de réflexion"
+    "thinkingMaxHeight": "Hauteur maximale du processus de réflexion",
+    "uiScale": "Échelle de l'IU",
+    "uiScaleDesc": "Ajuste l'échelle d'affichage globale du texte, des boutons et des panneaux",
+    "showThinkingDesc": "Affiche les étapes de réflexion internes pour les modèles compatibles",
+    "keepThinkingGeneratingDesc": "Garde le bloc de réflexion ouvert pendant la génération",
+    "keepThinkingFinishedDesc": "Laisse la carte de réflexion ouverte une fois la génération terminée",
+    "thinkingMaxHeightDesc": "Définit la hauteur maximale de la zone de réflexion",
+    "thinkingDisplayStyleDesc": "Choisissez entre une carte rétractable ou du texte brut",
+    "serverUrlDesc": "Point de terminaison local du serveur API LM Studio (par défaut http://localhost:1234/v1)",
+    "lmStudioDirectoryDesc": "Chemin d'accès au cache local de LM Studio pour la détection des modèles"
   },
   "hi": {
     "newChat": "नया चैट",
@@ -340,7 +396,16 @@ window.KAI_ALL_LOCALES = {
     "welcomePromptHint": "शुरू करने के लिए कोई प्रश्न पूछें, कोड संपादित करें या फ़ाइलें संलग्न करें",
     "help": "मदद",
     "readme": "README",
-    "thinkingMaxHeight": "सोचने की प्रक्रिया की अधिकतम ऊंचाई"
+    "thinkingMaxHeight": "सोचने की प्रक्रिया की अधिकतम ऊंचाई",
+    "uiScale": "UI Scale",
+    "uiScaleDesc": "Adjusts the overall display scale for text, buttons, and panels",
+    "showThinkingDesc": "Displays internal reasoning traces for supported models",
+    "keepThinkingGeneratingDesc": "Keeps the reasoning block open while the response is streaming",
+    "keepThinkingFinishedDesc": "Leaves the reasoning card expanded after generation completes",
+    "thinkingMaxHeightDesc": "Sets the maximum height limit of the scrollable reasoning block in chat messages",
+    "thinkingDisplayStyleDesc": "Choose between a collapsible card or inline text",
+    "serverUrlDesc": "Local endpoint of the LM Studio API server (default http://localhost:1234/v1)",
+    "lmStudioDirectoryDesc": "Path to the local LM Studio cache directory for automatic model and thinking detection"
   },
   "hu": {
     "newChat": "Új csevegés",
@@ -389,7 +454,16 @@ window.KAI_ALL_LOCALES = {
     "welcomePromptHint": "Tegyen fel egy kérdést, szerkesszen kódot vagy csatoljon fájlokat a kezdéshez",
     "help": "Súgó",
     "readme": "README",
-    "thinkingMaxHeight": "Gondolkodási folyamat maximális magassága"
+    "thinkingMaxHeight": "Gondolkodási folyamat maximális magassága",
+    "uiScale": "UI Scale",
+    "uiScaleDesc": "Adjusts the overall display scale for text, buttons, and panels",
+    "showThinkingDesc": "Displays internal reasoning traces for supported models",
+    "keepThinkingGeneratingDesc": "Keeps the reasoning block open while the response is streaming",
+    "keepThinkingFinishedDesc": "Leaves the reasoning card expanded after generation completes",
+    "thinkingMaxHeightDesc": "Sets the maximum height limit of the scrollable reasoning block in chat messages",
+    "thinkingDisplayStyleDesc": "Choose between a collapsible card or inline text",
+    "serverUrlDesc": "Local endpoint of the LM Studio API server (default http://localhost:1234/v1)",
+    "lmStudioDirectoryDesc": "Path to the local LM Studio cache directory for automatic model and thinking detection"
   },
   "it": {
     "newChat": "Nuova Chat",
@@ -438,7 +512,16 @@ window.KAI_ALL_LOCALES = {
     "welcomePromptHint": "Fai una domanda, modifica il codice o allega file per iniziare",
     "help": "Aiuto",
     "readme": "README",
-    "thinkingMaxHeight": "Altezza massima del processo di pensiero"
+    "thinkingMaxHeight": "Altezza massima del processo di pensiero",
+    "uiScale": "UI Scale",
+    "uiScaleDesc": "Adjusts the overall display scale for text, buttons, and panels",
+    "showThinkingDesc": "Displays internal reasoning traces for supported models",
+    "keepThinkingGeneratingDesc": "Keeps the reasoning block open while the response is streaming",
+    "keepThinkingFinishedDesc": "Leaves the reasoning card expanded after generation completes",
+    "thinkingMaxHeightDesc": "Sets the maximum height limit of the scrollable reasoning block in chat messages",
+    "thinkingDisplayStyleDesc": "Choose between a collapsible card or inline text",
+    "serverUrlDesc": "Local endpoint of the LM Studio API server (default http://localhost:1234/v1)",
+    "lmStudioDirectoryDesc": "Path to the local LM Studio cache directory for automatic model and thinking detection"
   },
   "ja": {
     "newChat": "新規チャット",
@@ -487,7 +570,16 @@ window.KAI_ALL_LOCALES = {
     "welcomePromptHint": "質問を入力、コードを編集、またはファイルを添付して開始してください",
     "help": "ヘルプ",
     "readme": "README",
-    "thinkingMaxHeight": "思考プロセスの最大高さ"
+    "thinkingMaxHeight": "思考プロセスの最大高さ",
+    "uiScale": "UI Scale",
+    "uiScaleDesc": "Adjusts the overall display scale for text, buttons, and panels",
+    "showThinkingDesc": "Displays internal reasoning traces for supported models",
+    "keepThinkingGeneratingDesc": "Keeps the reasoning block open while the response is streaming",
+    "keepThinkingFinishedDesc": "Leaves the reasoning card expanded after generation completes",
+    "thinkingMaxHeightDesc": "Sets the maximum height limit of the scrollable reasoning block in chat messages",
+    "thinkingDisplayStyleDesc": "Choose between a collapsible card or inline text",
+    "serverUrlDesc": "Local endpoint of the LM Studio API server (default http://localhost:1234/v1)",
+    "lmStudioDirectoryDesc": "Path to the local LM Studio cache directory for automatic model and thinking detection"
   },
   "ko": {
     "newChat": "새 채팅",
@@ -536,7 +628,16 @@ window.KAI_ALL_LOCALES = {
     "welcomePromptHint": "질문하기, 코드 수정 또는 파일을 첨부하여 시작하세요",
     "help": "도움말",
     "readme": "README",
-    "thinkingMaxHeight": "사고 과정 최대 높이"
+    "thinkingMaxHeight": "사고 과정 최대 높이",
+    "uiScale": "UI Scale",
+    "uiScaleDesc": "Adjusts the overall display scale for text, buttons, and panels",
+    "showThinkingDesc": "Displays internal reasoning traces for supported models",
+    "keepThinkingGeneratingDesc": "Keeps the reasoning block open while the response is streaming",
+    "keepThinkingFinishedDesc": "Leaves the reasoning card expanded after generation completes",
+    "thinkingMaxHeightDesc": "Sets the maximum height limit of the scrollable reasoning block in chat messages",
+    "thinkingDisplayStyleDesc": "Choose between a collapsible card or inline text",
+    "serverUrlDesc": "Local endpoint of the LM Studio API server (default http://localhost:1234/v1)",
+    "lmStudioDirectoryDesc": "Path to the local LM Studio cache directory for automatic model and thinking detection"
   },
   "nl": {
     "newChat": "Nieuwe Chat",
@@ -585,7 +686,16 @@ window.KAI_ALL_LOCALES = {
     "welcomePromptHint": "Stel een vraag, bewerk code of voeg bestanden toe om te beginnen",
     "help": "Help",
     "readme": "README",
-    "thinkingMaxHeight": "Maximale hoogte denkproces"
+    "thinkingMaxHeight": "Maximale hoogte denkproces",
+    "uiScale": "UI Schaal",
+    "uiScaleDesc": "Past de weergavegrootte aan van tekst, knoppen en vensters",
+    "showThinkingDesc": "Toont de interne denkstappen en redeneringen van ondersteunde modellen",
+    "keepThinkingGeneratingDesc": "Houdt het denkblok geopend zolang het model aan het redeneren is",
+    "keepThinkingFinishedDesc": "Laat het denkproces geopend na voltooien in plaats van automatisch in te klappen",
+    "thinkingMaxHeightDesc": "Bepaalt de maximale hoogte van het scrollbare denkvenster in berichten",
+    "thinkingDisplayStyleDesc": "Kies tussen een inklapbare kaart of inline tekst",
+    "serverUrlDesc": "Het lokale endpoint van de LM Studio API server (standaard http://localhost:1234/v1)",
+    "lmStudioDirectoryDesc": "Pad naar de lokale LM Studio cache voor automatische model- en thinking-detectie"
   },
   "pl": {
     "newChat": "Nowy czat",
@@ -634,7 +744,16 @@ window.KAI_ALL_LOCALES = {
     "welcomePromptHint": "Zadaj pytanie, edytuj kod lub dołącz pliki, aby rozpocząć",
     "help": "Pomoc",
     "readme": "README",
-    "thinkingMaxHeight": "Maksymalna wysokość procesu myślenia"
+    "thinkingMaxHeight": "Maksymalna wysokość procesu myślenia",
+    "uiScale": "UI Scale",
+    "uiScaleDesc": "Adjusts the overall display scale for text, buttons, and panels",
+    "showThinkingDesc": "Displays internal reasoning traces for supported models",
+    "keepThinkingGeneratingDesc": "Keeps the reasoning block open while the response is streaming",
+    "keepThinkingFinishedDesc": "Leaves the reasoning card expanded after generation completes",
+    "thinkingMaxHeightDesc": "Sets the maximum height limit of the scrollable reasoning block in chat messages",
+    "thinkingDisplayStyleDesc": "Choose between a collapsible card or inline text",
+    "serverUrlDesc": "Local endpoint of the LM Studio API server (default http://localhost:1234/v1)",
+    "lmStudioDirectoryDesc": "Path to the local LM Studio cache directory for automatic model and thinking detection"
   },
   "pt": {
     "newChat": "Novo Chat",
@@ -683,7 +802,16 @@ window.KAI_ALL_LOCALES = {
     "welcomePromptHint": "Faça uma pergunta, edite o código ou anexe arquivos para começar",
     "help": "Ajuda",
     "readme": "README",
-    "thinkingMaxHeight": "Altura máxima do processo de pensamento"
+    "thinkingMaxHeight": "Altura máxima do processo de pensamento",
+    "uiScale": "UI Scale",
+    "uiScaleDesc": "Adjusts the overall display scale for text, buttons, and panels",
+    "showThinkingDesc": "Displays internal reasoning traces for supported models",
+    "keepThinkingGeneratingDesc": "Keeps the reasoning block open while the response is streaming",
+    "keepThinkingFinishedDesc": "Leaves the reasoning card expanded after generation completes",
+    "thinkingMaxHeightDesc": "Sets the maximum height limit of the scrollable reasoning block in chat messages",
+    "thinkingDisplayStyleDesc": "Choose between a collapsible card or inline text",
+    "serverUrlDesc": "Local endpoint of the LM Studio API server (default http://localhost:1234/v1)",
+    "lmStudioDirectoryDesc": "Path to the local LM Studio cache directory for automatic model and thinking detection"
   },
   "ru": {
     "newChat": "Новый чат",
@@ -732,7 +860,16 @@ window.KAI_ALL_LOCALES = {
     "welcomePromptHint": "Задайте вопрос, измените код или прикрепите файлы для начала",
     "help": "Справка",
     "readme": "README",
-    "thinkingMaxHeight": "Максимальная высота процесса мышления"
+    "thinkingMaxHeight": "Максимальная высота процесса мышления",
+    "uiScale": "UI Scale",
+    "uiScaleDesc": "Adjusts the overall display scale for text, buttons, and panels",
+    "showThinkingDesc": "Displays internal reasoning traces for supported models",
+    "keepThinkingGeneratingDesc": "Keeps the reasoning block open while the response is streaming",
+    "keepThinkingFinishedDesc": "Leaves the reasoning card expanded after generation completes",
+    "thinkingMaxHeightDesc": "Sets the maximum height limit of the scrollable reasoning block in chat messages",
+    "thinkingDisplayStyleDesc": "Choose between a collapsible card or inline text",
+    "serverUrlDesc": "Local endpoint of the LM Studio API server (default http://localhost:1234/v1)",
+    "lmStudioDirectoryDesc": "Path to the local LM Studio cache directory for automatic model and thinking detection"
   },
   "tr": {
     "newChat": "Yeni Sohbet",
@@ -781,7 +918,16 @@ window.KAI_ALL_LOCALES = {
     "welcomePromptHint": "Başlamak için bir soru sorun, kod düzenleyin veya dosya ekleyin",
     "help": "Yardım",
     "readme": "README",
-    "thinkingMaxHeight": "Düşünme Süreci Maksimum Yüksekliği"
+    "thinkingMaxHeight": "Düşünme Süreci Maksimum Yüksekliği",
+    "uiScale": "UI Scale",
+    "uiScaleDesc": "Adjusts the overall display scale for text, buttons, and panels",
+    "showThinkingDesc": "Displays internal reasoning traces for supported models",
+    "keepThinkingGeneratingDesc": "Keeps the reasoning block open while the response is streaming",
+    "keepThinkingFinishedDesc": "Leaves the reasoning card expanded after generation completes",
+    "thinkingMaxHeightDesc": "Sets the maximum height limit of the scrollable reasoning block in chat messages",
+    "thinkingDisplayStyleDesc": "Choose between a collapsible card or inline text",
+    "serverUrlDesc": "Local endpoint of the LM Studio API server (default http://localhost:1234/v1)",
+    "lmStudioDirectoryDesc": "Path to the local LM Studio cache directory for automatic model and thinking detection"
   },
   "zh_tw": {
     "newChat": "建立新對話",
@@ -830,7 +976,16 @@ window.KAI_ALL_LOCALES = {
     "welcomePromptHint": "提出問題、編輯程式碼或附加檔案以開始",
     "help": "說明",
     "readme": "README",
-    "thinkingMaxHeight": "Thinking Process Max Height"
+    "thinkingMaxHeight": "Thinking Process Max Height",
+    "uiScale": "UI Scale",
+    "uiScaleDesc": "Adjusts the overall display scale for text, buttons, and panels",
+    "showThinkingDesc": "Displays internal reasoning traces for supported models",
+    "keepThinkingGeneratingDesc": "Keeps the reasoning block open while the response is streaming",
+    "keepThinkingFinishedDesc": "Leaves the reasoning card expanded after generation completes",
+    "thinkingMaxHeightDesc": "Sets the maximum height limit of the scrollable reasoning block in chat messages",
+    "thinkingDisplayStyleDesc": "Choose between a collapsible card or inline text",
+    "serverUrlDesc": "Local endpoint of the LM Studio API server (default http://localhost:1234/v1)",
+    "lmStudioDirectoryDesc": "Path to the local LM Studio cache directory for automatic model and thinking detection"
   },
   "zh": {
     "newChat": "新建对话",
@@ -879,6 +1034,15 @@ window.KAI_ALL_LOCALES = {
     "welcomePromptHint": "提出问题、编辑代码或附加文件以开始",
     "help": "帮助",
     "readme": "README",
-    "thinkingMaxHeight": "思考过程最大高度"
+    "thinkingMaxHeight": "思考过程最大高度",
+    "uiScale": "UI Scale",
+    "uiScaleDesc": "Adjusts the overall display scale for text, buttons, and panels",
+    "showThinkingDesc": "Displays internal reasoning traces for supported models",
+    "keepThinkingGeneratingDesc": "Keeps the reasoning block open while the response is streaming",
+    "keepThinkingFinishedDesc": "Leaves the reasoning card expanded after generation completes",
+    "thinkingMaxHeightDesc": "Sets the maximum height limit of the scrollable reasoning block in chat messages",
+    "thinkingDisplayStyleDesc": "Choose between a collapsible card or inline text",
+    "serverUrlDesc": "Local endpoint of the LM Studio API server (default http://localhost:1234/v1)",
+    "lmStudioDirectoryDesc": "Path to the local LM Studio cache directory for automatic model and thinking detection"
   }
 };

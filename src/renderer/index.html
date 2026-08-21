@@ -169,7 +169,8 @@
                                 </div>
                                 <div class="setting-row">
                                     <div class="setting-info">
-                                        <span class="setting-label">UI Scale</span>
+                                        <span class="setting-label" data-i18n="uiScale">UI Scale</span>
+                                        <span class="setting-subtitle" data-i18n="uiScaleDesc">Adjusts the overall display scale for text, buttons, and panels</span>
                                     </div>
                                     <div class="setting-control" id="ui-scale-select-container"></div>
                                 </div>
@@ -189,6 +190,7 @@
                                 <div class="setting-row">
                                     <div class="setting-info">
                                         <span class="setting-label" data-i18n="thinkingMaxHeight">Thinking Process Max Height</span>
+                                        <span class="setting-subtitle" data-i18n="thinkingMaxHeightDesc">Sets the maximum height limit of the scrollable reasoning block</span>
                                     </div>
                                     <div class="setting-control" id="thinking-max-height-select-container"></div>
                                 </div>
@@ -205,6 +207,7 @@
                                 <div class="setting-row">
                                     <div class="setting-info">
                                         <span class="setting-label" data-i18n="serverUrl">Server URL</span>
+                                        <span class="setting-subtitle" data-i18n="serverUrlDesc">Local endpoint of the LM Studio API server (default http://localhost:1234/v1)</span>
                                     </div>
                                     <div class="setting-control">
                                         <input type="text" id="settings-server-url" class="setting-input-text" placeholder="http://localhost:1234/v1" />
@@ -213,6 +216,7 @@
                                 <div class="setting-row">
                                     <div class="setting-info">
                                         <span class="setting-label" data-i18n="lmStudioDirectory">LM Studio Directory</span>
+                                        <span class="setting-subtitle" data-i18n="lmStudioDirectoryDesc">Path to the local LM Studio cache directory for model detection</span>
                                     </div>
                                     <div class="setting-control setting-control-stacked">
                                         <div class="input-with-action">
@@ -235,17 +239,7 @@
                                 <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                             </button>
                             <div class="category-content">
-                                <div class="setting-row">
-                                    <div class="setting-info">
-                                        <span class="setting-label" data-i18n="geminiApiKey">Google Gemini API Key</span>
-                                    </div>
-                                    <div class="setting-control">
-                                        <div class="password-input-wrapper">
-                                            <input type="password" id="settings-gemini-key" class="setting-input-text" placeholder="AIzaSy..." />
-                                            <button type="button" class="toggle-password-btn" data-target="settings-gemini-key" title="Show/Hide">👁</button>
-                                        </div>
-                                    </div>
-                                </div>
+                                <span class="setting-subtitle category-intro-subtitle" data-i18n="apiKeysSettingsDesc">Manage API keys and test live connections for cloud models</span>
                                 <div id="free-providers-keys-list" class="free-providers-keys-list"></div>
                             </div>
                         </div>

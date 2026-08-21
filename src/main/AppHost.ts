@@ -115,6 +115,36 @@ export class AppHost {
                 await this.handleOpenFilePicker();
                 break;
             }
+            case 'openExternalUrl': {
+                if (data.url) {
+                    try {
+                        const { shell } = require('electron');
+                        shell.openExternal(data.url);
+                    } catch (e) {}
+                }
+                break;
+            }
+            case 'testProviderConnection': {
+                const configKey = data.configKey;
+                const apiKey = data.apiKey;
+                let isValid = false;
+                try {
+                    const client = new LMStudioClient('http://localhost:1234/v1', apiKey);
+                    if (configKey === 'geminiApiKey') {
+                        isValid = await client.validateGemini(apiKey);
+                    } else {
+                        isValid = await client.validateFreeProvider(configKey, apiKey);
+                    }
+                } catch (e) {
+                    isValid = false;
+                }
+                this.postMessage({
+                    type: 'providerTestResult',
+                    configKey: configKey,
+                    success: isValid
+                });
+                break;
+            }
             case 'saveChat': {
                 if (data.chat && (data.chat.messages?.length > 0 || data.chat.uiEvents?.length > 0)) {
                     await this.sessionStore.saveChat(data.chat);
