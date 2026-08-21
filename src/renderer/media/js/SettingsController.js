@@ -27,6 +27,7 @@ class SettingsController {
         this.freeProvidersKeysList = document.getElementById('free-providers-keys-list');
 
         this.freeProviders = [...KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS];
+        this.providerReloadButtons = new Map();
 
         this.initSettings();
         this.initEventListeners();
@@ -205,6 +206,8 @@ class SettingsController {
                 }
             });
         }
+
+        this.renderProviderKeyInputs();
     }
 
     /**
@@ -395,8 +398,8 @@ class SettingsController {
             this.geminiKeyInput.value = message.apiKey;
         }
 
-        if (message.cacheStatus && this.cacheStatusDot && this.cacheStatusText) {
-            const status = message.cacheStatus;
+        if (message.lmStudioCacheStatus && this.cacheStatusDot && this.cacheStatusText) {
+            const status = message.lmStudioCacheStatus;
             const i18n = window.KAI_I18N || {};
             if (status.valid) {
                 this.cacheStatusDot.className = 'status-dot status-connected';
@@ -409,6 +412,35 @@ class SettingsController {
                 this.cacheStatusText.style.color = 'var(--app-danger, #f44747)';
             }
         }
+
+        if (message.freeProviders && message.freeProviders.length > 0) {
+            this.freeProviders = message.freeProviders.map(p => {
+                const def = (typeof KAI_CONSTANTS !== 'undefined' && KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS)
+                    ? KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS.find(d => d.configKey === p.configKey || d.name === p.name)
+                    : null;
+                return {
+                    ...p,
+                    docUrl: p.docUrl || (def ? def.docUrl : '')
+                };
+            });
+        }
+
+        if (message.apiKey !== undefined) {
+            const gemini = this.freeProviders.find(p => p.configKey === 'geminiApiKey');
+            if (gemini && !gemini.apiKey) {
+                gemini.apiKey = message.apiKey;
+            }
+        }
+
+        this.renderProviderKeyInputs();
+    }
+
+    /**
+     * Updates settings state and renders API key inputs when connection status arrives.
+     * @param {object} message Connection status message.
+     */
+    updateConnectionStatus(message) {
+        this.handleHostMessage(message);
     }
 
     /**
@@ -417,9 +449,18 @@ class SettingsController {
     renderProviderKeyInputs() {
         if (!this.freeProvidersKeysList) return;
         this.freeProvidersKeysList.innerHTML = '';
-        this.providerReloadButtons.clear();
+        if (!this.providerReloadButtons) {
+            this.providerReloadButtons = new Map();
+        } else {
+            this.providerReloadButtons.clear();
+        }
 
         this.freeProviders.forEach((provider) => {
+            const defaultDef = (typeof KAI_CONSTANTS !== 'undefined' && KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS)
+                ? KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS.find(d => d.configKey === provider.configKey || d.name === provider.name)
+                : null;
+            const docUrl = provider.docUrl || (defaultDef ? defaultDef.docUrl : '');
+
             const row = document.createElement('div');
             row.className = 'provider-key-row setting-row';
 
@@ -429,15 +470,15 @@ class SettingsController {
             // Provider Name with External Link Icon (↗)
             const labelLink = document.createElement('a');
             labelLink.className = 'provider-label-link';
-            if (provider.docUrl) {
-                labelLink.href = provider.docUrl;
+            if (docUrl) {
+                labelLink.href = docUrl;
                 labelLink.target = '_blank';
                 labelLink.rel = 'noopener noreferrer';
                 labelLink.title = `Open ${provider.name} documentation`;
                 labelLink.addEventListener('click', (e) => {
                     if (this.ipcBridge) {
                         e.preventDefault();
-                        this.ipcBridge.sendMessage('openExternalUrl', { url: provider.docUrl });
+                        this.ipcBridge.sendMessage('openExternalUrl', { url: docUrl });
                     }
                 });
             }
@@ -447,7 +488,7 @@ class SettingsController {
             name.textContent = provider.name;
             labelLink.appendChild(name);
 
-            if (provider.docUrl) {
+            if (docUrl) {
                 const docIconSpan = document.createElement('span');
                 docIconSpan.className = 'provider-doc-icon';
                 docIconSpan.innerHTML = window.KAI_SVGS.external_link || '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>';

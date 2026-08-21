@@ -425,6 +425,14 @@
         modelDropdownController.updateConnectionStatus(message);
     });
 
+    ipcBridge.on('providerTestResult', (message) => {
+        settingsController.handleHostMessage(message);
+    });
+
+    ipcBridge.on('settings', (message) => {
+        settingsController.handleHostMessage(message);
+    });
+
     ipcBridge.on('addCodeSelection', (message) => {
         appState.selectedCodeContext = message.text;
         if (messageInput) {
