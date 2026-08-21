@@ -585,8 +585,8 @@ class SettingsController {
 
             passWrapper.appendChild(input);
             passWrapper.appendChild(toggleBtn);
-            passWrapper.appendChild(reloadBtn);
             control.appendChild(passWrapper);
+            control.appendChild(reloadBtn);
 
             row.appendChild(info);
             row.appendChild(control);

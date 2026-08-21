@@ -31,6 +31,8 @@
   --app-surface: rgba(255, 255, 255, 0.03);
   --app-surface-strong: rgba(255, 255, 255, 0.06);
   --app-surface-hover: rgba(255, 255, 255, 0.08);
+  --app-surface-active: rgba(255, 255, 255, 0.12);
+  --app-btn-inset: 0 0 0 1px var(--app-surface-hover);
   --app-accent: var(--vscode-button-background, #007acc);
   --app-accent-hover: var(--vscode-button-hoverBackground, #0062a3);
   --app-input-bg: var(--vscode-input-background, #252526);
@@ -76,6 +78,7 @@ body.vscode-high-contrast-light {
   --app-surface: rgba(0, 0, 0, 0.03);
   --app-surface-strong: rgba(0, 0, 0, 0.06);
   --app-surface-hover: rgba(0, 0, 0, 0.08);
+  --app-surface-active: rgba(0, 0, 0, 0.12);
   --app-input-bg: var(--vscode-input-background, #ffffff);
   --app-input-border: var(--vscode-input-border, rgba(0, 0, 0, 0.18));
   --app-code-bg: var(--vscode-editor-background, #f6f8fa);
@@ -253,13 +256,13 @@ body {
   flex-shrink: 0;
   border: 0 !important;
   outline: none;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .sidebar-icon-btn:hover {
   background: var(--app-surface-hover);
   color: var(--app-fg);
-  box-shadow: 0 0 0 1px var(--app-surface-hover);
+  box-shadow: var(--app-btn-inset);
 }
 
 /* Sidebar Action Buttons (New Chat, Workspace Selector, Settings) */
@@ -283,21 +286,21 @@ body {
   overflow: hidden;
   white-space: nowrap;
   user-select: none;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .sidebar-action-btn:hover,
 .sidebar-footer-btn:hover {
   background: var(--app-surface-hover);
   color: var(--app-fg);
-  box-shadow: 0 0 0 1px var(--app-surface-hover);
+  box-shadow: var(--app-btn-inset);
 }
 
 .sidebar-action-btn:active,
 .sidebar-footer-btn:active {
-  background: var(--app-surface-strong);
+  background: var(--app-surface-active);
   color: var(--app-fg);
-  box-shadow: 0 0 0 1px var(--app-surface-strong);
+  box-shadow: none;
 }
 
 .sidebar-btn-icon {
@@ -432,6 +435,7 @@ body {
 .new-chat-btn-compact:hover {
   background: var(--app-surface-hover);
   color: var(--app-fg);
+  box-shadow: var(--app-btn-inset);
 }
 
 .history-item-delete-btn {
@@ -657,7 +661,7 @@ button:disabled {
   border: 0 !important;
   outline: none;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .icon-btn-header svg {
@@ -669,7 +673,11 @@ button:disabled {
 .icon-btn-header:hover {
   color: var(--app-fg);
   background: var(--app-surface-hover);
-  box-shadow: 0 0 0 1px var(--app-surface-hover);
+  box-shadow: var(--app-btn-inset);
+}
+
+.icon-btn-header:active {
+  background: var(--app-surface-active);
 }
 
 .icon-btn {
@@ -678,13 +686,20 @@ button:disabled {
   border-radius: 4px;
   border: 0 !important;
   outline: none;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  background: transparent;
+  color: var(--app-muted);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .icon-btn:hover {
   background: var(--app-surface-hover);
   color: var(--app-fg);
-  box-shadow: 0 0 0 1px var(--app-surface-hover);
+  box-shadow: var(--app-btn-inset);
+}
+
+.icon-btn:active {
+  background: var(--app-surface-active);
 }
 
 #send-btn {
@@ -1632,13 +1647,13 @@ button:disabled {
   cursor: pointer;
   box-sizing: border-box;
   flex-shrink: 0;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .toolbar-mode-btn:hover {
   background: var(--app-surface-hover);
   color: var(--app-fg);
-  box-shadow: 0 0 0 1px var(--app-surface-hover);
+  box-shadow: var(--app-btn-inset);
 }
 
 /* Icon specific colors per active mode */
@@ -1697,7 +1712,7 @@ button:disabled {
   cursor: pointer;
   box-sizing: border-box;
   flex-shrink: 0;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .toolbar-icon-btn svg {
@@ -1708,7 +1723,7 @@ button:disabled {
 .toolbar-icon-btn:hover {
   background: var(--app-surface-hover);
   color: var(--app-fg);
-  box-shadow: 0 0 0 1px var(--app-surface-hover);
+  box-shadow: var(--app-btn-inset);
 }
 
 /* Active indicator highlight when Planning Mode is enabled */
@@ -1947,14 +1962,14 @@ button:disabled {
   text-align: left;
   cursor: pointer;
   user-select: none;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .dropdown-trigger:hover,
 .dropdown-trigger:focus {
   background: var(--app-surface-hover);
   color: var(--app-fg);
-  box-shadow: 0 0 0 1px var(--app-surface-hover);
+  box-shadow: var(--app-btn-inset);
 }
 
 /* Outer container clipping text behind the component */
@@ -3156,13 +3171,20 @@ button:disabled {
   font-weight: 500;
   cursor: pointer;
   flex-shrink: 0;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
 .setting-action-btn:hover {
-  background: var(--app-surface-hover);
+  background: var(--app-surface-hover, rgba(255, 255, 255, 0.08));
   color: var(--app-fg);
-  box-shadow: 0 0 0 1px var(--app-surface-hover);
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  box-shadow: var(--app-btn-inset);
+}
+
+.setting-action-btn:active {
+  background: var(--app-surface-active);
+  box-shadow: none;
 }
 
 .free-providers-keys-list {
@@ -3187,6 +3209,9 @@ button:disabled {
   min-width: 320px;
   max-width: 380px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* Provider Label Link with External Top-Right Arrow */
@@ -3225,16 +3250,17 @@ button:disabled {
   position: relative;
   display: flex;
   align-items: center;
+  flex: 1;
   width: 100%;
 }
 
 .password-input-wrapper .setting-input-text {
-  padding-right: 64px;
+  padding-right: 34px;
 }
 
 .toggle-password-btn {
   position: absolute;
-  right: 33px;
+  right: 5px;
   height: 26px;
   width: 26px;
   aspect-ratio: 1 / 1;
@@ -3255,28 +3281,36 @@ button:disabled {
   background: var(--app-surface-hover);
 }
 
-/* Reload & Test Connection Button beside Password Toggle */
+/* Reload & Test Connection Button OUTSIDE the input frame (to the right) */
 .reload-key-btn {
-  position: absolute;
-  right: 5px;
-  height: 26px;
-  width: 26px;
+  position: static;
+  flex-shrink: 0;
+  height: 35px;
+  width: 35px;
+  padding: 0;
   aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
+  background: var(--app-surface-strong, #2a2a2e);
+  border: 1px solid var(--app-border-strong, rgba(255, 255, 255, 0.1)) !important;
+  border-radius: var(--app-radius-md, 6px);
   color: var(--app-muted);
   cursor: pointer;
-  border-radius: var(--app-radius-sm);
-  border: 0 !important;
-  font-size: 0.85rem;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  box-sizing: border-box;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .reload-key-btn:hover {
+  background: var(--app-surface-hover, rgba(255, 255, 255, 0.08));
   color: var(--app-fg);
-  background: var(--app-surface-hover);
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  box-shadow: var(--app-btn-inset);
+}
+
+.reload-key-btn:active {
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: none !important;
 }
 
 .reload-key-btn.testing svg {
@@ -3286,10 +3320,12 @@ button:disabled {
 
 .reload-key-btn.success {
   color: var(--main-success-color, #4ec9b0) !important;
+  border-color: var(--main-success-color, #4ec9b0) !important;
 }
 
 .reload-key-btn.error {
   color: var(--main-danger-color, #f44747) !important;
+  border-color: var(--main-danger-color, #f44747) !important;
 }
 
 
@@ -3339,7 +3375,7 @@ button:disabled {
   cursor: pointer !important;
   user-select: none;
   outline: none;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .custom-select-trigger * {
@@ -3351,7 +3387,7 @@ button:disabled {
 .custom-select-trigger.active {
   background: var(--app-surface-hover);
   color: var(--app-fg);
-  box-shadow: 0 0 0 1px var(--app-surface-hover);
+  box-shadow: var(--app-btn-inset);
 }
 
 /* Label text container within custom select trigger button */
@@ -4465,18 +4501,18 @@ details[open]>summary>.custom-chevron {
   padding: 10px 14px 16px 14px;
 }
 
-/* Settings category wrapper - Smooth 250ms morph with ultra-subtle darker background (#1b1b1b) and 2px border */
+/* Settings category wrapper - Smooth 250ms morph with ultra-subtle darker background (#1b1b1b) and borderless container */
 .settings-category {
   position: relative;
   margin: 0;
   padding: 0;
-  border: 2px solid rgba(255, 255, 255, 0.08);
+  border: none !important;
   border-radius: 12px;
   background: #1b1b1b;
   box-sizing: border-box;
   width: 100%;
   overflow: hidden;
-  transition: border-radius 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.15s ease;
+  transition: border-radius 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Fully rounded pill-shaped container when category is collapsed */
@@ -4494,7 +4530,7 @@ details[open]>summary>.custom-chevron {
   gap: 12px;
   padding: 10px 10px 10px 10px;
   margin: 0;
-  background: transparent !important;
+  background: transparent;
   color: var(--app-muted);
   font-size: 0.78rem;
   font-weight: 600;
@@ -4505,24 +4541,37 @@ details[open]>summary>.custom-chevron {
   border: 0 !important;
   border-radius: 0;
   outline: none;
-  transition: color 0.15s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Pill-shaped header button when inside collapsed category */
+/* Pill-shaped header button when inside category */
 .settings-category .category-header-btn {
   padding: 10px 16px;
-  transition: border-radius 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease;
+  border-radius: 12px;
+  transition: border-radius 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .settings-category.collapsed .category-header-btn {
   border-radius: 22px;
 }
 
-/* Hover & focus states for unified category header */
+/* Hover & focus states for unified category header with inset effect */
 .category-header-btn:hover,
 .category-header-btn:focus-visible {
-  background: transparent !important;
   color: var(--app-fg, #ffffff);
+}
+
+.settings-category .category-header-btn:hover,
+.settings-category .category-header-btn:focus-visible {
+  background: var(--app-surface-hover, rgba(255, 255, 255, 0.07)) !important;
+  color: var(--app-fg, #ffffff);
+  border: none !important;
+  box-shadow: var(--app-btn-inset);
+}
+
+.settings-category .category-header-btn:active {
+  background: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: none !important;
 }
 
 /* Category Title - Uppercase, bold, matching unified typography */
