@@ -127,10 +127,14 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
             self._handle_lmstudio_models()
             return
 
-        # Serve system prompt markdown files located in APP_DIR
+        # Serve system prompt markdown files located in APP_DIR/prompts (with legacy root fallback)
         clean_path = self.path.lstrip("/")
+        if clean_path.startswith("prompts/"):
+            clean_path = clean_path[len("prompts/"):]
         if clean_path.startswith("system_prompt") and clean_path.endswith(".md"):
-            prompt_file = APP_DIR / clean_path
+            prompt_file = APP_DIR / "prompts" / clean_path
+            if not prompt_file.exists():
+                prompt_file = APP_DIR / clean_path
             if prompt_file.exists():
                 self.send_response(200)
                 self.send_header("Content-Type", "text/markdown; charset=utf-8")

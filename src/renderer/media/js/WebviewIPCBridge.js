@@ -307,7 +307,10 @@ class WebviewIPCBridge {
                     } else if (activeMode === 'agent') {
                         promptFile = 'system_prompt_agent.md';
                     }
-                    const promptRes = await fetch(`/${promptFile}`);
+                    let promptRes = await fetch(`/prompts/${promptFile}`);
+                    if (!promptRes.ok) {
+                        promptRes = await fetch(`/${promptFile}`);
+                    }
                     if (promptRes.ok) {
                         systemPrompt = await promptRes.text();
                     }

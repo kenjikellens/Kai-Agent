@@ -342,28 +342,37 @@ export class AgentExecutor {
     }
 
     /**
-     * Constructs the system prompt by loading the appropriate mode-specific markdown file.
-     * @param mode Active execution mode ('chat' | 'agent' | 'planning').
+     * Constructs the system prompt by loading the appropriate mode-specific markdown file from the prompts directory.
+     * @param mode Active execution mode ('chat' | 'agent' | 'planning' | 'ask').
      * @param hasWorkspace Whether a workspace folder is open.
      * @param nativeFunctionCalling Whether the provider handles native function schemas.
      */
     private getSystemPrompt(
-        mode: 'chat' | 'agent' | 'planning' = 'agent',
+        mode: 'chat' | 'agent' | 'planning' | 'ask' | string = 'agent',
         hasWorkspace: boolean = true,
         nativeFunctionCalling: boolean = false
     ): string {
         let fileName = 'system_prompt_agent.md';
         if (mode === 'chat') {
             fileName = hasWorkspace ? 'system_prompt_chat_workspace.md' : 'system_prompt_chat.md';
+        } else if (mode === 'ask') {
+            fileName = 'system_prompt_ask.md';
         } else if (mode === 'planning') {
             fileName = 'system_prompt_planning.md';
         }
 
         const candidatePaths = [
+            path.join(this.extensionPath, 'prompts', fileName),
+            path.join(process.cwd(), 'prompts', fileName),
+            path.join(__dirname, '..', '..', 'prompts', fileName),
+            path.join(__dirname, 'prompts', fileName),
             path.join(__dirname, fileName),
             path.join(this.extensionPath, fileName),
             path.join(process.cwd(), fileName),
             // Fallback candidate paths
+            path.join(this.extensionPath, 'prompts', 'system_prompt.md'),
+            path.join(process.cwd(), 'prompts', 'system_prompt.md'),
+            path.join(__dirname, '..', '..', 'prompts', 'system_prompt.md'),
             path.join(__dirname, 'system_prompt.md'),
             path.join(this.extensionPath, 'system_prompt.md'),
             path.join(process.cwd(), 'system_prompt.md')
