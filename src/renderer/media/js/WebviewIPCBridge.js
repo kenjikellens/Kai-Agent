@@ -605,8 +605,9 @@ class WebviewIPCBridge {
                                 signal: abortController.signal
                             });
                         } catch (fetchErr) {
-                            if (!isGemini && !isMistral && !isGroq && !isTogether && !isZhipu && !isCohere && !isCerebras && !isOmniRoute) {
-                                // Fallback to same-origin Python proxy if browser blocked direct LM Studio fetch due to CORS
+                            const isCloudProvider = isGemini || isMistral || isZhipu || isCohere || isCerebras || isOmniRoute;
+                            if (!isCloudProvider) {
+                                // Fallback to same-origin Python proxy if browser blocked direct LM Studio fetch due to CORS or port access
                                 response = await fetch('/api/lmstudio/chat', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },

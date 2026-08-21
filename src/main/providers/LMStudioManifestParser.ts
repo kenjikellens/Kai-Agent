@@ -227,6 +227,29 @@ export class LMStudioManifestParser {
                 return capabilitiesMap;
             }
 
+            // Layer 1: Read gguf-metadata-cache.json for embedded chatTemplate
+            const ggufMetaMap: Record<string, boolean> = {};
+            const cacheFolder = path.dirname(filePath);
+            const ggufMetaPath = path.join(cacheFolder, 'gguf-metadata-cache.json');
+            if (fs.existsSync(ggufMetaPath)) {
+                try {
+                    const ggufRaw = fs.readFileSync(ggufMetaPath, 'utf8');
+                    const ggufData = JSON.parse(ggufRaw);
+                    const mapItems = ggufData?.json?.map || [];
+                    for (const item of mapItems) {
+                        const fpath = String(item[0] || '').replace(/\\/g, '/').toLowerCase();
+                        const meta = item[1]?.metadata || {};
+                        const tmpl = String(meta.chatTemplate || meta['tokenizer.chat_template'] || '').toLowerCase();
+                        const hasThinking = ['enable_thinking', '<think>', '<|thought|>', 'reasoning_content', 'thought'].some(k => tmpl.includes(k));
+                        ggufMetaMap[fpath] = hasThinking;
+                        const fname = path.basename(fpath);
+                        ggufMetaMap[fname] = hasThinking;
+                    }
+                } catch {
+                    // ignore
+                }
+            }
+
             const rawContent = fs.readFileSync(filePath, 'utf8');
             const data = JSON.parse(rawContent);
 
@@ -237,7 +260,7 @@ export class LMStudioManifestParser {
             for (const modelEntry of data.models) {
                 const domain = modelEntry.domain || 'llm';
                 const displayName = modelEntry.displayName || modelEntry.indexedModelIdentifier || '';
-                const isReasoning = Boolean(modelEntry.virtual?.metadataOverridesReasoning);
+                let isReasoning = Boolean(modelEntry.virtual?.metadataOverridesReasoning);
 
                 const fields: ManifestField[] = [];
                 const rawCustomFields = modelEntry.virtual?.customFieldDefinitions;
@@ -274,30 +297,84 @@ export class LMStudioManifestParser {
                     }
                 }
 
-                const cap: ModelCapabilities = {
-                    modelId: modelEntry.indexedModelIdentifier,
-                    displayName: displayName,
-                    domain: domain,
-                    fields: fields,
-                    isReasoning: isReasoning
-                };
-
-                // Index under all known identifiers and aliases (case-insensitive keys for robust lookup)
+                // Collect all aliases including concrete model options and links
                 const aliases: string[] = [
                     modelEntry.indexedModelIdentifier,
                     modelEntry.defaultIdentifier,
                     modelEntry.originalIndexedModelIdentifier,
-                    modelEntry.altIndexedModelIdentifier
+                    modelEntry.altIndexedModelIdentifier,
+                    modelEntry.displayName,
+                    modelEntry.virtual?.concreteModelIndexedModelIdentifier
                 ].filter(Boolean);
+
+                if (Array.isArray(modelEntry.virtual?.concreteModelOptions)) {
+                    for (const opt of modelEntry.virtual.concreteModelOptions) {
+                        if (opt) aliases.push(opt);
+                    }
+                }
 
                 if (modelEntry.indexedModelIdentifier && modelEntry.indexedModelIdentifier.includes('@')) {
                     aliases.push(modelEntry.indexedModelIdentifier.split('@')[0]);
                 }
 
+                // Layer 1 (GGUF chat template) & Layer 3 (Pattern matching) if fields not in manifest
+                if (fields.length === 0) {
+                    let hasGgufThinking = false;
+                    for (const a of aliases) {
+                        const aLower = String(a).toLowerCase().replace(/\\/g, '/');
+                        const aBase = path.basename(aLower);
+                        if (ggufMetaMap[aLower] || ggufMetaMap[aBase]) {
+                            hasGgufThinking = true;
+                            break;
+                        }
+                    }
+
+                    const nameStr = aliases.map(a => String(a).toLowerCase()).join(' ');
+                    const isPatternReasoning = ['qwen', 'ornith', 'deepseek', 'r1', 'qwq', 'gemma-4', 'thinking', 'reasoning', 'thought', 'glm-4'].some(k => nameStr.includes(k));
+
+                    if (hasGgufThinking || isPatternReasoning || isReasoning) {
+                        isReasoning = true;
+                        fields.push({
+                            displayName: 'Enable Thinking',
+                            type: 'boolean',
+                            variable: 'enable_thinking',
+                            defaultValue: true
+                        });
+                        fields.push({
+                            displayName: 'Reasoning Effort',
+                            type: 'select',
+                            variable: 'reasoning_effort',
+                            defaultValue: 'xhigh',
+                            options: [
+                                { label: 'xhigh', value: 'xhigh' },
+                                { label: 'high', value: 'high' },
+                                { label: 'medium', value: 'medium' },
+                                { label: 'low', value: 'low' },
+                                { label: 'off', value: 'off' }
+                            ]
+                        });
+                    }
+                }
+
+                const cap: ModelCapabilities = {
+                    modelId: modelEntry.indexedModelIdentifier,
+                    displayName: displayName,
+                    domain: domain,
+                    fields: fields,
+                    isReasoning: isReasoning || fields.length > 0
+                };
+
                 for (const alias of aliases) {
                     if (alias) {
                         capabilitiesMap[alias] = cap;
                         capabilitiesMap[alias.toLowerCase()] = cap;
+                        if (alias.includes('/')) {
+                            const subName = alias.split('/').pop() || '';
+                            if (subName) {
+                                capabilitiesMap[subName] = cap;
+                                capabilitiesMap[subName.toLowerCase()] = cap;
+                            }
+                        }
                     }
                 }
             }

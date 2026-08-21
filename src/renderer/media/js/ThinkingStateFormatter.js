@@ -122,7 +122,33 @@ class ThinkingStateFormatter {
             };
         }
 
-        // 4. Standard non-thinking models (no fallback assumptions)
+        // 4. Pattern fallback for reasoning/thinking local models (e.g. Ornith, Qwen, DeepSeek-R1, QwQ, Gemma-4)
+        const isPatternReasoning = ['qwen', 'ornith', 'deepseek', 'r1', 'qwq', 'gemma-4', 'thinking', 'reasoning', 'thought', 'glm-4'].some(k => lowerRaw.includes(k));
+        if (isPatternReasoning) {
+            const stored = localStorage.getItem(`kai.lmStudioThinking.${rawModel}`) ??
+                localStorage.getItem(`kai.lmStudioThinking.${lowerRaw}`) ??
+                localStorage.getItem(`kai.lmStudioThinking.${modelId}`);
+            const storedEffort = localStorage.getItem(`kai.lmStudioReasoningLevel.${rawModel}`) ??
+                localStorage.getItem(`kai.lmStudioReasoningLevel.${lowerRaw}`) ??
+                localStorage.getItem(`kai.lmStudioReasoningLevel.${modelId}`) ?? 'xhigh';
+            return {
+                rawModel: rawModel,
+                hasThinkingToggle: true,
+                isThinkingOn: stored !== 'false',
+                hasReasoningEffort: true,
+                reasoningLevel: storedEffort,
+                effortOptions: [
+                    { label: 'xhigh', value: 'xhigh' },
+                    { label: 'high', value: 'high' },
+                    { label: 'medium', value: 'medium' },
+                    { label: 'low', value: 'low' },
+                    { label: 'off', value: 'off' }
+                ],
+                effortDisplayName: 'Reasoning Effort'
+            };
+        }
+
+        // 5. Standard non-thinking models (no fallback assumptions)
         return {
             rawModel: rawModel,
             hasThinkingToggle: false,
