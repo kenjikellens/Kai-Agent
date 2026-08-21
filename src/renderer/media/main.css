@@ -4515,13 +4515,34 @@ details[open]>summary>.custom-chevron {
   background: rgba(255, 255, 255, 0.04);
   box-sizing: border-box;
   width: 100%;
-  overflow: hidden;
-  transition: border-radius 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: visible;
+  transition: border-radius 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 /* Fully rounded pill-shaped container when category is collapsed */
 .settings-category.collapsed {
   border-radius: 22px;
+}
+
+/* Action button inside settings input row with smooth transition */
+.setting-action-btn,
+.settings-browse-btn {
+  padding: 5px 12px;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-surface-strong, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--app-input-border, rgba(255, 255, 255, 0.1));
+  color: var(--app-fg);
+  cursor: pointer;
+  font-size: 0.78rem;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Action button hover state with spread inset effect */
+.setting-action-btn:hover,
+.settings-browse-btn:hover {
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
+  box-shadow: var(--app-btn-inset);
 }
 
 /* Unified Category Header Button across Model Dropdown, Settings, and Help */
