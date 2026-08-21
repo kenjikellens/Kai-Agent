@@ -22,6 +22,8 @@ export interface ModelCapabilities {
     domain: string;
     fields: ManifestField[];
     isReasoning: boolean;
+    sizeBytes?: number;
+    mtime?: number;
 }
 
 /**
@@ -340,19 +342,6 @@ export class LMStudioManifestParser {
                             variable: 'enable_thinking',
                             defaultValue: true
                         });
-                        fields.push({
-                            displayName: 'Reasoning Effort',
-                            type: 'select',
-                            variable: 'reasoning_effort',
-                            defaultValue: 'xhigh',
-                            options: [
-                                { label: 'xhigh', value: 'xhigh' },
-                                { label: 'high', value: 'high' },
-                                { label: 'medium', value: 'medium' },
-                                { label: 'low', value: 'low' },
-                                { label: 'off', value: 'off' }
-                            ]
-                        });
                     }
                 }
 
@@ -361,7 +350,9 @@ export class LMStudioManifestParser {
                     displayName: displayName,
                     domain: domain,
                     fields: fields,
-                    isReasoning: isReasoning || fields.length > 0
+                    isReasoning: isReasoning || fields.length > 0,
+                    sizeBytes: modelEntry.sizeBytes || 0,
+                    mtime: modelEntry.containingDirMtime || 0
                 };
 
                 for (const alias of aliases) {

@@ -128,22 +128,13 @@ class ThinkingStateFormatter {
             const stored = localStorage.getItem(`kai.lmStudioThinking.${rawModel}`) ??
                 localStorage.getItem(`kai.lmStudioThinking.${lowerRaw}`) ??
                 localStorage.getItem(`kai.lmStudioThinking.${modelId}`);
-            const storedEffort = localStorage.getItem(`kai.lmStudioReasoningLevel.${rawModel}`) ??
-                localStorage.getItem(`kai.lmStudioReasoningLevel.${lowerRaw}`) ??
-                localStorage.getItem(`kai.lmStudioReasoningLevel.${modelId}`) ?? 'xhigh';
             return {
                 rawModel: rawModel,
                 hasThinkingToggle: true,
                 isThinkingOn: stored !== 'false',
-                hasReasoningEffort: true,
-                reasoningLevel: storedEffort,
-                effortOptions: [
-                    { label: 'xhigh', value: 'xhigh' },
-                    { label: 'high', value: 'high' },
-                    { label: 'medium', value: 'medium' },
-                    { label: 'low', value: 'low' },
-                    { label: 'off', value: 'off' }
-                ],
+                hasReasoningEffort: false,
+                reasoningLevel: 'off',
+                effortOptions: [],
                 effortDisplayName: 'Reasoning Effort'
             };
         }

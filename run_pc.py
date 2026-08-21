@@ -158,10 +158,13 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
             except Exception:
                 pass
 
-        self.send_response(200)
-        self.send_header("Content-Type", "application/json")
-        self.end_headers()
-        self.wfile.write(json.dumps({"data": models_data}).encode("utf-8"))
+        try:
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"data": models_data}).encode("utf-8"))
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+            pass
 
     def _handle_lmstudio_chat(self, raw_body):
         """Proxies chat completions requests from the browser to local LM Studio.
@@ -779,6 +782,19 @@ def _call_mcp_tool(tool_name, arguments, timeout_sec=40):
     return result_holder["result"]
 
 
+class KaiTCPServer(socketserver.ThreadingTCPServer):
+    """Threading TCP server with silent exception handling for normal client connection aborts."""
+    allow_reuse_address = True
+    daemon_threads = True
+
+    def handle_error(self, request, client_address):
+        """Silently handles normal browser connection aborts and resets without spamming terminal traces."""
+        exc_type, _, _ = sys.exc_info()
+        if exc_type in (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+            return
+        super().handle_error(request, client_address)
+
+
 def start_server(port: int = 5173) -> None:
     """Starts a static test server and opens the browser."""
     if not RENDERER_DIR.exists():
@@ -793,10 +809,8 @@ def start_server(port: int = 5173) -> None:
     print(f"  URL:       {url}")
     print("=" * 60)
 
-    socketserver.TCPServer.allow_reuse_address = True
-
     try:
-        with socketserver.TCPServer(("", port), KaiStaticServer) as httpd:
+        with KaiTCPServer(("", port), KaiStaticServer) as httpd:
             try:
                 webbrowser.open(url)
             except Exception:

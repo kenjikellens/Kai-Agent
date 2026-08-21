@@ -232,257 +232,391 @@ class ModelDropdownController {
                 }
             });
 
-            displayItems.forEach(itemData => {
-                const caps = ThinkingStateFormatter.getCapabilitiesState(itemData.rawModel);
-                const hasFlyout = caps.hasThinkingToggle || (caps.hasReasoningEffort && Array.isArray(caps.effortOptions) && caps.effortOptions.length > 0);
+            if (isLMStudioCategory) {
+                let currentSortKey = localStorage.getItem('kai.lmStudioSortKey') || 'recent';
+                let currentSortDir = localStorage.getItem('kai.lmStudioSortDir') || (currentSortKey === 'name' ? 'asc' : 'desc');
 
-                const item = document.createElement('div');
-                item.className = 'dropdown-item';
-                if (hasFlyout) {
-                    item.classList.add('model-hover-item');
-                }
-                item.setAttribute('role', 'button');
-                item.setAttribute('tabindex', '0');
-                item.setAttribute('aria-label', `Select model ${itemData.label}`);
+                const sortBarDiv = document.createElement('div');
+                sortBarDiv.className = 'lmstudio-sort-bar';
 
-                if (itemData.value === this.selectedModelValue) {
-                    item.classList.add('selected');
-                }
-                item.dataset.value = itemData.value;
-                const isLoaded = isModelConnectedFn ? isModelConnectedFn(itemData.rawModel) : false;
-                const dotClass = isLoaded ? 'status-connected' : 'status-disconnected';
+                const itemsContainer = document.createElement('div');
+                itemsContainer.className = 'lmstudio-items-container';
 
-                const statusDotSpan = document.createElement('span');
-                statusDotSpan.className = `status-dot ${dotClass}`;
-                item.appendChild(statusDotSpan);
+                const renderLMStudioItems = () => {
+                    sortBarDiv.innerHTML = '';
+                    itemsContainer.innerHTML = '';
 
-                const textContainer = document.createElement('div');
-                textContainer.className = 'model-text-container';
-
-                const textSpan = document.createElement('span');
-                textSpan.className = 'model-text-inner dropdown-item-text';
-                textSpan.textContent = itemData.label;
-
-                textContainer.appendChild(textSpan);
-                item.appendChild(textContainer);
-
-                if (hasFlyout) {
-                    const flyoutChevron = document.createElement('span');
-                    flyoutChevron.className = 'model-flyout-chevron';
-                    flyoutChevron.textContent = '›';
-                    item.appendChild(flyoutChevron);
-
-                    // Build integrated flyout submenu (no icons)
-                    const flyoutMenu = document.createElement('div');
-                    flyoutMenu.className = 'thinking-flyout-menu';
-
-                    const flyoutInner = document.createElement('div');
-                    flyoutInner.className = 'thinking-flyout-menu-inner';
-
-                    const rawModel = itemData.rawModel;
-
-                    // 1. Thinking Toggle Switch (Boolean soft-coded)
-                    if (caps.hasThinkingToggle) {
-                        const toggleRow = document.createElement('div');
-                        toggleRow.className = 'toggle-switch-row';
-                        toggleRow.setAttribute('role', 'button');
-                        toggleRow.setAttribute('tabindex', '0');
-                        toggleRow.setAttribute('aria-label', `Toggle thinking ${caps.isThinkingOn ? 'off' : 'on'}`);
-
-                        const toggleLabel = document.createElement('span');
-                        toggleLabel.className = 'toggle-label';
-                        toggleLabel.textContent = 'Thinking';
-                        toggleRow.appendChild(toggleLabel);
-
-                        const switchPill = document.createElement('div');
-                        switchPill.className = `switch-pill ${caps.isThinkingOn ? 'active' : ''}`;
-                        const switchHandle = document.createElement('div');
-                        switchHandle.className = 'switch-handle';
-                        switchPill.appendChild(switchHandle);
-                        toggleRow.appendChild(switchPill);
-
-                        const handleToggleClick = (e) => {
-                            e.stopPropagation();
-                            const newState = !switchPill.classList.contains('active');
-                            if (newState) {
-                                switchPill.classList.add('active');
-                            } else {
-                                switchPill.classList.remove('active');
-                            }
-
-                            localStorage.setItem(`kai.lmStudioThinking.${rawModel}`, newState ? 'true' : 'false');
-                            localStorage.setItem(`kai.mistralThinking.${rawModel}`, newState ? 'true' : 'false');
-                            if (rawModel.includes('/')) {
-                                const short = rawModel.split('/').pop();
-                                localStorage.setItem(`kai.lmStudioThinking.${short}`, newState ? 'true' : 'false');
-                            }
-                            caps.isThinkingOn = newState;
-
-                            this.selectedModelValue = itemData.value;
-                            localStorage.setItem('kai.selectedModel', itemData.value);
-                            this.setSelectedModel(itemData.value);
-
-                            if (this.statusDot) {
-                                this.statusDot.className = (isModelConnectedFn && isModelConnectedFn(itemData.rawModel)) ? 'status-dot status-connected' : 'status-dot status-disconnected';
-                            }
-
-                            if (this.onSelect) {
-                                this.onSelect(itemData.value);
-                            }
-                        };
-
-                        toggleRow.addEventListener('click', handleToggleClick);
-                        toggleRow.addEventListener('keydown', (e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                handleToggleClick(e);
-                            }
-                        });
-
-                        flyoutInner.appendChild(toggleRow);
-                    }
-
-                    // 2. Reasoning Effort Option Rows (if supported)
-                    if (caps.hasReasoningEffort && Array.isArray(caps.effortOptions)) {
-                        caps.effortOptions.forEach(opt => {
-                            const optItem = document.createElement('div');
-                            const isSelected = opt.value === caps.reasoningLevel;
-                            optItem.className = `flyout-option ${isSelected ? 'selected' : ''}`;
-                            optItem.setAttribute('role', 'button');
-                            optItem.setAttribute('tabindex', '0');
-
-                            ThinkingStateFormatter.renderFlyoutOptionContent(optItem, opt.label);
-
-                            if (isSelected) {
-                                optItem.appendChild(DOMUtils.createCheckIcon('check-icon'));
-                            }
-
-                            const handleEffortClick = (e) => {
-                                e.stopPropagation();
-                                if (rawModel.toLowerCase().includes('gemini')) {
-                                    localStorage.setItem(`kai.geminiThinkingLevel.${itemData.value}`, opt.value);
-                                    localStorage.setItem(`kai.geminiThinkingLevel.${rawModel}`, opt.value);
-                                    localStorage.setItem('kai.geminiThinkingLevel', opt.value);
-                                } else {
-                                    localStorage.setItem(`kai.lmStudioReasoningLevel.${rawModel}`, opt.value);
-                                    localStorage.setItem(`kai.lmStudioReasoningLevel.${itemData.value}`, opt.value);
-                                    if (rawModel.includes('/')) {
-                                        const short = rawModel.split('/').pop();
-                                        localStorage.setItem(`kai.lmStudioReasoningLevel.${short}`, opt.value);
-                                    }
-                                }
-
-                                caps.reasoningLevel = opt.value;
-                                this.selectedModelValue = itemData.value;
-                                localStorage.setItem('kai.selectedModel', itemData.value);
-                                this.setSelectedModel(itemData.value);
-
-                                if (this.statusDot) {
-                                    this.statusDot.className = (isModelConnectedFn && isModelConnectedFn(itemData.rawModel)) ? 'status-dot status-connected' : 'status-dot status-disconnected';
-                                }
-                                this.closeActiveFlyoutImmediately();
-                                this.dropdownOptionsMenu.classList.add('hidden');
-
-                                if (this.onSelect) {
-                                    this.onSelect(itemData.value);
-                                }
-                            };
-
-                            optItem.addEventListener('click', handleEffortClick);
-                            optItem.addEventListener('keydown', (e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                    e.preventDefault();
-                                    handleEffortClick(e);
-                                }
-                            });
-
-                            flyoutInner.appendChild(optItem);
-                        });
-                    }
-
-                    flyoutMenu.appendChild(flyoutInner);
-                    item.appendChild(flyoutMenu);
-
-                    // Dynamic positioning and hover handlers
-                    const openFlyout = () => {
-                        if (this.flyoutCloseTimer) {
-                            clearTimeout(this.flyoutCloseTimer);
-                            this.flyoutCloseTimer = null;
-                        }
-                        if (this.activeFlyoutItem && this.activeFlyoutItem !== item) {
-                            this.activeFlyoutItem.classList.remove('flyout-open');
-                        }
-                        item.classList.add('flyout-open');
-                        this.activeFlyoutItem = item;
-
-                        const rect = item.getBoundingClientRect();
-                        flyoutMenu.style.position = 'fixed';
-                        flyoutMenu.style.top = `${rect.top}px`;
-
-                        const flyoutWidth = flyoutMenu.offsetWidth || 160;
-                        let leftPos = rect.right + 4;
-                        if (leftPos + flyoutWidth > window.innerWidth - 6) {
-                            const leftCandidate = rect.left - flyoutWidth - 4;
-                            if (leftCandidate >= 6) {
-                                leftPos = leftCandidate;
-                            } else {
-                                leftPos = Math.max(6, window.innerWidth - flyoutWidth - 6);
-                            }
-                        }
-                        flyoutMenu.style.left = `${leftPos}px`;
-                    };
-
-                    const scheduleCloseFlyout = () => {
-                        this.flyoutCloseTimer = setTimeout(() => {
-                            if (this.activeFlyoutItem === item) {
-                                item.classList.remove('flyout-open');
-                                this.activeFlyoutItem = null;
-                            }
-                        }, 150);
-                    };
-
-                    item.addEventListener('mouseenter', openFlyout);
-                    item.addEventListener('mouseleave', scheduleCloseFlyout);
-                    flyoutMenu.addEventListener('mouseenter', () => {
-                        if (this.flyoutCloseTimer) {
-                            clearTimeout(this.flyoutCloseTimer);
-                            this.flyoutCloseTimer = null;
-                        }
+                    // 1. Recent Chip (Always newest first)
+                    const btnRecent = document.createElement('button');
+                    btnRecent.type = 'button';
+                    btnRecent.className = `sort-chip-btn ${currentSortKey === 'recent' ? 'active' : ''}`;
+                    btnRecent.textContent = '🕒 Recent';
+                    btnRecent.title = 'Sorteer op nieuwste download';
+                    btnRecent.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        currentSortKey = 'recent';
+                        currentSortDir = 'desc';
+                        localStorage.setItem('kai.lmStudioSortKey', 'recent');
+                        localStorage.setItem('kai.lmStudioSortDir', 'desc');
+                        renderLMStudioItems();
                     });
-                    flyoutMenu.addEventListener('mouseleave', scheduleCloseFlyout);
-                }
+                    sortBarDiv.appendChild(btnRecent);
 
-                // Base Model Item Click
-                const handleItemClick = (e) => {
-                    if (e.target.closest('.thinking-flyout-menu')) return;
+                    // 2. Size Chip (Toggles Large -> Small / Small -> Large)
+                    const btnSize = document.createElement('button');
+                    btnSize.type = 'button';
+                    btnSize.className = `sort-chip-btn ${currentSortKey === 'size' ? 'active' : ''}`;
+                    const sizeArrow = currentSortKey === 'size' ? (currentSortDir === 'asc' ? '↑' : '↓') : '↓';
+                    btnSize.textContent = `📦 Grootte ${sizeArrow}`;
+                    btnSize.title = 'Sorteer op bestandsgrootte (klik om richting te wisselen)';
+                    btnSize.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (currentSortKey === 'size') {
+                            currentSortDir = currentSortDir === 'desc' ? 'asc' : 'desc';
+                        } else {
+                            currentSortKey = 'size';
+                            currentSortDir = 'desc';
+                        }
+                        localStorage.setItem('kai.lmStudioSortKey', 'size');
+                        localStorage.setItem('kai.lmStudioSortDir', currentSortDir);
+                        renderLMStudioItems();
+                    });
+                    sortBarDiv.appendChild(btnSize);
+
+                    // 3. Name Chip (Toggles A-Z / Z-A)
+                    const btnName = document.createElement('button');
+                    btnName.type = 'button';
+                    btnName.className = `sort-chip-btn ${currentSortKey === 'name' ? 'active' : ''}`;
+                    const nameArrow = currentSortKey === 'name' ? (currentSortDir === 'desc' ? 'Z-A ↑' : 'A-Z ↓') : 'A-Z ↓';
+                    btnName.textContent = `🔤 Naam ${nameArrow}`;
+                    btnName.title = 'Sorteer alfabetisch (klik om richting te wisselen)';
+                    btnName.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (currentSortKey === 'name') {
+                            currentSortDir = currentSortDir === 'asc' ? 'desc' : 'asc';
+                        } else {
+                            currentSortKey = 'name';
+                            currentSortDir = 'asc';
+                        }
+                        localStorage.setItem('kai.lmStudioSortKey', 'name');
+                        localStorage.setItem('kai.lmStudioSortDir', currentSortDir);
+                        renderLMStudioItems();
+                    });
+                    sortBarDiv.appendChild(btnName);
+
+                    const sorted = this.sortLMStudioItems(displayItems, currentSortKey, currentSortDir);
+                    sorted.forEach(itemData => {
+                        this.renderModelItem(itemData, isModelConnectedFn, itemsContainer);
+                    });
+                };
+
+                contentDiv.appendChild(sortBarDiv);
+                contentDiv.appendChild(itemsContainer);
+                renderLMStudioItems();
+            } else {
+                displayItems.forEach(itemData => {
+                    this.renderModelItem(itemData, isModelConnectedFn, contentDiv);
+                });
+            }
+        }
+
+        groupDiv.appendChild(headerDiv);
+        groupDiv.appendChild(contentDiv);
+        this.dropdownOptionsMenu.appendChild(groupDiv);
+    }
+
+    /**
+     * Sorts LM Studio model items based on recent download date, model file size, or alphabetical name.
+     * @param {Array<object>} itemsList List of item objects with rawModel, label, and value.
+     * @param {string} sortKey Sort dimension ('recent', 'size', 'name').
+     * @param {string} sortDir Sort direction ('desc' or 'asc').
+     * @returns {Array<object>} Sorted array of item objects.
+     */
+    sortLMStudioItems(itemsList, sortKey, sortDir) {
+        const capsMap = ThinkingStateFormatter.lmStudioCapabilities || {};
+        return [...itemsList].sort((a, b) => {
+            const capA = capsMap[a.rawModel] || capsMap[a.rawModel.toLowerCase()] || capsMap[a.value] || {};
+            const capB = capsMap[b.rawModel] || capsMap[b.rawModel.toLowerCase()] || capsMap[b.value] || {};
+
+            if (sortKey === 'recent') {
+                const timeA = Number(capA.mtime || 0);
+                const timeB = Number(capB.mtime || 0);
+                return timeB - timeA;
+            }
+
+            if (sortKey === 'size') {
+                const sizeA = Number(capA.sizeBytes || 0);
+                const sizeB = Number(capB.sizeBytes || 0);
+                return sortDir === 'asc' ? sizeA - sizeB : sizeB - sizeA;
+            }
+
+            if (sortKey === 'name') {
+                const nameA = String(a.label || a.rawModel || '');
+                const nameB = String(b.label || b.rawModel || '');
+                return sortDir === 'desc' ? nameB.localeCompare(nameA) : nameA.localeCompare(nameB);
+            }
+
+            return 0;
+        });
+    }
+
+    /**
+     * Renders a single model item element into a target DOM container.
+     * Attaches interactive flyouts for thinking-capable models and click handlers for model selection.
+     * @param {object} itemData Item descriptor with value, label, and rawModel.
+     * @param {Function|null} isModelConnectedFn Model connection check callback.
+     * @param {HTMLElement} targetContainer Destination container element.
+     */
+    renderModelItem(itemData, isModelConnectedFn, targetContainer) {
+        const caps = ThinkingStateFormatter.getCapabilitiesState(itemData.rawModel);
+        const hasFlyout = caps.hasThinkingToggle || (caps.hasReasoningEffort && Array.isArray(caps.effortOptions) && caps.effortOptions.length > 0);
+
+        const item = document.createElement('div');
+        item.className = 'dropdown-item';
+        if (hasFlyout) {
+            item.classList.add('model-hover-item');
+        }
+        item.setAttribute('role', 'button');
+        item.setAttribute('tabindex', '0');
+        item.setAttribute('aria-label', `Select model ${itemData.label}`);
+
+        if (itemData.value === this.selectedModelValue) {
+            item.classList.add('selected');
+        }
+        item.dataset.value = itemData.value;
+        const isLoaded = isModelConnectedFn ? isModelConnectedFn(itemData.rawModel) : false;
+        const dotClass = isLoaded ? 'status-connected' : 'status-disconnected';
+
+        const statusDotSpan = document.createElement('span');
+        statusDotSpan.className = `status-dot ${dotClass}`;
+        item.appendChild(statusDotSpan);
+
+        const textContainer = document.createElement('div');
+        textContainer.className = 'model-text-container';
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'model-text-inner dropdown-item-text';
+        textSpan.textContent = itemData.label;
+
+        textContainer.appendChild(textSpan);
+        item.appendChild(textContainer);
+
+        if (hasFlyout) {
+            const flyoutChevron = document.createElement('span');
+            flyoutChevron.className = 'model-flyout-chevron';
+            flyoutChevron.textContent = '›';
+            item.appendChild(flyoutChevron);
+
+            // Build integrated flyout submenu (no icons)
+            const flyoutMenu = document.createElement('div');
+            flyoutMenu.className = 'thinking-flyout-menu';
+
+            const flyoutInner = document.createElement('div');
+            flyoutInner.className = 'thinking-flyout-menu-inner';
+
+            const rawModel = itemData.rawModel;
+
+            // 1. Thinking Toggle Switch (Boolean soft-coded)
+            if (caps.hasThinkingToggle) {
+                const toggleRow = document.createElement('div');
+                toggleRow.className = 'toggle-switch-row';
+                toggleRow.setAttribute('role', 'button');
+                toggleRow.setAttribute('tabindex', '0');
+                toggleRow.setAttribute('aria-label', `Toggle thinking ${caps.isThinkingOn ? 'off' : 'on'}`);
+
+                const toggleLabel = document.createElement('span');
+                toggleLabel.className = 'toggle-label';
+                toggleLabel.textContent = 'Thinking';
+                toggleRow.appendChild(toggleLabel);
+
+                const switchPill = document.createElement('div');
+                switchPill.className = `switch-pill ${caps.isThinkingOn ? 'active' : ''}`;
+                const switchHandle = document.createElement('div');
+                switchHandle.className = 'switch-handle';
+                switchPill.appendChild(switchHandle);
+                toggleRow.appendChild(switchPill);
+
+                const handleToggleClick = (e) => {
                     e.stopPropagation();
+                    const newState = !switchPill.classList.contains('active');
+                    if (newState) {
+                        switchPill.classList.add('active');
+                    } else {
+                        switchPill.classList.remove('active');
+                    }
+
+                    localStorage.setItem(`kai.lmStudioThinking.${rawModel}`, newState ? 'true' : 'false');
+                    localStorage.setItem(`kai.mistralThinking.${rawModel}`, newState ? 'true' : 'false');
+                    if (rawModel.includes('/')) {
+                        const short = rawModel.split('/').pop();
+                        localStorage.setItem(`kai.lmStudioThinking.${short}`, newState ? 'true' : 'false');
+                    }
+                    caps.isThinkingOn = newState;
+
                     this.selectedModelValue = itemData.value;
                     localStorage.setItem('kai.selectedModel', itemData.value);
-
                     this.setSelectedModel(itemData.value);
 
                     if (this.statusDot) {
                         this.statusDot.className = (isModelConnectedFn && isModelConnectedFn(itemData.rawModel)) ? 'status-dot status-connected' : 'status-dot status-disconnected';
                     }
-                    this.closeActiveFlyoutImmediately();
-                    this.dropdownOptionsMenu.classList.add('hidden');
 
                     if (this.onSelect) {
                         this.onSelect(itemData.value);
                     }
                 };
 
-                item.addEventListener('click', handleItemClick);
-                item.addEventListener('keydown', (e) => {
+                toggleRow.addEventListener('click', handleToggleClick);
+                toggleRow.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        handleItemClick(e);
+                        handleToggleClick(e);
                     }
                 });
 
-                contentDiv.appendChild(item);
+                flyoutInner.appendChild(toggleRow);
+            }
+
+            // 2. Reasoning Effort Option Rows (if supported)
+            if (caps.hasReasoningEffort && Array.isArray(caps.effortOptions)) {
+                caps.effortOptions.forEach(opt => {
+                    const optItem = document.createElement('div');
+                    const isSelected = opt.value === caps.reasoningLevel;
+                    optItem.className = `flyout-option ${isSelected ? 'selected' : ''}`;
+                    optItem.setAttribute('role', 'button');
+                    optItem.setAttribute('tabindex', '0');
+
+                    ThinkingStateFormatter.renderFlyoutOptionContent(optItem, opt.label);
+
+                    if (isSelected) {
+                        optItem.appendChild(DOMUtils.createCheckIcon('check-icon'));
+                    }
+
+                    const handleEffortClick = (e) => {
+                        e.stopPropagation();
+                        if (rawModel.toLowerCase().includes('gemini')) {
+                            localStorage.setItem(`kai.geminiThinkingLevel.${itemData.value}`, opt.value);
+                            localStorage.setItem(`kai.geminiThinkingLevel.${rawModel}`, opt.value);
+                            localStorage.setItem('kai.geminiThinkingLevel', opt.value);
+                        } else {
+                            localStorage.setItem(`kai.lmStudioReasoningLevel.${rawModel}`, opt.value);
+                            localStorage.setItem(`kai.lmStudioReasoningLevel.${itemData.value}`, opt.value);
+                            if (rawModel.includes('/')) {
+                                const short = rawModel.split('/').pop();
+                                localStorage.setItem(`kai.lmStudioReasoningLevel.${short}`, opt.value);
+                            }
+                        }
+
+                        caps.reasoningLevel = opt.value;
+                        this.selectedModelValue = itemData.value;
+                        localStorage.setItem('kai.selectedModel', itemData.value);
+                        this.setSelectedModel(itemData.value);
+
+                        if (this.statusDot) {
+                            this.statusDot.className = (isModelConnectedFn && isModelConnectedFn(itemData.rawModel)) ? 'status-dot status-connected' : 'status-dot status-disconnected';
+                        }
+                        this.closeActiveFlyoutImmediately();
+                        this.dropdownOptionsMenu.classList.add('hidden');
+
+                        if (this.onSelect) {
+                            this.onSelect(itemData.value);
+                        }
+                    };
+
+                    optItem.addEventListener('click', handleEffortClick);
+                    optItem.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleEffortClick(e);
+                        }
+                    });
+
+                    flyoutInner.appendChild(optItem);
+                });
+            }
+
+            flyoutMenu.appendChild(flyoutInner);
+            item.appendChild(flyoutMenu);
+
+            // Dynamic positioning and hover handlers
+            const openFlyout = () => {
+                if (this.flyoutCloseTimer) {
+                    clearTimeout(this.flyoutCloseTimer);
+                    this.flyoutCloseTimer = null;
+                }
+                if (this.activeFlyoutItem && this.activeFlyoutItem !== item) {
+                    this.activeFlyoutItem.classList.remove('flyout-open');
+                }
+                item.classList.add('flyout-open');
+                this.activeFlyoutItem = item;
+
+                const rect = item.getBoundingClientRect();
+                flyoutMenu.style.position = 'fixed';
+                flyoutMenu.style.top = `${rect.top}px`;
+
+                const flyoutWidth = flyoutMenu.offsetWidth || 160;
+                let leftPos = rect.right + 4;
+                if (leftPos + flyoutWidth > window.innerWidth - 6) {
+                    const leftCandidate = rect.left - flyoutWidth - 4;
+                    if (leftCandidate >= 6) {
+                        leftPos = leftCandidate;
+                    } else {
+                        leftPos = Math.max(6, window.innerWidth - flyoutWidth - 6);
+                    }
+                }
+                flyoutMenu.style.left = `${leftPos}px`;
+            };
+
+            const scheduleCloseFlyout = () => {
+                this.flyoutCloseTimer = setTimeout(() => {
+                    if (this.activeFlyoutItem === item) {
+                        item.classList.remove('flyout-open');
+                        this.activeFlyoutItem = null;
+                    }
+                }, 150);
+            };
+
+            item.addEventListener('mouseenter', openFlyout);
+            item.addEventListener('mouseleave', scheduleCloseFlyout);
+            flyoutMenu.addEventListener('mouseenter', () => {
+                if (this.flyoutCloseTimer) {
+                    clearTimeout(this.flyoutCloseTimer);
+                    this.flyoutCloseTimer = null;
+                }
             });
+            flyoutMenu.addEventListener('mouseleave', scheduleCloseFlyout);
         }
+
+        // Base Model Item Click
+        const handleItemClick = (e) => {
+            if (e.target.closest('.thinking-flyout-menu')) return;
+            e.stopPropagation();
+            this.selectedModelValue = itemData.value;
+            localStorage.setItem('kai.selectedModel', itemData.value);
+
+            this.setSelectedModel(itemData.value);
+
+            if (this.statusDot) {
+                this.statusDot.className = (isModelConnectedFn && isModelConnectedFn(itemData.rawModel)) ? 'status-dot status-connected' : 'status-dot status-disconnected';
+            }
+            this.closeActiveFlyoutImmediately();
+            this.dropdownOptionsMenu.classList.add('hidden');
+
+            if (this.onSelect) {
+                this.onSelect(itemData.value);
+            }
+        };
+
+        item.addEventListener('click', handleItemClick);
+        item.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleItemClick(e);
+            }
+        });
+
+        targetContainer.appendChild(item);
+    }
 
         groupDiv.appendChild(headerDiv);
         groupDiv.appendChild(contentDiv);
