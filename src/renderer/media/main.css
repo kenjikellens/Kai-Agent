@@ -32,7 +32,7 @@
   --app-surface-strong: rgba(255, 255, 255, 0.06);
   --app-surface-hover: rgba(255, 255, 255, 0.08);
   --app-surface-active: rgba(255, 255, 255, 0.12);
-  --app-btn-inset: 0 0 0 1px var(--app-surface-hover);
+  --app-btn-inset: 0 0 0 1.5px var(--app-surface-hover);
   --app-accent: var(--vscode-button-background, #007acc);
   --app-accent-hover: var(--vscode-button-hoverBackground, #0062a3);
   --app-input-bg: var(--vscode-input-background, #252526);
@@ -256,7 +256,7 @@ body {
   flex-shrink: 0;
   border: 0 !important;
   outline: none;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .sidebar-icon-btn:hover {
@@ -286,7 +286,7 @@ body {
   overflow: hidden;
   white-space: nowrap;
   user-select: none;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .sidebar-action-btn:hover,
@@ -4505,14 +4505,14 @@ details[open]>summary>.custom-chevron {
   padding: 10px 14px 16px 14px;
 }
 
-/* Settings category wrapper - Smooth 250ms morph with ultra-subtle darker background (#1b1b1b) and borderless container */
+/* Settings category wrapper - Smooth 250ms morph with slightly lighter card background and borderless container */
 .settings-category {
   position: relative;
   margin: 0;
   padding: 0;
   border: none !important;
   border-radius: 12px;
-  background: #1b1b1b;
+  background: rgba(255, 255, 255, 0.04);
   box-sizing: border-box;
   width: 100%;
   overflow: hidden;

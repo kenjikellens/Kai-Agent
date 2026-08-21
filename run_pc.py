@@ -10,6 +10,8 @@ import os
 import socketserver
 import subprocess
 import sys
+import urllib.error
+import urllib.request
 import webbrowser
 from pathlib import Path
 
@@ -97,20 +99,32 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
         pass
 
     def end_headers(self):
-        """Sends cache-busting headers so the browser always loads fresh JavaScript."""
+        """Sends cache-busting and CORS headers so the browser always loads fresh JavaScript and bypasses CORS."""
         self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
         self.send_header("Pragma", "no-cache")
         self.send_header("Expires", "0")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "*")
         super().end_headers()
 
+    def do_OPTIONS(self):
+        """Handles browser CORS preflight requests across all local dev origins."""
+        self.send_response(204)
+        self.end_headers()
+
     def do_GET(self):
-        """Serves static files, system prompts and LM Studio capabilities API."""
+        """Serves static files, system prompts, LM Studio proxy, and model capabilities API."""
         if self.path.startswith("/api/capabilities"):
             caps = get_lmstudio_capabilities()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps(caps).encode("utf-8"))
+            return
+
+        if self.path.startswith("/api/lmstudio/models") or self.path.startswith("/api/models"):
+            self._handle_lmstudio_models()
             return
 
         # Serve system prompt markdown files located in APP_DIR
@@ -159,11 +173,69 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
             self._handle_lmstudio_switch(raw_body)
             return
 
+        if self.path.startswith("/api/lmstudio/chat") or self.path.startswith("/api/proxy/chat"):
+            self._handle_lmstudio_chat(raw_body)
+            return
+
         # Fallback for unknown POST paths
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
         self.wfile.write(b'{"status":"ok"}')
+
+    def _handle_lmstudio_models(self):
+        """Proxies model discovery requests directly to local LM Studio via Python.
+        Eliminates browser CORS restrictions by returning standard JSON with permissive headers."""
+        urls = [
+            "http://127.0.0.1:1234/api/v0/models",
+            "http://127.0.0.1:1234/v1/models",
+            "http://localhost:1234/api/v0/models",
+            "http://localhost:1234/v1/models",
+        ]
+        models_data = []
+        for url in urls:
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": "KaiAgent/1.0"})
+                with urllib.request.urlopen(req, timeout=2.5) as resp:
+                    if resp.status == 200:
+                        data = json.loads(resp.read().decode("utf-8"))
+                        if isinstance(data, dict) and "data" in data and isinstance(data["data"], list) and len(data["data"]) > 0:
+                            models_data = data["data"]
+                            break
+            except Exception:
+                pass
+
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps({"data": models_data}).encode("utf-8"))
+
+    def _handle_lmstudio_chat(self, raw_body):
+        """Proxies chat completions requests from the browser to local LM Studio.
+        Streams SSE token chunks back to the browser without triggering CORS errors."""
+        target_url = "http://127.0.0.1:1234/v1/chat/completions"
+        try:
+            req = urllib.request.Request(
+                target_url,
+                data=raw_body,
+                headers={"Content-Type": "application/json", "User-Agent": "KaiAgent/1.0"},
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                self.send_response(resp.status)
+                self.send_header("Content-Type", resp.headers.get("Content-Type", "text/event-stream; charset=utf-8"))
+                self.end_headers()
+                while True:
+                    chunk = resp.read(512)
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
+                    self.wfile.flush()
+        except Exception as e:
+            self.send_response(502)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
 
     def _find_lms_cli(self):
         """Finds the local LM Studio lms executable if installed.

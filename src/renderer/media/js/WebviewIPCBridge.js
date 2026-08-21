@@ -73,6 +73,8 @@ class WebviewIPCBridge {
                 });
 
                 const v0Urls = [
+                    '/api/lmstudio/models',
+                    '/api/models',
                     'http://127.0.0.1:1234/api/v0/models',
                     'http://localhost:1234/api/v0/models'
                 ];
@@ -88,7 +90,7 @@ class WebviewIPCBridge {
                 // Fast probe for raw model data
                 const probeCandidate = async (url) => {
                     const controller = new AbortController();
-                    const timer = setTimeout(() => controller.abort(), 2000);
+                    const timer = setTimeout(() => controller.abort(), 2500);
                     try {
                         const res = await fetch(url, { method: 'GET', signal: controller.signal });
                         clearTimeout(timer);
@@ -591,12 +593,27 @@ class WebviewIPCBridge {
 
                         if (abortController.signal.aborted) break;
 
-                        const response = await fetch(targetUrl, {
-                            method: 'POST',
-                            headers: fetchHeaders,
-                            body: JSON.stringify(payload),
-                            signal: abortController.signal
-                        });
+                        let response;
+                        try {
+                            response = await fetch(targetUrl, {
+                                method: 'POST',
+                                headers: fetchHeaders,
+                                body: JSON.stringify(payload),
+                                signal: abortController.signal
+                            });
+                        } catch (fetchErr) {
+                            if (!isGemini && !isMistral && !isGroq && !isTogether && !isZhipu && !isCohere && !isCerebras && !isOmniRoute) {
+                                // Fallback to same-origin Python proxy if browser blocked direct LM Studio fetch due to CORS
+                                response = await fetch('/api/lmstudio/chat', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(payload),
+                                    signal: abortController.signal
+                                });
+                            } else {
+                                throw fetchErr;
+                            }
+                        }
 
                         if (!response.ok) {
                             const errBody = await response.text().catch(() => '');
