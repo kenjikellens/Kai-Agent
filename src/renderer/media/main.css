@@ -323,7 +323,9 @@ body {
   flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
-  padding: 4px 8px 8px 8px;
+  padding: 8px 8px 8px 8px;
+  margin-top: 6px;
+  border-top: 1px solid var(--app-border, rgba(255, 255, 255, 0.08));
   overflow: hidden;
 }
 
@@ -359,19 +361,21 @@ body {
   font-size: 0.85rem;
   cursor: pointer;
   box-sizing: border-box;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
   user-select: none;
 }
 
 .history-item:hover {
   background: var(--app-surface-hover);
   color: var(--app-fg);
+  box-shadow: var(--app-btn-inset);
 }
 
 .history-item.active {
   background: var(--app-surface-strong);
   color: var(--app-fg);
   font-weight: 600;
+  box-shadow: var(--app-btn-inset);
 }
 
 .history-item-content {
