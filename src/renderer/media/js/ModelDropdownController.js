@@ -618,12 +618,8 @@ class ModelDropdownController {
             this.closeActiveFlyoutImmediately();
             this.dropdownOptionsMenu.classList.add('hidden');
 
-            if (isLMStudio && this.ipcBridge && typeof this.ipcBridge.switchLMStudioModel === 'function') {
-                this.ipcBridge.switchLMStudioModel(itemData.rawModel || itemData.value);
-            }
-
             if (this.onSelect) {
-                this.onSelect(itemData.value, isLMStudio);
+                this.onSelect(itemData.value);
             }
         };
 

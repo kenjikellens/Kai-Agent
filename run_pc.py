@@ -52,6 +52,7 @@ def get_lmstudio_capabilities():
 
 class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
     """Simple static HTTP handler serving the src/renderer directory with no-cache headers."""
+    protocol_version = "HTTP/1.1"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(RENDERER_DIR), **kwargs)
@@ -197,13 +198,15 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
                 )
                 with urllib.request.urlopen(req, timeout=120) as resp:
                     self.send_response(resp.status)
-                    self.send_header("Content-Type", resp.headers.get("Content-Type", "text/event-stream; charset=utf-8"))
+                    self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+                    self.send_header("Cache-Control", "no-cache")
+                    self.send_header("Connection", "keep-alive")
                     self.end_headers()
                     while True:
-                        chunk = resp.read(512)
-                        if not chunk:
+                        line = resp.readline()
+                        if not line:
                             break
-                        self.wfile.write(chunk)
+                        self.wfile.write(line)
                         self.wfile.flush()
                     return
             except urllib.error.HTTPError as e:
@@ -236,19 +239,32 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
         return None
 
     def _handle_lmstudio_switch(self, raw_body):
-        """Unloads prior LM Studio models and loads the selected model dynamically.
-        Affects active LM Studio memory state by calling the lms CLI tool in a background thread."""
+        """Loads the selected model into LM Studio memory state by calling the lms CLI tool."""
         try:
             body = json.loads(raw_body) if raw_body else {}
         except Exception:
             body = {}
 
         model = body.get("model", "")
-        unload_previous = body.get("unloadPrevious", True)
+        unload_previous = body.get("unloadPrevious", False)
         lms_path = self._find_lms_cli()
 
         if lms_path and lms_path.exists() and model and model != "local-model" and not model.lower().startswith("gemini"):
-            def _do_switch():
+            # Check if target model is already loaded into LM Studio VRAM
+            is_loaded = False
+            try:
+                ps_res = subprocess.run([str(lms_path), "ps", "--json"], capture_output=True, text=True, timeout=3)
+                if ps_res.returncode == 0:
+                    loaded_list = json.loads(ps_res.stdout.strip() or "[]")
+                    for m in loaded_list:
+                        m_ident = m.get("modelKey") or m.get("identifier") or m.get("path") or ""
+                        if model in m_ident or m_ident in model:
+                            is_loaded = True
+                            break
+            except Exception:
+                pass
+
+            if not is_loaded:
                 if unload_previous:
                     try:
                         subprocess.run(
@@ -266,8 +282,6 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
                     )
                 except Exception:
                     pass
-
-            threading.Thread(target=_do_switch, daemon=True).start()
 
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
