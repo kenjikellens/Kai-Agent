@@ -4,14 +4,26 @@
  * Dynamically utilizes LM Studio ModelCapabilities manifest definitions.
  */
 class ThinkingStateFormatter {
-    static lmStudioCapabilities = {};
+    static lmStudioCapabilities = (() => {
+        try {
+            const cached = localStorage.getItem('kai.lmStudioCapabilitiesCache');
+            return cached ? JSON.parse(cached) : {};
+        } catch {
+            return {};
+        }
+    })();
 
     /**
-     * Updates the active LM Studio model capabilities map.
+     * Updates the active LM Studio model capabilities map and caches it locally.
      * @param {Record<string, object>} capabilities Map of model identifiers to ModelCapabilities.
      */
     static setLMStudioCapabilities(capabilities) {
-        ThinkingStateFormatter.lmStudioCapabilities = capabilities || {};
+        if (capabilities && typeof capabilities === 'object' && Object.keys(capabilities).length > 0) {
+            ThinkingStateFormatter.lmStudioCapabilities = capabilities;
+            try {
+                localStorage.setItem('kai.lmStudioCapabilitiesCache', JSON.stringify(capabilities));
+            } catch {}
+        }
     }
 
     /**

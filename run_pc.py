@@ -19,8 +19,17 @@ APP_DIR = Path(__file__).resolve().parent
 RENDERER_DIR = APP_DIR / "src" / "renderer"
 
 
+_capabilities_cache = {"data": None, "timestamp": 0}
+
+
 def get_lmstudio_capabilities():
-    """Extracts model capabilities by invoking the TypeScript LMStudioManifestParser class via Node.js as the Single Source of Truth."""
+    """Extracts model capabilities by invoking the TypeScript LMStudioManifestParser class via Node.js as the Single Source of Truth.
+    Caches parsed capabilities in memory with a 15-second TTL for instantaneous API responses."""
+    import time
+    now = time.time()
+    if _capabilities_cache["data"] is not None and (now - _capabilities_cache["timestamp"]) < 15:
+        return _capabilities_cache["data"]
+
     candidates = [
         APP_DIR.parent / "KAI Agent extension" / "code" / "out" / "providers" / "LMStudioManifestParser.js",
         APP_DIR / "dist" / "main" / "providers" / "LMStudioManifestParser.js",
@@ -31,10 +40,13 @@ def get_lmstudio_capabilities():
             script = f"const {{ LMStudioManifestParser }} = require({json.dumps(str(parser_js))}); console.log(JSON.stringify(LMStudioManifestParser.parseModelCapabilities()));"
             res = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=5)
             if res.returncode == 0 and res.stdout.strip():
-                return json.loads(res.stdout.strip())
+                data = json.loads(res.stdout.strip())
+                _capabilities_cache["data"] = data
+                _capabilities_cache["timestamp"] = now
+                return data
         except Exception:
             pass
-    return {}
+    return _capabilities_cache["data"] or {}
 
 
 class KaiStaticServer(http.server.SimpleHTTPRequestHandler):

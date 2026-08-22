@@ -72,22 +72,16 @@ class WebviewIPCBridge {
                     };
                 });
 
-                const v0Urls = [
+                const probeUrls = [
                     '/api/lmstudio/models',
-                    '/api/models',
-                    'http://127.0.0.1:1234/api/v0/models',
-                    'http://localhost:1234/api/v0/models'
-                ];
-                const v1Urls = [
-                    'http://127.0.0.1:1234/v1/models',
-                    'http://localhost:1234/v1/models'
+                    '/api/models'
                 ];
 
                 let lmConnected = false;
                 let lmModels = [];
                 let loadedModels = [];
 
-                // Fast probe for raw model data
+                // Fast probe for raw model data via local backend proxy to eliminate CORS restrictions
                 const probeCandidate = async (url) => {
                     const controller = new AbortController();
                     const timer = setTimeout(() => controller.abort(), 2500);
@@ -106,22 +100,12 @@ class WebviewIPCBridge {
                     return [];
                 };
 
-                const v0Results = await Promise.allSettled(v0Urls.map(probeCandidate));
+                const probeResults = await Promise.allSettled(probeUrls.map(probeCandidate));
                 let rawData = null;
-                for (const r of v0Results) {
+                for (const r of probeResults) {
                     if (r.status === 'fulfilled' && r.value && r.value.length > 0) {
                         rawData = r.value;
                         break;
-                    }
-                }
-
-                if (!rawData) {
-                    const v1Results = await Promise.allSettled(v1Urls.map(probeCandidate));
-                    for (const r of v1Results) {
-                        if (r.status === 'fulfilled' && r.value && r.value.length > 0) {
-                            rawData = r.value;
-                            break;
-                        }
                     }
                 }
 

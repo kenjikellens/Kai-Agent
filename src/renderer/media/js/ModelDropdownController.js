@@ -249,8 +249,8 @@ class ModelDropdownController {
                     // 1. Recent Chip (Always newest first)
                     const btnRecent = document.createElement('button');
                     btnRecent.type = 'button';
-                    btnRecent.className = `sort-chip-btn ${currentSortKey === 'recent' ? 'active' : ''}`;
-                    btnRecent.textContent = '🕒 Recent';
+                    btnRecent.className = `secondary-btn secondary-btn--sort ${currentSortKey === 'recent' ? 'active' : ''}`;
+                    btnRecent.textContent = 'Recent';
                     btnRecent.title = 'Sorteer op nieuwste download';
                     btnRecent.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -265,9 +265,9 @@ class ModelDropdownController {
                     // 2. Size Chip (Toggles Large -> Small / Small -> Large)
                     const btnSize = document.createElement('button');
                     btnSize.type = 'button';
-                    btnSize.className = `sort-chip-btn ${currentSortKey === 'size' ? 'active' : ''}`;
+                    btnSize.className = `secondary-btn secondary-btn--sort ${currentSortKey === 'size' ? 'active' : ''}`;
                     const sizeArrow = currentSortKey === 'size' ? (currentSortDir === 'asc' ? '↑' : '↓') : '↓';
-                    btnSize.textContent = `📦 Grootte ${sizeArrow}`;
+                    btnSize.textContent = `Grootte ${sizeArrow}`;
                     btnSize.title = 'Sorteer op bestandsgrootte (klik om richting te wisselen)';
                     btnSize.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -286,9 +286,9 @@ class ModelDropdownController {
                     // 3. Name Chip (Toggles A-Z / Z-A)
                     const btnName = document.createElement('button');
                     btnName.type = 'button';
-                    btnName.className = `sort-chip-btn ${currentSortKey === 'name' ? 'active' : ''}`;
+                    btnName.className = `secondary-btn secondary-btn--sort ${currentSortKey === 'name' ? 'active' : ''}`;
                     const nameArrow = currentSortKey === 'name' ? (currentSortDir === 'desc' ? 'Z-A ↑' : 'A-Z ↓') : 'A-Z ↓';
-                    btnName.textContent = `🔤 Naam ${nameArrow}`;
+                    btnName.textContent = `Naam ${nameArrow}`;
                     btnName.title = 'Sorteer alfabetisch (klik om richting te wisselen)';
                     btnName.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -327,6 +327,7 @@ class ModelDropdownController {
 
     /**
      * Sorts LM Studio model items based on recent download date, model file size, or alphabetical name.
+     * Uses fuzzy fallback to match aliases, raw model IDs, and base filenames against capabilities metadata.
      * @param {Array<object>} itemsList List of item objects with rawModel, label, and value.
      * @param {string} sortKey Sort dimension ('recent', 'size', 'name').
      * @param {string} sortDir Sort direction ('desc' or 'asc').
@@ -334,9 +335,16 @@ class ModelDropdownController {
      */
     sortLMStudioItems(itemsList, sortKey, sortDir) {
         const capsMap = ThinkingStateFormatter.lmStudioCapabilities || {};
+        const getCap = (m) => {
+            if (!m) return {};
+            const low = String(m).toLowerCase();
+            const base = low.split('/').pop() || '';
+            return capsMap[m] || capsMap[low] || capsMap[base] || {};
+        };
+
         return [...itemsList].sort((a, b) => {
-            const capA = capsMap[a.rawModel] || capsMap[a.rawModel.toLowerCase()] || capsMap[a.value] || {};
-            const capB = capsMap[b.rawModel] || capsMap[b.rawModel.toLowerCase()] || capsMap[b.value] || {};
+            const capA = getCap(a.rawModel) || getCap(a.value);
+            const capB = getCap(b.rawModel) || getCap(b.value);
 
             if (sortKey === 'recent') {
                 const timeA = Number(capA.mtime || 0);
@@ -389,7 +397,14 @@ class ModelDropdownController {
 
         const statusDotSpan = document.createElement('span');
         statusDotSpan.className = `status-dot ${dotClass}`;
-        item.appendChild(statusDotSpan);
+        const capsMap = ThinkingStateFormatter.lmStudioCapabilities || {};
+        const low = String(itemData.rawModel || '').toLowerCase();
+        const base = low.split('/').pop() || '';
+        const rawCap = capsMap[itemData.rawModel] || capsMap[low] || capsMap[base] || {};
+        if (rawCap.sizeBytes && rawCap.sizeBytes > 0) {
+            const sizeGb = (rawCap.sizeBytes / (1024 * 1024 * 1024)).toFixed(1);
+            item.title = `${itemData.label} (${sizeGb} GB)`;
+        }
 
         const textContainer = document.createElement('div');
         textContainer.className = 'model-text-container';
@@ -616,11 +631,6 @@ class ModelDropdownController {
         });
 
         targetContainer.appendChild(item);
-    }
-
-        groupDiv.appendChild(headerDiv);
-        groupDiv.appendChild(contentDiv);
-        this.dropdownOptionsMenu.appendChild(groupDiv);
     }
 
     /**
