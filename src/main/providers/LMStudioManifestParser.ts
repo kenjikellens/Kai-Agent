@@ -372,4 +372,38 @@ export class LMStudioManifestParser {
             return capabilitiesMap;
         }
     }
+
+    /**
+     * Extracts unique chat models from cache without alias duplication.
+     */
+    public static getUniqueChatModels(cacheDir?: string): { id: string; name: string; sizeBytes: number; mtime: number }[] {
+        const filePath = LMStudioManifestParser.resolveIndexCacheFilePath(cacheDir);
+        try {
+            if (!fs.existsSync(filePath)) {
+                return [];
+            }
+            const rawContent = fs.readFileSync(filePath, 'utf8');
+            const data = JSON.parse(rawContent);
+            if (!data || !Array.isArray(data.models)) {
+                return [];
+            }
+            const seen = new Set<string>();
+            const result: { id: string; name: string; sizeBytes: number; mtime: number }[] = [];
+            for (const m of data.models) {
+                if (m.domain === 'embedding') continue;
+                const id = m.indexedModelIdentifier || m.displayName;
+                if (!id || seen.has(id.toLowerCase())) continue;
+                seen.add(id.toLowerCase());
+                result.push({
+                    id: id,
+                    name: m.displayName || id,
+                    sizeBytes: m.sizeBytes || 0,
+                    mtime: m.containingDirMtime || 0
+                });
+            }
+            return result;
+        } catch {
+            return [];
+        }
+    }
 }

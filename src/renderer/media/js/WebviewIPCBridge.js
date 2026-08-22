@@ -112,7 +112,7 @@ class WebviewIPCBridge {
                 if (rawData && Array.isArray(rawData)) {
                     lmConnected = true;
                     // Filter chat models (exclude embeddings)
-                    lmModels = rawData
+                    const filtered = rawData
                         .filter(m => {
                             const id = (m.id || m.name || '').toLowerCase();
                             const type = (m.type || '').toLowerCase();
@@ -120,6 +120,16 @@ class WebviewIPCBridge {
                         })
                         .map(m => m.id || m.name)
                         .filter(Boolean);
+
+                    const seen = new Set();
+                    lmModels = [];
+                    for (const id of filtered) {
+                        const lower = id.toLowerCase();
+                        if (!seen.has(lower)) {
+                            seen.add(lower);
+                            lmModels.push(id);
+                        }
+                    }
 
                     // ONLY models with state === 'loaded' are considered loaded in memory
                     loadedModels = rawData
@@ -137,8 +147,16 @@ class WebviewIPCBridge {
                 } catch (e) {}
 
                 if ((!lmModels || lmModels.length === 0) && lmStudioCapabilities && Object.keys(lmStudioCapabilities).length > 0) {
-                    lmModels = Object.keys(lmStudioCapabilities);
-                    lmConnected = true;
+                    const seen = new Set();
+                    lmModels = [];
+                    for (const cap of Object.values(lmStudioCapabilities)) {
+                        const id = cap.displayName || cap.modelId;
+                        if (id && !seen.has(id.toLowerCase())) {
+                            seen.add(id.toLowerCase());
+                            lmModels.push(id);
+                        }
+                    }
+                    lmConnected = lmModels.length > 0;
                 }
 
                 const freeProvidersConfig = buildFreeProviders();

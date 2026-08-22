@@ -16,19 +16,27 @@ const APP_DIR = __dirname;
 const RENDERER_DIR = path.join(APP_DIR, 'src', 'renderer');
 const PROMPTS_DIR = path.join(APP_DIR, 'prompts');
 
-// Load compiled TypeScript modules
-let getRegisteredTools, TurnSnapshotManager, LMStudioClient, LMStudioManifestParser;
-try {
-    const toolsModule = require(path.join(APP_DIR, 'dist', 'main', 'tools', 'index.js'));
-    getRegisteredTools = toolsModule.getRegisteredTools;
-    const snapModule = require(path.join(APP_DIR, 'dist', 'main', 'services', 'TurnSnapshotManager.js'));
-    TurnSnapshotManager = snapModule.TurnSnapshotManager;
-    const clientModule = require(path.join(APP_DIR, 'dist', 'main', 'LMStudioClient.js'));
-    LMStudioClient = clientModule.LMStudioClient;
-    const parserModule = require(path.join(APP_DIR, 'dist', 'main', 'providers', 'LMStudioManifestParser.js'));
-    LMStudioManifestParser = parserModule.LMStudioManifestParser;
-} catch (e) {
-    console.error('[PreviewServer] Error importing compiled dist/ modules. Please run "npm run compile" first.', e);
+function loadFreshDistModules() {
+    try {
+        const distDir = path.join(APP_DIR, 'dist', 'main');
+        Object.keys(require.cache).forEach(cacheKey => {
+            if (cacheKey.startsWith(distDir)) {
+                delete require.cache[cacheKey];
+            }
+        });
+        const toolsModule = require(path.join(APP_DIR, 'dist', 'main', 'tools', 'index.js'));
+        const snapModule = require(path.join(APP_DIR, 'dist', 'main', 'services', 'TurnSnapshotManager.js'));
+        const clientModule = require(path.join(APP_DIR, 'dist', 'main', 'LMStudioClient.js'));
+        const parserModule = require(path.join(APP_DIR, 'dist', 'main', 'providers', 'LMStudioManifestParser.js'));
+        return {
+            getRegisteredTools: toolsModule.getRegisteredTools,
+            TurnSnapshotManager: snapModule.TurnSnapshotManager,
+            LMStudioClient: clientModule.LMStudioClient,
+            LMStudioManifestParser: parserModule.LMStudioManifestParser
+        };
+    } catch (e) {
+        return {};
+    }
 }
 
 const MIME_TYPES = {
@@ -70,6 +78,9 @@ function parseBody(req) {
 }
 
 const server = http.createServer(async (req, res) => {
+    // Dynamically load fresh compiled modules on every request (supports instant Ctrl+F5 hot reload)
+    const { getRegisteredTools, TurnSnapshotManager, LMStudioClient, LMStudioManifestParser } = loadFreshDistModules();
+
     // Enable CORS preflight
     if (req.method === 'OPTIONS') {
         res.writeHead(204, {
@@ -98,13 +109,30 @@ const server = http.createServer(async (req, res) => {
     if ((pathname === '/api/lmstudio/models' || pathname === '/api/models') && req.method === 'GET') {
         try {
             const client = new LMStudioClient();
-            const models = await client.getLoadedModels().catch(() => []);
-            const allModels = LMStudioManifestParser ? Object.keys(LMStudioManifestParser.parseModelCapabilities()) : [];
-            const combined = Array.from(new Set([...models, ...allModels]));
-            const data = combined.map(id => ({
+            const lmModels = await client.getLMStudioModels().catch(() => []);
+            const loadedModels = await client.getLoadedModels().catch(() => []);
+
+            let modelIds = lmModels;
+            if (modelIds.length === 0 && LMStudioManifestParser) {
+                const uniqueEntries = LMStudioManifestParser.getUniqueChatModels();
+                modelIds = uniqueEntries.map(e => e.id);
+            }
+
+            // Deduplicate case-insensitively
+            const seen = new Set();
+            const uniqueModels = [];
+            for (const id of modelIds) {
+                const lower = id.toLowerCase();
+                if (!seen.has(lower)) {
+                    seen.add(lower);
+                    uniqueModels.push(id);
+                }
+            }
+
+            const data = uniqueModels.map(id => ({
                 id: id,
                 name: id,
-                state: models.includes(id) ? 'loaded' : 'downloaded'
+                state: loadedModels.some(lm => lm.toLowerCase() === id.toLowerCase()) ? 'loaded' : 'downloaded'
             }));
             return sendJson(res, 200, { data });
         } catch (e) {
