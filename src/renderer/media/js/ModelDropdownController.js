@@ -723,11 +723,11 @@ class ModelDropdownController {
 
         let addedCategories = 0;
 
-        // 1. LM Studio local models - ONLY if connected with loaded models
-        const isLMConnected = Boolean(message.connected && lmStudioModels.length > 0);
-        if (isLMConnected) {
+        // 1. LM Studio local models
+        const hasLMModels = Boolean(lmStudioModels && lmStudioModels.length > 0);
+        if (hasLMModels) {
             const i18n = window.KAI_I18N || {};
-            const lmStudioStatus = i18n.connected || 'Connected';
+            const lmStudioStatus = message.connected ? (i18n.connected || 'Connected') : (i18n.disconnected || 'Local');
             const headerTitle = i18n.lmStudioHeader || 'LM Studio';
             const lmTitle = `${headerTitle} (${lmStudioStatus})`;
             const isExpanded = this.selectedModelValue && !this.selectedModelValue.toLowerCase().startsWith('gemini');

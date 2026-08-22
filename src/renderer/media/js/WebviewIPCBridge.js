@@ -128,12 +128,6 @@ class WebviewIPCBridge {
                         .filter(Boolean);
                 }
 
-                const freeProvidersConfig = buildFreeProviders();
-                const isGeminiConnected = !!apiKey.trim();
-                const activeModel = lmModels.length > 0
-                    ? (loadedModels.length > 0 ? loadedModels[0] : lmModels[0])
-                    : (isGeminiConnected ? defaultGemini[0] : 'local-model');
-
                 let lmStudioCapabilities = {};
                 try {
                     const capRes = await fetch('/api/capabilities');
@@ -141,6 +135,17 @@ class WebviewIPCBridge {
                         lmStudioCapabilities = await capRes.json();
                     }
                 } catch (e) {}
+
+                if ((!lmModels || lmModels.length === 0) && lmStudioCapabilities && Object.keys(lmStudioCapabilities).length > 0) {
+                    lmModels = Object.keys(lmStudioCapabilities);
+                    lmConnected = true;
+                }
+
+                const freeProvidersConfig = buildFreeProviders();
+                const isGeminiConnected = !!apiKey.trim();
+                const activeModel = lmModels.length > 0
+                    ? (loadedModels.length > 0 ? loadedModels[0] : lmModels[0])
+                    : (isGeminiConnected ? defaultGemini[0] : 'local-model');
 
                 const savedWs = message.workspacePath || localStorage.getItem('kai.workspacePath') || '';
                 emit({
@@ -535,8 +540,9 @@ class WebviewIPCBridge {
                             };
                         } else {
                             targetUrl = serverUrl.replace(/\/$/, '') + '/chat/completions';
+                            const cleanModel = (model || '').endsWith(' (thinking)') ? model.slice(0, -11) : model;
                             payload = {
-                                model: model,
+                                model: cleanModel,
                                 messages: messagesToSend.map(m => ({ role: m.role, content: m.content })),
                                 stream: true
                             };

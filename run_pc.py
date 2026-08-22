@@ -172,6 +172,41 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
             except Exception:
                 pass
 
+        # Fallback to lms CLI or capabilities cache if server not returning models
+        if not models_data:
+            lms_path = self._find_lms_cli()
+            if lms_path and lms_path.exists():
+                try:
+                    ls_res = subprocess.run([str(lms_path), "ls", "--json"], capture_output=True, text=True, timeout=3)
+                    if ls_res.returncode == 0:
+                        parsed_ls = json.loads(ls_res.stdout.strip() or "[]")
+                        if isinstance(parsed_ls, list) and len(parsed_ls) > 0:
+                            models_data = [
+                                {"id": m.get("modelKey") or m.get("identifier") or m.get("path"), "name": m.get("modelKey") or m.get("identifier") or m.get("name"), "state": "downloaded"}
+                                for m in parsed_ls if isinstance(m, dict)
+                            ]
+                except Exception:
+                    pass
+
+        if not models_data:
+            caps = get_lmstudio_capabilities()
+            if caps and isinstance(caps, dict):
+                models_data = [{"id": k, "name": k, "state": "downloaded"} for k in caps.keys()]
+
+        # Check for loaded models via lms ps
+        lms_path = self._find_lms_cli()
+        if lms_path and lms_path.exists():
+            try:
+                ps_res = subprocess.run([str(lms_path), "ps", "--json"], capture_output=True, text=True, timeout=2)
+                if ps_res.returncode == 0:
+                    loaded_list = json.loads(ps_res.stdout.strip() or "[]")
+                    loaded_keys = {m.get("modelKey") or m.get("identifier") or m.get("path") for m in loaded_list if isinstance(m, dict)}
+                    for item in models_data:
+                        if item.get("id") in loaded_keys or item.get("name") in loaded_keys:
+                            item["state"] = "loaded"
+            except Exception:
+                pass
+
         try:
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
@@ -183,41 +218,40 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
     def _handle_lmstudio_chat(self, raw_body):
         """Proxies chat completions requests from the browser to local LM Studio.
         Streams SSE token chunks back to the browser without triggering CORS errors."""
-        target_urls = [
-            "http://127.0.0.1:1234/v1/chat/completions",
-            "http://localhost:1234/v1/chat/completions",
-        ]
+        import http.client
+        hosts = [("127.0.0.1", 1234), ("localhost", 1234)]
         last_error = None
-        for target_url in target_urls:
+        for host, port in hosts:
+            conn = None
             try:
-                req = urllib.request.Request(
-                    target_url,
-                    data=raw_body,
-                    headers={"Content-Type": "application/json", "User-Agent": "KaiAgent/1.0"},
-                    method="POST"
-                )
-                with urllib.request.urlopen(req, timeout=120) as resp:
-                    self.send_response(resp.status)
-                    self.send_header("Content-Type", "text/event-stream; charset=utf-8")
-                    self.send_header("Cache-Control", "no-cache")
-                    self.send_header("Connection", "keep-alive")
-                    self.end_headers()
-                    while True:
-                        line = resp.readline()
-                        if not line:
-                            break
-                        self.wfile.write(line)
-                        self.wfile.flush()
-                    return
-            except urllib.error.HTTPError as e:
-                err_content = e.read().decode("utf-8", errors="replace") if hasattr(e, 'read') else str(e)
-                self.send_response(e.code)
-                self.send_header("Content-Type", "application/json")
+                conn = http.client.HTTPConnection(host, port, timeout=120)
+                conn.request("POST", "/v1/chat/completions", body=raw_body, headers={
+                    "Content-Type": "application/json",
+                    "User-Agent": "KaiAgent/1.0",
+                    "Accept": "text/event-stream"
+                })
+                resp = conn.getresponse()
+                self.send_response(resp.status)
+                self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+                self.send_header("Cache-Control", "no-cache")
+                self.send_header("Connection", "keep-alive")
                 self.end_headers()
-                self.wfile.write(err_content.encode("utf-8"))
+
+                while True:
+                    chunk = resp.read(128)
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
+                    self.wfile.flush()
+                conn.close()
                 return
             except Exception as e:
                 last_error = e
+                if conn:
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
 
         self.send_response(502)
         self.send_header("Content-Type", "application/json")
