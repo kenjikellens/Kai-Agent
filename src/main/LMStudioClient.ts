@@ -234,14 +234,15 @@ export class LMStudioClient implements ILLMProvider {
         return new Promise((resolve, reject) => {
             const { hostname, port, pathPrefix } = this.parseServerUrl();
             
+            const cleanModel = (model || '').endsWith(' (thinking)') ? model.slice(0, -11) : (model || 'local-model');
             const requestParams: any = {
-                model: model,
+                model: cleanModel,
                 messages: messages,
                 temperature: temperature,
                 stream: false
             };
 
-            this.applyThinkingParameters(requestParams, model, thinking, geminiThinkingLevel);
+            this.applyThinkingParameters(requestParams, cleanModel, thinking, geminiThinkingLevel);
 
             const payload = JSON.stringify(requestParams);
 
@@ -313,14 +314,15 @@ export class LMStudioClient implements ILLMProvider {
         return new Promise((resolve, reject) => {
             const { hostname, port, pathPrefix } = this.parseServerUrl();
             
+            const cleanModel = (model || '').endsWith(' (thinking)') ? model.slice(0, -11) : (model || 'local-model');
             const requestParams: any = {
-                model: model,
+                model: cleanModel,
                 messages: messages,
                 temperature: temperature,
                 stream: true
             };
 
-            this.applyThinkingParameters(requestParams, model, thinking, geminiThinkingLevel);
+            this.applyThinkingParameters(requestParams, cleanModel, thinking, geminiThinkingLevel);
 
             const payload = JSON.stringify(requestParams);
 

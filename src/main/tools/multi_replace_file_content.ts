@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import { Tool, ToolContext, FunctionDeclaration, resolveSafePath } from './Tool';
 import { FileReplacementHelper, ReplacementChunk } from './FileReplacementHelper';
+import { TurnSnapshotManager } from '../services/TurnSnapshotManager';
 
 /**
  * Tool for replacing multiple non-contiguous blocks of lines in a file.
@@ -67,6 +68,9 @@ export class MultiReplaceFileContentTool extends Tool {
         if (error) {
             return error;
         }
+
+        const turnId = context.turnId || 'default';
+        await TurnSnapshotManager.getInstance().recordBeforeMutation(turnId, targetPath);
 
         await fs.promises.writeFile(targetPath, lines.join('\n'), 'utf8');
         return `Successfully updated file: ${args.path} (${args.chunks.length} chunks applied)`;

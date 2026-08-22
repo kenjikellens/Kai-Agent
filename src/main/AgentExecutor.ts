@@ -58,9 +58,11 @@ export class AgentExecutor {
         planningMode: boolean = false,
         attachedFiles?: any[],
         maxContextTokens: number = 16000,
-        mode: 'chat' | 'agent' | 'planning' = 'agent'
+        mode: 'chat' | 'agent' | 'planning' = 'agent',
+        turnId?: string
     ): Promise<{ reply: string; messages: { role: string; content: string }[]; modifiedFiles: string[] }> {
         let messages: ContextMessage[] = [...chatHistory];
+        const activeTurnId = turnId || `turn-${Date.now()}`;
         this.contextManager = new ContextManager(maxContextTokens);
 
         // Dynamically instantiate registered tools matching the active mode and workspace state
@@ -278,7 +280,7 @@ export class AgentExecutor {
 
             let toolResult = '';
             try {
-                toolResult = await this.executeTool(toolCall.name, toolCall.args);
+                toolResult = await this.executeTool(toolCall.name, toolCall.args, activeTurnId);
             } catch (err: any) {
                 toolResult = `[Error executing tool ${toolCall.name}]: ${err.message || err}`;
             }
@@ -554,7 +556,7 @@ export class AgentExecutor {
     /**
      * Executes the requested tool polymorphically.
      */
-    private async executeTool(tool: string, args: any): Promise<string> {
+    private async executeTool(tool: string, args: any, turnId?: string): Promise<string> {
         const matchedTool = this.tools.find((t) => t.name === tool);
         if (!matchedTool) {
             throw new Error(`Unknown tool: ${tool}`);
@@ -562,7 +564,8 @@ export class AgentExecutor {
 
         let result = await matchedTool.execute(args, {
             workspacePath: this.workspacePath,
-            extensionPath: this.extensionPath
+            extensionPath: this.extensionPath,
+            turnId: turnId
         });
         const absoluteMaxBytes = 10000;
         if (Buffer.byteLength(result, 'utf8') > absoluteMaxBytes) {

@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import { Tool, ToolContext, FunctionDeclaration, resolveSafePath } from './Tool';
+import { TurnSnapshotManager } from '../services/TurnSnapshotManager';
 
 /**
  * Tool for deleting files or directories within the workspace.
@@ -64,6 +65,7 @@ export class DeleteItemTool extends Tool {
 
         const deleted: string[] = [];
         const errors: string[] = [];
+        const turnId = context.turnId || 'default';
 
         for (const relPath of targets) {
             try {
@@ -80,6 +82,7 @@ export class DeleteItemTool extends Tool {
                     continue;
                 }
 
+                await TurnSnapshotManager.getInstance().recordBeforeDeletion(turnId, targetPath);
                 await fs.promises.rm(targetPath, { recursive: true, force: true });
                 deleted.push(relPath);
             } catch (err: any) {

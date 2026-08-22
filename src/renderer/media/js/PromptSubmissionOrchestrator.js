@@ -114,14 +114,120 @@ class PromptSubmissionOrchestrator {
     }
 
     /**
-     * Edits a previously submitted user prompt and triggers a fresh generation.
-     * @param {HTMLElement} userRowElement Target row element.
+     * Edits a previously submitted user prompt in-place, truncates subsequent messages, and regenerates response.
+     * @param {HTMLElement} userRowElement Target user row DOM element.
      * @param {string} newText Edited prompt string.
      */
     async editPrompt(userRowElement, newText) {
         if (this.appState.isWaitingForResponse) return;
-        if (!newText || !newText.trim()) return;
+        if (!newText || !newText.trim() || !userRowElement) return;
 
-        await this.submitPrompt(newText);
+        const trimmedText = newText.trim();
+
+        // 1. Determine user turn index in chat container
+        const allUserRows = Array.from(this.chatUIController.chatContainer ? this.chatUIController.chatContainer.querySelectorAll('.user-message-row') : []);
+        const userIndex = allUserRows.indexOf(userRowElement);
+
+        // 2. Remove all DOM elements after this user message row
+        if (userRowElement.parentElement) {
+            while (userRowElement.nextElementSibling) {
+                userRowElement.nextElementSibling.remove();
+            }
+        }
+
+        // 3. Update the target user row DOM and close inline editor
+        userRowElement.dataset.rawPrompt = trimmedText;
+        const messageBubble = userRowElement.querySelector('.message.user-message');
+        const editBtn = userRowElement.querySelector('.edit-prompt-btn');
+        if (messageBubble) {
+            messageBubble.classList.remove('hidden');
+            const contentDiv = messageBubble.querySelector('.message-content');
+            if (contentDiv) {
+                contentDiv.innerHTML = this.chatUIController.formatter ? this.chatUIController.formatter.formatMarkdown(trimmedText) : trimmedText;
+            }
+        }
+        if (editBtn) editBtn.classList.remove('hidden');
+        const editor = userRowElement.querySelector('.inline-prompt-editor');
+        if (editor) editor.remove();
+        userRowElement.classList.remove('is-editing');
+
+        // 4. Truncate appState.messages to this user turn
+        let userCount = 0;
+        let targetMsgIdx = -1;
+        for (let i = 0; i < this.appState.messages.length; i++) {
+            if (this.appState.messages[i].role === 'user') {
+                if (userCount === userIndex) {
+                    targetMsgIdx = i;
+                    break;
+                }
+                userCount++;
+            }
+        }
+
+        if (targetMsgIdx !== -1) {
+            this.appState.messages[targetMsgIdx].content = trimmedText;
+            this.appState.messages = this.appState.messages.slice(0, targetMsgIdx + 1);
+        } else {
+            this.appState.messages.push({ role: 'user', content: trimmedText });
+        }
+
+        // 5. Truncate appState.uiEvents to this user turn
+        let userEventCount = 0;
+        let targetEventIdx = -1;
+        for (let i = 0; i < this.appState.uiEvents.length; i++) {
+            if (this.appState.uiEvents[i].type === 'user') {
+                if (userEventCount === userIndex) {
+                    targetEventIdx = i;
+                    break;
+                }
+                userEventCount++;
+            }
+        }
+
+        if (targetEventIdx !== -1) {
+            this.appState.uiEvents[targetEventIdx].text = trimmedText;
+            this.appState.uiEvents = this.appState.uiEvents.slice(0, targetEventIdx + 1);
+        } else {
+            this.appState.uiEvents.push({ type: 'user', text: trimmedText });
+        }
+
+        // 6. Rollback any file changes from this turn and subsequent truncated turns
+        if (this.ipcBridge && typeof this.ipcBridge.rollbackTurn === 'function') {
+            this.ipcBridge.rollbackTurn(this.appState.currentChatId || 'default');
+        }
+
+        // 7. Reset assistant stream and update UI state
+        this.chatUIController.resetAssistantStream();
+        this.chatUIController.setUiLoading(true, this.appState);
+
+        // 8. Persist updated session
+        if (this.sessionRepository) {
+            this.sessionRepository.saveSession({
+                id: this.appState.currentChatId,
+                title: this.appState.currentChatTitle || trimmedText.substring(0, 30),
+                timestamp: Date.now(),
+                messages: this.appState.messages,
+                uiEvents: this.appState.uiEvents,
+                model: this.appState.selectedModelValue,
+                mode: this.appState.activeMode,
+                workspacePath: this.appState.workspacePath || ''
+            });
+        }
+
+        // 8. Dispatch prompt with truncated conversation history
+        const modelDetails = this.modelDropdownController.getSelectedModelDetails();
+        const reasoningLevel = modelDetails.reasoningEffort || (this.settingsController ? this.settingsController.getGeminiThinkingLevel(modelDetails.model) : 'high');
+
+        this.ipcBridge.sendUserPrompt(
+            this.appState.messages,
+            modelDetails.model,
+            modelDetails.thinking,
+            reasoningLevel,
+            this.appState.activeMode === 'planning',
+            [],
+            this.appState.currentChatId,
+            this.appState.activeMode,
+            this.appState.workspacePath || ''
+        );
     }
 }

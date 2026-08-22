@@ -9,6 +9,7 @@ import { I18nManager } from './i18n';
 import { SessionStore } from './SessionStore';
 import { WorkspaceManager } from './WorkspaceManager';
 import { ConfigManager } from './ConfigManager';
+import { TurnSnapshotManager } from './services/TurnSnapshotManager';
 
 /**
  * AppHost coordinates bidirectional IPC messaging between the Electron Main process
@@ -171,11 +172,19 @@ export class AppHost {
             }
             case 'deleteChat': {
                 if (data.chatId) {
+                    TurnSnapshotManager.getInstance().clearTurn(data.chatId);
                     const updatedList = await this.sessionStore.deleteChat(data.chatId);
                     this.postMessage({
                         type: 'chatHistory',
                         chats: updatedList
                     });
+                }
+                break;
+            }
+            case 'rollbackTurn': {
+                if (data.turnIds || data.chatId) {
+                    const ids = data.turnIds || [data.chatId];
+                    await TurnSnapshotManager.getInstance().rollbackTurn(ids);
                 }
                 break;
             }

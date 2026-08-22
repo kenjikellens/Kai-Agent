@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import { Tool, ToolContext, FunctionDeclaration, resolveSafePath } from './Tool';
 import { FileReplacementHelper } from './FileReplacementHelper';
+import { TurnSnapshotManager } from '../services/TurnSnapshotManager';
 
 /**
  * Tool for replacing a single contiguous block of lines in a file.
@@ -60,6 +61,9 @@ export class ReplaceFileContentTool extends Tool {
         if (error) {
             return error;
         }
+
+        const turnId = context.turnId || 'default';
+        await TurnSnapshotManager.getInstance().recordBeforeMutation(turnId, targetPath);
 
         await fs.promises.writeFile(targetPath, lines.join('\n'), 'utf8');
         return `Successfully updated file: ${args.path} (lines ${args.startLine}-${args.endLine})`;

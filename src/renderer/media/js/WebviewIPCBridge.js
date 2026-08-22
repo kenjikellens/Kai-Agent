@@ -264,6 +264,16 @@ class WebviewIPCBridge {
                 } catch (e) {}
                 break;
             }
+            case 'rollbackTurn': {
+                try {
+                    await fetch('/api/tools/rollback', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ turnIds: message.turnIds || [message.chatId] })
+                    });
+                } catch (e) {}
+                break;
+            }
             case 'abort': {
                 if (this._activeAbortController) {
                     this._activeAbortController.abort();
@@ -1514,6 +1524,15 @@ class WebviewIPCBridge {
      */
     openFile(filePath) {
         this.postMessage({ type: 'openFile', filePath });
+    }
+
+    /**
+     * Triggers turn snapshot rollback for specified turn IDs or active chat.
+     * @param {string|Array<string>} turnIds Turn ID or list of turn IDs to rollback.
+     */
+    rollbackTurn(turnIds) {
+        const ids = Array.isArray(turnIds) ? turnIds : [turnIds];
+        this.postMessage({ type: 'rollbackTurn', turnIds: ids });
     }
 
     /**

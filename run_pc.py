@@ -50,6 +50,9 @@ def get_lmstudio_capabilities():
     return _capabilities_cache["data"] or {}
 
 
+_TURN_SNAPSHOTS = {}
+
+
 class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
     """Simple static HTTP handler serving the src/renderer directory with no-cache headers."""
 
@@ -601,6 +604,7 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
                         if target == workspace_path:
                             errors.append(f"Cannot delete workspace root: {p}")
                             continue
+                        self._record_file_snapshot(turn_id, "delete_item", p, target)
                         if os.path.isdir(target):
                             shutil.rmtree(target)
                             deleted.append(p)
@@ -630,6 +634,70 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
 
         except Exception as e:
             self._json_response(500, {"result": f"[Error executing {tool_name}]: {str(e)}"})
+
+    def _record_file_snapshot(self, turn_id, op_type, rel_path, abs_path):
+        """Records a snapshot of a file's state before mutation for turn rollback."""
+        if not turn_id or not abs_path:
+            return
+        global _TURN_SNAPSHOTS
+        if turn_id not in _TURN_SNAPSHOTS:
+            _TURN_SNAPSHOTS[turn_id] = []
+        
+        # Preserve original baseline if already captured in this turn
+        if any(s.get("path") == abs_path for s in _TURN_SNAPSHOTS[turn_id]):
+            return
+
+        if os.path.exists(abs_path) and os.path.isfile(abs_path):
+            try:
+                with open(abs_path, "r", encoding="utf-8", errors="replace") as f:
+                    content = f.read()
+                _TURN_SNAPSHOTS[turn_id].append({
+                    "type": "delete" if op_type == "delete_item" else "modify",
+                    "path": abs_path,
+                    "content": content
+                })
+            except Exception:
+                pass
+        elif not os.path.exists(abs_path):
+            _TURN_SNAPSHOTS[turn_id].append({
+                "type": "create",
+                "path": abs_path,
+                "content": None
+            })
+
+    def _handle_tool_rollback(self, raw_body):
+        """Rolls back file changes for given turn IDs in reverse order."""
+        try:
+            body = json.loads(raw_body) if raw_body else {}
+        except Exception:
+            body = {}
+        turn_ids = body.get("turnIds", [])
+        if isinstance(turn_ids, str):
+            turn_ids = [turn_ids]
+
+        reverted = []
+        global _TURN_SNAPSHOTS
+        for tid in reversed(turn_ids):
+            snaps = _TURN_SNAPSHOTS.pop(tid, [])
+            for snap in reversed(snaps):
+                target = snap.get("path")
+                snap_type = snap.get("type")
+                orig = snap.get("content")
+                try:
+                    if snap_type == "create":
+                        if os.path.exists(target):
+                            os.remove(target)
+                            reverted.append(target)
+                    elif snap_type in ("modify", "delete"):
+                        if orig is not None:
+                            os.makedirs(os.path.dirname(target), exist_ok=True)
+                            with open(target, "w", encoding="utf-8") as f:
+                                f.write(orig)
+                            reverted.append(target)
+                except Exception as e:
+                    print(f"[Rollback error on {target}]: {e}")
+
+        self._json_response(200, {"status": "ok", "reverted": list(set(reverted))})
 
     def _handle_workspace_pick(self):
         """Opens native OS folder picker dialog to select absolute workspace path."""

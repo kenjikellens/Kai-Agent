@@ -8,6 +8,8 @@ export interface ToolContext {
     workspacePath: string;
     /** The absolute path to the extension's root directory. */
     extensionPath?: string;
+    /** The unique ID of the active chat or execution turn. */
+    turnId?: string;
 }
 
 /**
