@@ -155,14 +155,12 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
         urls = [
             "http://127.0.0.1:1234/api/v0/models",
             "http://127.0.0.1:1234/v1/models",
-            "http://localhost:1234/api/v0/models",
-            "http://localhost:1234/v1/models",
         ]
         models_data = []
         for url in urls:
             try:
                 req = urllib.request.Request(url, headers={"User-Agent": "KaiAgent/1.0"})
-                with urllib.request.urlopen(req, timeout=2.5) as resp:
+                with urllib.request.urlopen(req, timeout=0.5) as resp:
                     if resp.status == 200:
                         data = json.loads(resp.read().decode("utf-8"))
                         if isinstance(data, dict) and "data" in data and isinstance(data["data"], list) and len(data["data"]) > 0:

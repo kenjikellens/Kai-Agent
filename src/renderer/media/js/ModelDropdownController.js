@@ -416,6 +416,7 @@ class ModelDropdownController {
         textSpan.textContent = itemData.label;
 
         textContainer.appendChild(textSpan);
+        item.appendChild(statusDotSpan);
         item.appendChild(textContainer);
 
         if (hasFlyout) {
@@ -642,8 +643,9 @@ class ModelDropdownController {
         if (!this.dropdownOptionsMenu) return;
         this.dropdownOptionsMenu.innerHTML = '';
 
-        const defaultGemini = KAI_CONSTANTS.DEFAULT_GEMINI_MODELS;
-        const defaultProviders = KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS || [];
+        const defaultGemini = KAI_CONSTANTS.DEFAULT_GEMINI_MODELS || [];
+        const defaultProviders = KAI_CONSTANTS.DEFAULT_PROVIDERS_WITH_MODELS || [];
+        const freeProviders = KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS || [];
 
         let addedAny = false;
 
@@ -654,19 +656,24 @@ class ModelDropdownController {
             addedAny = true;
         }
 
-        defaultProviders.forEach(p => {
+        freeProviders.forEach(p => {
             const key = (localStorage.getItem(`kai.${p.configKey}`) || '').trim();
             if (key) {
-                const isExpanded = this.selectedModelValue && p.models.includes(this.selectedModelValue);
-                const cleanName = p.name.replace(/\s*\([^)]*\)/g, '').trim();
-                this.createAccordionGroup(cleanName, p.models, isExpanded);
-                addedAny = true;
+                const matchedGroup = defaultProviders.find(dp => dp.name && dp.name.includes(p.name));
+                const models = matchedGroup ? matchedGroup.models : [];
+                if (models && models.length > 0) {
+                    const isExpanded = this.selectedModelValue && models.includes(this.selectedModelValue);
+                    const cleanName = p.name.replace(/\s*\([^)]*\)/g, '').trim();
+                    this.createAccordionGroup(cleanName, models, isExpanded);
+                    addedAny = true;
+                }
             }
         });
 
         // Check if a local LM Studio model is saved or available
         const savedModel = (localStorage.getItem('kai.selectedModel') || '').trim();
-        const isLocalSaved = savedModel && savedModel !== 'local-model' && !savedModel.toLowerCase().startsWith('gemini') && !defaultProviders.some(p => p.models.includes(savedModel));
+        const allCloudModels = defaultProviders.flatMap(p => p.models || []);
+        const isLocalSaved = savedModel && savedModel !== 'local-model' && !savedModel.toLowerCase().startsWith('gemini') && !allCloudModels.includes(savedModel);
         if (isLocalSaved) {
             const i18n = window.KAI_I18N || {};
             const headerTitle = i18n.lmStudioHeader || 'LM Studio';

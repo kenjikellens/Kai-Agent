@@ -84,7 +84,7 @@ class WebviewIPCBridge {
                 // Fast probe for raw model data via local backend proxy to eliminate CORS restrictions
                 const probeCandidate = async (url) => {
                     const controller = new AbortController();
-                    const timer = setTimeout(() => controller.abort(), 2500);
+                    const timer = setTimeout(() => controller.abort(), 5000);
                     try {
                         const res = await fetch(url, { method: 'GET', signal: controller.signal });
                         clearTimeout(timer);
