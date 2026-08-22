@@ -534,16 +534,6 @@ class WebviewIPCBridge {
                                 stream: true
                             };
                         } else {
-                            // Local LM Studio: ensure model is loaded into LM Studio on send
-                            if (iteration === 1 && model && model !== 'local-model') {
-                                try {
-                                    await fetch('/api/lmstudio/switch', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ model: model, unloadPrevious: true })
-                                    });
-                                } catch (e) {}
-                            }
                             targetUrl = serverUrl.replace(/\/$/, '') + '/chat/completions';
                             payload = {
                                 model: model,
@@ -827,7 +817,7 @@ class WebviewIPCBridge {
                                     }
                                 }
 
-                                const titleRes = await fetch(cleanUrl, {
+                                const titleRes = await fetch(targetUrl, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify(titlePayload)

@@ -331,10 +331,7 @@ export class LMStudioManifestParser {
                         }
                     }
 
-                    const nameStr = aliases.map(a => String(a).toLowerCase()).join(' ');
-                    const isPatternReasoning = ['qwen', 'ornith', 'deepseek', 'r1', 'qwq', 'gemma-4', 'thinking', 'reasoning', 'thought', 'glm-4'].some(k => nameStr.includes(k));
-
-                    if (hasGgufThinking || isPatternReasoning || isReasoning) {
+                    if (hasGgufThinking || isReasoning) {
                         isReasoning = true;
                         fields.push({
                             displayName: 'Enable Thinking',

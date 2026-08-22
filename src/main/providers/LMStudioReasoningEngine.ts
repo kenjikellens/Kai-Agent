@@ -53,42 +53,24 @@ export class LMStudioReasoningEngine {
 
     /**
      * Checks whether a model is capable of reasoning or thinking toggles.
+     * Evaluates user configuration profiles and custom overrides.
      * @param modelId Target model ID string.
      * @returns True if model supports reasoning parameters.
      */
     public static isThinkingCapable(modelId: string): boolean {
         if (!modelId) return false;
-        const lower = modelId.toLowerCase();
-
-        // Muse Glimmer has baked-in reasoning which cannot be toggled at parameter level
-        if (lower.includes('muse') || lower.includes('glimmer')) {
-            return false;
-        }
 
         const userProfiles = LMStudioReasoningEngine.getUserProfiles();
         if (userProfiles[modelId]) {
             return userProfiles[modelId].reasoningType !== 'none';
         }
 
-        // Qwen, GLM, Gemma, Mistral, DeepSeek, and generic thinking models
-        return (
-            lower.includes('qwen') ||
-            lower.includes('qwq') ||
-            lower.includes('glm') ||
-            lower.includes('gemma') ||
-            lower.includes('mistral') ||
-            lower.includes('codestral') ||
-            lower.includes('magistral') ||
-            lower.includes('ministral') ||
-            lower.includes('deepseek') ||
-            lower.includes('r1') ||
-            lower.includes('thinking') ||
-            lower.includes('reasoning')
-        );
+        return true;
     }
 
     /**
      * Applies dynamic thinking/reasoning parameters to the target HTTP request payload.
+     * Dispatches standardized thinking flags, chat template kwargs, and reasoning effort levels.
      * @param requestParams Target HTTP payload object.
      * @param modelId Target model ID string.
      * @param thinking Whether thinking phase is enabled.
@@ -120,81 +102,22 @@ export class LMStudioReasoningEngine {
             }
         }
 
-        // 2. Muse Glimmer (baked-in reasoning; output is parsed via stream transformer)
-        if (lower.includes('muse') || lower.includes('glimmer')) {
-            if (thinking) {
-                requestParams.thinking = true;
-            } else {
-                requestParams.thinking = false;
-                requestParams.reasoning_effort = 'none';
-                requestParams.reasoning = 'off';
-            }
-            return;
-        }
-
-        // 3. Qwen & GLM Architecture (e.g. Qwen 3.8 27B, Qwen 3.6, Qwen 3.5, Qwen 3 Coder, GLM 4.7 Flash, QwQ)
-        if (lower.includes('qwen') || lower.includes('glm') || lower.includes('qwq')) {
-            requestParams.reasoning_effort = thinking ? effortVal : 'none';
-            if (thinking) {
-                requestParams.thinking = true;
-                requestParams.enable_thinking = true;
-                requestParams.chat_template_kwargs = { enable_thinking: true };
-            } else {
-                requestParams.thinking = false;
-                requestParams.enable_thinking = false;
-                requestParams.chat_template_kwargs = { enable_thinking: false };
-            }
-            return;
-        }
-
-        // 4. Mistral & Codestral Architecture (e.g. Magistral, Codestral, Mistral Small 3)
-        if (lower.includes('mistral') || lower.includes('codestral') || lower.includes('magistral') || lower.includes('ministral')) {
-            if (thinking) {
-                requestParams.reasoning_effort = effortVal;
-            }
-            return;
-        }
-
-        // 5. Gemma & Bonsai Architecture (e.g. Gemma 4 E4B, Gemma 4 E2B, Gemma 4 12B/31B, Bonsai 27B)
-        if (lower.includes('gemma') || lower.includes('bonsai')) {
-            if (thinking) {
-                requestParams.thinking = true;
-                requestParams.enable_thinking = true;
-                requestParams.chat_template_kwargs = { enable_thinking: true };
-            } else {
-                requestParams.thinking = false;
-                requestParams.enable_thinking = false;
-                requestParams.chat_template_kwargs = { enable_thinking: false };
-                requestParams.reasoning_effort = 'none';
-            }
-            return;
-        }
-
-        // 6. DeepSeek-R1 and General Thinking Models (e.g. DeepSeek-R1 Distill)
-        if (lower.includes('deepseek') || lower.includes('r1') || lower.includes('thinking') || lower.includes('reasoning')) {
-            requestParams.reasoning_effort = effortVal;
-            if (thinking) {
-                requestParams.thinking = true;
-                requestParams.enable_thinking = true;
-                requestParams.chat_template_kwargs = { enable_thinking: true };
-            } else {
-                requestParams.thinking = false;
-                requestParams.enable_thinking = false;
-                requestParams.chat_template_kwargs = { enable_thinking: false };
-            }
-            return;
-        }
-
-        // 7. Generic Fallback for unspecified local models
+        // 2. Standardized softcoded reasoning parameter dispatch
         requestParams.reasoning_effort = effortVal;
         if (thinking) {
             requestParams.thinking = true;
             requestParams.enable_thinking = true;
-            requestParams.chat_template_kwargs = { enable_thinking: true };
+            requestParams.chat_template_kwargs = {
+                ...(requestParams.chat_template_kwargs || {}),
+                enable_thinking: true
+            };
         } else {
             requestParams.thinking = false;
             requestParams.enable_thinking = false;
-            requestParams.chat_template_kwargs = { enable_thinking: false };
+            requestParams.chat_template_kwargs = {
+                ...(requestParams.chat_template_kwargs || {}),
+                enable_thinking: false
+            };
         }
     }
 

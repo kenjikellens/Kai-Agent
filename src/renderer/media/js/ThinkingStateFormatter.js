@@ -134,24 +134,7 @@ class ThinkingStateFormatter {
             };
         }
 
-        // 4. Pattern fallback for reasoning/thinking local models (e.g. Ornith, Qwen, DeepSeek-R1, QwQ, Gemma-4)
-        const isPatternReasoning = ['qwen', 'ornith', 'deepseek', 'r1', 'qwq', 'gemma-4', 'thinking', 'reasoning', 'thought', 'glm-4'].some(k => lowerRaw.includes(k));
-        if (isPatternReasoning) {
-            const stored = localStorage.getItem(`kai.lmStudioThinking.${rawModel}`) ??
-                localStorage.getItem(`kai.lmStudioThinking.${lowerRaw}`) ??
-                localStorage.getItem(`kai.lmStudioThinking.${modelId}`);
-            return {
-                rawModel: rawModel,
-                hasThinkingToggle: true,
-                isThinkingOn: stored !== 'false',
-                hasReasoningEffort: false,
-                reasoningLevel: 'off',
-                effortOptions: [],
-                effortDisplayName: 'Reasoning Effort'
-            };
-        }
-
-        // 5. Standard non-thinking models (no fallback assumptions)
+        // 4. Standard non-thinking models (100% manifest-driven, no hardcoded fallbacks)
         return {
             rawModel: rawModel,
             hasThinkingToggle: false,

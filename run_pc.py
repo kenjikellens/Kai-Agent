@@ -221,7 +221,7 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
 
     def _handle_lmstudio_switch(self, raw_body):
         """Unloads prior LM Studio models and loads the selected model dynamically.
-        Affects active LM Studio memory state by calling the lms CLI tool."""
+        Affects active LM Studio memory state by calling the lms CLI tool in a background thread."""
         try:
             body = json.loads(raw_body) if raw_body else {}
         except Exception:
@@ -231,25 +231,27 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
         unload_previous = body.get("unloadPrevious", True)
         lms_path = self._find_lms_cli()
 
-        if lms_path and lms_path.exists():
-            if unload_previous:
-                try:
-                    subprocess.run(
-                        [str(lms_path), "unload", "--all"],
-                        capture_output=True,
-                        timeout=15
-                    )
-                except Exception:
-                    pass
-            if model and model != "local-model" and not model.lower().startswith("gemini"):
+        if lms_path and lms_path.exists() and model and model != "local-model" and not model.lower().startswith("gemini"):
+            def _do_switch():
+                if unload_previous:
+                    try:
+                        subprocess.run(
+                            [str(lms_path), "unload", "--all"],
+                            capture_output=True,
+                            timeout=15
+                        )
+                    except Exception:
+                        pass
                 try:
                     subprocess.run(
                         [str(lms_path), "load", model, "-y"],
                         capture_output=True,
-                        timeout=30
+                        timeout=45
                     )
                 except Exception:
                     pass
+
+            threading.Thread(target=_do_switch, daemon=True).start()
 
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
