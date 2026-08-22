@@ -12,8 +12,8 @@ This repository contains two core implementations of the KAI Agent ecosystem:
    - Frontend / Webview: `Kai-Agent-extension/code/media/` (HTML, CSS, JS).
 2. **`KAI Agent App/`**: Standalone Desktop Application.
    - Core / Renderer: `KAI Agent App/src/` (TypeScript, Electron Main & Preload).
-   - Python Local Preview Server: `KAI Agent App/run_pc.py` (launches `preview_server.js`).
-3. **`docs/`**: Shared documentation and reference configurations (`model_reference.json`, `overview.md`).
+   - Python Local Preview Server: `KAI Agent App/run_pc.py`.
+3. **`docs/`**: Shared documentation and reference configurations (`model_reference.json`).
 
 ---
 
@@ -24,8 +24,8 @@ This repository contains two core implementations of the KAI Agent ecosystem:
   - Compile extension changes: Run `npm run compile` within `Kai-Agent-extension/code`.
   - Sync to IDE extension folder: Execute `Kai-Agent-extension/update.bat`.
 - **Desktop App Preview**:
-  - Run via Electron: `npm run dev` / `npm start` in `KAI Agent App`.
-  - Run via Python preview: `python run_pc.py` in `KAI Agent App` (spawns `node preview_server.js`).
+  - Run via Electron: `npm run dev` in `KAI Agent App`.
+  - Run via Python preview: `python run_pc.py` in `KAI Agent App`.
 
 ---
 
@@ -42,26 +42,23 @@ This repository contains two core implementations of the KAI Agent ecosystem:
 
 ---
 
-## 4. LM Studio Reasoning / Thinking Toggles & Single-Model Rule
+## 4. LM Studio Reasoning / Thinking Toggles
 
-1. **Max 1 Loaded Model Rule**:
-   - Before completing with a local model, check active models in memory (`lms ps`).
-   - If a different model is loaded, automatically execute `lms unload --all` before loading the target model.
-   - If the requested model is already loaded, preserve it in VRAM without redundant reload.
+When implementing or modifying completions in `LMStudioClient.ts` (or equivalent provider logic), dynamically apply the exact model-specific thinking/reasoning parameters:
 
-2. **Gemma Models (`google/gemma-*`)**:
+1. **Gemma Models (`google/gemma-*`)**:
    - **Enable**: `"thinking": true`
    - **Disable**: `"thinking": false`, `"reasoning_effort": "none"`, `"reasoning": "off"`
 
-3. **Qwen & GLM Models (`qwen/*`, `glm/*`)**:
+2. **Qwen & GLM Models (`qwen/*`, `glm/*`)**:
    - **Enable**: `"thinking": true`, `"enable_thinking": true`, `"chat_template_kwargs": { "enable_thinking": true }`
    - **Disable**: `"thinking": false`, `"enable_thinking": false`, `"chat_template_kwargs": { "enable_thinking": false }`, `"reasoning_effort": "none"`, `"reasoning": "off"`
 
-4. **Mistral & Codestral Models (`mistral/*`, `codestral/*`)**:
+3. **Mistral & Codestral Models (`mistral/*`, `codestral/*`)**:
    - **Enable**: `"reasoning_effort": "high"`
    - **Disable**: `"reasoning_effort": "none"`
 
-5. **Muse Glimmer Models (`muse/*`, `*glimmer*`)**:
+4. **Muse Glimmer Models (`muse/*`, `*glimmer*`)**:
    - **Reasoning format**: Emits `to=self<|message|>[reasoning]<|eom|><|start|>assistant to=user<|message|>[content]`.
    - **Baked-in reasoning**: Cannot be toggled off; do not show a thinking toggle/flyout in the UI. Parse stream output automatically into `<think>...</think>` tags using `MuseGlimmerStreamParser`.
 
@@ -91,3 +88,19 @@ This repository contains two core implementations of the KAI Agent ecosystem:
   2. Desktop App: `KAI Agent App/.agents/AGENTS.md` and `KAI Agent App/docs/overview.md`
   3. Extension: `Kai-Agent-extension/.agents/AGENTS.md` and `Kai-Agent-extension/docs/overview.md`
 - Never leave any of the 3 instances outdated or out of sync.
+
+---
+
+## 8. Workspace UI Terminology: Sidebar vs. Header
+
+- **Sidebar is ONLY in the Desktop App (`KAI Agent App`)**: The Left Sidebar (containing `+ Nieuwe Chat`, chat history list, folder selection, and footer settings) exists ONLY in the Desktop App.
+- **The Extension (`Kai-Agent-extension`) has NO Sidebar**: The extension is hosted inside a VS Code webview panel and has ONLY a Header and Input Card dock. It does NOT have a sidebar.
+- **Mandate**: When the user refers to the "sidebar" or "sidebar buttons", this ALWAYS refers exclusively to the Desktop App (`KAI Agent App`) and NEVER to the Extension.
+
+---
+
+## 9. Design Independence & No Blind Copying
+
+- **Distinct UI & Layout Architectures**: The Desktop App and the VS Code Extension have fundamentally different design layouts, viewport constraints, and user experiences (e.g. permanent Desktop Sidebar with multi-chat list vs. compact Extension Webview panel with header navigation and view toggling).
+- **Strict Mandate**: Never blindly copy or duplicate UI components, CSS styles, or layout logic 1-to-1 between the Desktop App and the Extension without explicitly respecting and adapting to the dedicated architecture and design requirements of each specific project.
+
