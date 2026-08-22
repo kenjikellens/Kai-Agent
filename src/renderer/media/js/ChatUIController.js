@@ -1030,42 +1030,42 @@ class ChatUIController {
         this.clearChatContainer();
         this.resetAssistantStream();
 
-        if (uiEvents && uiEvents.length > 0) {
-            uiEvents.forEach(evt => {
-                if (evt.type === 'user') {
-                    this.appendMessage('user', evt.text);
-                } else if (evt.type === 'assistant') {
-                    this.appendMessage('assistant', evt.content, evt.mode, {
-                        model: evt.model,
-                        thinking: evt.thinking,
-                        isThinkingCapable: evt.isThinkingCapable,
-                        reasoningEffort: evt.reasoningEffort
-                    });
-                } else if (evt.type === 'file-summary') {
-                    this.appendMessage('file-summary', JSON.stringify(evt.files));
-                } else if (evt.type === 'tool') {
-                    const statusDiv = document.createElement('div');
-                    statusDiv.id = evt.toolId;
-                    statusDiv.className = `tool-status-row ${evt.state === 'error' ? 'errored' : (evt.state === 'success' ? 'completed' : 'in-progress')}`;
-                    statusDiv.innerHTML = this.getToolDescription(evt.tool, evt.fileName, evt.state === 'error' ? 'error' : 'success');
-                    if (evt.output) {
-                        const dropdownDiv = document.createElement('div');
-                        dropdownDiv.className = 'tool-result-dropdown hidden';
-                        dropdownDiv.innerHTML = `<pre><code>${this.formatter.escapeHtml(evt.output)}</code></pre>`;
-                        statusDiv.appendChild(dropdownDiv);
-                    }
-                    if (this.chatContainer) {
-                        this.chatContainer.appendChild(statusDiv);
-                    }
+        const eventsToRender = (uiEvents && uiEvents.length > 0) ? uiEvents : (messages || []).map(m => ({
+            type: m.role,
+            text: m.content,
+            content: m.content,
+            mode: m.mode
+        }));
+
+        eventsToRender.forEach(evt => {
+            if (evt.type === 'user' || evt.role === 'user') {
+                this.appendMessage('user', evt.text || evt.content || '');
+            } else if (evt.type === 'assistant' || evt.role === 'assistant') {
+                this.appendMessage('assistant', evt.content || evt.text || '', evt.mode, {
+                    model: evt.model,
+                    thinking: evt.thinking,
+                    isThinkingCapable: evt.isThinkingCapable,
+                    reasoningEffort: evt.reasoningEffort
+                });
+            } else if (evt.type === 'file-summary' || evt.role === 'file-summary') {
+                this.appendMessage('file-summary', typeof evt.files === 'string' ? evt.files : JSON.stringify(evt.files || evt.content || []));
+            } else if (evt.type === 'tool') {
+                const statusDiv = document.createElement('div');
+                statusDiv.id = evt.toolId;
+                statusDiv.className = `tool-status-row ${evt.state === 'error' ? 'errored' : (evt.state === 'success' ? 'completed' : 'in-progress')}`;
+                statusDiv.innerHTML = this.getToolDescription(evt.tool, evt.fileName, evt.state === 'error' ? 'error' : 'success');
+                if (evt.output) {
+                    const dropdownDiv = document.createElement('div');
+                    dropdownDiv.className = 'tool-result-dropdown hidden';
+                    dropdownDiv.innerHTML = `<pre><code>${this.formatter.escapeHtml(evt.output)}</code></pre>`;
+                    statusDiv.appendChild(dropdownDiv);
                 }
-            });
-        } else if (messages && messages.length > 0) {
-            messages.forEach(msg => {
-                if (msg.role === 'user' || msg.role === 'assistant' || msg.role === 'file-summary') {
-                    this.appendMessage(msg.role, msg.content, msg.mode);
+                if (this.chatContainer) {
+                    this.chatContainer.appendChild(statusDiv);
                 }
-            });
-        }
+            }
+        });
+
         this.scrollToBottom();
         if (this.mermaidRenderer && this.chatContainer) {
             this.mermaidRenderer.renderDiagrams(this.chatContainer);

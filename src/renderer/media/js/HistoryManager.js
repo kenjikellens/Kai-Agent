@@ -154,7 +154,10 @@ class HistoryManager {
                 }
             });
             
-            item.addEventListener('click', () => {
+            item.addEventListener('click', (e) => {
+                if (e.target && e.target.closest && e.target.closest('.history-item-delete-btn')) {
+                    return;
+                }
                 if (typeof isWaitingForResponse !== 'undefined' && isWaitingForResponse) {
                     this.ipcBridge.abort();
                 }

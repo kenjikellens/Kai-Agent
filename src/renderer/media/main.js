@@ -175,11 +175,12 @@
 
     // New Chat Click Handlers
     const handleNewChatClick = () => {
-        if (appState.messages.length > 0) {
+        if ((appState.messages && appState.messages.length > 0) || (appState.uiEvents && appState.uiEvents.length > 0)) {
             saveCurrentChat();
         }
         const newId = appState.generateChatId();
         window.location.hash = `session-${newId}`;
+        createNewChat(newId);
     };
 
     if (newChatBtn) {
@@ -216,7 +217,7 @@
      * Persists current active chat session to storage via SessionRepository.
      */
     function saveCurrentChat() {
-        if (!appState.messages || appState.messages.length === 0) {
+        if ((!appState.messages || appState.messages.length === 0) && (!appState.uiEvents || appState.uiEvents.length === 0)) {
             return;
         }
         const details = modelDropdownController.getSelectedModelDetails();
@@ -232,26 +233,18 @@
         if (appState.isWaitingForResponse) {
             ipcBridge.abort();
             chatUIController.setUiLoading(false, appState);
-            chatUIController.resetAssistantStream();
-            chatUIController.appendMessage('system', 'Generation stopped.');
             return;
         }
 
-        const text = messageInput ? messageInput.value.trim() : '';
-        if (!text && !appState.selectedCodeContext) {
+        const userPrompt = messageInput.value.trim();
+        if (!userPrompt && !appState.hasStagedAttachments()) {
             return;
         }
 
-        let userPrompt = '';
-        if (appState.selectedCodeContext) {
-            userPrompt += `Here is the selected code context from the editor:\n\`\`\`\n${appState.selectedCodeContext}\n\`\`\`\n\n`;
-        }
-        userPrompt += text;
+        messageInput.value = '';
+        autoResizeInput();
 
-        if (messageInput) {
-            messageInput.value = '';
-            autoResizeInput();
-        }
+        // Clear inline selected code context after sending
         appState.selectedCodeContext = '';
 
         promptOrchestrator.submitPrompt(userPrompt);
@@ -269,7 +262,14 @@
             helpModalController.close(false);
         }
 
-        if (appState.messages.length > 0 && appState.currentChatId && appState.currentChatId !== targetSessionId) {
+        // If clicking the currently active chat session, simply reveal the chat view
+        if (targetSessionId === appState.currentChatId) {
+            chatUIController.showView('chat');
+            historyManager.setActiveChatId(targetSessionId);
+            return;
+        }
+
+        if (appState.messages.length > 0 && appState.currentChatId) {
             saveCurrentChat();
         }
 
