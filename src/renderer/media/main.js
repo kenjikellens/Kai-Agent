@@ -478,7 +478,6 @@
      */
     const handleReply = (message) => {
         chatUIController.setUiLoading(false, appState);
-        appState.finalizeAssistantUiEvent();
 
         let forceThinkingCollapsed = null;
         let forcePlanExpanded = null;
@@ -509,7 +508,7 @@
             reasoningEffort: modelDetails.reasoningEffort
         };
 
-        if (chatUIController.currentAssistantMsgElement) {
+        if (chatUIController.currentAssistantMsgElement && chatUIController.chatContainer && chatUIController.chatContainer.contains(chatUIController.currentAssistantMsgElement)) {
             if (formatted.trim()) {
                 chatUIController.currentAssistantMsgElement.dataset.rawContent = replyContent;
                 chatUIController.currentAssistantMsgElement.dataset.mode = currentMode;
@@ -524,27 +523,18 @@
             chatUIController.appendMessage('assistant', replyContent, currentMode, meta);
         }
 
-        if (message.fullHistory) {
+        if (message.fullHistory && Array.isArray(message.fullHistory)) {
             appState.messages = message.fullHistory;
         } else {
-            appState.addMessage({ role: 'assistant', content: replyContent });
+            const lastMsg = appState.messages[appState.messages.length - 1];
+            if (lastMsg && lastMsg.role === 'assistant') {
+                lastMsg.content = replyContent;
+            } else {
+                appState.addMessage({ role: 'assistant', content: replyContent });
+            }
         }
 
-        const lastEvt = appState.uiEvents[appState.uiEvents.length - 1];
-        if (replyContent && lastEvt && lastEvt.type === 'assistant' && lastEvt.isStreaming) {
-            appState.updateOrAddAssistantUiEvent(replyContent, currentMode, meta);
-            appState.finalizeAssistantUiEvent();
-        } else if (replyContent) {
-            appState.addUiEvent({ 
-                type: 'assistant', 
-                content: replyContent, 
-                mode: currentMode,
-                model: meta.model,
-                thinking: meta.thinking,
-                isThinkingCapable: meta.isThinkingCapable,
-                reasoningEffort: meta.reasoningEffort
-            });
-        }
+        appState.finalizeAssistantUiEvent(replyContent, currentMode, meta);
 
         if (message.modifiedFiles && message.modifiedFiles.length > 0) {
             appState.addUiEvent({ type: 'file-summary', files: message.modifiedFiles });
@@ -565,7 +555,9 @@
     ipcBridge.on('replyError', (message) => {
         chatUIController.setUiLoading(false, appState);
         chatUIController.removeActivityStatus();
-        chatUIController.appendMessage('system', `Error: ${message.message}`);
+        const errText = `Error: ${message.message || message.error || 'Request failed'}`;
+        appState.addUiEvent({ type: 'system', content: errText });
+        chatUIController.appendMessage('system', errText);
         saveCurrentChat();
         chatUIController.resetAssistantStream();
     });

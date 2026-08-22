@@ -1027,10 +1027,20 @@ class ChatUIController {
      * @param {Array<object>} messages Fallback messages array.
      */
     renderUiEvents(uiEvents, messages) {
-        this.clearChatContainer();
+        if (this.chatContainer) {
+            this.chatContainer.innerHTML = '';
+        }
         this.resetAssistantStream();
 
-        const eventsToRender = (uiEvents && uiEvents.length > 0) ? uiEvents : (messages || []).map(m => ({
+        const hasUiEvents = Array.isArray(uiEvents) && uiEvents.length > 0;
+        const hasMessages = Array.isArray(messages) && messages.length > 0;
+
+        if (!hasUiEvents && !hasMessages) {
+            this.renderWelcomeHero();
+            return;
+        }
+
+        const eventsToRender = hasUiEvents ? uiEvents : messages.map(m => ({
             type: m.role,
             text: m.content,
             content: m.content,
@@ -1038,6 +1048,7 @@ class ChatUIController {
         }));
 
         eventsToRender.forEach(evt => {
+            if (!evt) return;
             if (evt.type === 'user' || evt.role === 'user') {
                 this.appendMessage('user', evt.text || evt.content || '');
             } else if (evt.type === 'assistant' || evt.role === 'assistant') {
@@ -1047,11 +1058,13 @@ class ChatUIController {
                     isThinkingCapable: evt.isThinkingCapable,
                     reasoningEffort: evt.reasoningEffort
                 });
+            } else if (evt.type === 'system') {
+                this.appendMessage('system', evt.content || evt.text || '');
             } else if (evt.type === 'file-summary' || evt.role === 'file-summary') {
                 this.appendMessage('file-summary', typeof evt.files === 'string' ? evt.files : JSON.stringify(evt.files || evt.content || []));
             } else if (evt.type === 'tool') {
                 const statusDiv = document.createElement('div');
-                statusDiv.id = evt.toolId;
+                if (evt.toolId) statusDiv.id = evt.toolId;
                 statusDiv.className = `tool-status-row ${evt.state === 'error' ? 'errored' : (evt.state === 'success' ? 'completed' : 'in-progress')}`;
                 statusDiv.innerHTML = this.getToolDescription(evt.tool, evt.fileName, evt.state === 'error' ? 'error' : 'success');
                 if (evt.output) {

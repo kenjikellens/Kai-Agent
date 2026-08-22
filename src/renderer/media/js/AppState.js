@@ -54,11 +54,13 @@ class AppState {
     /**
      * Updates or appends the current assistant response UI event payload.
      * @param {string} text Live assistant response text.
+     * @param {string} [mode] Current operational mode.
+     * @param {object} [meta] Metadata for model, thinking, and reasoning.
      */
     updateOrAddAssistantUiEvent(text, mode, meta = {}) {
         if (!text) return;
         const lastEvt = this.uiEvents[this.uiEvents.length - 1];
-        if (lastEvt && lastEvt.type === 'assistant' && lastEvt.isStreaming) {
+        if (lastEvt && lastEvt.type === 'assistant') {
             lastEvt.content = text;
             if (mode) lastEvt.mode = mode;
             if (meta.model) lastEvt.model = meta.model;
@@ -81,11 +83,30 @@ class AppState {
 
     /**
      * Finalizes streaming on the active assistant UI event.
+     * @param {string} [finalText] Optional final response text.
+     * @param {string} [mode] Current operational mode.
+     * @param {object} [meta] Metadata for model, thinking, and reasoning.
      */
-    finalizeAssistantUiEvent() {
+    finalizeAssistantUiEvent(finalText, mode, meta = {}) {
         const lastEvt = this.uiEvents[this.uiEvents.length - 1];
         if (lastEvt && lastEvt.type === 'assistant') {
             delete lastEvt.isStreaming;
+            if (finalText !== undefined && finalText !== null) lastEvt.content = finalText;
+            if (mode) lastEvt.mode = mode;
+            if (meta.model) lastEvt.model = meta.model;
+            if (meta.thinking !== undefined) lastEvt.thinking = meta.thinking;
+            if (meta.isThinkingCapable !== undefined) lastEvt.isThinkingCapable = meta.isThinkingCapable;
+            if (meta.reasoningEffort) lastEvt.reasoningEffort = meta.reasoningEffort;
+        } else if (finalText) {
+            this.uiEvents.push({
+                type: 'assistant',
+                content: finalText,
+                mode: mode || this.activeMode,
+                model: meta.model || this.selectedModelValue,
+                thinking: meta.thinking,
+                isThinkingCapable: meta.isThinkingCapable,
+                reasoningEffort: meta.reasoningEffort
+            });
         }
     }
 
@@ -105,8 +126,8 @@ class AppState {
         if (!chat) return;
         this.currentChatId = chat.id;
         this.currentChatTitle = chat.title || '';
-        this.messages = chat.messages || [];
-        this.uiEvents = chat.uiEvents || [];
+        this.messages = Array.isArray(chat.messages) ? JSON.parse(JSON.stringify(chat.messages)) : [];
+        this.uiEvents = Array.isArray(chat.uiEvents) ? JSON.parse(JSON.stringify(chat.uiEvents)) : [];
         if (chat.model) {
             this.selectedModelValue = chat.model;
         }
@@ -151,8 +172,8 @@ class AppState {
         return {
             id: this.currentChatId,
             title: this.currentChatTitle || this.getChatTitle(),
-            messages: this.messages,
-            uiEvents: this.uiEvents,
+            messages: JSON.parse(JSON.stringify(this.messages || [])),
+            uiEvents: JSON.parse(JSON.stringify(this.uiEvents || [])),
             model: this.selectedModelValue,
             mode: this.activeMode,
             workspacePath: this.workspacePath,
