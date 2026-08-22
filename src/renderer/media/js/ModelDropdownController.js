@@ -190,7 +190,7 @@ class ModelDropdownController {
 
         let isExpanded = this.accordionStates[title];
         if (isExpanded === undefined || isExpanded === null) {
-            isExpanded = isInitiallyExpanded;
+            isExpanded = isInitiallyExpanded !== undefined ? isInitiallyExpanded : true;
             this.accordionStates[title] = isExpanded;
         }
 
@@ -198,6 +198,7 @@ class ModelDropdownController {
             contentDiv.classList.add('collapsed');
             chevronSvg.style.transform = 'rotate(-90deg)';
         } else {
+            contentDiv.classList.remove('collapsed');
             chevronSvg.style.transform = 'rotate(0deg)';
         }
 
@@ -663,6 +664,16 @@ class ModelDropdownController {
             }
         });
 
+        // Check if a local LM Studio model is saved or available
+        const savedModel = (localStorage.getItem('kai.selectedModel') || '').trim();
+        const isLocalSaved = savedModel && savedModel !== 'local-model' && !savedModel.toLowerCase().startsWith('gemini') && !defaultProviders.some(p => p.models.includes(savedModel));
+        if (isLocalSaved) {
+            const i18n = window.KAI_I18N || {};
+            const headerTitle = i18n.lmStudioHeader || 'LM Studio';
+            this.createAccordionGroup(headerTitle, [savedModel], true, () => false, true);
+            addedAny = true;
+        }
+
         if (!addedAny) {
             const placeholder = document.createElement('div');
             placeholder.className = 'dropdown-item-placeholder';
@@ -677,25 +688,12 @@ class ModelDropdownController {
      * @param {object} message Connection status payload from extension host.
      */
     updateConnectionStatus(message) {
-        if (!this.dropdownOptionsMenu) return;
+        if (!this.dropdownOptionsMenu || !message) return;
+        console.log('[KAI Dropdown] updateConnectionStatus:', message.lmStudioModels?.length, 'LM models, connected:', message.connected);
 
         if (message.lmStudioCapabilities) {
             ThinkingStateFormatter.setLMStudioCapabilities(message.lmStudioCapabilities);
         }
-
-        const fingerprint = JSON.stringify({
-            c: message.connected,
-            lm: message.lmStudioModels,
-            gm: message.geminiModels,
-            ld: message.loadedModels,
-            caps: Object.keys(message.lmStudioCapabilities || {}).length,
-            ak: message.apiKey,
-            fp: (message.freeProviders || []).map(p => ({ k: p.configKey, has: !!p.apiKey }))
-        });
-        if (this._lastFingerprint && this._lastFingerprint === fingerprint) {
-            return;
-        }
-        this._lastFingerprint = fingerprint;
 
         const isModelConnected = (m) => {
             if (!m) return false;

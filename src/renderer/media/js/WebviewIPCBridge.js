@@ -345,12 +345,12 @@ class WebviewIPCBridge {
 
                 try {
                     const modelLower = (model || '').toLowerCase();
-                    const isGemini = modelLower.includes('gemini');
-                    const isMistral = !isGemini && (modelLower.includes('mistral') || modelLower.includes('codestral') || modelLower.includes('magistral')) && !modelLower.includes('gguf');
-                    const isZhipu = !isGemini && !isMistral && (modelLower.includes('zhipu') || modelLower.includes('glm')) && !modelLower.includes('gguf');
-                    const isCohere = !isGemini && !isMistral && !isZhipu && (modelLower.includes('cohere') || modelLower.includes('command-r')) && !modelLower.includes('gguf');
-                    const isCerebras = !isGemini && !isMistral && !isZhipu && !isCohere && modelLower.includes('cerebras') && !modelLower.includes('gguf');
-                    const isOmniRoute = !isGemini && !isMistral && !isZhipu && !isCohere && !isCerebras && modelLower.includes('omniroute');
+                    const isGemini = modelLower.startsWith('gemini');
+                    const isMistral = modelLower.startsWith('mistral/');
+                    const isZhipu = modelLower.startsWith('zhipu/');
+                    const isCohere = modelLower.startsWith('cohere/');
+                    const isCerebras = modelLower.startsWith('cerebras/');
+                    const isOmniRoute = modelLower.startsWith('omniroute/');
 
                     const effortVal = message.geminiThinkingLevel || 'high';
                     const caps = (typeof ThinkingStateFormatter !== 'undefined' && ThinkingStateFormatter._capabilities)
@@ -574,6 +574,7 @@ class WebviewIPCBridge {
                             }
                         }
 
+                        console.log(`[KAI IPC] Sending prompt iteration ${iteration} to ${targetUrl}`, payload);
                         if (abortController.signal.aborted) break;
 
                         let response;
@@ -585,6 +586,7 @@ class WebviewIPCBridge {
                                 signal: abortController.signal
                             });
                         } catch (fetchErr) {
+                            console.warn(`[KAI IPC] Direct fetch to ${targetUrl} failed (${fetchErr.message}). Trying proxy...`);
                             const isCloudProvider = isGemini || isMistral || isZhipu || isCohere || isCerebras || isOmniRoute;
                             if (!isCloudProvider) {
                                 // Fallback to same-origin Python proxy if browser blocked direct LM Studio fetch due to CORS or port access
@@ -595,6 +597,7 @@ class WebviewIPCBridge {
                                     signal: abortController.signal
                                 });
                             } else {
+                                console.error('[KAI IPC] Cloud provider fetch error:', fetchErr);
                                 throw fetchErr;
                             }
                         }
@@ -602,9 +605,11 @@ class WebviewIPCBridge {
                         if (!response.ok) {
                             const errBody = await response.text().catch(() => '');
                             const providerName = isGemini ? 'Google Gemini' : (isMistral ? 'Mistral AI' : 'LM Studio');
+                            console.error(`[KAI IPC] ${providerName} returned HTTP ${response.status}:`, errBody);
                             throw new Error(`${providerName} error (${response.status}): ${errBody || response.statusText}`);
                         }
 
+                        console.log(`[KAI IPC] Connected! Response status ${response.status}. Starting SSE stream reader...`);
                         // Stream the response tokens
                         const reader = response.body.getReader();
                         const decoder = new TextDecoder();

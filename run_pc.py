@@ -52,7 +52,6 @@ def get_lmstudio_capabilities():
 
 class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
     """Simple static HTTP handler serving the src/renderer directory with no-cache headers."""
-    protocol_version = "HTTP/1.1"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(RENDERER_DIR), **kwargs)
@@ -221,9 +220,17 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
         import http.client
         hosts = [("127.0.0.1", 1234), ("localhost", 1234)]
         last_error = None
+        print(f"\n[KAI Backend] Received chat request ({len(raw_body)} bytes)")
+        try:
+            parsed_body = json.loads(raw_body.decode('utf-8'))
+            print(f"[KAI Backend] Target model: {parsed_body.get('model')} | messages: {len(parsed_body.get('messages', []))}")
+        except Exception:
+            pass
+
         for host, port in hosts:
             conn = None
             try:
+                print(f"[KAI Backend] Connecting to LM Studio at {host}:{port}/v1/chat/completions ...")
                 conn = http.client.HTTPConnection(host, port, timeout=120)
                 conn.request("POST", "/v1/chat/completions", body=raw_body, headers={
                     "Content-Type": "application/json",
@@ -231,21 +238,26 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
                     "Accept": "text/event-stream"
                 })
                 resp = conn.getresponse()
+                print(f"[KAI Backend] LM Studio response status: {resp.status} {resp.reason}")
                 self.send_response(resp.status)
                 self.send_header("Content-Type", "text/event-stream; charset=utf-8")
                 self.send_header("Cache-Control", "no-cache")
                 self.send_header("Connection", "keep-alive")
                 self.end_headers()
 
+                token_count = 0
                 while True:
                     chunk = resp.read(128)
                     if not chunk:
                         break
+                    token_count += len(chunk)
                     self.wfile.write(chunk)
                     self.wfile.flush()
+                print(f"[KAI Backend] Stream completed successfully ({token_count} bytes streamed)")
                 conn.close()
                 return
             except Exception as e:
+                print(f"[KAI Backend] Error connecting to {host}:{port}: {e}")
                 last_error = e
                 if conn:
                     try:
@@ -253,6 +265,7 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
                     except Exception:
                         pass
 
+        print(f"[KAI Backend] 502 Proxy Error: {last_error}")
         self.send_response(502)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
