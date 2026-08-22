@@ -215,6 +215,67 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
         except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
             pass
 
+    @staticmethod
+    def _find_lms_cli():
+        """Locates the lms executable on Windows or POSIX."""
+        home = Path.home()
+        candidates = [
+            home / ".cache" / "lm-studio" / "bin" / ("lms.exe" if os.name == "nt" else "lms"),
+            home / ".lmstudio" / "bin" / ("lms.exe" if os.name == "nt" else "lms"),
+            home / "AppData" / "Local" / "LM-Studio" / "bin" / "lms.exe",
+        ]
+        for c in candidates:
+            if c.exists():
+                return c
+        import shutil
+        found = shutil.which("lms")
+        if found:
+            return Path(found)
+        return None
+
+    def _ensure_single_loaded_model(self, target_model):
+        """Enforces the strict rule: MAX 1 MODEL LOADED AT ALL TIMES.
+        If a different model is loaded in LM Studio, unloads all previous models first."""
+        if not target_model or target_model == "local-model":
+            return
+        clean_target = target_model.replace(" (thinking)", "").strip().lower()
+        lms_path = self._find_lms_cli()
+        if not lms_path:
+            return
+
+        try:
+            ps_res = subprocess.run([str(lms_path), "ps", "--json"], capture_output=True, text=True, timeout=3)
+            if ps_res.returncode == 0:
+                loaded_list = json.loads(ps_res.stdout.strip() or "[]")
+                if isinstance(loaded_list, list) and len(loaded_list) > 0:
+                    loaded_keys = [
+                        (m.get("modelKey") or m.get("identifier") or m.get("path") or "").lower()
+                        for m in loaded_list if isinstance(m, dict)
+                    ]
+                    is_sole_match = len(loaded_keys) == 1 and any(clean_target in k or k in clean_target for k in loaded_keys)
+                    if not is_sole_match:
+                        print(f"[KAI Backend] Enforcing MAX 1 model rule. Unloading {len(loaded_keys)} loaded models before sending to {target_model}...")
+                        subprocess.run([str(lms_path), "unload", "--all"], capture_output=True, text=True, timeout=10)
+        except Exception as e:
+            print(f"[KAI Backend] Model unload error: {e}")
+
+    def _handle_lmstudio_switch(self, raw_body):
+        """Switches loaded LM Studio model: unloads all previous models and loads new one."""
+        try:
+            body = json.loads(raw_body.decode('utf-8')) if raw_body else {}
+        except Exception:
+            body = {}
+        model_id = body.get("model", "")
+        if model_id:
+            self._ensure_single_loaded_model(model_id)
+            lms_path = self._find_lms_cli()
+            if lms_path:
+                try:
+                    subprocess.run([str(lms_path), "load", model_id, "-y"], capture_output=True, text=True, timeout=45)
+                except Exception:
+                    pass
+        self._json_response(200, {"status": "ok"})
+
     def _handle_lmstudio_chat(self, raw_body):
         """Proxies chat completions requests from the browser to local LM Studio.
         Streams SSE token chunks back to the browser without triggering CORS errors."""
@@ -224,7 +285,10 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
         print(f"\n[KAI Backend] Received chat request ({len(raw_body)} bytes)")
         try:
             parsed_body = json.loads(raw_body.decode('utf-8'))
-            print(f"[KAI Backend] Target model: {parsed_body.get('model')} | messages: {len(parsed_body.get('messages', []))}")
+            target_model = parsed_body.get('model')
+            print(f"[KAI Backend] Target model: {target_model} | messages: {len(parsed_body.get('messages', []))}")
+            if target_model:
+                self._ensure_single_loaded_model(target_model)
         except Exception:
             pass
 

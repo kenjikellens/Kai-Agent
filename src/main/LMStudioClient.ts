@@ -186,6 +186,35 @@ export class LMStudioClient implements ILLMProvider {
     }
 
     /**
+     * Enforces the strict rule: MAX 1 MODEL LOADED AT ALL TIMES in LM Studio.
+     * If multiple models or a different model is loaded in memory, unloads all previous models first.
+     */
+    public async ensureSingleLoadedModel(targetModel: string): Promise<void> {
+        if (!targetModel || targetModel === 'local-model' || targetModel.toLowerCase().startsWith('gemini')) {
+            return;
+        }
+        const isFreeProvider = this.freeProviderClient.resolveFreeProvider(targetModel);
+        if (isFreeProvider) return;
+
+        const cleanTarget = (targetModel.endsWith(' (thinking)') ? targetModel.slice(0, -11) : targetModel).toLowerCase();
+        try {
+            const loaded = await this.getLoadedModels();
+            const isSoleMatch = loaded.length === 1 && loaded.some(m => m.toLowerCase().includes(cleanTarget) || cleanTarget.includes(m.toLowerCase()));
+            if (!isSoleMatch && loaded.length > 0) {
+                const config = ConfigManager.getInstance().getConfig();
+                const customDir = config.lmStudioCacheDir || '';
+                const lmsPath = LMStudioManifestParser.resolveLmsExecutablePath(customDir);
+                const { exec } = require('child_process');
+                await new Promise<void>((resolve) => {
+                    exec(`"${lmsPath}" unload --all`, { timeout: 10000 }, () => resolve());
+                });
+            }
+        } catch {
+            // ignore
+        }
+    }
+
+    /**
      * Delegated method for getGeminiModels.
      */
     public async getGeminiModels(_apiKey?: string): Promise<string[]> {
@@ -231,10 +260,12 @@ export class LMStudioClient implements ILLMProvider {
             return this.freeProviderClient.chatCompletion(messages, model, temperature, signal, thinking, geminiThinkingLevel);
         }
 
+        const cleanModel = (model || '').endsWith(' (thinking)') ? model.slice(0, -11) : (model || 'local-model');
+        await this.ensureSingleLoadedModel(cleanModel);
+
         return new Promise((resolve, reject) => {
             const { hostname, port, pathPrefix } = this.parseServerUrl();
             
-            const cleanModel = (model || '').endsWith(' (thinking)') ? model.slice(0, -11) : (model || 'local-model');
             const requestParams: any = {
                 model: cleanModel,
                 messages: messages,
@@ -311,10 +342,12 @@ export class LMStudioClient implements ILLMProvider {
             return this.freeProviderClient.chatCompletionStream(messages, model, temperature, onToken, signal, thinking, geminiThinkingLevel);
         }
 
+        const cleanModel = (model || '').endsWith(' (thinking)') ? model.slice(0, -11) : (model || 'local-model');
+        await this.ensureSingleLoadedModel(cleanModel);
+
         return new Promise((resolve, reject) => {
             const { hostname, port, pathPrefix } = this.parseServerUrl();
             
-            const cleanModel = (model || '').endsWith(' (thinking)') ? model.slice(0, -11) : (model || 'local-model');
             const requestParams: any = {
                 model: cleanModel,
                 messages: messages,
