@@ -55,13 +55,27 @@ class AppState {
      * Updates or appends the current assistant response UI event payload.
      * @param {string} text Live assistant response text.
      */
-    updateOrAddAssistantUiEvent(text) {
+    updateOrAddAssistantUiEvent(text, mode, meta = {}) {
         if (!text) return;
         const lastEvt = this.uiEvents[this.uiEvents.length - 1];
         if (lastEvt && lastEvt.type === 'assistant' && lastEvt.isStreaming) {
             lastEvt.content = text;
+            if (mode) lastEvt.mode = mode;
+            if (meta.model) lastEvt.model = meta.model;
+            if (meta.thinking !== undefined) lastEvt.thinking = meta.thinking;
+            if (meta.isThinkingCapable !== undefined) lastEvt.isThinkingCapable = meta.isThinkingCapable;
+            if (meta.reasoningEffort) lastEvt.reasoningEffort = meta.reasoningEffort;
         } else {
-            this.uiEvents.push({ type: 'assistant', content: text, isStreaming: true });
+            this.uiEvents.push({
+                type: 'assistant',
+                content: text,
+                isStreaming: true,
+                mode: mode || this.activeMode,
+                model: meta.model || this.selectedModelValue,
+                thinking: meta.thinking,
+                isThinkingCapable: meta.isThinkingCapable,
+                reasoningEffort: meta.reasoningEffort
+            });
         }
     }
 

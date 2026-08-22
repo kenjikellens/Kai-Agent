@@ -712,7 +712,8 @@ class ModelDropdownController {
             }
             const freeProviders = message.freeProviders || [];
             for (const provider of freeProviders) {
-                if (provider.models.includes(bare)) {
+                const providerModels = Array.isArray(provider.models) ? provider.models : [];
+                if (providerModels.includes(bare)) {
                     const key = (localStorage.getItem(`kai.${provider.configKey}`) || '').trim();
                     return !!(provider.apiKey || key);
                 }
@@ -754,10 +755,11 @@ class ModelDropdownController {
         this.freeProvidersConfig = freeProviders;
         for (const provider of freeProviders) {
             const hasProviderKey = Boolean(provider.apiKey || (localStorage.getItem(`kai.${provider.configKey}`) || '').trim());
-            if (hasProviderKey) {
-                const isExpanded = this.selectedModelValue && provider.models.includes(this.selectedModelValue);
+            const providerModels = Array.isArray(provider.models) ? provider.models : [];
+            if (hasProviderKey && providerModels.length > 0) {
+                const isExpanded = this.selectedModelValue && providerModels.includes(this.selectedModelValue);
                 const cleanName = provider.name.replace(/\s*\([^)]*\)/g, '').trim();
-                this.createAccordionGroup(cleanName, provider.models, isExpanded, isModelConnected);
+                this.createAccordionGroup(cleanName, providerModels, isExpanded, isModelConnected);
                 addedCategories++;
             }
         }

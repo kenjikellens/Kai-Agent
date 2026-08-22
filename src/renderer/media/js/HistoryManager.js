@@ -21,7 +21,7 @@ class HistoryManager {
 
         // Instant render from localStorage cache on boot if available
         try {
-            const localSaved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
+            const localSaved = JSON.parse(localStorage.getItem('kai.savedChatsSummary') || '[]');
             if (localSaved.length > 0) {
                 this.renderHistoryList(localSaved.map(c => ({
                     id: c.id,
@@ -137,9 +137,9 @@ class HistoryManager {
                 const wasActive = (this.activeChatId === chatIdToDelete);
 
                 try {
-                    let localSaved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
+                    let localSaved = JSON.parse(localStorage.getItem('kai.savedChatsSummary') || '[]');
                     localSaved = localSaved.filter(c => c.id !== chatIdToDelete);
-                    localStorage.setItem('kai.savedChats', JSON.stringify(localSaved));
+                    localStorage.setItem('kai.savedChatsSummary', JSON.stringify(localSaved));
                     this.renderHistoryList(localSaved.map(c => ({
                         id: c.id,
                         title: c.title || 'New Chat',

@@ -94,11 +94,12 @@ export class SessionStore {
         if (!chat || !chat.id) {
             return;
         }
+        const previous = this.cache[chat.id];
         this.cache[chat.id] = {
             id: chat.id,
             title: chat.title || 'New Chat',
-            messages: chat.messages || [],
-            uiEvents: chat.uiEvents || [],
+            messages: Array.isArray(chat.messages) ? chat.messages : (previous?.messages || []),
+            uiEvents: Array.isArray(chat.uiEvents) ? chat.uiEvents : (previous?.uiEvents || []),
             model: chat.model || '',
             thinking: chat.thinking !== false,
             timestamp: chat.timestamp || Date.now()

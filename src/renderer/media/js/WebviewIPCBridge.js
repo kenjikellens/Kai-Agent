@@ -44,6 +44,34 @@ class WebviewIPCBridge {
                 this.listeners.get(data.type).forEach(cb => cb(data));
             }
         };
+        const fullSessionsKey = 'kai.savedFullSessions';
+        const legacySessionsKey = 'kai.savedChats';
+        const summaryKey = 'kai.savedChatsSummary';
+        const toSummary = (sessions) => sessions.map(chat => ({
+            id: chat.id,
+            title: chat.title || 'New Chat',
+            timestamp: chat.timestamp || Date.now()
+        }));
+        const readFullSessions = () => {
+            const storedRaw = localStorage.getItem(fullSessionsKey);
+            if (storedRaw !== null) {
+                const saved = JSON.parse(storedRaw);
+                return Array.isArray(saved) ? saved : [];
+            }
+            const legacy = JSON.parse(localStorage.getItem(legacySessionsKey) || '[]');
+            const completeLegacy = Array.isArray(legacy)
+                ? legacy.filter(chat => chat && chat.id &&
+                    (Array.isArray(chat.messages) || Array.isArray(chat.uiEvents)))
+                : [];
+            if (completeLegacy.length > 0) {
+                localStorage.setItem(fullSessionsKey, JSON.stringify(completeLegacy));
+            }
+            return completeLegacy;
+        };
+        const writeFullSessions = (sessions) => {
+            localStorage.setItem(fullSessionsKey, JSON.stringify(sessions));
+            localStorage.setItem(summaryKey, JSON.stringify(toSummary(sessions)));
+        };
 
         switch (message.type) {
             case 'checkConnection': {
@@ -233,18 +261,25 @@ class WebviewIPCBridge {
             case 'saveChat': {
                 try {
                     const chat = message.chat;
-                    if (chat && chat.messages && chat.messages.length > 0) {
-                        const saved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
+                    if (chat && chat.id && (Array.isArray(chat.messages) || Array.isArray(chat.uiEvents))) {
+                        const saved = readFullSessions();
                         const idx = saved.findIndex(c => c.id === chat.id);
+                        const previous = idx >= 0 ? saved[idx] : {};
+                        const completeChat = {
+                            ...previous,
+                            ...chat,
+                            messages: Array.isArray(chat.messages) ? chat.messages : (previous.messages || []),
+                            uiEvents: Array.isArray(chat.uiEvents) ? chat.uiEvents : (previous.uiEvents || [])
+                        };
                         if (idx !== -1) {
-                            saved[idx] = chat;
+                            saved[idx] = completeChat;
                         } else {
-                            saved.unshift(chat);
+                            saved.unshift(completeChat);
                         }
-                        localStorage.setItem('kai.savedChats', JSON.stringify(saved));
+                        writeFullSessions(saved);
                         emit({
                             type: 'chatHistory',
-                            chats: saved.map(c => ({ id: c.id, title: c.title || 'New Chat', timestamp: c.timestamp || Date.now() }))
+                            chats: toSummary(saved)
                         });
                     }
                 } catch (e) {}
@@ -252,10 +287,10 @@ class WebviewIPCBridge {
             }
             case 'loadChatHistory': {
                 try {
-                    const saved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
+                    const saved = readFullSessions();
                     emit({
                         type: 'chatHistory',
-                        chats: saved.map(c => ({ id: c.id, title: c.title || 'New Chat', timestamp: c.timestamp || Date.now() }))
+                        chats: toSummary(saved)
                     });
                 } catch (e) {
                     emit({ type: 'chatHistory', chats: [] });
@@ -264,7 +299,7 @@ class WebviewIPCBridge {
             }
             case 'loadChat': {
                 try {
-                    const saved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
+                    const saved = readFullSessions();
                     const found = saved.find(c => c.id === message.chatId);
                     if (found) emit({ type: 'loadChat', chat: found });
                 } catch (e) {}
@@ -272,12 +307,12 @@ class WebviewIPCBridge {
             }
             case 'deleteChat': {
                 try {
-                    let saved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
+                    let saved = readFullSessions();
                     saved = saved.filter(c => c.id !== message.chatId);
-                    localStorage.setItem('kai.savedChats', JSON.stringify(saved));
+                    writeFullSessions(saved);
                     emit({
                         type: 'chatHistory',
-                        chats: saved.map(c => ({ id: c.id, title: c.title || 'New Chat', timestamp: c.timestamp || Date.now() }))
+                        chats: toSummary(saved)
                     });
                 } catch (e) {}
                 break;
@@ -889,14 +924,14 @@ class WebviewIPCBridge {
                                                        .replace(/\s+/g, ' ')
                                                        .trim();
                                     if (rawTitle && rawTitle.length > 0 && rawTitle.length < 60) {
-                                        const savedChats = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
+                                        const savedChats = readFullSessions();
                                         const foundChat = (targetChatId ? savedChats.find(c => c.id === targetChatId) : null) || savedChats[0];
                                         if (foundChat) {
                                             foundChat.title = rawTitle;
-                                            localStorage.setItem('kai.savedChats', JSON.stringify(savedChats));
+                                            writeFullSessions(savedChats);
                                             emit({
                                                 type: 'chatHistory',
-                                                chats: savedChats.map(c => ({ id: c.id, title: c.title || 'New Chat', timestamp: c.timestamp || Date.now() }))
+                                                chats: toSummary(savedChats)
                                             });
                                             emit({
                                                 type: 'chatTitleUpdated',

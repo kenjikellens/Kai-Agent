@@ -448,7 +448,14 @@
             payload.progressType = payload.type;
         }
         chatUIController.handleAgentProgress(payload, appState);
-        sessionRepository.markDirty(appState.toChatPayload(modelDropdownController.getSelectedModelDetails().thinking));
+        const session = appState.toChatPayload(modelDropdownController.getSelectedModelDetails().thinking);
+        if (payload.progressType === 'tool_start' || payload.progressType === 'tool_end') {
+            // Tool cards are meaningful history records; commit them immediately
+            // instead of relying on the token-save debounce.
+            sessionRepository.saveSession(session);
+        } else {
+            sessionRepository.markDirty(session);
+        }
     };
 
     ipcBridge.on('agentProgress', handleAgentProgress);
@@ -524,7 +531,10 @@
         }
 
         const lastEvt = appState.uiEvents[appState.uiEvents.length - 1];
-        if (replyContent && (!lastEvt || lastEvt.type !== 'assistant')) {
+        if (replyContent && lastEvt && lastEvt.type === 'assistant' && lastEvt.isStreaming) {
+            appState.updateOrAddAssistantUiEvent(replyContent, currentMode, meta);
+            appState.finalizeAssistantUiEvent();
+        } else if (replyContent) {
             appState.addUiEvent({ 
                 type: 'assistant', 
                 content: replyContent, 
@@ -561,16 +571,23 @@
     });
 
     ipcBridge.on('loadChat', (message) => {
-        loadChatSession(message.chat);
+        if (message && message.chat) {
+            // Cache host-loaded records as complete sessions; this is distinct
+            // from the metadata-only chatHistory event.
+            sessionRepository.saveSession(message.chat);
+            loadChatSession(message.chat);
+        }
     });
 
     ipcBridge.on('chatHistory', (message) => {
-        if (message && message.chats) {
+        if (message && Array.isArray(message.chats)) {
             try {
-                localStorage.setItem('kai.savedChats', JSON.stringify(message.chats));
+                // The host deliberately sends sidebar metadata here. Store it
+                // independently so it can never overwrite full chat payloads.
+                localStorage.setItem('kai.savedChatsSummary', JSON.stringify(message.chats));
             } catch (e) {}
         }
-        historyManager.renderHistoryList(message.chats, appState.isWaitingForResponse);
+        historyManager.renderHistoryList((message && message.chats) || [], appState.isWaitingForResponse);
     });
 
     // Request initial chat history load after listeners are registered
