@@ -245,7 +245,45 @@ class MarkdownFormatter {
         // Closed code blocks
         escaped = escaped.replace(/```([a-zA-Z0-9_\-\+]*)[ \t]*\r?\n([\s\S]*?)```/g, (match, lang, rawCode) => {
             const languageLabel = (lang || 'code').trim().toLowerCase();
-            const highlighted = this.highlightSyntax(rawCode.replace(/\r?\n$/, ''), languageLabel);
+            const trimmedCode = rawCode.replace(/\r?\n$/, '');
+            const highlighted = this.highlightSyntax(trimmedCode, languageLabel);
+
+            if (languageLabel === 'mermaid') {
+                const blockHtml = `<div class="mermaid-diagram-card" data-raw-mermaid="${this.escapeHtml(trimmedCode.trim())}">` +
+                    `<div class="mermaid-card-header">` +
+                        `<div class="mermaid-header-left">` +
+                            `<div class="mermaid-tab-group">` +
+                                `<button type="button" class="mermaid-tab-btn active" data-tab="diagram">` +
+                                    `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>` +
+                                    `<span>Diagram</span>` +
+                                `</button>` +
+                                `<button type="button" class="mermaid-tab-btn" data-tab="code">` +
+                                    `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>` +
+                                    `<span>Code</span>` +
+                                `</button>` +
+                            `</div>` +
+                        `</div>` +
+                        `<div class="mermaid-header-actions">` +
+                            `<button type="button" class="copy-mermaid-code-btn" title="Copy Mermaid Code" aria-label="Copy Mermaid Code">${copyIconSvg}<span>Code</span></button>` +
+                            `<button type="button" class="copy-mermaid-svg-btn" title="Copy SVG" aria-label="Copy SVG"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>SVG</span></button>` +
+                            `<button type="button" class="download-mermaid-svg-btn" title="Download SVG" aria-label="Download SVG">${downloadIconSvg}</button>` +
+                        `</div>` +
+                    `</div>` +
+                    `<div class="mermaid-diagram-viewport">` +
+                        `<div class="mermaid-error-notice hidden"></div>` +
+                        `<div class="mermaid-svg-container" data-raw-code="${this.escapeHtml(trimmedCode.trim())}">` +
+                            `<div class="mermaid-loading-indicator"><span class="kai-spinner"></span> Rendering diagram...</div>` +
+                        `</div>` +
+                    `</div>` +
+                    `<div class="mermaid-source-viewport hidden">` +
+                        `<pre><code class="language-mermaid">${highlighted}</code></pre>` +
+                    `</div>` +
+                `</div>`;
+                const idx = codeBlocks.length;
+                codeBlocks.push(blockHtml);
+                return `\n%%CBLOCK${idx}%%\n`;
+            }
+
             const blockHtml = `<div class="code-block-wrapper"><div class="code-block-header"><span class="code-lang-label">${this.escapeHtml(languageLabel)}</span><div class="code-block-actions"><button type="button" class="copy-code-btn" title="Copy code" aria-label="Copy code">${copyIconSvg}</button><button type="button" class="download-code-btn" title="Download snippet" aria-label="Download snippet" data-lang="${this.escapeHtml(languageLabel)}">${downloadIconSvg}</button></div></div><pre><code class="language-${this.escapeHtml(languageLabel)}">${highlighted}</code></pre></div>`;
             const idx = codeBlocks.length;
             codeBlocks.push(blockHtml);

@@ -90,12 +90,7 @@ export class GeminiClient implements ILLMProvider {
             const modelParam = model || 'gemini-3.1-flash-lite';
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelParam}:generateContent?key=${apiKey}`;
 
-            const contents = messages
-                .filter(m => m.role !== 'system')
-                .map(m => ({
-                    role: m.role === 'assistant' ? 'model' : 'user',
-                    parts: [{ text: m.content }]
-                }));
+            const contents = this.toGeminiContents(messages as ChatMessage[]);
 
             const systemMsg = messages.find(m => m.role === 'system');
             const systemInstruction = systemMsg ? {
@@ -200,12 +195,7 @@ export class GeminiClient implements ILLMProvider {
             const modelParam = model || 'gemini-3.1-flash-lite';
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelParam}:streamGenerateContent?key=${apiKey}`;
 
-            const contents = messages
-                .filter(m => m.role !== 'system')
-                .map(m => ({
-                    role: m.role === 'assistant' ? 'model' : 'user',
-                    parts: [{ text: m.content }]
-                }));
+            const contents = this.toGeminiContents(messages as ChatMessage[]);
 
             const systemMsg = messages.find(m => m.role === 'system');
             const systemInstruction = systemMsg ? {
@@ -511,7 +501,7 @@ export class GeminiClient implements ILLMProvider {
     }
 
     private toGeminiContents(messages: ChatMessage[]): any[] {
-        return messages
+        const raw = messages
             .filter((message) => message.role !== 'system')
             .map((message) => {
                 if (message.role === 'assistant') {
@@ -529,7 +519,7 @@ export class GeminiClient implements ILLMProvider {
                             ...(toolCall.thoughtSignature ? { thoughtSignature: toolCall.thoughtSignature } : {})
                         });
                     }
-                    return { role: 'model', parts };
+                    return { role: 'model', parts: parts.length > 0 ? parts : [{ text: '' }] };
                 }
 
                 if (message.role === 'tool') {
@@ -545,8 +535,18 @@ export class GeminiClient implements ILLMProvider {
                     };
                 }
 
-                return { role: 'user', parts: [{ text: message.content }] };
+                return { role: 'user', parts: [{ text: message.content || '' }] };
             });
+
+        const collapsed: any[] = [];
+        for (const item of raw) {
+            if (collapsed.length > 0 && collapsed[collapsed.length - 1].role === item.role) {
+                collapsed[collapsed.length - 1].parts.push(...item.parts);
+            } else {
+                collapsed.push(item);
+            }
+        }
+        return collapsed;
     }
 
     private createGeminiHttpError(statusCode: number | undefined, responseBody: string): Error {

@@ -265,21 +265,23 @@ body {
   box-shadow: var(--app-btn-inset);
 }
 
-/* Sidebar Action Buttons (New Chat, Workspace Selector, Settings) */
+/* Sidebar Action Buttons (New Chat, Workspace Selector, Settings) - Matching input field pill buttons */
 .sidebar-action-btn,
 .sidebar-footer-btn {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
-  height: 36px;
-  padding: 0 10px;
-  border-radius: var(--app-radius-md);
-  background: transparent;
+  height: 32px;
+  min-height: 32px;
+  max-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--app-surface-strong);
   border: 0 !important;
   outline: none;
   color: var(--app-muted);
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   font-weight: 500;
   cursor: pointer;
   box-sizing: border-box;
@@ -323,7 +325,7 @@ body {
   flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
-  padding: 8px 8px 8px 8px;
+  padding: 8px;
   margin-top: 6px;
   border-top: 1px solid var(--app-border, rgba(255, 255, 255, 0.08));
   overflow: hidden;
@@ -343,27 +345,37 @@ body {
 .sidebar-history-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
 }
 
-/* Individual Chat History Row in Left Sidebar */
+/* Individual Chat History Row in Left Sidebar - Pill styling matching input field buttons */
 .history-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
-  padding: 8px 10px;
-  border-radius: var(--app-radius-md);
+  gap: 8px;
+  width: 100%;
+  height: 32px;
+  min-height: 32px;
+  max-height: 32px;
+  padding: 0 12px;
+  border: 0 !important;
+  outline: none;
+  border-radius: 999px;
+  background: transparent;
   color: var(--app-muted);
-  font-size: 0.85rem;
+  font-size: 0.86rem;
+  font-weight: 500;
   cursor: pointer;
   box-sizing: border-box;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  overflow: hidden;
+  white-space: nowrap;
   user-select: none;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .history-item:hover {
@@ -375,7 +387,12 @@ body {
 .history-item.active {
   background: var(--app-surface-strong);
   color: var(--app-fg);
-  font-weight: 600;
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.history-item.active:hover {
+  background: var(--app-surface-hover);
   box-shadow: var(--app-btn-inset);
 }
 
@@ -1243,6 +1260,182 @@ button:disabled {
 .copy-code-btn:hover {
   background: var(--app-surface-hover);
   color: var(--app-fg);
+}
+
+/* -------------------------------------------------------------
+   Mermaid Diagram Cards & Interactive Visualization Controls
+-------------------------------------------------------------- */
+
+/* Main outer container for rendered Mermaid diagrams */
+.mermaid-diagram-card {
+  margin: 10px 0;
+  background: var(--app-code-bg);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-lg, 8px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header bar containing diagram view tabs and action buttons */
+.mermaid-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background: var(--app-surface-strong);
+  border-bottom: 1px solid var(--app-border-subtle);
+  user-select: none;
+  gap: 8px;
+}
+
+/* Left container holding view switch tabs */
+.mermaid-header-left {
+  display: flex;
+  align-items: center;
+}
+
+/* Segmented tab group for toggling Diagram and Code views */
+.mermaid-tab-group {
+  display: inline-flex;
+  align-items: center;
+  background: var(--app-surface);
+  padding: 2px;
+  border-radius: var(--app-radius-md, 6px);
+  gap: 2px;
+}
+
+/* Individual tab button inside Mermaid card header */
+.mermaid-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--app-muted);
+  font-size: 0.72rem;
+  font-family: var(--app-font);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* Hover state for tab button */
+.mermaid-tab-btn:hover {
+  color: var(--app-fg);
+  background: var(--app-surface-hover);
+}
+
+/* Active selected state for tab button */
+.mermaid-tab-btn.active {
+  background: var(--app-surface-strong);
+  color: var(--app-fg);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Right action buttons container (Copy Code, Copy SVG, Download SVG) */
+.mermaid-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Action button for copying code or SVG */
+.copy-mermaid-code-btn,
+.copy-mermaid-svg-btn,
+.download-mermaid-svg-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: var(--app-muted);
+  font-size: 0.68rem;
+  font-family: var(--app-font);
+  cursor: pointer;
+  padding: 3px 6px;
+  border-radius: 4px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* Hover state for Mermaid action buttons */
+.copy-mermaid-code-btn:hover,
+.copy-mermaid-svg-btn:hover,
+.download-mermaid-svg-btn:hover {
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
+}
+
+/* Copied success feedback state */
+.copy-mermaid-code-btn.copied,
+.copy-mermaid-svg-btn.copied {
+  color: var(--main-success-color, #4ec9b0);
+}
+
+/* Viewport container holding the rendered diagram SVG */
+.mermaid-diagram-viewport {
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow-x: auto;
+  min-height: 80px;
+  background: var(--app-bg);
+}
+
+/* Inner SVG wrapper ensuring responsive diagram auto-scaling */
+.mermaid-svg-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Scaled SVG image inside viewport */
+.mermaid-svg-container svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Loading spinner indicator shown while diagram is compiling */
+.mermaid-loading-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--app-muted);
+  font-size: 0.78rem;
+  padding: 12px;
+}
+
+/* Error notice badge displayed when diagram syntax is invalid */
+.mermaid-error-notice {
+  padding: 8px 12px;
+  margin: 6px;
+  border-radius: var(--app-radius-sm, 4px);
+  background: var(--app-tool-error-bg, rgba(244, 71, 71, 0.15));
+  color: var(--main-danger-color, #f44747);
+  font-size: 0.76rem;
+  font-family: var(--app-mono);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Viewport for showing raw syntax highlighted Mermaid code */
+.mermaid-source-viewport {
+  padding: 0;
+  margin: 0;
+}
+
+.mermaid-source-viewport pre {
+  margin: 0;
+  padding: 8px 10px;
+  overflow-x: auto;
+  background: transparent;
 }
 
 .message-content pre {
@@ -3819,22 +4012,6 @@ button:disabled {
   border: none;
 }
 
-.history-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 10px;
-  gap: 8px;
-  border: 0 !important;
-  border-radius: var(--app-radius-md);
-  background: transparent;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.history-item:hover {
-  background: var(--app-surface-hover);
-}
 
 .history-item-content {
   display: flex;

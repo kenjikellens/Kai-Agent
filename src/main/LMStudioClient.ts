@@ -196,11 +196,13 @@ export class LMStudioClient implements ILLMProvider {
         const isFreeProvider = this.freeProviderClient.resolveFreeProvider(targetModel);
         if (isFreeProvider) return;
 
-        const cleanTarget = (targetModel.endsWith(' (thinking)') ? targetModel.slice(0, -11) : targetModel).toLowerCase();
+        const cleanTarget = (targetModel.endsWith(' (thinking)') ? targetModel.slice(0, -11) : targetModel).toLowerCase().trim();
+        if (!cleanTarget || cleanTarget === 'local-model') return;
+
         try {
             const loaded = await this.getLoadedModels();
-            const isSoleMatch = loaded.length === 1 && loaded.some(m => m.toLowerCase().includes(cleanTarget) || cleanTarget.includes(m.toLowerCase()));
-            if (!isSoleMatch && loaded.length > 0) {
+            const isMatch = loaded.some(m => m.toLowerCase().includes(cleanTarget) || cleanTarget.includes(m.toLowerCase()));
+            if (!isMatch && loaded.length > 0) {
                 const config = ConfigManager.getInstance().getConfig();
                 const customDir = config.lmStudioCacheDir || '';
                 const lmsPath = LMStudioManifestParser.resolveLmsExecutablePath(customDir);

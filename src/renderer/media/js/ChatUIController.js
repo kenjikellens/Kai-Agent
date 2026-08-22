@@ -11,14 +11,16 @@ class ChatUIController {
      * @param {SettingsController} settingsController Settings controller instance.
      * @param {HelpModalController} [helpModalController] Help modal controller instance.
      * @param {ModelDropdownController} [modelDropdownController] Model dropdown controller instance.
+     * @param {MermaidRenderer} [mermaidRenderer] Mermaid renderer instance.
      */
-    constructor(formatter, ipcBridge, fileSummaryWidget, settingsController, helpModalController, modelDropdownController) {
+    constructor(formatter, ipcBridge, fileSummaryWidget, settingsController, helpModalController, modelDropdownController, mermaidRenderer = null) {
         this.formatter = formatter;
         this.ipcBridge = ipcBridge;
         this.fileSummaryWidget = fileSummaryWidget;
         this.settingsController = settingsController;
         this.helpModalController = helpModalController;
         this.modelDropdownController = modelDropdownController;
+        this.mermaidRenderer = mermaidRenderer;
 
         this.chatContainer = document.getElementById('chat-container');
         this.messageInput = document.getElementById('message-input');
@@ -201,6 +203,47 @@ class ChatUIController {
                                 copyRespBtn.classList.remove('copied');
                             }, 1600);
                         });
+                    }
+                    return;
+                }
+
+                // 8a. Mermaid diagram tabs switching (Diagram vs Code view)
+                const mermaidTabBtn = e.target.closest('.mermaid-tab-btn');
+                if (mermaidTabBtn) {
+                    const card = mermaidTabBtn.closest('.mermaid-diagram-card');
+                    const tabName = mermaidTabBtn.dataset.tab;
+                    if (card && tabName && this.mermaidRenderer) {
+                        this.mermaidRenderer.setActiveTab(card, tabName);
+                    }
+                    return;
+                }
+
+                // 8a2. Copy Mermaid code button
+                const copyMermaidCodeBtn = e.target.closest('.copy-mermaid-code-btn');
+                if (copyMermaidCodeBtn) {
+                    const card = copyMermaidCodeBtn.closest('.mermaid-diagram-card');
+                    if (card && this.mermaidRenderer) {
+                        this.mermaidRenderer.copyMermaidCode(card, copyMermaidCodeBtn);
+                    }
+                    return;
+                }
+
+                // 8a3. Copy Mermaid rendered SVG button
+                const copyMermaidSvgBtn = e.target.closest('.copy-mermaid-svg-btn');
+                if (copyMermaidSvgBtn) {
+                    const card = copyMermaidSvgBtn.closest('.mermaid-diagram-card');
+                    if (card && this.mermaidRenderer) {
+                        this.mermaidRenderer.copyMermaidSvg(card, copyMermaidSvgBtn);
+                    }
+                    return;
+                }
+
+                // 8a4. Download Mermaid rendered SVG button
+                const downloadMermaidSvgBtn = e.target.closest('.download-mermaid-svg-btn');
+                if (downloadMermaidSvgBtn) {
+                    const card = downloadMermaidSvgBtn.closest('.mermaid-diagram-card');
+                    if (card && this.mermaidRenderer) {
+                        this.mermaidRenderer.downloadMermaidSvg(card);
                     }
                     return;
                 }
@@ -589,6 +632,9 @@ class ChatUIController {
         if (this.chatContainer) {
             this.chatContainer.appendChild(messageDiv);
             this.scrollToBottom();
+            if (this.mermaidRenderer) {
+                this.mermaidRenderer.renderDiagrams(this.chatContainer);
+            }
         }
     }
 
@@ -1021,6 +1067,9 @@ class ChatUIController {
             });
         }
         this.scrollToBottom();
+        if (this.mermaidRenderer && this.chatContainer) {
+            this.mermaidRenderer.renderDiagrams(this.chatContainer);
+        }
     }
 
     /**

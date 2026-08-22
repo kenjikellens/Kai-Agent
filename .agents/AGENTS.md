@@ -79,5 +79,16 @@ This repository contains two core implementations of the KAI Agent ecosystem:
 
 ## 6. Python Preview (`run_pc.py`) vs JavaScript / TypeScript Architecture
 
-- **`run_pc.py` is ONLY a Launcher**: Its sole responsibility is starting `node preview_server.js` and opening the browser.
-- **NEVER put core application logic in Python**: All model switching rules, single-model enforcement, tool execution, session management, and prompt workflows MUST be implemented in JavaScript / TypeScript (`src/renderer/` and `src/main/`). This ensures 100% full parity with the Electron standalone desktop application (EXE) and the VS Code extension.
+- **`run_pc.py` is ONLY a Static Server & CORS Proxy**: Its sole responsibility is serving `index.html`, static assets (`src/renderer`), and forwarding requests when necessary to bypass browser CORS.
+- **NEVER put core application logic in Python**: All model switching rules, single-model enforcement, tool execution, session management, and prompt workflows MUST be implemented in JavaScript / TypeScript (`src/renderer/` and `src/main/`). This ensures full compatibility with the Electron standalone desktop application (EXE) and the VS Code extension.
+
+---
+
+## 7. Documentation & Architecture Sync Mandate
+
+- **Triple-File Synchronization**: Whenever architecture, UI components, runtime features, or system design guidelines are modified, the agent MUST always update and synchronize all 3 `AGENTS.md` and all 3 `overview.md` files in lockstep:
+  1. Root workspace: `.agents/AGENTS.md` and `.agents/overview.md`
+  2. Desktop App: `KAI Agent App/.agents/AGENTS.md` and `KAI Agent App/docs/overview.md`
+  3. Extension: `Kai-Agent-extension/.agents/AGENTS.md` and `Kai-Agent-extension/docs/overview.md`
+- Never leave any of the 3 instances outdated or out of sync.
+

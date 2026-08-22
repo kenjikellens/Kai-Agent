@@ -60,8 +60,10 @@ class PromptSubmissionOrchestrator {
         const modelDetails = this.modelDropdownController.getSelectedModelDetails();
         const reasoningLevel = modelDetails.reasoningEffort || (this.settingsController ? this.settingsController.getGeminiThinkingLevel(modelDetails.model) : 'high');
 
+        const cleanMessages = (this.appState.messages || []).filter(m => m && (m.role === 'user' || m.role === 'assistant' || m.role === 'system') && m.content !== undefined);
+
         this.ipcBridge.sendUserPrompt(
-            this.appState.messages,
+            cleanMessages,
             modelDetails.model,
             modelDetails.thinking,
             reasoningLevel,

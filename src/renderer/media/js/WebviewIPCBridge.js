@@ -419,12 +419,24 @@ class WebviewIPCBridge {
                             }
                             targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${encodeURIComponent(geminiKey)}`;
 
-                            const contents = messagesToSend
+                            const rawContents = messagesToSend
                                 .filter(m => m.role !== 'system')
                                 .map(m => ({
                                     role: m.role === 'assistant' ? 'model' : 'user',
-                                    parts: [{ text: m.content }]
+                                    parts: [{ text: m.content || '' }]
                                 }));
+
+                            const contents = [];
+                            for (const item of rawContents) {
+                                if (contents.length > 0 && contents[contents.length - 1].role === item.role) {
+                                    contents[contents.length - 1].parts[0].text += `\n\n${item.parts[0].text}`;
+                                } else {
+                                    contents.push({
+                                        role: item.role,
+                                        parts: [{ text: item.parts[0].text }]
+                                    });
+                                }
+                            }
 
                             const isGemini3 = modelLower.includes('gemini-3');
                             const geminiEffort = message.geminiThinkingLevel || localStorage.getItem(`kai.geminiThinkingLevel.${model}`) || localStorage.getItem('kai.geminiThinkingLevel') || 'high';
@@ -814,6 +826,10 @@ class WebviewIPCBridge {
 
                     if (abortController.signal.aborted) {
                         return;
+                    }
+
+                    if (lastFullText) {
+                        messagesToSend.push({ role: 'assistant', content: lastFullText });
                     }
 
                     // Emit the final reply along with full conversation history including tool results

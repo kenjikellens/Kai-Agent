@@ -28,7 +28,8 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "@vscode/codicons": "^0.0.45"
+    "@vscode/codicons": "^0.0.45",
+    "mermaid": "^11.17.0"
   },
   "build": {
     "appId": "com.kaiagent.app",
