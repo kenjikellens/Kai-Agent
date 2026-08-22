@@ -162,7 +162,6 @@ class HistoryManager {
                     this.ipcBridge.abort();
                 }
                 this.setActiveChatId(chat.id);
-                window.location.hash = 'session-' + chat.id;
                 if (typeof this.onSelectChat === 'function') {
                     this.onSelectChat(chat.id);
                 } else {

@@ -158,6 +158,7 @@
             appState.currentChatId = newSessionId;
         }
         localStorage.setItem('kai.activeChatId', appState.currentChatId);
+        window.location.hash = `session-${appState.currentChatId}`;
         updateWorkspaceUi('');
         historyManager.setActiveChatId(appState.currentChatId);
         chatUIController.clearChatContainer();
@@ -179,7 +180,6 @@
             saveCurrentChat();
         }
         const newId = appState.generateChatId();
-        window.location.hash = `session-${newId}`;
         createNewChat(newId);
     };
 
@@ -191,13 +191,11 @@
     historyManager.onDeleteActiveChat = (deletedChatId) => {
         if (appState.currentChatId === deletedChatId) {
             const newId = appState.generateChatId();
-            window.location.hash = `session-${newId}`;
             createNewChat(newId);
         }
     };
     historyManager.onActiveChatDeleted = () => {
         const newId = appState.generateChatId();
-        window.location.hash = `session-${newId}`;
         createNewChat(newId);
     };
 
@@ -276,11 +274,13 @@
         const cached = sessionRepository.getSession(targetSessionId);
         if (cached) {
             loadChatSession(cached);
+            window.location.hash = `session-${targetSessionId}`;
             return;
         }
 
         const isExistingChat = historyManager.cachedChats && historyManager.cachedChats.some(c => c.id === targetSessionId);
         if (isExistingChat) {
+            window.location.hash = `session-${targetSessionId}`;
             ipcBridge.loadChat(targetSessionId);
         } else {
             createNewChat(targetSessionId);
@@ -594,6 +594,10 @@
             }
         },
         onSessionRoute: (sessionId) => {
+            if (sessionId && sessionId === appState.currentChatId) {
+                chatUIController.showView('chat');
+                return;
+            }
             openSessionById(sessionId);
         },
         onDefaultRoute: () => {

@@ -91,4 +91,3 @@ This repository contains two core implementations of the KAI Agent ecosystem:
   2. Desktop App: `KAI Agent App/.agents/AGENTS.md` and `KAI Agent App/docs/overview.md`
   3. Extension: `Kai-Agent-extension/.agents/AGENTS.md` and `Kai-Agent-extension/docs/overview.md`
 - Never leave any of the 3 instances outdated or out of sync.
-
