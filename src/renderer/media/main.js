@@ -21,12 +21,6 @@
         saveCurrentChat();
     }, ipcBridge);
 
-    const historyManager = new HistoryManager(
-        ipcBridge,
-        (viewName) => { chatUIController.showView(viewName); },
-        (chatId) => { openSessionById(chatId); }
-    );
-
     const chatUIController = new ChatUIController(
         formatter,
         ipcBridge,
@@ -35,6 +29,17 @@
         helpModalController,
         modelDropdownController,
         mermaidRenderer
+    );
+    window.chatUIController = chatUIController;
+
+    const historyManager = new HistoryManager(
+        ipcBridge,
+        (viewName) => {
+            if (chatUIController && typeof chatUIController.showView === 'function') {
+                chatUIController.showView(viewName);
+            }
+        },
+        (chatId) => { openSessionById(chatId); }
     );
 
     // 3. Mode Manager (4 modes in Desktop App: chat, ask, agent, planning)

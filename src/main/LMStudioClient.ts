@@ -104,16 +104,36 @@ export class LMStudioClient implements ILLMProvider {
         const probePromises = uniqueUrls.map(url => HttpClient.getJson<{ data: any[] }>(url, {}, 800));
         const results = await Promise.allSettled(probePromises);
 
+        const allDiscoveredIds: string[] = [];
         for (const res of results) {
             if (res.status === 'fulfilled' && res.value && Array.isArray(res.value.data) && res.value.data.length > 0) {
                 const allIds = res.value.data.map((m: any) => m.id || m.name).filter(Boolean);
-                const filtered = LMStudioReasoningEngine.filterChatModels(allIds);
-                if (filtered.length > 0) {
-                    return filtered;
-                }
+                allDiscoveredIds.push(...allIds);
             }
         }
-        return [];
+
+        // Merge models discovered from local manifest cache
+        try {
+            const capabilitiesMap = LMStudioManifestParser.parseModelCapabilities();
+            for (const cap of Object.values(capabilitiesMap)) {
+                const id = cap.displayName || cap.modelId;
+                if (id) {
+                    allDiscoveredIds.push(id);
+                }
+            }
+        } catch {}
+
+        const filtered = LMStudioReasoningEngine.filterChatModels(allDiscoveredIds);
+        const seen = new Set<string>();
+        const uniqueModels: string[] = [];
+        for (const id of filtered) {
+            const lower = id.toLowerCase();
+            if (!seen.has(lower)) {
+                seen.add(lower);
+                uniqueModels.push(id);
+            }
+        }
+        return uniqueModels;
     }
 
     /**
