@@ -10,6 +10,7 @@ import os
 import socketserver
 import subprocess
 import sys
+import threading
 import urllib.error
 import urllib.request
 import webbrowser
@@ -31,7 +32,7 @@ def get_lmstudio_capabilities():
         return _capabilities_cache["data"]
 
     candidates = [
-        APP_DIR.parent / "KAI Agent extension" / "code" / "out" / "providers" / "LMStudioManifestParser.js",
+        APP_DIR.parent / "Kai-Agent-extension" / "code" / "out" / "providers" / "LMStudioManifestParser.js",
         APP_DIR / "dist" / "main" / "providers" / "LMStudioManifestParser.js",
     ]
     parser_js = next((p for p in candidates if p.exists()), None)
@@ -181,29 +182,44 @@ class KaiStaticServer(http.server.SimpleHTTPRequestHandler):
     def _handle_lmstudio_chat(self, raw_body):
         """Proxies chat completions requests from the browser to local LM Studio.
         Streams SSE token chunks back to the browser without triggering CORS errors."""
-        target_url = "http://127.0.0.1:1234/v1/chat/completions"
-        try:
-            req = urllib.request.Request(
-                target_url,
-                data=raw_body,
-                headers={"Content-Type": "application/json", "User-Agent": "KaiAgent/1.0"},
-                method="POST"
-            )
-            with urllib.request.urlopen(req, timeout=120) as resp:
-                self.send_response(resp.status)
-                self.send_header("Content-Type", resp.headers.get("Content-Type", "text/event-stream; charset=utf-8"))
+        target_urls = [
+            "http://127.0.0.1:1234/v1/chat/completions",
+            "http://localhost:1234/v1/chat/completions",
+        ]
+        last_error = None
+        for target_url in target_urls:
+            try:
+                req = urllib.request.Request(
+                    target_url,
+                    data=raw_body,
+                    headers={"Content-Type": "application/json", "User-Agent": "KaiAgent/1.0"},
+                    method="POST"
+                )
+                with urllib.request.urlopen(req, timeout=120) as resp:
+                    self.send_response(resp.status)
+                    self.send_header("Content-Type", resp.headers.get("Content-Type", "text/event-stream; charset=utf-8"))
+                    self.end_headers()
+                    while True:
+                        chunk = resp.read(512)
+                        if not chunk:
+                            break
+                        self.wfile.write(chunk)
+                        self.wfile.flush()
+                    return
+            except urllib.error.HTTPError as e:
+                err_content = e.read().decode("utf-8", errors="replace") if hasattr(e, 'read') else str(e)
+                self.send_response(e.code)
+                self.send_header("Content-Type", "application/json")
                 self.end_headers()
-                while True:
-                    chunk = resp.read(512)
-                    if not chunk:
-                        break
-                    self.wfile.write(chunk)
-                    self.wfile.flush()
-        except Exception as e:
-            self.send_response(502)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+                self.wfile.write(err_content.encode("utf-8"))
+                return
+            except Exception as e:
+                last_error = e
+
+        self.send_response(502)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps({"error": str(last_error)}).encode("utf-8"))
 
     def _find_lms_cli(self):
         """Finds the local LM Studio lms executable if installed.

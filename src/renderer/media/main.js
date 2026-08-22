@@ -18,7 +18,7 @@
     const modelDropdownController = new ModelDropdownController(formatter, (selectedModel) => {
         appState.selectedModelValue = selectedModel;
         saveCurrentChat();
-    });
+    }, ipcBridge);
 
     const historyManager = new HistoryManager(
         ipcBridge,

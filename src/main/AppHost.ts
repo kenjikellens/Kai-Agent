@@ -1,6 +1,7 @@
 import { BrowserWindow, dialog, shell } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as child_process from 'child_process';
 import { AgentExecutor } from './AgentExecutor';
 import { LMStudioClient, FREE_PROVIDERS } from './LMStudioClient';
 import { LMStudioManifestParser } from './providers/LMStudioManifestParser';
@@ -113,6 +114,10 @@ export class AppHost {
             }
             case 'openFilePicker': {
                 await this.handleOpenFilePicker();
+                break;
+            }
+            case 'switchLMStudioModel': {
+                await this.handleSwitchLMStudioModel(data.model);
                 break;
             }
             case 'openExternalUrl': {
@@ -396,6 +401,39 @@ export class AppHost {
             this.configManager.update({ lmStudioCacheDir: selectedPath });
             await this.handleCheckConnection();
         }
+    }
+
+    /**
+     * Unloads prior LM Studio models and loads the specified model dynamically in LM Studio.
+     * Invokes the lms command line tool to manage VRAM memory and refreshes connection state.
+     * @param modelId Identifier of the LM Studio model to load.
+     */
+    private async handleSwitchLMStudioModel(modelId: string): Promise<void> {
+        if (!modelId || modelId === 'local-model' || modelId.toLowerCase().startsWith('gemini')) {
+            return;
+        }
+
+        const isFreeProvider = FREE_PROVIDERS.some(p => p.models.includes(modelId) || modelId.toLowerCase().startsWith(p.name.toLowerCase()));
+        if (isFreeProvider) {
+            return;
+        }
+
+        const config = this.configManager.getConfig();
+        const lmsBin = LMStudioManifestParser.resolveLmsExecutablePath(config.lmStudioCacheDir);
+
+        if (lmsBin) {
+            try {
+                // Unload all previous models to free up GPU memory
+                await new Promise<void>((resolve) => {
+                    child_process.execFile(lmsBin, ['unload', '--all'], { timeout: 15000 }, () => resolve());
+                });
+                // Load newly selected model
+                await new Promise<void>((resolve) => {
+                    child_process.execFile(lmsBin, ['load', modelId, '-y'], { timeout: 45000 }, () => resolve());
+                });
+            } catch {}
+        }
+        await this.handleCheckConnection();
     }
 
     /**
