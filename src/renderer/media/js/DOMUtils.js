@@ -45,7 +45,7 @@ class DOMUtils {
      * @returns {string} SVG HTML string.
      */
     static getChevronSvgString(className = 'thinking-chevron') {
-        return `<svg class="${className}" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+        return `<svg class="${className}" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
     }
 
     /**
@@ -54,7 +54,7 @@ class DOMUtils {
      * @returns {string} SVG HTML string.
      */
     static getChevronUpSvgString(className = 'thinking-chevron') {
-        return `<svg class="${className}" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>`;
+        return `<svg class="${className}" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>`;
     }
 
     /**

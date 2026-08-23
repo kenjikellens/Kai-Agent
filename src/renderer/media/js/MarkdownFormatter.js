@@ -167,7 +167,7 @@ class MarkdownFormatter {
                         const isCollapsed = shouldRespectExistingState ? forceThinkingCollapsed : !keepThinkingFinishedExpanded;
                         const activeChevron = isCollapsed ? chevronDown : chevronUp;
                         const activeCollapsedClass = isCollapsed ? ' collapsed' : '';
-                        return `<div class="thinking-block"><div class="thinking-header">${thinkingProcessTitle}${activeChevron}</div><div class="thinking-content${activeCollapsedClass}"><em>${cleanedContent}</em></div></div>\n\n`;
+                        return `<div class="thinking-block"><div class="thinking-header">${thinkingProcessTitle}${activeChevron}</div><div class="thinking-content${activeCollapsedClass}"><em>${cleanedContent}</em></div></div>\n`;
                     });
                 }
                 // Streaming thinking block
@@ -178,7 +178,7 @@ class MarkdownFormatter {
                         const isCollapsed = shouldRespectExistingState ? forceThinkingCollapsed : !keepThinkingExpanded;
                         const activeChevron = isCollapsed ? chevronDown : chevronUp;
                         const activeCollapsedClass = isCollapsed ? ' collapsed' : '';
-                        return `<div class="thinking-block"><div class="thinking-header"><span class="thinking-spinner"></span>${thinkingTextTitle}${activeChevron}</div><div class="thinking-content${activeCollapsedClass}"><em>${cleanedContent}</em></div></div>\n\n`;
+                        return `<div class="thinking-block"><div class="thinking-header"><span class="thinking-spinner"></span>${thinkingTextTitle}${activeChevron}</div><div class="thinking-content${activeCollapsedClass}"><em>${cleanedContent}</em></div></div>\n`;
                     });
                 }
             } else {
@@ -187,7 +187,7 @@ class MarkdownFormatter {
                 }
                 if (escaped.includes('&lt;think&gt;')) {
                     escaped = escaped.replace(/&lt;think&gt;([\s\S]*)$/g, () => {
-                        return `<div class="thinking-loader"><span class="thinking-spinner"></span>${thinkingTextTitle}</div>\n\n`;
+                        return `<div class="thinking-loader"><span class="thinking-spinner"></span>${thinkingTextTitle}</div>\n`;
                     });
                 }
             }

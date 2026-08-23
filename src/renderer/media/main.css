@@ -2626,21 +2626,54 @@ button:disabled {
 .thinking-block {
   display: flex;
   flex-direction: column;
-  margin: 2px 0;
-  padding: 2px 0;
+  margin: 1px 0;
+  padding: 0;
   border-left: 0;
 }
 
 .thinking-header {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
-  margin-bottom: 2px;
+  align-self: flex-start;
+  gap: 5px;
+  margin: 1px 0;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: transparent;
+  border: 0 !important;
+  outline: none;
   color: var(--app-muted);
-  font-size: 0.72rem;
-  font-weight: 500;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   user-select: none;
   cursor: pointer;
+  box-sizing: border-box;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.thinking-header:hover {
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.thinking-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 10px;
+  height: 10px;
+  margin-left: 2px;
+  flex-shrink: 0;
+  color: var(--app-muted);
+  transition: transform 0.2s ease, color 0.15s ease;
+}
+
+.thinking-header:hover .thinking-chevron {
+  color: var(--app-fg);
 }
 
 .thinking-spinner {
