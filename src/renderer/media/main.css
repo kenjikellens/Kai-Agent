@@ -470,16 +470,17 @@ body {
   min-width: 24px;
   min-height: 24px;
   padding: 0;
-  border-radius: 4px;
+  border-radius: 999px;
   color: var(--app-muted);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 0;
+  border: 0 !important;
+  outline: none;
   background: transparent;
   cursor: pointer;
   flex-shrink: 0;
-  transition: opacity 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+  transition: opacity 0.15s ease, color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .history-item:hover .history-item-delete-btn {
@@ -597,25 +598,24 @@ body {
   gap: 8px;
   max-width: 480px;
   padding: 6px 14px;
-  background: var(--app-surface, #1e1e24);
-  border: 1px solid var(--app-border-subtle, rgba(255, 255, 255, 0.08)) !important;
-  border-radius: var(--app-radius-md, 8px);
-  color: var(--app-fg-muted, #a1a1aa);
+  background: var(--app-surface-strong);
+  border: 0 !important;
+  outline: none;
+  border-radius: 999px;
+  color: var(--app-muted);
   font-family: var(--app-mono, monospace);
   font-size: 0.78rem;
   font-weight: 500;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18), 0 1px 2px rgba(0, 0, 0, 0.12);
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
   user-select: none;
   overflow: hidden;
 }
 
 .top-workspace-bar:hover {
-  background: var(--app-surface-hover, #27272a);
-  color: var(--app-fg, #f4f4f5);
-  border-color: var(--app-border, rgba(255, 255, 255, 0.15)) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28), 0 1px 3px rgba(0, 0, 0, 0.16);
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
+  box-shadow: var(--app-btn-inset);
 }
 
 .top-workspace-icon {
@@ -2175,23 +2175,24 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  height: 26px;
-  padding: 0 10px;
-  border-radius: var(--app-radius-md, 6px);
-  background: var(--app-surface-strong, #252526);
-  border: 1px solid var(--app-border, #3c3c3c);
-  color: var(--app-muted, #999999);
-  font-size: 0.72rem;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--app-surface-strong);
+  border: 0 !important;
+  outline: none;
+  color: var(--app-muted);
+  font-size: 0.76rem;
   font-weight: 500;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .welcome-link-btn:hover {
-  background: var(--app-surface-hover, #2d2d2d);
-  color: var(--app-fg, #ffffff);
-  border-color: var(--app-border-strong, #555555);
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
+  box-shadow: var(--app-btn-inset);
 }
 
 /* ==========================================================================
@@ -3306,21 +3307,23 @@ button:disabled {
   align-items: center;
   gap: 6px;
   padding: 6px 14px;
-  border-radius: var(--app-radius-md);
-  background: var(--app-surface-hover);
-  border: 1px solid var(--app-border-strong) !important;
+  border-radius: 999px;
+  background: var(--app-surface-strong);
+  border: 0 !important;
+  outline: none;
   color: var(--app-fg);
   font-family: var(--app-font);
-  font-size: 0.9rem;
+  font-size: 0.84rem;
   font-weight: 500;
   cursor: pointer;
   flex-shrink: 0;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .settings-close-btn:hover {
-  background: var(--app-surface-strong);
-  border-color: var(--app-border-strong) !important;
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
+  box-shadow: var(--app-btn-inset);
 }
 
 .settings-content-panel {
@@ -4621,23 +4624,34 @@ details[open]>summary>.custom-chevron {
 }
 
 .help-close-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
   padding: 0;
+  margin: 0;
   border: 0 !important;
-  border-radius: var(--app-radius-sm, 4px);
-  background: transparent;
+  border-radius: 999px;
+  background: var(--app-surface-strong);
   color: var(--app-muted, #a1a1aa);
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  outline: none;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.help-close-btn svg {
+  display: block;
+  pointer-events: none;
 }
 
 .help-close-btn:hover {
   background: var(--app-surface-hover, #2e2e34);
-  color: #ffffff;
+  color: var(--app-fg, #ffffff);
+  box-shadow: var(--app-btn-inset);
 }
 
 .help-modal-body {
@@ -4816,27 +4830,32 @@ details[open]>summary>.custom-chevron {
 .settings-content-panel {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 8px;
   padding: 10px 14px 16px 14px;
 }
 
-/* Settings category wrapper - Smooth 250ms morph with slightly lighter card background and borderless container */
 .settings-category {
   position: relative;
   margin: 0;
   padding: 0;
   border: none !important;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
+  background: transparent;
   box-sizing: border-box;
   width: 100%;
   overflow: visible;
-  transition: border-radius 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-radius 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s ease;
+}
+
+/* When category is expanded, the wrapper gets the card background */
+.settings-category:not(.collapsed) {
+  background: rgba(255, 255, 255, 0.04);
 }
 
 /* Fully rounded pill-shaped container when category is collapsed */
 .settings-category.collapsed {
   border-radius: 22px;
+  background: transparent;
 }
 
 /* Action button inside settings input row with smooth transition */
@@ -4884,10 +4903,11 @@ details[open]>summary>.custom-chevron {
   transition: color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Pill-shaped header button when inside category */
+/* Pill-shaped header button when inside category - Exact same base & hover as sidebar buttons */
 .settings-category .category-header-btn {
   padding: 10px 16px;
   border-radius: 12px;
+  background: var(--app-surface-strong);
   transition: border-radius 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -4895,7 +4915,7 @@ details[open]>summary>.custom-chevron {
   border-radius: 22px;
 }
 
-/* Hover & focus states for unified category header with inset effect */
+/* Hover & focus states for unified category header with inset effect - EXACTLY same as sidebar buttons */
 .category-header-btn:hover,
 .category-header-btn:focus-visible {
   color: var(--app-fg, #ffffff);
@@ -4903,14 +4923,15 @@ details[open]>summary>.custom-chevron {
 
 .settings-category .category-header-btn:hover,
 .settings-category .category-header-btn:focus-visible {
-  background: var(--app-surface-hover, rgba(255, 255, 255, 0.07)) !important;
+  background: var(--app-surface-hover) !important;
   color: var(--app-fg, #ffffff);
   border: none !important;
   box-shadow: var(--app-btn-inset);
 }
 
 .settings-category .category-header-btn:active {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: var(--app-surface-active) !important;
+  color: var(--app-fg, #ffffff);
   box-shadow: none !important;
 }
 

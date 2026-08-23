@@ -158,3 +158,14 @@ When implementing or modifying completions across providers, dynamically apply t
   - **Thinking Flyout Submenu**: The Thinking & Reasoning flyout submenu's dynamic alignment calculation (fixed positioning, right-side `rect.right + 4px` with left viewport fallback) and container styling (`padding: 2.5px`, `border-radius: 12px` / `999px` for single item) must remain fully preserved across all refactoring batches.
   - **Extension Settings vs. Desktop Settings**: Respect layout boundaries between Extension accordion panels (`.settings-category`) and Desktop standalone settings layout.
 
+---
+
+## 14. Comprehensive i18n & Localization Strict Parity
+
+- **Zero English Leftovers in Non-English Locales**:
+  - Whenever new UI strings, setting descriptions (`*Desc`), buttons, or placeholders are added or modified, they **MUST** be translated across ALL 18 supported languages in `AllLocales.js`.
+  - Never leave English strings as lazy fallbacks in non-English locale blocks (e.g. Dutch, German, French, Spanish, Japanese, Chinese, etc.).
+- **Both Projects Synchronized**:
+  - `AllLocales.js` in `KAI Agent App/src/renderer/media/js/` and `Kai-Agent-extension/code/media/js/` must always be identical and 100% in sync.
+- **Batch Updates via Scratch Script**:
+  - Per global agent rules, always update all locale dictionaries programmatically using a single batch script in `scratch/` and verify that all 18 locales contain every key.

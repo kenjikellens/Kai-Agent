@@ -29,10 +29,10 @@ class ModeManager {
 
         this.modeLabels = { chat: 'Chat', ask: 'Ask', agent: 'Agent', planning: 'Plan' };
         this.modeIcons = {
-            chat: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
-            ask: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
-            agent: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>',
-            planning: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>'
+            chat: DOMUtils.getSvgImgString('chat_mode', 'mode-btn-svg', 13),
+            ask: DOMUtils.getSvgImgString('ask_mode', 'mode-btn-svg', 13),
+            agent: DOMUtils.getSvgImgString('agent_mode', 'mode-btn-svg', 13),
+            planning: DOMUtils.getSvgImgString('plan_mode', 'mode-btn-svg', 13)
         };
 
         this.initEventListeners();
@@ -73,20 +73,30 @@ class ModeManager {
             this.atMentionTriggerBtn.classList.toggle('active-mode', mode !== 'chat' && mode !== 'ask');
         }
 
-        if (this.messageInput) {
-            if (mode === 'chat') {
-                this.messageInput.placeholder = 'Ask Kai anything, calculate, convert, or search the web...';
-            } else if (mode === 'ask') {
-                this.messageInput.placeholder = 'Ask questions about your workspace codebase...';
-            } else if (mode === 'agent') {
-                this.messageInput.placeholder = 'Ask Kai to edit code, execute tasks, or run commands...';
-            } else if (mode === 'planning') {
-                this.messageInput.placeholder = 'Describe a project task to generate an implementation plan...';
-            }
-        }
+        this.updatePlaceholder();
 
         if (this.onModeChange) {
             this.onModeChange(mode);
+        }
+    }
+
+    /**
+     * Dynamically updates the message textarea placeholder based on the active mode and current i18n dictionary.
+     * @param {object} [customTranslations] Optional translation dictionary override.
+     */
+    updatePlaceholder(customTranslations = null) {
+        if (!this.messageInput) return;
+        const i18n = customTranslations || window.KAI_I18N || {};
+        const mode = this.appState.activeMode || 'chat';
+
+        if (mode === 'chat') {
+            this.messageInput.placeholder = i18n.placeholderChat || 'Ask Kai anything, calculate, convert, or search the web...';
+        } else if (mode === 'ask') {
+            this.messageInput.placeholder = i18n.placeholderAsk || 'Ask questions about your workspace codebase...';
+        } else if (mode === 'agent') {
+            this.messageInput.placeholder = i18n.placeholderAgent || 'Ask Kai to edit code, execute tasks, or run commands...';
+        } else if (mode === 'planning') {
+            this.messageInput.placeholder = i18n.placeholderPlanning || 'Describe a project task to generate an implementation plan...';
         }
     }
 

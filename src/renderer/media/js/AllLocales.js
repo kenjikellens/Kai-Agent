@@ -57,7 +57,12 @@ window.KAI_ALL_LOCALES = {
     "serverUrlDesc": "نقطة النهاية المحلية لخادم LM Studio API (الافتراضي http://localhost:1234/v1)",
     "lmStudioDirectoryDesc": "مسار دليل ذاكرة التخزين المحلية لـ LM Studio للكشف التلقائي عن النماذج",
     "apiKeysSettingsDesc": "إدارة مفاتيح API واختبار الاتصالات المباشرة للنماذج السحابية",
-    "testConnection": "اختبار الاتصال"
+    "testConnection": "اختبار الاتصال",
+    "noWorkspaceSelected": "لم يتم تحديد مساحة عمل",
+    "placeholderChat": "اسأل Kai أي شيء، أو قم بالحساب، أو التحويل، أو ابحث في الويب...",
+    "placeholderAsk": "اطرح أسئلة حول قاعدة التعليمات البرمجية لمساحة العمل...",
+    "placeholderAgent": "اطلب من Kai تعديل التعليمات البرمجية، أو تنفيذ المهام، أو تشغيل الأوامر...",
+    "placeholderPlanning": "صف مهمة المشروع لإنشاء خطة تنفيذ..."
 },
   "cs": {
     "newChat": "Nový chat",
@@ -117,7 +122,12 @@ window.KAI_ALL_LOCALES = {
     "serverUrlDesc": "Lokální endpoint LM Studio API serveru (výchozí http://localhost:1234/v1)",
     "lmStudioDirectoryDesc": "Cesta k lokální mezipaměti LM Studio pro automatickou detekci modelů",
     "apiKeysSettingsDesc": "Spravovat API klíče a testovat připojení ke cloudovým modelům",
-    "testConnection": "Testovat připojení"
+    "testConnection": "Testovat připojení",
+    "noWorkspaceSelected": "Není vybrán žádný pracovní prostor",
+    "placeholderChat": "Zeptejte se Kai na cokoliv, počítejte, převádějte nebo hledejte na webu...",
+    "placeholderAsk": "Položte otázky týkající se vaší kódové základny...",
+    "placeholderAgent": "Požádejte Kai o úpravu kódu, provádění úkolů nebo spouštění příkazů...",
+    "placeholderPlanning": "Popište projektový úkol pro vygenerování plánu implementace..."
 },
   "de": {
     "newChat": "Neuer Chat",
@@ -177,7 +187,12 @@ window.KAI_ALL_LOCALES = {
     "serverUrlDesc": "Lokaler Endpunkt des LM Studio API-Servers (Standard http://localhost:1234/v1)",
     "lmStudioDirectoryDesc": "Pfad zum lokalen LM Studio Cache-Verzeichnis zur Modellerkennung",
     "apiKeysSettingsDesc": "API-Schlüssel verwalten und Verbindungen zu Cloud-Modellen testen",
-    "testConnection": "Verbindung testen"
+    "testConnection": "Verbindung testen",
+    "noWorkspaceSelected": "Kein Arbeitsbereich ausgewählt",
+    "placeholderChat": "Fragen Sie Kai alles, berechnen, konvertieren oder im Web suchen...",
+    "placeholderAsk": "Fragen zur Codebasis des Arbeitsbereichs stellen...",
+    "placeholderAgent": "Bitten Sie Kai, Code zu bearbeiten, Aufgaben auszuführen oder Befehle zu starten...",
+    "placeholderPlanning": "Beschreiben Sie eine Projektaufgabe, um einen Implementierungsplan zu erstellen..."
 },
   "en": {
     "newChat": "New Chat",
@@ -237,8 +252,13 @@ window.KAI_ALL_LOCALES = {
     "serverUrlDesc": "Local endpoint of the LM Studio API server (default http://localhost:1234/v1)",
     "lmStudioDirectoryDesc": "Path to the local LM Studio cache directory for automatic model and thinking detection",
     "apiKeysSettingsDesc": "Manage API keys and test live connections for cloud models",
-    "testConnection": "Test connection"
-  },
+    "testConnection": "Test connection",
+    "noWorkspaceSelected": "No Workspace Selected",
+    "placeholderChat": "Ask Kai anything, calculate, convert, or search the web...",
+    "placeholderAsk": "Ask questions about your workspace codebase...",
+    "placeholderAgent": "Ask Kai to edit code, execute tasks, or run commands...",
+    "placeholderPlanning": "Describe a project task to generate an implementation plan..."
+},
   "es": {
     "newChat": "Nuevo Chat",
     "previousChats": "Chats Anteriores",
@@ -297,7 +317,12 @@ window.KAI_ALL_LOCALES = {
     "serverUrlDesc": "Punto de conexión local del servidor LM Studio API (predeterminado http://localhost:1234/v1)",
     "lmStudioDirectoryDesc": "Ruta al directorio de caché local de LM Studio para la detección de modelos",
     "apiKeysSettingsDesc": "Gestionar claves API y probar conexiones en vivo con modelos en la nube",
-    "testConnection": "Probar conexión"
+    "testConnection": "Probar conexión",
+    "noWorkspaceSelected": "Ningún espacio de trabajo seleccionado",
+    "placeholderChat": "Pregunta a Kai lo que sea, calcula, convierte o busca en la web...",
+    "placeholderAsk": "Haz preguntas sobre la base de código de tu espacio de trabajo...",
+    "placeholderAgent": "Pide a Kai que edite código, ejecute tareas o corra comandos...",
+    "placeholderPlanning": "Describe una tarea del proyecto para generar un plan de implementación..."
 },
   "fr": {
     "newChat": "Nouvelle Discussion",
@@ -357,7 +382,12 @@ window.KAI_ALL_LOCALES = {
     "serverUrlDesc": "Point de terminaison local du serveur API LM Studio (par défaut http://localhost:1234/v1)",
     "lmStudioDirectoryDesc": "Chemin d'accès au cache local de LM Studio pour la détection des modèles",
     "apiKeysSettingsDesc": "Gérer les clés API et tester les connexions en direct pour les modèles cloud",
-    "testConnection": "Tester la connexion"
+    "testConnection": "Tester la connexion",
+    "noWorkspaceSelected": "Aucun espace de travail sélectionné",
+    "placeholderChat": "Demandez n'importe quoi à Kai, calculez, convertissez ou cherchez sur le web...",
+    "placeholderAsk": "Posez des questions sur la base de code de votre espace de travail...",
+    "placeholderAgent": "Demandez à Kai de modifier du code, exécuter des tâches ou des commandes...",
+    "placeholderPlanning": "Décrivez une tâche pour générer un plan d'implémentation..."
 },
   "hi": {
     "newChat": "नया चैट",
@@ -417,7 +447,12 @@ window.KAI_ALL_LOCALES = {
     "serverUrlDesc": "LM Studio API सर्वर का स्थानीय एंडपॉइंट (डिफ़ॉल्ट http://localhost:1234/v1)",
     "lmStudioDirectoryDesc": "स्वचालित मॉडल और थिंकिंग डिटेक्शन के लिए स्थानीय LM Studio कैश डायरेक्टरी का पथ",
     "apiKeysSettingsDesc": "API कुंजियाँ प्रबंधित करें और क्लाउड मॉडलों के लिए लाइव कनेक्शन परीक्षण करें",
-    "testConnection": "कनेक्शन परीक्षण"
+    "testConnection": "कनेक्शन परीक्षण",
+    "noWorkspaceSelected": "कोई कार्यक्षेत्र चयनित नहीं है",
+    "placeholderChat": "Kai से कुछ भी पूछें, गणना करें, रूपांतरित करें या वेब पर खोजें...",
+    "placeholderAsk": "अपने कार्यक्षेत्र कोडबेस के बारे में प्रश्न पूछें...",
+    "placeholderAgent": "कोड संपादित करने, कार्य निष्पादित करने या कमांड चलाने के लिए कहें...",
+    "placeholderPlanning": "कार्यान्वयन योजना बनाने के लिए प्रोजेक्ट कार्य का विवरण दें..."
 },
   "hu": {
     "newChat": "Új csevegés",
@@ -477,7 +512,12 @@ window.KAI_ALL_LOCALES = {
     "serverUrlDesc": "Az LM Studio API szerver helyi végpontja (alapértelmezett http://localhost:1234/v1)",
     "lmStudioDirectoryDesc": "Az LM Studio helyi gyorsítótár könyvtárának elérési útja",
     "apiKeysSettingsDesc": "API kulcsok kezelése és élő kapcsolatok tesztelése felhő modellekhez",
-    "testConnection": "Kapcsolat tesztelése"
+    "testConnection": "Kapcsolat tesztelése",
+    "noWorkspaceSelected": "Nincs munkaterület kiválasztva",
+    "placeholderChat": "Kérdezzen bármit a Kai-tól, számoljon, váltson át vagy keressen a weben...",
+    "placeholderAsk": "Tegyen fel kérdéseket a munkaterület kódbázisáról...",
+    "placeholderAgent": "Kérje meg a Kai-t kód szerkesztésére, feladatok végrehajtására vagy parancsok futtatására...",
+    "placeholderPlanning": "Írjon le egy projektfeladatot a megvalósítási terv generálásához..."
 },
   "it": {
     "newChat": "Nuova Chat",
@@ -537,7 +577,12 @@ window.KAI_ALL_LOCALES = {
     "serverUrlDesc": "Endpoint locale del server API LM Studio (predefinito http://localhost:1234/v1)",
     "lmStudioDirectoryDesc": "Percorso della directory cache locale di LM Studio per il rilevamento automatico dei modelli",
     "apiKeysSettingsDesc": "Gestisci le chiavi API e testa le connessioni ai modelli cloud",
-    "testConnection": "Testa connessione"
+    "testConnection": "Testa connessione",
+    "noWorkspaceSelected": "Nessuno spazio di lavoro selezionato",
+    "placeholderChat": "Chiedi qualsiasi cosa a Kai, calcola, converti o cerca nel web...",
+    "placeholderAsk": "Fai domande sulla base di codice del tuo spazio di lavoro...",
+    "placeholderAgent": "Chiedi a Kai di modificare codice, eseguire attività o eseguire comandi...",
+    "placeholderPlanning": "Descrivi un'attività per generare un piano di implementazione..."
 },
   "ja": {
     "newChat": "新規チャット",
@@ -597,7 +642,12 @@ window.KAI_ALL_LOCALES = {
     "serverUrlDesc": "LM Studio APIサーバーのローカルエンドポイント（デフォルト http://localhost:1234/v1）",
     "lmStudioDirectoryDesc": "モデルと思考の自動検出のためのローカルLM Studioキャッシュディレクトリへのパス",
     "apiKeysSettingsDesc": "APIキーを管理し、クラウドモデルへのライブ接続をテストします",
-    "testConnection": "接続テスト"
+    "testConnection": "接続テスト",
+    "noWorkspaceSelected": "ワークスペースが選択されていません",
+    "placeholderChat": "Kaiに何でも質問、計算、変換、またはウェブ検索...",
+    "placeholderAsk": "ワークスペースのコードベースについて質問する...",
+    "placeholderAgent": "Kaiにコードの編集、タスクの実行、コマンドの実行を依頼する...",
+    "placeholderPlanning": "実装計画を生成するためのタスクを記述してください..."
 },
   "ko": {
     "newChat": "새 채팅",
@@ -657,7 +707,12 @@ window.KAI_ALL_LOCALES = {
     "serverUrlDesc": "LM Studio API 서버의 로컬 엔드포인트 (기본값 http://localhost:1234/v1)",
     "lmStudioDirectoryDesc": "자동 모델 및 사고 감지를 위한 로컬 LM Studio 캐시 디렉토리 경로",
     "apiKeysSettingsDesc": "API 키를 관리하고 클라우드 모델에 대한 실시간 연결을 테스트합니다",
-    "testConnection": "연결 테스트"
+    "testConnection": "연결 테스트",
+    "noWorkspaceSelected": "선택된 워크스페이스 없음",
+    "placeholderChat": "Kai에게 무엇이든 질문, 계산, 변환 또는 웹 검색...",
+    "placeholderAsk": "워크스페이스 코드베이스에 대해 질문하세요...",
+    "placeholderAgent": "Kai에게 코드 수정, 작업 실행 또는 명령 실행 요청...",
+    "placeholderPlanning": "구현 계획을 생성할 프로젝트 작업을 설명하세요..."
 },
   "nl": {
     "newChat": "Nieuwe Chat",
@@ -717,7 +772,12 @@ window.KAI_ALL_LOCALES = {
     "serverUrlDesc": "Het lokale endpoint van de LM Studio API server (standaard http://localhost:1234/v1)",
     "lmStudioDirectoryDesc": "Pad naar de lokale LM Studio cache voor automatische model- en thinking-detectie",
     "apiKeysSettingsDesc": "Beheer API sleutels en test live verbindingen voor cloud modellen",
-    "testConnection": "Verbinding testen"
+    "testConnection": "Verbinding testen",
+    "noWorkspaceSelected": "Geen werkruimte geselecteerd",
+    "placeholderChat": "Vraag Kai alles, bereken, converteer of zoek op het web...",
+    "placeholderAsk": "Stel vragen over de codebase van je werkruimte...",
+    "placeholderAgent": "Vraag Kai om code te bewerken, taken uit te voeren of commando's te draaien...",
+    "placeholderPlanning": "Beschrijf een projecttaak om een implementatieplan te genereren..."
 },
   "pl": {
     "newChat": "Nowy czat",
@@ -777,7 +837,12 @@ window.KAI_ALL_LOCALES = {
     "serverUrlDesc": "Lokalny endpoint serwera API LM Studio (domyślnie http://localhost:1234/v1)",
     "lmStudioDirectoryDesc": "Ścieżka do lokalnego katalogu pamięci podręcznej LM Studio do automatycznego wykrywania modeli",
     "apiKeysSettingsDesc": "Zarządzaj kluczami API i testuj połączenia z modelami chmurowymi",
-    "testConnection": "Testuj połączenie"
+    "testConnection": "Testuj połączenie",
+    "noWorkspaceSelected": "Nie wybrano obszaru roboczego",
+    "placeholderChat": "Zapytaj Kai o cokolwiek, obliczaj, konwertuj lub przeszukuj sieć...",
+    "placeholderAsk": "Zadawaj pytania dotyczące bazy kodu obszaru roboczego...",
+    "placeholderAgent": "Poproś Kai o edycję kodu, wykonywanie zadań lub uruchamianie poleceń...",
+    "placeholderPlanning": "Opisz zadanie projektowe, aby wygenerować plan wdrożenia..."
 },
   "pt": {
     "newChat": "Novo Chat",
@@ -837,7 +902,12 @@ window.KAI_ALL_LOCALES = {
     "serverUrlDesc": "Endpoint local do servidor API LM Studio (padrão http://localhost:1234/v1)",
     "lmStudioDirectoryDesc": "Caminho para o diretório de cache local do LM Studio para detecção automática de modelos",
     "apiKeysSettingsDesc": "Gerencie chaves de API e teste conexões ativas com modelos em nuvem",
-    "testConnection": "Testar conexão"
+    "testConnection": "Testar conexão",
+    "noWorkspaceSelected": "Nenhum espaço de trabalho selecionado",
+    "placeholderChat": "Pergunte qualquer coisa ao Kai, calcule, converta ou pesquise na web...",
+    "placeholderAsk": "Faça perguntas sobre a base de código do seu espaço de trabalho...",
+    "placeholderAgent": "Peça ao Kai para editar código, executar tarefas ou rodar comandos...",
+    "placeholderPlanning": "Descreva uma tarefa do projeto para gerar um plano de implementação..."
 },
   "ru": {
     "newChat": "Новый чат",
@@ -897,7 +967,12 @@ window.KAI_ALL_LOCALES = {
     "serverUrlDesc": "Локальная конечная точка сервера API LM Studio (по умолчанию http://localhost:1234/v1)",
     "lmStudioDirectoryDesc": "Путь к локальному каталогу кэша LM Studio для автоматического обнаружения моделей",
     "apiKeysSettingsDesc": "Управление API ключами и тестирование подключений к облачным моделям",
-    "testConnection": "Тестировать подключение"
+    "testConnection": "Тестировать подключение",
+    "noWorkspaceSelected": "Рабочая область не выбрана",
+    "placeholderChat": "Спросите Kai о чем угодно, считайте, конвертируйте или ищите в интернете...",
+    "placeholderAsk": "Задавайте вопросы о кодовой базе вашей рабочей области...",
+    "placeholderAgent": "Попросите Kai редактировать код, выполнять задачи или запускать команды...",
+    "placeholderPlanning": "Опишите задачу проекта для создания плана реализации..."
 },
   "tr": {
     "newChat": "Yeni Sohbet",
@@ -957,7 +1032,12 @@ window.KAI_ALL_LOCALES = {
     "serverUrlDesc": "LM Studio API sunucusunun yerel uç noktası (varsayılan http://localhost:1234/v1)",
     "lmStudioDirectoryDesc": "Otomatik model ve düşünme algılama için yerel LM Studio önbellek dizininin yolu",
     "apiKeysSettingsDesc": "API anahtarlarını yönetin ve bulut modelleri için bağlantıları test edin",
-    "testConnection": "Bağlantıyı test et"
+    "testConnection": "Bağlantıyı test et",
+    "noWorkspaceSelected": "Çalışma alanı seçilmedi",
+    "placeholderChat": "Kai'ye her şeyi sorun, hesaplayın, dönüştürün veya web'de arayın...",
+    "placeholderAsk": "Çalışma alanı kod tabanınız hakkında sorular sorun...",
+    "placeholderAgent": "Kai'den kod düzenlemesini, görevleri veya komutları çalıştırmasını isteyin...",
+    "placeholderPlanning": "Uygulama planı oluşturmak için bir proje görevi açıklayın..."
 },
   "zh_tw": {
     "newChat": "建立新對話",
@@ -1017,7 +1097,12 @@ window.KAI_ALL_LOCALES = {
     "serverUrlDesc": "LM Studio API 伺服器的本地端點（預設 http://localhost:1234/v1）",
     "lmStudioDirectoryDesc": "用於自動模型和思考偵測的本地 LM Studio 快取目錄路徑",
     "apiKeysSettingsDesc": "管理 API 金鑰並測試雲端模型的即時連線",
-    "testConnection": "測試連線"
+    "testConnection": "測試連線",
+    "noWorkspaceSelected": "未選擇工作區",
+    "placeholderChat": "向 Kai 詢問任何問題、計算、轉換或搜尋網路...",
+    "placeholderAsk": "詢問有關工作區程式碼庫的問題...",
+    "placeholderAgent": "讓 Kai 編輯程式碼、執行任務或執行命令...",
+    "placeholderPlanning": "描述專案任務以產生實作計劃..."
 },
   "zh": {
     "newChat": "新建对话",
@@ -1077,6 +1162,11 @@ window.KAI_ALL_LOCALES = {
     "serverUrlDesc": "LM Studio API 服务器的本地端点（默认 http://localhost:1234/v1）",
     "lmStudioDirectoryDesc": "用于自动模型和思考检测的本地 LM Studio 缓存目录路径",
     "apiKeysSettingsDesc": "管理 API 密钥并测试云模型的实时连接",
-    "testConnection": "测试连接"
+    "testConnection": "测试连接",
+    "noWorkspaceSelected": "未选择工作区",
+    "placeholderChat": "向 Kai 询问任何问题、计算、转换或搜索网络...",
+    "placeholderAsk": "询问有关工作区代码库的问题...",
+    "placeholderAgent": "让 Kai 编辑代码、执行任务或运行命令...",
+    "placeholderPlanning": "描述项目任务以生成实施计划..."
 }
 };

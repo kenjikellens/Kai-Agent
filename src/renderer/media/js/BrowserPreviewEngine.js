@@ -160,8 +160,16 @@ class BrowserPreviewEngine {
             };
         });
 
-        const activeLang = localStorage.getItem('kai.language') || 'en';
-        const translations = (window.AllLocales && window.AllLocales[activeLang]) || {};
+        const activeLang = localStorage.getItem('kai.language') || 'auto';
+        const allLocales = window.KAI_ALL_LOCALES || {};
+        let translations = allLocales[activeLang];
+        if (!translations && activeLang === 'auto') {
+            const sys = (navigator.language || 'en').slice(0, 2).toLowerCase();
+            translations = allLocales[sys] || allLocales.en;
+        }
+        if (!translations && allLocales) {
+            translations = allLocales.en || {};
+        }
 
         let activeWorkspace = localStorage.getItem('kai.workspacePath') || '';
         if (message && message.isFolderPicked && message.workspacePath) {

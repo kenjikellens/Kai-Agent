@@ -141,7 +141,8 @@
 
         const topWsText = document.getElementById('top-workspace-path');
         if (topWsText) {
-            topWsText.textContent = hasWs ? workspacePath : 'No Workspace Selected';
+            const i18n = window.KAI_I18N || {};
+            topWsText.textContent = hasWs ? workspacePath : (i18n.noWorkspaceSelected || 'No Workspace Selected');
         }
         if (topWorkspaceBtn) {
             topWorkspaceBtn.title = hasWs ? `Active Workspace: ${workspacePath} (Click to change)` : 'Click to Select Workspace Folder';
@@ -346,7 +347,7 @@
      * Globally translates all DOM text, titles, placeholders, and controller widgets.
      * @param {object} translations Translation key-value map.
      */
-    window.applyAllTranslations = function(translations) {
+    window.applyAllTranslations = function (translations) {
         if (!translations) return;
         window.KAI_I18N = translations;
 
@@ -365,8 +366,17 @@
         });
 
         const msgInput = document.getElementById('message-input');
-        if (msgInput && translations.messagePlaceholder) {
-            msgInput.placeholder = translations.messagePlaceholder;
+        if (msgInput) {
+            if (modeManager && typeof modeManager.updatePlaceholder === 'function') {
+                modeManager.updatePlaceholder(translations);
+            } else if (translations.messagePlaceholder) {
+                msgInput.placeholder = translations.messagePlaceholder;
+            }
+        }
+
+        const topWsText = document.getElementById('top-workspace-path');
+        if (topWsText && !appState.hasActiveWorkspace && translations.noWorkspaceSelected) {
+            topWsText.textContent = translations.noWorkspaceSelected;
         }
 
         const thinkingLabel = document.getElementById('thinking-toggle-label');
@@ -420,7 +430,7 @@
         if (message.translations) {
             window.applyAllTranslations(message.translations);
         }
-        
+
         if (message.isFolderPicked && message.workspacePath) {
             updateWorkspaceUi(message.workspacePath);
             saveCurrentChat();
@@ -498,8 +508,8 @@
         }
 
         const replyContent = message.content !== undefined ? message.content : (message.text || '');
-        const isThinkingChecked = (settingsController && settingsController.showThinkingToggle) 
-            ? settingsController.showThinkingToggle.checked 
+        const isThinkingChecked = (settingsController && settingsController.showThinkingToggle)
+            ? settingsController.showThinkingToggle.checked
             : (localStorage.getItem('kai.showThinking') !== 'false');
         const formatted = formatter.formatMarkdown(replyContent, forceThinkingCollapsed, isThinkingChecked, forcePlanExpanded);
 
@@ -582,7 +592,7 @@
                 // The host deliberately sends sidebar metadata here. Store it
                 // independently so it can never overwrite full chat payloads.
                 localStorage.setItem('kai.savedChatsSummary', JSON.stringify(message.chats));
-            } catch (e) {}
+            } catch (e) { }
         }
         historyManager.renderHistoryList((message && message.chats) || [], appState.isWaitingForResponse);
     });

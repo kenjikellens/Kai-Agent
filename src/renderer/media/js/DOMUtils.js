@@ -18,6 +18,17 @@ class DOMUtils {
     }
 
     /**
+     * Returns an img tag HTML string referencing a standalone SVG asset in media/svg/.
+     * @param {string} name SVG asset filename without extension (e.g. 'close', 'folder').
+     * @param {string} [className='icon-svg'] CSS class name.
+     * @param {number} [size=14] Width and height in pixels.
+     * @returns {string} Image tag referencing the SVG file.
+     */
+    static getSvgImgString(name, className = 'icon-svg', size = 14) {
+        return `<img src="media/svg/${name}.svg" class="${className}" width="${size}" height="${size}" alt="${name}" draggable="false" />`;
+    }
+
+    /**
      * Generates a standard chevron SVG element.
      * @param {string} className CSS class name.
      * @returns {SVGElement} Chevron SVG element.
@@ -45,7 +56,7 @@ class DOMUtils {
      * @returns {string} SVG HTML string.
      */
     static getChevronSvgString(className = 'thinking-chevron') {
-        return `<svg class="${className}" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+        return DOMUtils.getSvgImgString('chevron_down', className, 10);
     }
 
     /**
@@ -54,7 +65,7 @@ class DOMUtils {
      * @returns {string} SVG HTML string.
      */
     static getChevronUpSvgString(className = 'thinking-chevron') {
-        return `<svg class="${className}" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>`;
+        return DOMUtils.getSvgImgString('chevron_up', className, 10);
     }
 
     /**

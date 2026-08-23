@@ -28,11 +28,11 @@ class HelpModalController {
             <div class="help-modal-card">
                 <div class="help-modal-header">
                     <div class="help-modal-title">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                        <img src="media/svg/help_circle.svg" width="16" height="16" alt="help" class="help-title-icon" />
                         <span id="help-modal-title-text">Kai Quick Guide & Shortcuts</span>
                     </div>
                     <button type="button" class="help-close-btn" id="close-help-btn" title="Close">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        <img src="media/svg/close.svg" width="12" height="12" alt="close" class="help-close-icon" />
                     </button>
                 </div>
                 <div class="help-modal-body" id="help-modal-body">
