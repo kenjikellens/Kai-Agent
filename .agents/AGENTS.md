@@ -153,6 +153,7 @@ When implementing or modifying completions across providers, dynamically apply t
 - **Strict Container vs. Element Spacing**:
   - Always enforce container-to-content spacing via container `padding` (e.g., `padding: 2.5px`), never by adding outer `margin` to inner buttons or child elements.
 - **Protected Theme & UI Features (Non-Negotiable Boundaries)**:
+  - **Zero Button Regression & Pixel-Perfect UI**: Refactoring must NEVER alter computed visual styles (dimensions, padding, margins, border-radius, accent colors, hover shadows, or transitions) or break click/keyboard event listeners and DOM queries.
   - **VS Code Theme Tokens (Extension)**: The Extension stylesheet MUST always use VS Code theme variables (`var(--vscode-*)`). NEVER replace theme tokens with hardcoded hex colors or remove dynamic theme adaptability.
   - **Thinking Flyout Submenu**: The Thinking & Reasoning flyout submenu's dynamic alignment calculation (fixed positioning, right-side `rect.right + 4px` with left viewport fallback) and container styling (`padding: 2.5px`, `border-radius: 12px` / `999px` for single item) must remain fully preserved across all refactoring batches.
   - **Extension Settings vs. Desktop Settings**: Respect layout boundaries between Extension accordion panels (`.settings-category`) and Desktop standalone settings layout.

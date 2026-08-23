@@ -761,16 +761,38 @@ button:disabled {
   box-shadow: none !important;
 }
 
-.secondary-btn:hover:not(:disabled) {
-  background: var(--app-surface-hover);
-}
-
-.btn-primary {
-  width: 100%;
+/**
+ * Single Unified Component: .btn
+ * Standardized clickable button base for action, primary, and secondary buttons.
+ * 
+ * Applied in:
+ * - Primary Action / Manage Keys Button (.btn, .btn--primary)
+ * - Secondary Utility Buttons (.btn, .btn--secondary)
+ * - Model Dropdown Sort Toolbar Buttons (.btn, .btn--sort)
+ */
+.btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  border: 0 !important;
+  outline: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  font-family: inherit;
+  user-select: none;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Modifiers on .btn */
+.btn--primary {
+  width: 100%;
   padding: 6px 12px;
   border-radius: var(--app-radius-sm);
   background: var(--app-accent);
@@ -779,8 +801,46 @@ button:disabled {
   font-weight: 500;
 }
 
-.btn-primary:hover:not(:disabled) {
+.btn--primary:hover:not(:disabled) {
   background: var(--app-accent-hover);
+}
+
+.btn--secondary {
+  padding: 5px 10px;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-surface-strong);
+  color: var(--app-muted);
+  font-size: 0.75rem;
+}
+
+.btn--secondary:hover:not(:disabled) {
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
+}
+
+.btn--sort {
+  gap: 3px;
+  padding: 2px 8px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--app-surface-strong, rgba(255, 255, 255, 0.06));
+  color: var(--app-muted);
+}
+
+.btn--sort:hover:not(:disabled) {
+  background: var(--app-surface-hover, rgba(255, 255, 255, 0.12));
+  color: var(--app-fg);
+  border-color: var(--app-border-subtle);
+  box-shadow: var(--app-btn-inset);
+}
+
+.btn--sort.active {
+  background: var(--app-surface-hover, rgba(255, 255, 255, 0.12));
+  color: #ffffff;
+  border-color: var(--app-border-strong, rgba(255, 255, 255, 0.2));
+  font-weight: 600;
 }
 
 /* -----------------------------
@@ -4959,41 +5019,6 @@ details[open]>summary>.custom-chevron {
   margin-bottom: 4px;
   overflow-x: auto;
   scrollbar-width: none;
-}
-
-/* Compact sort button modifier reusing the secondary-btn design system base with pill rounding */
-.secondary-btn--sort {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 2px 8px;
-  font-size: 0.68rem;
-  font-weight: 500;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  background: var(--app-surface-strong, rgba(255, 255, 255, 0.06));
-  color: var(--app-muted, #888888);
-  cursor: pointer;
-  white-space: nowrap;
-  user-select: none;
-  box-shadow: none;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-/* Hover state for secondary sort button modifier with subtle inset spread and lighter button color */
-.secondary-btn--sort:hover {
-  background: var(--app-surface-hover, rgba(255, 255, 255, 0.12));
-  color: var(--app-fg, #ffffff);
-  border-color: var(--app-border-subtle, rgba(255, 255, 255, 0.08));
-  box-shadow: var(--app-btn-inset, inset 0 0 0 1px rgba(255, 255, 255, 0.1));
-}
-
-/* Active state for secondary sort button modifier with crisp white text and theme surface without blue accent */
-.secondary-btn--sort.active {
-  background: var(--app-surface-hover, rgba(255, 255, 255, 0.12));
-  color: #ffffff;
-  border-color: var(--app-border-strong, rgba(255, 255, 255, 0.2));
-  font-weight: 600;
 }
 
 /* Container for dynamically sorted LM Studio model items */

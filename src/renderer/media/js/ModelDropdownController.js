@@ -252,7 +252,7 @@ class ModelDropdownController {
                     // 1. Recent Chip (Always newest first)
                     const btnRecent = document.createElement('button');
                     btnRecent.type = 'button';
-                    btnRecent.className = `secondary-btn secondary-btn--sort ${currentSortKey === 'recent' ? 'active' : ''}`;
+                    btnRecent.className = `btn btn--sort ${currentSortKey === 'recent' ? 'active' : ''}`;
                     btnRecent.textContent = 'Recent';
                     btnRecent.title = 'Sorteer op nieuwste download';
                     btnRecent.addEventListener('click', (e) => {
@@ -268,7 +268,7 @@ class ModelDropdownController {
                     // 2. Name Chip (Toggle Asc/Desc)
                     const btnName = document.createElement('button');
                     btnName.type = 'button';
-                    btnName.className = `secondary-btn secondary-btn--sort ${currentSortKey === 'name' ? 'active' : ''}`;
+                    btnName.className = `btn btn--sort ${currentSortKey === 'name' ? 'active' : ''}`;
                     const nameArrow = currentSortKey === 'name' ? (currentSortDir === 'asc' ? ' ↑' : ' ↓') : '';
                     btnName.textContent = `Naam${nameArrow}`;
                     btnName.title = 'Sorteer alfabetisch op naam';
@@ -289,7 +289,7 @@ class ModelDropdownController {
                     // 3. Size Chip (Toggle Asc/Desc)
                     const btnSize = document.createElement('button');
                     btnSize.type = 'button';
-                    btnSize.className = `secondary-btn secondary-btn--sort ${currentSortKey === 'size' ? 'active' : ''}`;
+                    btnSize.className = `btn btn--sort ${currentSortKey === 'size' ? 'active' : ''}`;
                     const sizeArrow = currentSortKey === 'size' ? (currentSortDir === 'desc' ? ' ↓' : ' ↑') : '';
                     btnSize.textContent = `Grootte${sizeArrow}`;
                     btnSize.title = 'Sorteer op bestandsgrootte';
