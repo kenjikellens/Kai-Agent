@@ -117,12 +117,29 @@ class BrowserPreviewEngine {
             const res = await fetch('/api/lmstudio/models');
             if (res.ok) {
                 const json = await res.json();
-                connected = json.connected || false;
                 lmStudioModels = (json.data || []).map(m => m.id || m.name);
                 loadedModels = (json.data || []).filter(m => m.state === 'loaded').map(m => m.id || m.name);
+                connected = json.connected !== undefined ? Boolean(json.connected) : (lmStudioModels.length > 0);
             }
         } catch (e) {
             connected = false;
+        }
+
+        // Direct probe fallback if running in standalone browser preview
+        if (!connected) {
+            try {
+                const directRes = await fetch(serverUrl.replace(/\/$/, '') + '/models');
+                if (directRes.ok) {
+                    const directJson = await directRes.json();
+                    const directModels = (directJson.data || []).map(m => m.id || m.name);
+                    if (directModels.length > 0) {
+                        connected = true;
+                        if (lmStudioModels.length === 0) {
+                            lmStudioModels = directModels;
+                        }
+                    }
+                }
+            } catch (e) {}
         }
 
         const geminiKey = localStorage.getItem('kai.geminiApiKey') || '';

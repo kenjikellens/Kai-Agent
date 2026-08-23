@@ -595,8 +595,9 @@ class ChatUIController {
             editBtn.title = 'Edit prompt';
             editBtn.innerHTML = editSvg;
 
+            const isMulti = text && (text.includes('\n') || text.length > 80);
             const messageDiv = document.createElement('div');
-            messageDiv.className = 'message user-message';
+            messageDiv.className = `message user-message${isMulti ? ' is-multiline' : ''}`;
 
             const contentDiv = document.createElement('div');
             contentDiv.className = 'message-content';

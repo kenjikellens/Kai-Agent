@@ -130,9 +130,10 @@ const server = http.createServer(async (req, res) => {
                 name: id,
                 state: loadedModels.some(lm => lm.toLowerCase() === id.toLowerCase()) ? 'loaded' : 'downloaded'
             }));
-            return sendJson(res, 200, { data });
+            const isServerOnline = uniqueModels.length > 0 || loadedModels.length > 0;
+            return sendJson(res, 200, { connected: isServerOnline, data });
         } catch (e) {
-            return sendJson(res, 200, { data: [] });
+            return sendJson(res, 200, { connected: false, data: [] });
         }
     }
 

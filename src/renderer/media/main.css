@@ -346,10 +346,12 @@ body {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  padding: 3px 6px;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
+  box-sizing: border-box;
 }
 
 /* Individual Chat History Row in Left Sidebar - Pill styling matching input field buttons */
@@ -925,10 +927,27 @@ button:disabled {
   align-self: flex-end;
   background: var(--app-surface-hover, #2a2a2e);
   color: var(--app-fg, #e4e4e7);
-  border: 1px solid var(--app-border, #3f3f46);
-  border-radius: 12px;
-  padding: 8px 12px !important;
+  border: 1px solid var(--app-border, rgba(255, 255, 255, 0.08));
+  border-radius: 999px;
+  padding: 6px 14px !important;
   box-sizing: border-box;
+  word-break: break-word;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.user-message:hover {
+  background: var(--app-surface-active, #323238);
+  box-shadow: none !important;
+}
+
+.user-message.is-multiline,
+.user-message:has(br),
+.user-message:has(p + p),
+.user-message:has(ul),
+.user-message:has(ol),
+.user-message:has(pre) {
+  border-radius: 14px;
+  padding: 8px 14px !important;
 }
 
 .user-message .message-content {
@@ -3149,7 +3168,7 @@ button:disabled {
 
 /* Compact spacing between tool cards and adjacent text */
 .tool-status-row {
-  margin: 4px 0 !important;
+  margin: 2px 0 !important;
 }
 
 .tool-status-row + .tool-status-row {
@@ -3157,7 +3176,15 @@ button:disabled {
 }
 
 .message.assistant-message {
-  margin: 4px 0;
+  margin: 2px 0;
+}
+
+.assistant-message .message-content {
+  padding: 2px 0 !important;
+}
+
+.assistant-message .message-content p {
+  margin: 2px 0;
 }
 
 /* ==========================================================================
@@ -3806,22 +3833,34 @@ button:disabled {
    Tool cards
 ------------------------------ */
 .tool-status-row {
-  display: flex;
+  display: inline-flex;
   flex-direction: column;
-  align-self: stretch;
-  margin: 2px 0;
-  padding: 4px 8px;
-  border-radius: var(--app-radius-sm);
+  align-self: flex-start;
+  margin: 2px 0 !important;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid var(--app-border-subtle);
   color: var(--app-muted);
   font-size: 0.75rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  box-sizing: border-box;
+  user-select: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .tool-status-row:hover {
   background: var(--app-surface-hover);
+  border-color: var(--app-border);
   color: var(--app-fg);
+  box-shadow: none !important;
+}
+
+.tool-status-row.expanded {
+  border-radius: var(--app-radius-md, 8px);
+  display: flex;
+  align-self: stretch;
 }
 
 .tool-call-header {

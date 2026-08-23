@@ -13,7 +13,8 @@ class UserMessageBubble {
      */
     static render(text, options = {}) {
         const row = document.createElement('div');
-        row.className = 'message user-message';
+        const isMulti = text && (text.includes('\n') || text.length > 80);
+        row.className = `message user-message${isMulti ? ' is-multiline' : ''}`;
         row.dataset.rawContent = text;
 
         const contentDiv = document.createElement('div');
