@@ -28,41 +28,90 @@ class BrowserNativeDialogs {
     }
 
     /**
-     * Opens native folder picker dialog for workspace directory via backend endpoint.
-     * @returns {Promise<string | null>} Selected workspace folder path or null.
+     * Opens folder picker dialog for workspace directory using File System Access API or HTML5 webkitdirectory.
+     * @returns {Promise<string | null>} Selected workspace folder name/path or null.
      */
-    static async openWorkspaceFolderPicker() {
-        try {
-            const res = await fetch('/api/workspace/pick', { method: 'POST' });
-            if (res.ok) {
-                const data = await res.json();
-                if (!data.canceled && data.workspacePath) {
-                    return data.workspacePath;
+    static openWorkspaceFolderPicker() {
+        return new Promise(async (resolve) => {
+            // Method 1: Try modern window.showDirectoryPicker if supported
+            if (typeof window.showDirectoryPicker === 'function') {
+                try {
+                    const dirHandle = await window.showDirectoryPicker();
+                    if (dirHandle && dirHandle.name) {
+                        return resolve(dirHandle.name);
+                    }
+                } catch (e) {
+                    if (e.name !== 'AbortError') {
+                        console.warn('showDirectoryPicker error, falling back to input:', e);
+                    } else {
+                        return resolve(null);
+                    }
                 }
             }
-        } catch (e) {
-            console.error('Error selecting workspace folder:', e);
-        }
-        return null;
+
+            // Method 2: Standard HTML5 input element with webkitdirectory
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.webkitdirectory = true;
+            input.directory = true;
+            input.multiple = true;
+            input.style.display = 'none';
+
+            input.addEventListener('change', () => {
+                if (input.files && input.files.length > 0) {
+                    const firstFile = input.files[0];
+                    const relPath = firstFile.webkitRelativePath || '';
+                    const folderName = relPath.split('/')[0] || firstFile.name;
+                    resolve(folderName);
+                } else {
+                    resolve(null);
+                }
+                input.remove();
+            }, { once: true });
+
+            document.body.appendChild(input);
+            input.click();
+        });
     }
 
     /**
-     * Opens native folder picker dialog for LM Studio cache directory via backend endpoint.
+     * Opens folder picker dialog for LM Studio cache directory.
      * @returns {Promise<string | null>} Selected LM Studio cache path or null.
      */
-    static async openLMStudioFolderPicker() {
-        try {
-            const res = await fetch('/api/lmstudio/pick', { method: 'POST' });
-            if (res.ok) {
-                const data = await res.json();
-                if (!data.canceled && data.lmStudioCacheDir) {
-                    return data.lmStudioCacheDir;
+    static openLMStudioFolderPicker() {
+        return new Promise(async (resolve) => {
+            if (typeof window.showDirectoryPicker === 'function') {
+                try {
+                    const dirHandle = await window.showDirectoryPicker();
+                    if (dirHandle && dirHandle.name) {
+                        return resolve(dirHandle.name);
+                    }
+                } catch (e) {
+                    if (e.name === 'AbortError') return resolve(null);
                 }
             }
-        } catch (e) {
-            console.error('Error selecting LM Studio directory:', e);
-        }
-        return null;
+
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.webkitdirectory = true;
+            input.directory = true;
+            input.style.display = 'none';
+
+            input.addEventListener('change', () => {
+                if (input.files && input.files.length > 0) {
+                    const firstFile = input.files[0];
+                    const relPath = firstFile.webkitRelativePath || '';
+                    const folderName = relPath.split('/')[0] || firstFile.name;
+                    resolve(folderName);
+                } else {
+                    resolve(null);
+                }
+                input.remove();
+            }, { once: true });
+
+            document.body.appendChild(input);
+            input.click();
+        });
     }
 }
 

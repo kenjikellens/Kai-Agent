@@ -17,15 +17,42 @@ class DOMUtils {
         return el;
     }
 
+    static _svgCache = {};
+
     /**
-     * Returns an img tag HTML string referencing a standalone SVG asset in media/svg/.
-     * @param {string} name SVG asset filename without extension (e.g. 'close', 'folder').
-     * @param {string} [className='icon-svg'] CSS class name.
-     * @param {number} [size=14] Width and height in pixels.
-     * @returns {string} Image tag referencing the SVG file.
+     * Preloads and caches SVG text from media/svg/.
+     * @param {string} name Asset name without extension.
+     * @returns {Promise<string>} Raw SVG markup string.
      */
-    static getSvgImgString(name, className = 'icon-svg', size = 14) {
-        return `<img src="media/svg/${name}.svg" class="${className}" width="${size}" height="${size}" alt="${name}" draggable="false" />`;
+    static async loadSvg(name) {
+        if (DOMUtils._svgCache[name]) return DOMUtils._svgCache[name];
+        try {
+            const res = await fetch(`media/svg/${name}.svg`);
+            if (res.ok) {
+                const text = await res.text();
+                DOMUtils._svgCache[name] = text;
+                return text;
+            }
+        } catch (e) {}
+        return '';
+    }
+
+    /**
+     * Injects a standalone SVG into a container element dynamically.
+     * @param {HTMLElement} container Parent DOM element.
+     * @param {string} name SVG asset name.
+     * @param {string} [className=''] Extra CSS class to attach.
+     */
+    static async injectSvg(container, name, className = '') {
+        if (!container) return;
+        const svgText = await DOMUtils.loadSvg(name);
+        if (svgText) {
+            container.innerHTML = svgText;
+            const svgEl = container.querySelector('svg');
+            if (svgEl && className) {
+                svgEl.classList.add(...className.split(' ').filter(Boolean));
+            }
+        }
     }
 
     /**

@@ -199,6 +199,62 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 200, { status: 'ok', reverted: [] });
     }
 
+    // 4b. API: Workspace Folder Picker (Windows Native Folder Picker Dialog)
+    if (pathname === '/api/workspace/pick' && req.method === 'POST') {
+        const { spawn } = require('child_process');
+        const script = `
+[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms') | Out-Null
+$dialog = New-Object System.Windows.Forms.FolderBrowserDialog
+$dialog.Description = 'Select Workspace Folder'
+$dialog.ShowNewFolderButton = $true
+$result = $dialog.ShowDialog()
+if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
+    [Console]::Out.WriteLine($dialog.SelectedPath)
+} else {
+    [Console]::Out.WriteLine('CANCELED')
+}
+`;
+        const ps = spawn('powershell.exe', ['-STA', '-NoProfile', '-NonInteractive', '-Command', script]);
+        let output = '';
+        ps.stdout.on('data', data => { output += data.toString(); });
+        ps.on('close', () => {
+            const picked = output.trim();
+            if (picked && picked !== 'CANCELED' && !picked.includes('Exception')) {
+                return sendJson(res, 200, { canceled: false, workspacePath: picked });
+            }
+            return sendJson(res, 200, { canceled: true });
+        });
+        return;
+    }
+
+    // 4c. API: LM Studio Cache Folder Picker
+    if (pathname === '/api/lmstudio/pick' && req.method === 'POST') {
+        const { spawn } = require('child_process');
+        const script = `
+[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms') | Out-Null
+$dialog = New-Object System.Windows.Forms.FolderBrowserDialog
+$dialog.Description = 'Select LM Studio Directory'
+$dialog.ShowNewFolderButton = $false
+$result = $dialog.ShowDialog()
+if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
+    [Console]::Out.WriteLine($dialog.SelectedPath)
+} else {
+    [Console]::Out.WriteLine('CANCELED')
+}
+`;
+        const ps = spawn('powershell.exe', ['-STA', '-NoProfile', '-NonInteractive', '-Command', script]);
+        let output = '';
+        ps.stdout.on('data', data => { output += data.toString(); });
+        ps.on('close', () => {
+            const picked = output.trim();
+            if (picked && picked !== 'CANCELED' && !picked.includes('Exception')) {
+                return sendJson(res, 200, { canceled: false, lmStudioCacheDir: picked });
+            }
+            return sendJson(res, 200, { canceled: true });
+        });
+        return;
+    }
+
     // 5. API: Switch LM Studio Model (enforcing max 1 loaded model)
     if (pathname === '/api/lmstudio/switch' && req.method === 'POST') {
         const body = await parseBody(req);

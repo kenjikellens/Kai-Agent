@@ -79,13 +79,14 @@ When implementing or modifying completions across providers, dynamically apply t
 
 ---
 
-## 7. Documentation & Architecture Sync Mandate
+## 7. Mandatory Documentation & Overview Sync Mandate
 
-- **Triple-File Synchronization**: Whenever architecture, UI components, runtime features, or system design guidelines are modified, the agent MUST always update and synchronize all 3 `AGENTS.md` and all 3 `overview.md` files in lockstep:
-  1. Root workspace: `.agents/AGENTS.md` and `.agents/overview.md`
-  2. Desktop App: `KAI Agent App/.agents/AGENTS.md` and `KAI Agent App/docs/overview.md`
-  3. Extension: `Kai-Agent-extension/.agents/AGENTS.md` and `Kai-Agent-extension/docs/overview.md`
-- Never leave any of the 3 instances outdated or out of sync.
+- **MANDATORY TRIPLE-FILE SYNCHRONIZATION AFTER EVERY CHANGE**:
+  - Whenever ANY architectural change, UI modification, feature addition, refactoring, or tool/provider adjustment is made, the agent **MUST ALWAYS WITHOUT EXCEPTION** update and synchronize all 3 `AGENTS.md` and all 3 `overview.md` files in lockstep before concluding the task:
+    1. Workspace root: `.agents/AGENTS.md` and `.agents/overview.md`
+    2. Desktop App: `KAI Agent App/.agents/AGENTS.md` and `KAI Agent App/docs/overview.md`
+    3. Extension: `Kai-Agent-extension/.agents/AGENTS.md` and `Kai-Agent-extension/docs/overview.md`
+  - **Zero Exceptions**: Never conclude a turn or task with code or structural modifications without verifying and updating all 3 `overview.md` documentation files to reflect the current state.
 
 ---
 
