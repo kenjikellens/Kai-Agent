@@ -16,16 +16,16 @@ export class OpenRouterClient extends BaseCloudProviderClient {
     /** Available OpenRouter model identifiers. */
     public readonly models = [
         "openrouter/stealth/ox-alpha",
-        "openrouter/openrouter/free",
-        "openrouter/liquid/lfm-2.5-2.6b:free",
-        "openrouter/nvidia/nemotron-3.5-lightning:free",
         "openrouter/google/gemma-4-31b-it:free",
+        "openrouter/google/gemma-4-26b-a4b-it:free",
+        "openrouter/cohere/north-mini-code:free",
         "openrouter/z-ai/glm-5.2:free",
-        "openrouter/thinkingmachines/inkling:free",
-        "openrouter/poolside/laguna-s-2.1:free",
+        "openrouter/nvidia/nemotron-3.5-lightning:free",
         "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
         "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
-        "openrouter/nvidia/nemotron-3.5-content-safety:free"
+        "openrouter/poolside/laguna-s-2.1:free",
+        "openrouter/thinkingmachines/inkling:free",
+        "openrouter/liquid/lfm-2.5-2.6b:free"
     ];
 
     /**
@@ -69,13 +69,12 @@ export class OpenRouterClient extends BaseCloudProviderClient {
         const payload = super.preparePayload(model, messages, temperature, stream, thinking);
         const bareModel = this.stripProviderPrefix(model).toLowerCase();
         
-        // Check if model supports reasoning (Ox Alpha, R1, GLM-5.2, Gemma 4, openrouter/free, etc.)
+        // Check if model supports reasoning (Ox Alpha, R1, GLM-5.2, Gemma 4, DeepSeek, etc.)
         const isReasoningModel = bareModel.includes('ox-alpha') ||
             bareModel.includes('r1') ||
             bareModel.includes('reasoning') ||
             bareModel.includes('glm-5.2') ||
             bareModel.includes('gemma-4') ||
-            bareModel.includes('free') ||
             bareModel.includes('deepseek');
 
         if (isReasoningModel) {

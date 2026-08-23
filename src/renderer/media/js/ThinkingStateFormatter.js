@@ -31,16 +31,16 @@ class ThinkingStateFormatter {
      */
     static openRouterReasoningMap = {
         'stealth/ox-alpha': { mandatory: true, supportedEfforts: ['max', 'high', 'low'], defaultEffort: 'max' },
-        'openrouter/free': { mandatory: false, supportedEfforts: ['high', 'medium', 'low', 'none'], defaultEffort: 'high' },
-        'liquid/lfm-2.5-2.6b:free': { mandatory: true, supportedEfforts: null, defaultEffort: 'none' },
-        'nvidia/nemotron-3.5-lightning:free': { mandatory: false, supportedEfforts: null, defaultEffort: 'none' },
         'google/gemma-4-31b-it:free': { mandatory: false, supportedEfforts: null, defaultEffort: 'none' },
+        'google/gemma-4-26b-a4b-it:free': { mandatory: false, supportedEfforts: null, defaultEffort: 'none' },
+        'cohere/north-mini-code:free': { mandatory: false, supportedEfforts: null, defaultEffort: 'none' },
         'z-ai/glm-5.2:free': { mandatory: false, supportedEfforts: ['xhigh', 'high'], defaultEffort: 'high' },
-        'thinkingmachines/inkling:free': { mandatory: false, supportedEfforts: ['max', 'high', 'medium', 'low', 'minimal', 'none'], defaultEffort: 'high' },
-        'poolside/laguna-s-2.1:free': { mandatory: false, supportedEfforts: null, defaultEffort: 'none' },
+        'nvidia/nemotron-3.5-lightning:free': { mandatory: false, supportedEfforts: null, defaultEffort: 'none' },
         'nvidia/nemotron-3-super-120b-a12b:free': { mandatory: false, supportedEfforts: ['medium', 'low'], defaultEffort: 'medium' },
         'nvidia/nemotron-3-ultra-550b-a55b:free': { mandatory: false, supportedEfforts: ['high', 'medium'], defaultEffort: 'high' },
-        'nvidia/nemotron-3.5-content-safety:free': { mandatory: false, supportedEfforts: null, defaultEffort: 'none' }
+        'poolside/laguna-s-2.1:free': { mandatory: false, supportedEfforts: null, defaultEffort: 'none' },
+        'thinkingmachines/inkling:free': { mandatory: false, supportedEfforts: ['max', 'high', 'medium', 'low', 'minimal', 'none'], defaultEffort: 'high' },
+        'liquid/lfm-2.5-2.6b:free': { mandatory: true, supportedEfforts: null, defaultEffort: 'none' }
     };
 
     /**

@@ -22,7 +22,7 @@ const KAI_CONSTANTS = {
     ],
     DEFAULT_PROVIDERS_WITH_MODELS: [
         { name: 'OmniRoute Gateway', models: ['omniroute/auto'] },
-        { name: 'OpenRouter', models: ['openrouter/stealth/ox-alpha', 'openrouter/openrouter/free', 'openrouter/liquid/lfm-2.5-2.6b:free', 'openrouter/nvidia/nemotron-3.5-lightning:free', 'openrouter/google/gemma-4-31b-it:free', 'openrouter/z-ai/glm-5.2:free', 'openrouter/thinkingmachines/inkling:free', 'openrouter/poolside/laguna-s-2.1:free', 'openrouter/nvidia/nemotron-3-super-120b-a12b:free', 'openrouter/nvidia/nemotron-3-ultra-550b-a55b:free', 'openrouter/nvidia/nemotron-3.5-content-safety:free'] },
+        { name: 'OpenRouter', models: ['openrouter/stealth/ox-alpha', 'openrouter/google/gemma-4-31b-it:free', 'openrouter/google/gemma-4-26b-a4b-it:free', 'openrouter/cohere/north-mini-code:free', 'openrouter/z-ai/glm-5.2:free', 'openrouter/nvidia/nemotron-3.5-lightning:free', 'openrouter/nvidia/nemotron-3-super-120b-a12b:free', 'openrouter/nvidia/nemotron-3-ultra-550b-a55b:free', 'openrouter/poolside/laguna-s-2.1:free', 'openrouter/thinkingmachines/inkling:free', 'openrouter/liquid/lfm-2.5-2.6b:free'] },
         { name: 'Mistral AI', models: ['mistral/magistral-small-latest', 'mistral/magistral-medium-latest', 'mistral/mistral-small-latest', 'mistral/mistral-medium-3-5', 'mistral/codestral-latest', 'mistral/open-mixtral-8x22b'] },
         { name: 'Cohere', models: ['cohere/command-r-plus', 'cohere/command-r'] },
         { name: 'Cerebras', models: ['cerebras/llama-3.3-70b', 'cerebras/llama-3.1-8b'] },
