@@ -46,7 +46,7 @@ export class ReadFileTool extends Tool {
 
         const content = await fs.promises.readFile(targetPath, 'utf8');
         if (content.length === 0) {
-            return '';
+            return `[File '${args.path}' exists but is empty (0 lines, 0 bytes)]`;
         }
         const lines = content.split(/\r?\n/);
         const formatted = lines.map((line, idx) => `${idx + 1}: ${line}`).join('\n');
