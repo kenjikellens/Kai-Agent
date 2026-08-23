@@ -17,10 +17,12 @@ const KAI_CONSTANTS = {
         { name: 'Cohere', configKey: 'cohereApiKey', keyHint: 'Get free key at dashboard.cohere.com', docUrl: 'https://dashboard.cohere.com/api-keys' },
         { name: 'Cerebras', configKey: 'cerebrasApiKey', keyHint: 'Get free key at cloud.cerebras.ai', docUrl: 'https://cloud.cerebras.ai/' },
         { name: 'Zhipu AI', configKey: 'zhipuApiKey', keyHint: 'Get free key at open.bigmodel.cn', docUrl: 'https://open.bigmodel.cn/usercenter/apikeys' },
-        { name: 'OmniRoute Gateway', configKey: 'omnirouteApiKey', keyHint: 'Run OmniRoute via npm: npx omniroute', docUrl: 'https://github.com/omniroute/omniroute' }
+        { name: 'OmniRoute Gateway', configKey: 'omnirouteApiKey', keyHint: 'Run OmniRoute via npm: npx omniroute', docUrl: 'https://github.com/omniroute/omniroute' },
+        { name: 'OpenRouter', configKey: 'openrouterApiKey', keyHint: 'Get API key at openrouter.ai/keys', docUrl: 'https://openrouter.ai/keys' }
     ],
     DEFAULT_PROVIDERS_WITH_MODELS: [
         { name: 'OmniRoute Gateway', models: ['omniroute/auto'] },
+        { name: 'OpenRouter', models: ['openrouter/stealth/ox-alpha', 'openrouter/openrouter/free', 'openrouter/liquid/lfm-2.5-2.6b:free', 'openrouter/nvidia/nemotron-3.5-lightning:free', 'openrouter/google/gemma-4-31b-it:free', 'openrouter/z-ai/glm-5.2:free', 'openrouter/thinkingmachines/inkling:free', 'openrouter/poolside/laguna-s-2.1:free', 'openrouter/nvidia/nemotron-3-super-120b-a12b:free', 'openrouter/nvidia/nemotron-3-ultra-550b-a55b:free', 'openrouter/nvidia/nemotron-3.5-content-safety:free'] },
         { name: 'Mistral AI', models: ['mistral/magistral-small-latest', 'mistral/magistral-medium-latest', 'mistral/mistral-small-latest', 'mistral/mistral-medium-3-5', 'mistral/codestral-latest', 'mistral/open-mixtral-8x22b'] },
         { name: 'Cohere', models: ['cohere/command-r-plus', 'cohere/command-r'] },
         { name: 'Cerebras', models: ['cerebras/llama-3.3-70b', 'cerebras/llama-3.1-8b'] },

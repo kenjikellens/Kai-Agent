@@ -44,34 +44,6 @@ class WebviewIPCBridge {
                 this.listeners.get(data.type).forEach(cb => cb(data));
             }
         };
-        const fullSessionsKey = 'kai.savedFullSessions';
-        const legacySessionsKey = 'kai.savedChats';
-        const summaryKey = 'kai.savedChatsSummary';
-        const toSummary = (sessions) => sessions.map(chat => ({
-            id: chat.id,
-            title: chat.title || 'New Chat',
-            timestamp: chat.timestamp || Date.now()
-        }));
-        const readFullSessions = () => {
-            const storedRaw = localStorage.getItem(fullSessionsKey);
-            if (storedRaw !== null) {
-                const saved = JSON.parse(storedRaw);
-                return Array.isArray(saved) ? saved : [];
-            }
-            const legacy = JSON.parse(localStorage.getItem(legacySessionsKey) || '[]');
-            const completeLegacy = Array.isArray(legacy)
-                ? legacy.filter(chat => chat && chat.id &&
-                    (Array.isArray(chat.messages) || Array.isArray(chat.uiEvents)))
-                : [];
-            if (completeLegacy.length > 0) {
-                localStorage.setItem(fullSessionsKey, JSON.stringify(completeLegacy));
-            }
-            return completeLegacy;
-        };
-        const writeFullSessions = (sessions) => {
-            localStorage.setItem(fullSessionsKey, JSON.stringify(sessions));
-            localStorage.setItem(summaryKey, JSON.stringify(toSummary(sessions)));
-        };
 
         switch (message.type) {
             case 'checkConnection': {
@@ -112,7 +84,7 @@ class WebviewIPCBridge {
                 // Fast probe for raw model data via local backend proxy to eliminate CORS restrictions
                 const probeCandidate = async (url) => {
                     const controller = new AbortController();
-                    const timer = setTimeout(() => controller.abort(), 5000);
+                    const timer = setTimeout(() => controller.abort(), 2500);
                     try {
                         const res = await fetch(url, { method: 'GET', signal: controller.signal });
                         clearTimeout(timer);
@@ -174,18 +146,7 @@ class WebviewIPCBridge {
                     }
                 } catch (e) {}
 
-                if ((!lmModels || lmModels.length === 0) && lmStudioCapabilities && Object.keys(lmStudioCapabilities).length > 0) {
-                    const seen = new Set();
-                    lmModels = [];
-                    for (const cap of Object.values(lmStudioCapabilities)) {
-                        const id = cap.displayName || cap.modelId;
-                        if (id && !seen.has(id.toLowerCase())) {
-                            seen.add(id.toLowerCase());
-                            lmModels.push(id);
-                        }
-                    }
-                    lmConnected = lmModels.length > 0;
-                }
+                
 
                 const freeProvidersConfig = buildFreeProviders();
                 const isGeminiConnected = !!apiKey.trim();
@@ -261,25 +222,18 @@ class WebviewIPCBridge {
             case 'saveChat': {
                 try {
                     const chat = message.chat;
-                    if (chat && chat.id && (Array.isArray(chat.messages) || Array.isArray(chat.uiEvents))) {
-                        const saved = readFullSessions();
+                    if (chat && chat.messages && chat.messages.length > 0) {
+                        const saved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
                         const idx = saved.findIndex(c => c.id === chat.id);
-                        const previous = idx >= 0 ? saved[idx] : {};
-                        const completeChat = {
-                            ...previous,
-                            ...chat,
-                            messages: Array.isArray(chat.messages) ? chat.messages : (previous.messages || []),
-                            uiEvents: Array.isArray(chat.uiEvents) ? chat.uiEvents : (previous.uiEvents || [])
-                        };
                         if (idx !== -1) {
-                            saved[idx] = completeChat;
+                            saved[idx] = chat;
                         } else {
-                            saved.unshift(completeChat);
+                            saved.unshift(chat);
                         }
-                        writeFullSessions(saved);
+                        localStorage.setItem('kai.savedChats', JSON.stringify(saved));
                         emit({
                             type: 'chatHistory',
-                            chats: toSummary(saved)
+                            chats: saved.map(c => ({ id: c.id, title: c.title || 'New Chat', timestamp: c.timestamp || Date.now() }))
                         });
                     }
                 } catch (e) {}
@@ -287,10 +241,10 @@ class WebviewIPCBridge {
             }
             case 'loadChatHistory': {
                 try {
-                    const saved = readFullSessions();
+                    const saved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
                     emit({
                         type: 'chatHistory',
-                        chats: toSummary(saved)
+                        chats: saved.map(c => ({ id: c.id, title: c.title || 'New Chat', timestamp: c.timestamp || Date.now() }))
                     });
                 } catch (e) {
                     emit({ type: 'chatHistory', chats: [] });
@@ -299,7 +253,7 @@ class WebviewIPCBridge {
             }
             case 'loadChat': {
                 try {
-                    const saved = readFullSessions();
+                    const saved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
                     const found = saved.find(c => c.id === message.chatId);
                     if (found) emit({ type: 'loadChat', chat: found });
                 } catch (e) {}
@@ -307,22 +261,12 @@ class WebviewIPCBridge {
             }
             case 'deleteChat': {
                 try {
-                    let saved = readFullSessions();
+                    let saved = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
                     saved = saved.filter(c => c.id !== message.chatId);
-                    writeFullSessions(saved);
+                    localStorage.setItem('kai.savedChats', JSON.stringify(saved));
                     emit({
                         type: 'chatHistory',
-                        chats: toSummary(saved)
-                    });
-                } catch (e) {}
-                break;
-            }
-            case 'rollbackTurn': {
-                try {
-                    await fetch('/api/tools/rollback', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ turnIds: message.turnIds || [message.chatId] })
+                        chats: saved.map(c => ({ id: c.id, title: c.title || 'New Chat', timestamp: c.timestamp || Date.now() }))
                     });
                 } catch (e) {}
                 break;
@@ -410,15 +354,13 @@ class WebviewIPCBridge {
                     const modelLower = (model || '').toLowerCase();
                     const isGemini = modelLower.startsWith('gemini');
                     const isMistral = modelLower.startsWith('mistral/');
+                    const isOpenRouter = modelLower.startsWith('openrouter/');
                     const isZhipu = modelLower.startsWith('zhipu/');
                     const isCohere = modelLower.startsWith('cohere/');
                     const isCerebras = modelLower.startsWith('cerebras/');
                     const isOmniRoute = modelLower.startsWith('omniroute/');
 
-                    const effortVal = message.geminiThinkingLevel || 'high';
-                    const caps = (typeof ThinkingStateFormatter !== 'undefined' && ThinkingStateFormatter._capabilities)
-                        ? (ThinkingStateFormatter._capabilities[model] || ThinkingStateFormatter._capabilities[modelLower])
-                        : null;
+
 
                     // Agentic loop: stream response, parse tool calls, execute, repeat
                     const maxIterations = 15;
@@ -491,6 +433,7 @@ class WebviewIPCBridge {
                                     includeThoughts: isThinkingOn
                                 };
                             }
+                            console.log('[KAI IPC] Gemini thinkingConfig:', model, '→', thinkingConfig);
 
                             payload = {
                                 contents: contents,
@@ -500,6 +443,49 @@ class WebviewIPCBridge {
                                     thinkingConfig: thinkingConfig
                                 }
                             };
+                        } else if (isOpenRouter) {
+                            const openrouterKey = (localStorage.getItem('kai.openrouterApiKey') || '').trim();
+                            if (!openrouterKey) {
+                                if (window.chatUIController && typeof window.chatUIController.showApiKeyRequiredNotice === 'function') {
+                                    window.chatUIController.showApiKeyRequiredNotice({
+                                        providerName: 'OpenRouter',
+                                        modelName: model,
+                                        configKey: 'openrouterApiKey',
+                                        url: 'https://openrouter.ai/keys',
+                                        keyHint: 'Get API key at openrouter.ai/keys'
+                                    });
+                                }
+                                emit({
+                                    type: 'error',
+                                    error: 'OpenRouter API-sleutel is niet ingesteld! Voer je OpenRouter API key in via Instellingen.'
+                                });
+                                emit({ type: 'streamEnd' });
+                                return;
+                            }
+                            targetUrl = 'https://openrouter.ai/api/v1/chat/completions';
+                            fetchHeaders['Authorization'] = `Bearer ${openrouterKey}`;
+                            fetchHeaders['HTTP-Referer'] = 'https://kai-agent.local';
+                            fetchHeaders['X-Title'] = 'KAI Agent';
+
+                            const bareModel = model.replace(/^openrouter\//i, '');
+                            const caps = (typeof ThinkingStateFormatter !== 'undefined') ? ThinkingStateFormatter.getCapabilitiesState(model) : null;
+                            const isReasoningCapable = caps ? (caps.hasThinkingToggle || caps.hasReasoningEffort) : false;
+
+                            payload = {
+                                model: bareModel,
+                                messages: messagesToSend.map(m => ({ role: m.role, content: m.content })),
+                                stream: true
+                            };
+
+                            if (isReasoningCapable) {
+                                const isOn = caps.isThinkingOn;
+                                const effort = caps.hasReasoningEffort ? caps.reasoningLevel : (isOn ? 'high' : 'none');
+                                payload.reasoning = {
+                                    effort: isOn ? effort : 'none',
+                                    exclude: !isOn
+                                };
+                            }
+                            console.log('[KAI IPC] OpenRouter reasoning payload:', model, '→', payload.reasoning);
                         } else if (isMistral) {
                             const mistralKey = (localStorage.getItem('kai.mistralApiKey') || '').trim();
                             if (!mistralKey) {
@@ -662,7 +648,7 @@ class WebviewIPCBridge {
                             });
                         } catch (fetchErr) {
                             console.warn(`[KAI IPC] Direct fetch to ${targetUrl} failed (${fetchErr.message}). Trying proxy...`);
-                            const isCloudProvider = isGemini || isMistral || isZhipu || isCohere || isCerebras || isOmniRoute;
+                            const isCloudProvider = isGemini || isMistral || isOpenRouter || isZhipu || isCohere || isCerebras || isOmniRoute;
                             if (!isCloudProvider) {
                                 // Fallback to same-origin Python proxy if browser blocked direct LM Studio fetch due to CORS or port access
                                 response = await fetch('/api/lmstudio/chat', {
@@ -679,7 +665,7 @@ class WebviewIPCBridge {
 
                         if (!response.ok) {
                             const errBody = await response.text().catch(() => '');
-                            const providerName = isGemini ? 'Google Gemini' : (isMistral ? 'Mistral AI' : 'LM Studio');
+                            const providerName = isGemini ? 'Google Gemini' : (isMistral ? 'Mistral AI' : (isOpenRouter ? 'OpenRouter' : 'LM Studio'));
                             console.error(`[KAI IPC] ${providerName} returned HTTP ${response.status}:`, errBody);
                             throw new Error(`${providerName} error (${response.status}): ${errBody || response.statusText}`);
                         }
@@ -863,10 +849,6 @@ class WebviewIPCBridge {
                         return;
                     }
 
-                    if (lastFullText) {
-                        messagesToSend.push({ role: 'assistant', content: lastFullText });
-                    }
-
                     // Emit the final reply along with full conversation history including tool results
                     emit({
                         type: 'reply',
@@ -924,14 +906,14 @@ class WebviewIPCBridge {
                                                        .replace(/\s+/g, ' ')
                                                        .trim();
                                     if (rawTitle && rawTitle.length > 0 && rawTitle.length < 60) {
-                                        const savedChats = readFullSessions();
+                                        const savedChats = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
                                         const foundChat = (targetChatId ? savedChats.find(c => c.id === targetChatId) : null) || savedChats[0];
                                         if (foundChat) {
                                             foundChat.title = rawTitle;
-                                            writeFullSessions(savedChats);
+                                            localStorage.setItem('kai.savedChats', JSON.stringify(savedChats));
                                             emit({
                                                 type: 'chatHistory',
-                                                chats: toSummary(savedChats)
+                                                chats: savedChats.map(c => ({ id: c.id, title: c.title || 'New Chat', timestamp: c.timestamp || Date.now() }))
                                             });
                                             emit({
                                                 type: 'chatTitleUpdated',

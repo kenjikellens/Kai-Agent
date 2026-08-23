@@ -156,8 +156,7 @@ class ModelDropdownController {
 
     /**
      * Creates and appends an accordion category group to the Model Selector Dropdown menu.
-     * Each model option is rendered as an interactive button element.
-     * Capable models render an integrated flyout submenu for thinking & reasoning settings without icons.
+     * Each model option is rendered as an interactive button element with a status dot.
      * 
      * @param {string} title Category title string.
      * @param {Array<string>} modelsList List of model IDs under this category.
@@ -219,9 +218,10 @@ class ModelDropdownController {
         });
 
         if (modelsList.length === 0) {
+            const i18n = window.KAI_I18N || {};
             const placeholder = document.createElement('div');
             placeholder.className = 'dropdown-item-placeholder';
-            placeholder.textContent = title.includes('Gemini') ? 'Add API key in settings' : (title.includes('LM Studio') ? 'LM Studio server offline' : 'No Models Available');
+            placeholder.textContent = title.includes('LM Studio') ? (i18n.lmStudioOffline || 'LM Studio is offline') : (title.includes('Gemini') ? 'Add API key in settings' : 'No Models Available');
             contentDiv.appendChild(placeholder);
         } else {
             const displayItems = [];
@@ -265,34 +265,13 @@ class ModelDropdownController {
                     });
                     sortBarDiv.appendChild(btnRecent);
 
-                    // 2. Size Chip (Toggles Large -> Small / Small -> Large)
-                    const btnSize = document.createElement('button');
-                    btnSize.type = 'button';
-                    btnSize.className = `secondary-btn secondary-btn--sort ${currentSortKey === 'size' ? 'active' : ''}`;
-                    const sizeArrow = currentSortKey === 'size' ? (currentSortDir === 'asc' ? '↑' : '↓') : '↓';
-                    btnSize.textContent = `Grootte ${sizeArrow}`;
-                    btnSize.title = 'Sorteer op bestandsgrootte (klik om richting te wisselen)';
-                    btnSize.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        if (currentSortKey === 'size') {
-                            currentSortDir = currentSortDir === 'desc' ? 'asc' : 'desc';
-                        } else {
-                            currentSortKey = 'size';
-                            currentSortDir = 'desc';
-                        }
-                        localStorage.setItem('kai.lmStudioSortKey', 'size');
-                        localStorage.setItem('kai.lmStudioSortDir', currentSortDir);
-                        renderLMStudioItems();
-                    });
-                    sortBarDiv.appendChild(btnSize);
-
-                    // 3. Name Chip (Toggles A-Z / Z-A)
+                    // 2. Name Chip (Toggle Asc/Desc)
                     const btnName = document.createElement('button');
                     btnName.type = 'button';
                     btnName.className = `secondary-btn secondary-btn--sort ${currentSortKey === 'name' ? 'active' : ''}`;
-                    const nameArrow = currentSortKey === 'name' ? (currentSortDir === 'desc' ? 'Z-A ↑' : 'A-Z ↓') : 'A-Z ↓';
-                    btnName.textContent = `Naam ${nameArrow}`;
-                    btnName.title = 'Sorteer alfabetisch (klik om richting te wisselen)';
+                    const nameArrow = currentSortKey === 'name' ? (currentSortDir === 'asc' ? ' ↑' : ' ↓') : '';
+                    btnName.textContent = `Naam${nameArrow}`;
+                    btnName.title = 'Sorteer alfabetisch op naam';
                     btnName.addEventListener('click', (e) => {
                         e.stopPropagation();
                         if (currentSortKey === 'name') {
@@ -307,10 +286,58 @@ class ModelDropdownController {
                     });
                     sortBarDiv.appendChild(btnName);
 
-                    const sorted = this.sortLMStudioItems(displayItems, currentSortKey, currentSortDir);
+                    // 3. Size Chip (Toggle Asc/Desc)
+                    const btnSize = document.createElement('button');
+                    btnSize.type = 'button';
+                    btnSize.className = `secondary-btn secondary-btn--sort ${currentSortKey === 'size' ? 'active' : ''}`;
+                    const sizeArrow = currentSortKey === 'size' ? (currentSortDir === 'desc' ? ' ↓' : ' ↑') : '';
+                    btnSize.textContent = `Grootte${sizeArrow}`;
+                    btnSize.title = 'Sorteer op bestandsgrootte';
+                    btnSize.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (currentSortKey === 'size') {
+                            currentSortDir = currentSortDir === 'desc' ? 'asc' : 'desc';
+                        } else {
+                            currentSortKey = 'size';
+                            currentSortDir = 'desc';
+                        }
+                        localStorage.setItem('kai.lmStudioSortKey', 'size');
+                        localStorage.setItem('kai.lmStudioSortDir', currentSortDir);
+                        renderLMStudioItems();
+                    });
+                    sortBarDiv.appendChild(btnSize);
+
+                    // Sort items dynamically using native manifest metadata from cache
+                    const capsMap = ThinkingStateFormatter.lmStudioCapabilities || {};
+                    const sorted = [...displayItems].sort((a, b) => {
+                        const lowA = String(a.rawModel || '').toLowerCase();
+                        const baseA = lowA.split('/').pop() || '';
+                        const capA = capsMap[a.rawModel] || capsMap[lowA] || capsMap[baseA] || {};
+
+                        const lowB = String(b.rawModel || '').toLowerCase();
+                        const baseB = lowB.split('/').pop() || '';
+                        const capB = capsMap[b.rawModel] || capsMap[lowB] || capsMap[baseB] || {};
+
+                        if (currentSortKey === 'recent') {
+                            const timeA = capA.mtime || 0;
+                            const timeB = capB.mtime || 0;
+                            return timeB - timeA;
+                        } else if (currentSortKey === 'name') {
+                            const comp = a.label.localeCompare(b.label, undefined, { sensitivity: 'base' });
+                            return currentSortDir === 'asc' ? comp : -comp;
+                        } else if (currentSortKey === 'size') {
+                            const sizeA = capA.sizeBytes || 0;
+                            const sizeB = capB.sizeBytes || 0;
+                            return currentSortDir === 'desc' ? sizeB - sizeA : sizeA - sizeB;
+                        }
+                        return 0;
+                    });
+
                     sorted.forEach(itemData => {
                         this.renderModelItem(itemData, isModelConnectedFn, itemsContainer, true);
                     });
+
+                    this.updateTextOverflowMetrics();
                 };
 
                 contentDiv.appendChild(sortBarDiv);
@@ -326,60 +353,21 @@ class ModelDropdownController {
         groupDiv.appendChild(headerDiv);
         groupDiv.appendChild(contentDiv);
         this.dropdownOptionsMenu.appendChild(groupDiv);
+
+        this.updateTextOverflowMetrics();
     }
 
     /**
-     * Sorts LM Studio model items based on recent download date, model file size, or alphabetical name.
-     * Uses fuzzy fallback to match aliases, raw model IDs, and base filenames against capabilities metadata.
-     * @param {Array<object>} itemsList List of item objects with rawModel, label, and value.
-     * @param {string} sortKey Sort dimension ('recent', 'size', 'name').
-     * @param {string} sortDir Sort direction ('desc' or 'asc').
-     * @returns {Array<object>} Sorted array of item objects.
-     */
-    sortLMStudioItems(itemsList, sortKey, sortDir) {
-        const capsMap = ThinkingStateFormatter.lmStudioCapabilities || {};
-        const getCap = (m) => {
-            if (!m) return {};
-            const low = String(m).toLowerCase();
-            const base = low.split('/').pop() || '';
-            return capsMap[m] || capsMap[low] || capsMap[base] || {};
-        };
-
-        return [...itemsList].sort((a, b) => {
-            const capA = getCap(a.rawModel) || getCap(a.value);
-            const capB = getCap(b.rawModel) || getCap(b.value);
-
-            if (sortKey === 'recent') {
-                const timeA = Number(capA.mtime || 0);
-                const timeB = Number(capB.mtime || 0);
-                if (timeA !== timeB) {
-                    return sortDir === 'asc' ? timeA - timeB : timeB - timeA;
-                }
-            } else if (sortKey === 'size') {
-                const sizeA = Number(capA.sizeBytes || 0);
-                const sizeB = Number(capB.sizeBytes || 0);
-                if (sizeA !== sizeB) {
-                    return sortDir === 'asc' ? sizeA - sizeB : sizeB - sizeA;
-                }
-            }
-
-            const labelA = String(a.label || a.value || '').toLowerCase();
-            const labelB = String(b.label || b.value || '').toLowerCase();
-            return sortDir === 'desc' ? labelB.localeCompare(labelA) : labelA.localeCompare(labelB);
-        });
-    }
-
-    /**
-     * Renders a single model item element into a target DOM container.
-     * Attaches interactive flyouts for thinking-capable models and click handlers for model selection.
-     * @param {object} itemData Item descriptor with value, label, and rawModel.
+     * Renders an individual model option button and its optional integrated flyout submenu.
+     * @param {object} itemData Object containing value, label, rawModel, and thinking.
      * @param {Function|null} isModelConnectedFn Model connection check callback.
-     * @param {HTMLElement} targetContainer Destination container element.
-     * @param {boolean} [isLMStudio=false] Whether this item is a local LM Studio model.
+     * @param {HTMLElement} targetContainer Parent container to append the model item into.
+     * @param {boolean} isLMStudio Whether this model belongs to LM Studio.
      */
     renderModelItem(itemData, isModelConnectedFn, targetContainer, isLMStudio = false) {
         const caps = ThinkingStateFormatter.getCapabilitiesState(itemData.rawModel);
         const hasFlyout = caps.hasThinkingToggle || (caps.hasReasoningEffort && Array.isArray(caps.effortOptions) && caps.effortOptions.length > 0);
+        console.log('[KAI Dropdown] renderModelItem:', itemData.rawModel, '→ hasFlyout:', hasFlyout, 'caps:', caps);
 
         const item = document.createElement('div');
         item.className = 'dropdown-item';
@@ -457,6 +445,7 @@ class ModelDropdownController {
                 const handleToggleClick = (e) => {
                     e.stopPropagation();
                     const newState = !switchPill.classList.contains('active');
+                    console.log('[KAI Dropdown] Toggle thinking:', rawModel, '→', newState);
                     if (newState) {
                         switchPill.classList.add('active');
                     } else {
@@ -465,6 +454,7 @@ class ModelDropdownController {
 
                     localStorage.setItem(`kai.lmStudioThinking.${rawModel}`, newState ? 'true' : 'false');
                     localStorage.setItem(`kai.mistralThinking.${rawModel}`, newState ? 'true' : 'false');
+                    localStorage.setItem(`kai.openrouterThinking.${rawModel}`, newState ? 'true' : 'false');
                     if (rawModel.includes('/')) {
                         const short = rawModel.split('/').pop();
                         localStorage.setItem(`kai.lmStudioThinking.${short}`, newState ? 'true' : 'false');
@@ -495,37 +485,50 @@ class ModelDropdownController {
                 flyoutInner.appendChild(toggleRow);
             }
 
-            // 2. Reasoning Effort Option Rows (if supported)
-            if (caps.hasReasoningEffort && Array.isArray(caps.effortOptions)) {
+            // 2. Reasoning Effort Radio Options (Select soft-coded)
+            if (caps.hasReasoningEffort && Array.isArray(caps.effortOptions) && caps.effortOptions.length > 0) {
                 caps.effortOptions.forEach(opt => {
+                    const isSelected = caps.reasoningLevel === opt.value;
                     const optItem = document.createElement('div');
-                    const isSelected = opt.value === caps.reasoningLevel;
                     optItem.className = `flyout-option ${isSelected ? 'selected' : ''}`;
-                    optItem.setAttribute('role', 'button');
+                    optItem.setAttribute('role', 'radio');
+                    optItem.setAttribute('aria-checked', isSelected ? 'true' : 'false');
                     optItem.setAttribute('tabindex', '0');
 
-                    ThinkingStateFormatter.renderFlyoutOptionContent(optItem, opt.label);
+                    const optLabel = document.createElement('span');
+                    optLabel.textContent = opt.label;
+                    optItem.appendChild(optLabel);
 
-                    if (isSelected) {
-                        optItem.appendChild(DOMUtils.createCheckIcon('check-icon'));
-                    }
+                    const checkmark = document.createElement('span');
+                    checkmark.className = 'check-icon';
+                    checkmark.textContent = isSelected ? '✓' : '';
+                    optItem.appendChild(checkmark);
 
-                    const handleEffortClick = (e) => {
+                    const handleEffortSelect = (e) => {
                         e.stopPropagation();
-                        if (rawModel.toLowerCase().includes('gemini')) {
-                            localStorage.setItem(`kai.geminiThinkingLevel.${itemData.value}`, opt.value);
-                            localStorage.setItem(`kai.geminiThinkingLevel.${rawModel}`, opt.value);
-                            localStorage.setItem('kai.geminiThinkingLevel', opt.value);
-                        } else {
-                            localStorage.setItem(`kai.lmStudioReasoningLevel.${rawModel}`, opt.value);
-                            localStorage.setItem(`kai.lmStudioReasoningLevel.${itemData.value}`, opt.value);
-                            if (rawModel.includes('/')) {
-                                const short = rawModel.split('/').pop();
-                                localStorage.setItem(`kai.lmStudioReasoningLevel.${short}`, opt.value);
-                            }
+                        console.log('[KAI Dropdown] Effort selected:', rawModel, '→', opt.value);
+                        localStorage.setItem(`kai.lmStudioReasoningEffort.${rawModel}`, opt.value);
+                        localStorage.setItem(`kai.mistralReasoningEffort.${rawModel}`, opt.value);
+                        localStorage.setItem(`kai.openrouterReasoningEffort.${rawModel}`, opt.value);
+                        localStorage.setItem(`kai.geminiThinkingLevel.${rawModel}`, opt.value);
+                        if (rawModel.includes('/')) {
+                            const short = rawModel.split('/').pop();
+                            localStorage.setItem(`kai.lmStudioReasoningEffort.${short}`, opt.value);
+                            localStorage.setItem(`kai.openrouterReasoningEffort.${short}`, opt.value);
                         }
-
                         caps.reasoningLevel = opt.value;
+
+                        flyoutInner.querySelectorAll('.flyout-option').forEach(el => {
+                            el.classList.remove('selected');
+                            el.setAttribute('aria-checked', 'false');
+                            const chk = el.querySelector('.check-icon');
+                            if (chk) chk.textContent = '';
+                        });
+
+                        optItem.classList.add('selected');
+                        optItem.setAttribute('aria-checked', 'true');
+                        checkmark.textContent = '✓';
+
                         this.selectedModelValue = itemData.value;
                         localStorage.setItem('kai.selectedModel', itemData.value);
                         this.setSelectedModel(itemData.value);
@@ -533,19 +536,17 @@ class ModelDropdownController {
                         if (this.statusDot) {
                             this.statusDot.className = (isModelConnectedFn && isModelConnectedFn(itemData.rawModel)) ? 'status-dot status-connected' : 'status-dot status-disconnected';
                         }
-                        this.closeActiveFlyoutImmediately();
-                        this.dropdownOptionsMenu.classList.add('hidden');
 
                         if (this.onSelect) {
                             this.onSelect(itemData.value);
                         }
                     };
 
-                    optItem.addEventListener('click', handleEffortClick);
+                    optItem.addEventListener('click', handleEffortSelect);
                     optItem.addEventListener('keydown', (e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
-                            handleEffortClick(e);
+                            handleEffortSelect(e);
                         }
                     });
 
@@ -637,7 +638,7 @@ class ModelDropdownController {
     }
 
     /**
-     * Populates initial connected cloud and free models so user only sees connected providers.
+     * Populates all providers and models with status dots indicating configuration / load state.
      */
     initDefaultDropdown() {
         if (!this.dropdownOptionsMenu) return;
@@ -647,51 +648,68 @@ class ModelDropdownController {
         const defaultProviders = KAI_CONSTANTS.DEFAULT_PROVIDERS_WITH_MODELS || [];
         const freeProviders = KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS || [];
 
-        let addedAny = false;
-
-        const geminiKey = (localStorage.getItem('kai.geminiApiKey') || localStorage.getItem('kai.apiKey') || '').trim();
-        if (geminiKey) {
-            const showGeminiExpanded = this.selectedModelValue && this.selectedModelValue.toLowerCase().startsWith('gemini');
-            this.createAccordionGroup('Gemini', defaultGemini, showGeminiExpanded);
-            addedAny = true;
-        }
-
-        freeProviders.forEach(p => {
-            const key = (localStorage.getItem(`kai.${p.configKey}`) || '').trim();
-            if (key) {
-                const matchedGroup = defaultProviders.find(dp => dp.name && dp.name.includes(p.name));
-                const models = matchedGroup ? matchedGroup.models : [];
-                if (models && models.length > 0) {
-                    const isExpanded = this.selectedModelValue && models.includes(this.selectedModelValue);
-                    const cleanName = p.name.replace(/\s*\([^)]*\)/g, '').trim();
-                    this.createAccordionGroup(cleanName, models, isExpanded);
-                    addedAny = true;
+        const isModelConnected = (m) => {
+            if (!m) return false;
+            const bare = m.endsWith(' (thinking)') ? m.slice(0, -11) : m;
+            const lowerM = bare.toLowerCase();
+            if (lowerM.startsWith('gemini')) {
+                const key = (localStorage.getItem('kai.geminiApiKey') || localStorage.getItem('kai.apiKey') || '').trim();
+                return !!key;
+            }
+            for (const provider of freeProviders) {
+                const providerModels = Array.isArray(provider.models) ? provider.models : [];
+                const matchedGroup = defaultProviders.find(group => group.name && group.name.includes(provider.name));
+                const allGroupModels = matchedGroup && Array.isArray(matchedGroup.models) ? matchedGroup.models : providerModels;
+                if (allGroupModels.includes(bare) || providerModels.includes(bare)) {
+                    const key = (localStorage.getItem(`kai.${provider.configKey}`) || '').trim();
+                    return !!key;
                 }
             }
+            // LM Studio offline until live connection check
+            return false;
+        };
+
+        const i18n = window.KAI_I18N || {};
+
+        // 1. LM Studio (Offline initially)
+        const headerTitle = i18n.lmStudioHeader || 'LM Studio';
+        const offlineLabel = i18n.disconnected || 'Offline';
+        const lmTitle = `${headerTitle} (${offlineLabel})`;
+        this.createAccordionGroup(lmTitle, [], false, isModelConnected, true);
+
+        // 2. Google Gemini
+        const showGeminiExpanded = this.selectedModelValue && this.selectedModelValue.toLowerCase().startsWith('gemini');
+        this.createAccordionGroup('Gemini', defaultGemini, showGeminiExpanded, isModelConnected);
+
+        // 3. All Cloud & Free Providers
+        defaultProviders.forEach(dp => {
+            const cleanName = dp.name.replace(/\s*\([^)]*\)/g, '').trim();
+            const isExpanded = this.selectedModelValue && Array.isArray(dp.models) && dp.models.includes(this.selectedModelValue);
+            this.createAccordionGroup(cleanName, dp.models, isExpanded, isModelConnected);
         });
 
-        // Check if a local LM Studio model is saved or available
-        const savedModel = (localStorage.getItem('kai.selectedModel') || '').trim();
-        const allCloudModels = defaultProviders.flatMap(p => p.models || []);
-        const isLocalSaved = savedModel && savedModel !== 'local-model' && !savedModel.toLowerCase().startsWith('gemini') && !allCloudModels.includes(savedModel);
-        if (isLocalSaved) {
-            const i18n = window.KAI_I18N || {};
-            const headerTitle = i18n.lmStudioHeader || 'LM Studio';
-            this.createAccordionGroup(headerTitle, [savedModel], true, () => false, true);
-            addedAny = true;
-        }
-
-        if (!addedAny) {
-            const placeholder = document.createElement('div');
-            placeholder.className = 'dropdown-item-placeholder';
-            placeholder.textContent = 'No connected models. Add API key in Settings.';
-            this.dropdownOptionsMenu.appendChild(placeholder);
+        // 4. Update trigger button state & status dot
+        if (this.selectedModelValue && this.selectedModelValue !== 'local-model' && this.selectedModelValue !== 'No Models Loaded') {
+            ThinkingStateFormatter.renderTriggerLabel({
+                modelId: this.selectedModelValue,
+                container: this.selectedModelText,
+                formatter: this.formatter
+            });
+            if (this.statusDot) {
+                this.statusDot.className = isModelConnected(this.selectedModelValue) ? 'status-dot status-connected' : 'status-dot status-disconnected';
+            }
+        } else {
+            this.selectedModelValue = 'local-model';
+            if (this.selectedModelText) this.selectedModelText.textContent = 'local-model';
+            if (this.statusDot) {
+                this.statusDot.className = 'status-dot status-disconnected';
+            }
         }
     }
 
     /**
      * Updates model dropdown options and connection dots when extension connectionStatus event arrives.
-     * Only renders providers and APIs that are active and connected.
+     * Renders all providers with dynamic green/red status dots.
      * @param {object} message Connection status payload from extension host.
      */
     updateConnectionStatus(message) {
@@ -702,6 +720,10 @@ class ModelDropdownController {
             ThinkingStateFormatter.setLMStudioCapabilities(message.lmStudioCapabilities);
         }
 
+        const defaultProviders = KAI_CONSTANTS.DEFAULT_PROVIDERS_WITH_MODELS || [];
+        const freeProviders = message.freeProviders || KAI_CONSTANTS.DEFAULT_FREE_PROVIDERS || [];
+        this.freeProvidersConfig = freeProviders;
+
         const isModelConnected = (m) => {
             if (!m) return false;
             const bare = m.endsWith(' (thinking)') ? m.slice(0, -11) : m;
@@ -710,15 +732,17 @@ class ModelDropdownController {
                 const key = (localStorage.getItem('kai.geminiApiKey') || localStorage.getItem('kai.apiKey') || '').trim();
                 return !!(message.apiKey || key);
             }
-            const freeProviders = message.freeProviders || [];
             for (const provider of freeProviders) {
                 const providerModels = Array.isArray(provider.models) ? provider.models : [];
-                if (providerModels.includes(bare)) {
+                const matchedGroup = defaultProviders.find(group => group.name && group.name.includes(provider.name));
+                const allGroupModels = matchedGroup && Array.isArray(matchedGroup.models) ? matchedGroup.models : providerModels;
+                if (allGroupModels.includes(bare) || providerModels.includes(bare)) {
                     const key = (localStorage.getItem(`kai.${provider.configKey}`) || '').trim();
                     return !!(provider.apiKey || key);
                 }
             }
-            return Boolean(message.connected && message.loadedModels && message.loadedModels.includes(bare));
+            // For LM Studio: green only if server is online and model is in loadedModels
+            return Boolean(message.connected && message.loadedModels && message.loadedModels.some(lm => lm.toLowerCase() === bare.toLowerCase()));
         };
 
         const lmStudioModels = message.lmStudioModels || [];
@@ -727,61 +751,44 @@ class ModelDropdownController {
 
         this.dropdownOptionsMenu.innerHTML = '';
 
-        let addedCategories = 0;
+        const i18n = window.KAI_I18N || {};
 
         // 1. LM Studio local models
-        const hasLMModels = Boolean(lmStudioModels && lmStudioModels.length > 0);
-        if (hasLMModels) {
-            const i18n = window.KAI_I18N || {};
-            const lmStudioStatus = message.connected ? (i18n.connected || 'Connected') : (i18n.disconnected || 'Local');
-            const headerTitle = i18n.lmStudioHeader || 'LM Studio';
-            const lmTitle = `${headerTitle} (${lmStudioStatus})`;
-            const isExpanded = this.selectedModelValue && !this.selectedModelValue.toLowerCase().startsWith('gemini');
-            this.createAccordionGroup(lmTitle, lmStudioModels, isExpanded, isModelConnected, true);
-            addedCategories++;
-        }
+        const isServerOnline = Boolean(message.connected && lmStudioModels && lmStudioModels.length > 0);
+        const lmStudioStatus = isServerOnline ? (i18n.connected || 'Connected') : (i18n.disconnected || 'Offline');
+        const headerTitle = i18n.lmStudioHeader || 'LM Studio';
+        const lmTitle = `${headerTitle} (${lmStudioStatus})`;
+        const isLMExpanded = this.selectedModelValue && !this.selectedModelValue.toLowerCase().startsWith('gemini') && !defaultProviders.some(dp => Array.isArray(dp.models) && dp.models.includes(this.selectedModelValue));
+        this.createAccordionGroup(lmTitle, isServerOnline ? lmStudioModels : [], isLMExpanded, isModelConnected, true);
 
-        // 2. Google Gemini - ONLY if API key is configured
-        const hasGeminiKey = Boolean(message.apiKey || (localStorage.getItem('kai.geminiApiKey') || localStorage.getItem('kai.apiKey') || '').trim());
-        if (hasGeminiKey) {
-            const geminiTitle = 'Gemini';
-            const showGeminiExpanded = this.selectedModelValue && this.selectedModelValue.toLowerCase().startsWith('gemini');
-            this.createAccordionGroup(geminiTitle, geminiModels.length > 0 ? geminiModels : KAI_CONSTANTS.DEFAULT_GEMINI_MODELS, showGeminiExpanded, isModelConnected);
-            addedCategories++;
-        }
+        // 2. Google Gemini
+        const geminiTitle = 'Gemini';
+        const showGeminiExpanded = this.selectedModelValue && this.selectedModelValue.toLowerCase().startsWith('gemini');
+        this.createAccordionGroup(geminiTitle, geminiModels.length > 0 ? geminiModels : KAI_CONSTANTS.DEFAULT_GEMINI_MODELS, showGeminiExpanded, isModelConnected);
 
-        // 3. Free Cloud Providers - ONLY if API key is configured
-        const freeProviders = message.freeProviders || [];
-        this.freeProvidersConfig = freeProviders;
-        for (const provider of freeProviders) {
-            const hasProviderKey = Boolean(provider.apiKey || (localStorage.getItem(`kai.${provider.configKey}`) || '').trim());
-            const providerModels = Array.isArray(provider.models) ? provider.models : [];
-            if (hasProviderKey && providerModels.length > 0) {
-                const isExpanded = this.selectedModelValue && providerModels.includes(this.selectedModelValue);
-                const cleanName = provider.name.replace(/\s*\([^)]*\)/g, '').trim();
-                this.createAccordionGroup(cleanName, providerModels, isExpanded, isModelConnected);
-                addedCategories++;
-            }
-        }
+        // 3. All Free & Cloud Providers
+        defaultProviders.forEach(dp => {
+            const cleanName = dp.name.replace(/\s*\([^)]*\)/g, '').trim();
+            const isExpanded = this.selectedModelValue && Array.isArray(dp.models) && dp.models.includes(this.selectedModelValue);
+            this.createAccordionGroup(cleanName, dp.models, isExpanded, isModelConnected);
+        });
 
-        if (addedCategories === 0) {
-            const placeholder = document.createElement('div');
-            placeholder.className = 'dropdown-item-placeholder';
-            placeholder.textContent = 'No connected models. Add API key in Settings.';
-            this.dropdownOptionsMenu.appendChild(placeholder);
-        }
-
+        // 4. Update trigger button state & status dot
         if (this.selectedModelValue && this.selectedModelValue !== 'local-model' && this.selectedModelValue !== 'No Models Loaded') {
             ThinkingStateFormatter.renderTriggerLabel({
                 modelId: this.selectedModelValue,
                 container: this.selectedModelText,
                 formatter: this.formatter
             });
-            this.statusDot.className = isModelConnected(this.selectedModelValue) ? 'status-dot status-connected' : 'status-dot status-disconnected';
+            if (this.statusDot) {
+                this.statusDot.className = isModelConnected(this.selectedModelValue) ? 'status-dot status-connected' : 'status-dot status-disconnected';
+            }
         } else {
             this.selectedModelValue = 'local-model';
-            this.selectedModelText.textContent = 'local-model';
-            this.statusDot.className = isModelConnected('local-model') ? 'status-dot status-connected' : 'status-dot status-disconnected';
+            if (this.selectedModelText) this.selectedModelText.textContent = 'local-model';
+            if (this.statusDot) {
+                this.statusDot.className = isModelConnected('local-model') ? 'status-dot status-connected' : 'status-dot status-disconnected';
+            }
         }
 
         this.updateGeminiThinkingVisibility();
@@ -817,6 +824,7 @@ class ModelDropdownController {
                 else if (p.configKey === 'cohereApiKey') url = 'https://dashboard.cohere.com';
                 else if (p.configKey === 'cerebrasApiKey') url = 'https://cloud.cerebras.ai';
                 else if (p.configKey === 'zhipuApiKey') url = 'https://open.bigmodel.cn';
+                else if (p.configKey === 'openrouterApiKey') url = 'https://openrouter.ai/keys';
                 return {
                     providerName: p.name,
                     configKey: p.configKey,

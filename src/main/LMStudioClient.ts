@@ -112,17 +112,6 @@ export class LMStudioClient implements ILLMProvider {
             }
         }
 
-        // Merge models discovered from local manifest cache
-        try {
-            const capabilitiesMap = LMStudioManifestParser.parseModelCapabilities();
-            for (const cap of Object.values(capabilitiesMap)) {
-                const id = cap.displayName || cap.modelId;
-                if (id) {
-                    allDiscoveredIds.push(id);
-                }
-            }
-        } catch {}
-
         const filtered = LMStudioReasoningEngine.filterChatModels(allDiscoveredIds);
         const seen = new Set<string>();
         const uniqueModels: string[] = [];

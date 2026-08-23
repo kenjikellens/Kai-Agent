@@ -33,7 +33,7 @@ This repository contains two core implementations of the KAI Agent ecosystem:
 
 - **Dedicated Class Files**: Never bundle multiple distinct API providers, tools, or major UI modules into a single monolithic class or file.
 - **Provider Pattern**:
-  - Every LLM provider (e.g., `LMStudioClient`, `GeminiClient`, `MistralClient`, `CohereClient`, `CerebrasClient`, `ZhipuClient`, `OmniRouteClient`) must have its own dedicated class file in `src/providers/`.
+  - Every LLM provider (e.g., `LMStudioClient`, `GeminiClient`, `MistralClient`, `CohereClient`, `CerebrasClient`, `ZhipuClient`, `OmniRouteClient`, `OpenRouterClient`) must have its own dedicated class file in `src/providers/`.
   - All providers must implement `ILLMProvider` or extend `BaseCloudProviderClient`.
 - **Tool Parity**:
   - Keep tool contracts consistent across both the Extension and the Desktop App (`read_file`, `write_file`, `replace_file_content`, `multi_replace_file_content`, `delete_item`, `list_dir`, `grep_search`, `symbol_search`, `get_diagnostics`, `run_command`, `web_search`, `fetch_url`).
@@ -42,25 +42,23 @@ This repository contains two core implementations of the KAI Agent ecosystem:
 
 ---
 
-## 4. LM Studio Reasoning / Thinking Toggles
+## 4. Reasoning & Thinking Pipeline Specifications
 
-When implementing or modifying completions in `LMStudioClient.ts` (or equivalent provider logic), dynamically apply the exact model-specific thinking/reasoning parameters:
+When implementing or modifying completions across providers, dynamically apply the model-specific thinking/reasoning parameters:
 
-1. **Gemma Models (`google/gemma-*`)**:
-   - **Enable**: `"thinking": true`
-   - **Disable**: `"thinking": false`, `"reasoning_effort": "none"`, `"reasoning": "off"`
+1. **OpenRouter Models (`openrouter/*`)**:
+   - **Reasoning extraction**: Capture `delta.reasoning`, `delta.thought`, and `delta.reasoning_content` into encapsulated `<think>...</think>` blocks.
+   - **Request payload**: Send `"reasoning": { "effort": "high" | "medium" | "low" | "none", "exclude": false }`.
 
-2. **Qwen & GLM Models (`qwen/*`, `glm/*`)**:
-   - **Enable**: `"thinking": true`, `"enable_thinking": true`, `"chat_template_kwargs": { "enable_thinking": true }`
-   - **Disable**: `"thinking": false`, `"enable_thinking": false`, `"chat_template_kwargs": { "enable_thinking": false }`, `"reasoning_effort": "none"`, `"reasoning": "off"`
+2. **Google Gemini Models (`gemini-*`)**:
+   - **Gemini 3.x**: `generationConfig.thinkingConfig = { thinkingLevel: "HIGH" | "MEDIUM" | "LOW" | "MINIMAL", includeThoughts: true }`.
+   - **Gemini 2.x / 2.5**: `generationConfig.thinkingConfig = { thinkingBudget: -1 | 8192 | 1024 | 0, includeThoughts: true }`.
 
-3. **Mistral & Codestral Models (`mistral/*`, `codestral/*`)**:
-   - **Enable**: `"reasoning_effort": "high"`
-   - **Disable**: `"reasoning_effort": "none"`
-
-4. **Muse Glimmer Models (`muse/*`, `*glimmer*`)**:
-   - **Reasoning format**: Emits `to=self<|message|>[reasoning]<|eom|><|start|>assistant to=user<|message|>[content]`.
-   - **Baked-in reasoning**: Cannot be toggled off; do not show a thinking toggle/flyout in the UI. Parse stream output automatically into `<think>...</think>` tags using `MuseGlimmerStreamParser`.
+3. **LM Studio Models**:
+   - **Gemma Models (`google/gemma-*`)**: `"thinking": true` / `"thinking": false`
+   - **Qwen & GLM Models (`qwen/*`, `glm/*`)**: `"thinking": true`, `"enable_thinking": true`
+   - **Mistral & Codestral Models (`mistral/*`, `codestral/*`)**: `"reasoning_effort": "high"` / `"none"`
+   - **Muse Glimmer Models (`muse/*`, `*glimmer*`)**: Parse stream output automatically into `<think>...</think>` tags using `MuseGlimmerStreamParser`.
 
 ---
 
@@ -103,4 +101,59 @@ When implementing or modifying completions in `LMStudioClient.ts` (or equivalent
 
 - **Distinct UI & Layout Architectures**: The Desktop App and the VS Code Extension have fundamentally different design layouts, viewport constraints, and user experiences (e.g. permanent Desktop Sidebar with multi-chat list vs. compact Extension Webview panel with header navigation and view toggling).
 - **Strict Mandate**: Never blindly copy or duplicate UI components, CSS styles, or layout logic 1-to-1 between the Desktop App and the Extension without explicitly respecting and adapting to the dedicated architecture and design requirements of each specific project.
+
+---
+
+## 10. Model Selector & Status Dot Architecture
+
+- **LM Studio Server Offline**:
+  - The LM Studio accordion is displayed as `LM Studio (Offline)`.
+  - Inside the accordion content, only the placeholder text `'LM Studio is offline'` is displayed (no duplicate or casing variations injected from local disk cache).
+- **LM Studio Server Online**:
+  - Queries live models via `/v1/models` without duplicate aliases or casing variations.
+  - In the model list: Green dot (`status-connected`) if loaded in memory (`loadedModels`), Red dot (`status-disconnected`) if available but not loaded.
+  - Clicking an unloaded model selects it directly.
+- **Cloud & Free Providers (OpenRouter, Gemini, Mistral, Cerebras, Cohere, Zhipu, OmniRoute)**:
+  - All providers and their default models are always visible in the dropdown.
+  - Green dot (`status-connected`) if API key is configured; Red dot (`status-disconnected`) if not configured.
+- **Trigger Button Status**:
+  - For LM Studio: Green if selected model is loaded in memory, Red if offline or not loaded.
+  - For Cloud providers: Green if API key is configured, Red if missing.
+
+---
+
+## 11. IPC Architecture Boundary: Desktop App vs. Extension
+
+- **Desktop App (`KAI Agent App`)**:
+  - Contains the dual Electron Main / Browser Preview architecture.
+  - `WebviewIPCBridge.js` includes the browser-preview fallback engine (`_handleClientSideIPC`) and browser tools to support `run_pc.py` in standalone web browsers.
+- **VS Code Extension (`Kai-Agent-extension`)**:
+  - Operates **exclusively** through the VS Code Extension Host (`code/src/extension.ts`, `code/src/AgentExecutor.ts`, `code/src/providers/*`).
+  - `WebviewIPCBridge.js` is a **lean, dedicated bridge (~150 lines)** that exclusively forwards messages via `this.vscode.postMessage(message)`.
+  - **STRICT MANDATE**: The extension webview MUST NEVER contain browser-preview fallback engines, direct third-party API fetch loops, or client-side tool execution engines. All LLM requests, streaming, tool executions, and file operations in the extension are handled strictly by the Extension Host backend in TypeScript.
+
+---
+
+## 12. Conversational State & Zero Unsolicited Code Edits
+
+- **Statements & Feedback**: When the user provides feedback, makes a statement, or asks an architectural question, the agent MUST NOT trigger code edits, file rewrites, or build scripts unless the user explicitly requests an implementation or modification.
+- **Listen Before Editing**: Clarify, acknowledge, or update guidelines/documentation first. Never assume a conversational comment is an automated trigger to start editing application code.
+
+---
+
+## 13. CSS Architecture, DRY Consolidation & Protected Features
+
+- **Single Unified Class Name (Zero Duplicate Top-Level Aliases)**:
+  - Every distinct UI component has **EXACTLY ONE standardized base class name** (e.g., `.icon-btn`, `.dropdown-panel`, `.pill-option-btn`).
+  - NEVER invent multiple separate top-level class names for the same structural component across different panels or features.
+  - Variations in size, radius, or layout must use clean BEM modifier classes on that single base class (e.g., `.icon-btn--header`, `.icon-btn--toolbar`, `.icon-btn--delete`).
+  - When a component is refactored to a unified class, old legacy alias classes MUST be completely purged from stylesheets (no redundant alias lists in CSS selectors).
+- **Mandatory Component Documentation**:
+  - Above every base class definition in CSS, write a concise JSDoc-style comment listing all concrete features and modules that consume that component.
+- **Strict Container vs. Element Spacing**:
+  - Always enforce container-to-content spacing via container `padding` (e.g., `padding: 2.5px`), never by adding outer `margin` to inner buttons or child elements.
+- **Protected Theme & UI Features (Non-Negotiable Boundaries)**:
+  - **VS Code Theme Tokens (Extension)**: The Extension stylesheet MUST always use VS Code theme variables (`var(--vscode-*)`). NEVER replace theme tokens with hardcoded hex colors or remove dynamic theme adaptability.
+  - **Thinking Flyout Submenu**: The Thinking & Reasoning flyout submenu's dynamic alignment calculation (fixed positioning, right-side `rect.right + 4px` with left viewport fallback) and container styling (`padding: 2.5px`, `border-radius: 12px` / `999px` for single item) must remain fully preserved across all refactoring batches.
+  - **Extension Settings vs. Desktop Settings**: Respect layout boundaries between Extension accordion panels (`.settings-category`) and Desktop standalone settings layout.
 

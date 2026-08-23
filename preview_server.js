@@ -113,10 +113,6 @@ const server = http.createServer(async (req, res) => {
             const loadedModels = await client.getLoadedModels().catch(() => []);
 
             let modelIds = lmModels;
-            if (modelIds.length === 0 && LMStudioManifestParser) {
-                const uniqueEntries = LMStudioManifestParser.getUniqueChatModels();
-                modelIds = uniqueEntries.map(e => e.id);
-            }
 
             // Deduplicate case-insensitively
             const seen = new Set();

@@ -27,11 +27,48 @@ class ThinkingStateFormatter {
     }
 
     /**
+     * Exact verified reasoning metadata for curated OpenRouter models from live API.
+     */
+    static openRouterReasoningMap = {
+        'stealth/ox-alpha': { mandatory: true, supportedEfforts: ['max', 'high', 'low'], defaultEffort: 'max' },
+        'openrouter/free': { mandatory: false, supportedEfforts: ['high', 'medium', 'low', 'none'], defaultEffort: 'high' },
+        'liquid/lfm-2.5-2.6b:free': { mandatory: true, supportedEfforts: null, defaultEffort: 'none' },
+        'nvidia/nemotron-3.5-lightning:free': { mandatory: false, supportedEfforts: null, defaultEffort: 'none' },
+        'google/gemma-4-31b-it:free': { mandatory: false, supportedEfforts: null, defaultEffort: 'none' },
+        'z-ai/glm-5.2:free': { mandatory: false, supportedEfforts: ['xhigh', 'high'], defaultEffort: 'high' },
+        'thinkingmachines/inkling:free': { mandatory: false, supportedEfforts: ['max', 'high', 'medium', 'low', 'minimal', 'none'], defaultEffort: 'high' },
+        'poolside/laguna-s-2.1:free': { mandatory: false, supportedEfforts: null, defaultEffort: 'none' },
+        'nvidia/nemotron-3-super-120b-a12b:free': { mandatory: false, supportedEfforts: ['medium', 'low'], defaultEffort: 'medium' },
+        'nvidia/nemotron-3-ultra-550b-a55b:free': { mandatory: false, supportedEfforts: ['high', 'medium'], defaultEffort: 'high' },
+        'nvidia/nemotron-3.5-content-safety:free': { mandatory: false, supportedEfforts: null, defaultEffort: 'none' }
+    };
+
+    /**
+     * Formats an OpenRouter effort code into a clean, human-readable UI label.
+     * @param {string} effort Effort code (e.g. 'max', 'xhigh', 'high', 'medium', 'low', 'minimal', 'none').
+     * @returns {string} Capitalized label text.
+     */
+    static formatEffortLabel(effort) {
+        if (!effort) return '';
+        const map = {
+            'xhigh': 'X-High',
+            'max': 'Max',
+            'high': 'High',
+            'medium': 'Medium',
+            'low': 'Low',
+            'minimal': 'Minimal',
+            'none': 'Off'
+        };
+        return map[effort.toLowerCase()] || (effort.charAt(0).toUpperCase() + effort.slice(1));
+    }
+
+    /**
      * Inspects dynamic manifest and settings to return detailed capability state.
      * @param {string} modelId Active or raw model ID string.
      * @returns {object} Full capability state object.
      */
     static getCapabilitiesState(modelId) {
+        console.log('[KAI ThinkingState] getCapabilitiesState called:', modelId);
         if (!modelId) {
             return {
                 rawModel: '',
@@ -86,7 +123,7 @@ class ThinkingStateFormatter {
                 reasoningLevel = storedEffort || defaultVal;
             }
 
-            return {
+            const lmState = {
                 rawModel: rawModel,
                 hasThinkingToggle: hasThinkingToggle,
                 isThinkingOn: isThinkingOn,
@@ -95,6 +132,8 @@ class ThinkingStateFormatter {
                 effortOptions: effortOptions,
                 effortDisplayName: effortDisplayName
             };
+            console.log('[KAI ThinkingState] LM Studio manifest capabilities:', lmState);
+            return lmState;
         }
 
         // 2. Google Gemini cloud models
@@ -102,7 +141,7 @@ class ThinkingStateFormatter {
             const level = localStorage.getItem(`kai.geminiThinkingLevel.${modelId}`) ||
                 localStorage.getItem(`kai.geminiThinkingLevel.${rawModel}`) ||
                 localStorage.getItem('kai.geminiThinkingLevel') || 'high';
-            return {
+            const geminiState = {
                 rawModel: rawModel,
                 hasThinkingToggle: false,
                 isThinkingOn: level !== 'off' && level !== 'minimal',
@@ -112,18 +151,60 @@ class ThinkingStateFormatter {
                     { label: 'High', value: 'high' },
                     { label: 'Medium', value: 'medium' },
                     { label: 'Low', value: 'low' },
-                    { label: 'Off', value: 'minimal' }
+                    { label: 'Minimal', value: 'minimal' }
                 ],
                 effortDisplayName: 'Thinking Level'
             };
+            console.log('[KAI ThinkingState] Gemini capabilities:', geminiState);
+            return geminiState;
         }
 
-        // 3. Mistral cloud reasoning models
+        // 3. OpenRouter cloud reasoning models (100% per-model dictionary from live API)
+        if (lowerRaw.startsWith('openrouter/')) {
+            const bareModel = rawModel.replace(/^openrouter\//i, '');
+            const lowerBare = bareModel.toLowerCase();
+            const cap = ThinkingStateFormatter.openRouterReasoningMap[bareModel] ||
+                ThinkingStateFormatter.openRouterReasoningMap[lowerBare];
+
+            if (cap) {
+                const storedThinking = localStorage.getItem(`kai.openrouterThinking.${rawModel}`) ??
+                    localStorage.getItem(`kai.openrouterThinking.${bareModel}`);
+                const isThinkingOn = cap.mandatory ? true : (storedThinking !== 'false');
+
+                const hasReasoningEffort = Array.isArray(cap.supportedEfforts) && cap.supportedEfforts.length > 0;
+                let effortOptions = [];
+                let selectedEffort = 'none';
+
+                if (hasReasoningEffort) {
+                    effortOptions = cap.supportedEfforts.map(eff => ({
+                        label: ThinkingStateFormatter.formatEffortLabel(eff),
+                        value: eff
+                    }));
+                    const storedEffort = localStorage.getItem(`kai.openrouterReasoningEffort.${rawModel}`) ??
+                        localStorage.getItem(`kai.openrouterReasoningEffort.${bareModel}`);
+                    selectedEffort = storedEffort || cap.defaultEffort || effortOptions[0].value;
+                }
+
+                const orState = {
+                    rawModel: rawModel,
+                    hasThinkingToggle: !cap.mandatory,
+                    isThinkingOn: isThinkingOn,
+                    hasReasoningEffort: hasReasoningEffort,
+                    reasoningLevel: selectedEffort,
+                    effortOptions: effortOptions,
+                    effortDisplayName: 'Reasoning Effort'
+                };
+                console.log('[KAI ThinkingState] OpenRouter lookup:', bareModel, '→ cap:', cap, '→ state:', orState);
+                return orState;
+            }
+        }
+
+        // 4. Mistral cloud reasoning models
         const isMistralReasoning = lowerRaw.includes('magistral') || lowerRaw.includes('codestral');
         if (isMistralReasoning) {
             const stored = localStorage.getItem(`kai.mistralThinking.${rawModel}`);
             const isOn = stored !== 'false';
-            return {
+            const mistralState = {
                 rawModel: rawModel,
                 hasThinkingToggle: true,
                 isThinkingOn: isOn,
@@ -132,9 +213,12 @@ class ThinkingStateFormatter {
                 effortOptions: [],
                 effortDisplayName: 'Reasoning Effort'
             };
+            console.log('[KAI ThinkingState] Mistral reasoning capabilities:', mistralState);
+            return mistralState;
         }
 
-        // 4. Standard non-thinking models (100% manifest-driven, no hardcoded fallbacks)
+        // 5. Standard non-thinking models (100% manifest-driven, no hardcoded fallbacks)
+        console.log('[KAI ThinkingState] No reasoning capabilities for:', rawModel);
         return {
             rawModel: rawModel,
             hasThinkingToggle: false,

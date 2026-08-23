@@ -16,6 +16,8 @@ export interface KaiConfig {
     cerebrasApiKey?: string;
     /** API key for Zhipu AI. */
     zhipuApiKey?: string;
+    /** API key for OpenRouter. */
+    openrouterApiKey?: string;
     /** Base URL for OmniRoute gateway. */
     omnirouteServerUrl?: string;
     /** API key for OmniRoute. */
@@ -37,6 +39,7 @@ export const DEFAULT_CONFIG: KaiConfig = {
     cohereApiKey: '',
     cerebrasApiKey: '',
     zhipuApiKey: '',
+    openrouterApiKey: '',
     omnirouteServerUrl: 'http://localhost:8000/v1',
     omnirouteApiKey: '',
     temperature: 0.7,

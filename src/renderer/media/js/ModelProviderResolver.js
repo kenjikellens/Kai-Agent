@@ -58,6 +58,7 @@ class ModelProviderResolver {
                     else if (p.configKey === 'cohereApiKey') url = 'https://dashboard.cohere.com';
                     else if (p.configKey === 'cerebrasApiKey') url = 'https://cloud.cerebras.ai';
                     else if (p.configKey === 'zhipuApiKey') url = 'https://open.bigmodel.cn';
+                else if (p.configKey === 'openrouterApiKey') url = 'https://openrouter.ai/keys';
                     info = {
                         providerName: p.name,
                         configKey: p.configKey,

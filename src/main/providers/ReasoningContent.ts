@@ -3,10 +3,30 @@ export interface ReasoningSegment {
     text: string;
 }
 
-/** Normalizes OpenAI-compatible reasoning_content and Mistral content chunks. */
+/**
+ * Normalizes reasoning content from OpenAI, OpenRouter, DeepSeek, and Mistral responses.
+ * Detects reasoning fields: reasoning, thought, reasoning_content, or delta objects.
+ */
 export function normalizeReasoningSegments(source: any): ReasoningSegment[] {
-    if (source?.reasoning_content !== undefined && source.reasoning_content !== null) {
-        return [{ thinking: true, text: String(source.reasoning_content) }];
+    if (!source) return [];
+
+    // Check OpenRouter / DeepSeek reasoning fields
+    const reasoningText = source.reasoning !== undefined && source.reasoning !== null
+        ? String(source.reasoning)
+        : (source.thought !== undefined && source.thought !== null
+            ? String(source.thought)
+            : (source.reasoning_content !== undefined && source.reasoning_content !== null
+                ? String(source.reasoning_content)
+                : (source.delta?.reasoning !== undefined && source.delta?.reasoning !== null
+                    ? String(source.delta.reasoning)
+                    : (source.delta?.thought !== undefined && source.delta?.thought !== null
+                        ? String(source.delta.thought)
+                        : (source.delta?.reasoning_content !== undefined && source.delta?.reasoning_content !== null
+                            ? String(source.delta.reasoning_content)
+                            : null)))));
+
+    if (reasoningText !== null && reasoningText.length > 0) {
+        return [{ thinking: true, text: reasoningText }];
     }
 
     const content = source?.content;

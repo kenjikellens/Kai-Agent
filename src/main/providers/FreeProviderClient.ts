@@ -6,6 +6,7 @@ import { CohereClient } from './CohereClient';
 import { CerebrasClient } from './CerebrasClient';
 import { ZhipuClient } from './ZhipuClient';
 import { OmniRouteClient } from './OmniRouteClient';
+import { OpenRouterClient } from './OpenRouterClient';
 
 /**
  * Describes a free-tier cloud LLM provider configuration metadata.
@@ -31,6 +32,7 @@ const cohereClient = new CohereClient();
 const cerebrasClient = new CerebrasClient();
 const zhipuClient = new ZhipuClient();
 const omniRouteClient = new OmniRouteClient();
+const openRouterClient = new OpenRouterClient();
 
 /**
  * List of all instantiated cloud provider strategies.
@@ -40,7 +42,8 @@ export const PROVIDER_CLIENTS: BaseCloudProviderClient[] = [
     cohereClient,
     cerebrasClient,
     zhipuClient,
-    omniRouteClient
+    omniRouteClient,
+    openRouterClient
 ];
 
 /**
@@ -78,6 +81,9 @@ export class FreeProviderClient implements ILLMProvider {
         if (model.startsWith('omniroute/')) {
             return FREE_PROVIDERS.find(p => p.configKey === 'omnirouteApiKey');
         }
+        if (model.startsWith('openrouter/')) {
+            return FREE_PROVIDERS.find(p => p.configKey === 'openrouterApiKey');
+        }
         return undefined;
     }
 
@@ -92,6 +98,9 @@ export class FreeProviderClient implements ILLMProvider {
         if (matched) return matched;
         if (model.startsWith('omniroute/')) {
             return omniRouteClient;
+        }
+        if (model.startsWith('openrouter/')) {
+            return openRouterClient;
         }
         return undefined;
     }
