@@ -363,6 +363,7 @@ body {
   min-height: 32px;
   max-height: 32px;
   padding: 0 12px;
+  margin: 1.5px 0;
   border: 0 !important;
   outline: none;
   border-radius: 999px;
