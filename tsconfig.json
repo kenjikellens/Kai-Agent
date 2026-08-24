@@ -10,7 +10,9 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "incremental": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo"
   },
   "include": [
     "src/**/*"

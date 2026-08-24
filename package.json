@@ -45,8 +45,7 @@
     "files": [
       "dist/**/*",
       "src/renderer/**/*",
-      "prompts/**/*",
-      "node_modules/@vscode/codicons/**/*"
+      "prompts/**/*"
     ]
   }
 }

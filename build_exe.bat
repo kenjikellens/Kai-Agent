@@ -40,7 +40,12 @@ if exist "release_temp" (
     rmdir /s /q "release_temp" >nul 2>&1
 )
 
-call npx electron-builder --win portable --config.directories.output="release_temp"
+:: Optimize Node.js RAM and 7-Zip LZMA multi-threading across all CPU cores
+set NODE_OPTIONS=--max-old-space-size=4096
+set ELECTRON_BUILDER_COMPRESSION_LEVEL=normal
+set OMP_NUM_THREADS=%NUMBER_OF_PROCESSORS%
+
+call npx electron-builder --win portable -c.directories.output="release_temp" -c.compression="normal" -c.portable.useZip=false -c.win.requestedExecutionLevel="asInvoker"
 if errorlevel 1 (
     echo.
     echo [ERROR] Electron Builder packaging failed (Exit Code: %ERRORLEVEL%^).
