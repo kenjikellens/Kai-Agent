@@ -16,9 +16,10 @@ class MermaidRenderer {
      * @private
      */
     _initMermaid() {
-        if (typeof window.mermaid !== 'undefined' && !this._isInitialized) {
+        if (typeof window.mermaid !== 'undefined') {
             try {
                 const isLight = document.body.classList.contains('vscode-light') || 
+                                document.body.classList.contains('kai-light-theme') ||
                                 document.body.classList.contains('vscode-high-contrast-light');
                 window.mermaid.initialize({
                     startOnLoad: false,
@@ -41,6 +42,23 @@ class MermaidRenderer {
                 console.error('[MermaidRenderer] Initialization error:', err);
             }
         }
+    }
+
+    /**
+     * Re-initializes Mermaid with updated theme variables and re-renders active diagrams.
+     */
+    updateTheme() {
+        this._isInitialized = false;
+        this._initMermaid();
+        const containers = document.querySelectorAll('.mermaid-diagram-card');
+        containers.forEach(card => {
+            const rawCode = card.dataset.mermaidCode;
+            const container = card.querySelector('.mermaid-render-container');
+            if (rawCode && container) {
+                card.dataset.rendered = 'false';
+                this.renderAll(card);
+            }
+        });
     }
 
     /**

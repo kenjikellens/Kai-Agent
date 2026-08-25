@@ -62,8 +62,13 @@ window.KAI_ALL_LOCALES = {
     "placeholderChat": "اسأل Kai أي شيء، أو قم بالحساب، أو التحويل، أو ابحث في الويب...",
     "placeholderAsk": "اطرح أسئلة حول قاعدة التعليمات البرمجية لمساحة العمل...",
     "placeholderAgent": "اطلب من Kai تعديل التعليمات البرمجية، أو تنفيذ المهام، أو تشغيل الأوامر...",
-    "placeholderPlanning": "صف مهمة المشروع لإنشاء خطة تنفيذ..."
-},
+    "placeholderPlanning": "صف مهمة المشروع لإنشاء خطة تنفيذ...",
+    "theme": "المظهر",
+    "themeDesc": "اختر بين المظهر الداكن أو الفاتح أو مظهر النظام",
+    "darkTheme": "داكن",
+    "lightTheme": "فاتح",
+    "systemTheme": "تلقائي (النظام)"
+  },
   "cs": {
     "newChat": "Nový chat",
     "previousChats": "Předchozí chaty",
@@ -128,7 +133,7 @@ window.KAI_ALL_LOCALES = {
     "placeholderAsk": "Položte otázky týkající se vaší kódové základny...",
     "placeholderAgent": "Požádejte Kai o úpravu kódu, provádění úkolů nebo spouštění příkazů...",
     "placeholderPlanning": "Popište projektový úkol pro vygenerování plánu implementace..."
-},
+  },
   "de": {
     "newChat": "Neuer Chat",
     "previousChats": "Bisherige Chats",
@@ -192,8 +197,13 @@ window.KAI_ALL_LOCALES = {
     "placeholderChat": "Fragen Sie Kai alles, berechnen, konvertieren oder im Web suchen...",
     "placeholderAsk": "Fragen zur Codebasis des Arbeitsbereichs stellen...",
     "placeholderAgent": "Bitten Sie Kai, Code zu bearbeiten, Aufgaben auszuführen oder Befehle zu starten...",
-    "placeholderPlanning": "Beschreiben Sie eine Projektaufgabe, um einen Implementierungsplan zu erstellen..."
-},
+    "placeholderPlanning": "Beschreiben Sie eine Projektaufgabe, um einen Implementierungsplan zu erstellen...",
+    "theme": "Design",
+    "themeDesc": "Wähle zwischen dunklem, hellem oder System-Erscheinungsbild",
+    "darkTheme": "Dunkel",
+    "lightTheme": "Hell",
+    "systemTheme": "Auto (System)"
+  },
   "en": {
     "newChat": "New Chat",
     "previousChats": "Previous Chats",
@@ -257,8 +267,13 @@ window.KAI_ALL_LOCALES = {
     "placeholderChat": "Ask Kai anything, calculate, convert, or search the web...",
     "placeholderAsk": "Ask questions about your workspace codebase...",
     "placeholderAgent": "Ask Kai to edit code, execute tasks, or run commands...",
-    "placeholderPlanning": "Describe a project task to generate an implementation plan..."
-},
+    "placeholderPlanning": "Describe a project task to generate an implementation plan...",
+    "theme": "Theme",
+    "themeDesc": "Choose between Dark, Light, or System appearance",
+    "darkTheme": "Dark",
+    "lightTheme": "Light",
+    "systemTheme": "Auto (System)"
+  },
   "es": {
     "newChat": "Nuevo Chat",
     "previousChats": "Chats Anteriores",
@@ -322,8 +337,13 @@ window.KAI_ALL_LOCALES = {
     "placeholderChat": "Pregunta a Kai lo que sea, calcula, convierte o busca en la web...",
     "placeholderAsk": "Haz preguntas sobre la base de código de tu espacio de trabajo...",
     "placeholderAgent": "Pide a Kai que edite código, ejecute tareas o corra comandos...",
-    "placeholderPlanning": "Describe una tarea del proyecto para generar un plan de implementación..."
-},
+    "placeholderPlanning": "Describe una tarea del proyecto para generar un plan de implementación...",
+    "theme": "Tema",
+    "themeDesc": "Elige entre la apariencia oscura, clara o del sistema",
+    "darkTheme": "Oscuro",
+    "lightTheme": "Claro",
+    "systemTheme": "Automático (Sistema)"
+  },
   "fr": {
     "newChat": "Nouvelle Discussion",
     "previousChats": "Discussions Précédentes",
@@ -387,8 +407,13 @@ window.KAI_ALL_LOCALES = {
     "placeholderChat": "Demandez n'importe quoi à Kai, calculez, convertissez ou cherchez sur le web...",
     "placeholderAsk": "Posez des questions sur la base de code de votre espace de travail...",
     "placeholderAgent": "Demandez à Kai de modifier du code, exécuter des tâches ou des commandes...",
-    "placeholderPlanning": "Décrivez une tâche pour générer un plan d'implémentation..."
-},
+    "placeholderPlanning": "Décrivez une tâche pour générer un plan d'implémentation...",
+    "theme": "Thème",
+    "themeDesc": "Choisissez entre l'apparence sombre, claire ou système",
+    "darkTheme": "Sombre",
+    "lightTheme": "Clair",
+    "systemTheme": "Auto (Système)"
+  },
   "hi": {
     "newChat": "नया चैट",
     "previousChats": "पिछला चैट",
@@ -452,8 +477,13 @@ window.KAI_ALL_LOCALES = {
     "placeholderChat": "Kai से कुछ भी पूछें, गणना करें, रूपांतरित करें या वेब पर खोजें...",
     "placeholderAsk": "अपने कार्यक्षेत्र कोडबेस के बारे में प्रश्न पूछें...",
     "placeholderAgent": "कोड संपादित करने, कार्य निष्पादित करने या कमांड चलाने के लिए कहें...",
-    "placeholderPlanning": "कार्यान्वयन योजना बनाने के लिए प्रोजेक्ट कार्य का विवरण दें..."
-},
+    "placeholderPlanning": "कार्यान्वयन योजना बनाने के लिए प्रोजेक्ट कार्य का विवरण दें...",
+    "theme": "थीम",
+    "themeDesc": "डार्क, लाइट या सिस्टम उपस्थिति के बीच चुनें",
+    "darkTheme": "डार्क",
+    "lightTheme": "लाइट",
+    "systemTheme": "ऑटो (सिस्टम)"
+  },
   "hu": {
     "newChat": "Új csevegés",
     "previousChats": "Előző csevegések",
@@ -518,7 +548,7 @@ window.KAI_ALL_LOCALES = {
     "placeholderAsk": "Tegyen fel kérdéseket a munkaterület kódbázisáról...",
     "placeholderAgent": "Kérje meg a Kai-t kód szerkesztésére, feladatok végrehajtására vagy parancsok futtatására...",
     "placeholderPlanning": "Írjon le egy projektfeladatot a megvalósítási terv generálásához..."
-},
+  },
   "it": {
     "newChat": "Nuova Chat",
     "previousChats": "Chat Precedenti",
@@ -582,8 +612,13 @@ window.KAI_ALL_LOCALES = {
     "placeholderChat": "Chiedi qualsiasi cosa a Kai, calcola, converti o cerca nel web...",
     "placeholderAsk": "Fai domande sulla base di codice del tuo spazio di lavoro...",
     "placeholderAgent": "Chiedi a Kai di modificare codice, eseguire attività o eseguire comandi...",
-    "placeholderPlanning": "Descrivi un'attività per generare un piano di implementazione..."
-},
+    "placeholderPlanning": "Descrivi un'attività per generare un piano di implementazione...",
+    "theme": "Tema",
+    "themeDesc": "Scegli tra l'aspetto scuro, chiaro o di sistema",
+    "darkTheme": "Scuro",
+    "lightTheme": "Chiaro",
+    "systemTheme": "Auto (Sistema)"
+  },
   "ja": {
     "newChat": "新規チャット",
     "previousChats": "過去のチャット",
@@ -647,8 +682,13 @@ window.KAI_ALL_LOCALES = {
     "placeholderChat": "Kaiに何でも質問、計算、変換、またはウェブ検索...",
     "placeholderAsk": "ワークスペースのコードベースについて質問する...",
     "placeholderAgent": "Kaiにコードの編集、タスクの実行、コマンドの実行を依頼する...",
-    "placeholderPlanning": "実装計画を生成するためのタスクを記述してください..."
-},
+    "placeholderPlanning": "実装計画を生成するためのタスクを記述してください...",
+    "theme": "テーマ",
+    "themeDesc": "ダーク、ライト、またはシステム外観を選択します",
+    "darkTheme": "ダーク",
+    "lightTheme": "ライト",
+    "systemTheme": "自動 (システム)"
+  },
   "ko": {
     "newChat": "새 채팅",
     "previousChats": "이전 대화",
@@ -712,8 +752,13 @@ window.KAI_ALL_LOCALES = {
     "placeholderChat": "Kai에게 무엇이든 질문, 계산, 변환 또는 웹 검색...",
     "placeholderAsk": "워크스페이스 코드베이스에 대해 질문하세요...",
     "placeholderAgent": "Kai에게 코드 수정, 작업 실행 또는 명령 실행 요청...",
-    "placeholderPlanning": "구현 계획을 생성할 프로젝트 작업을 설명하세요..."
-},
+    "placeholderPlanning": "구현 계획을 생성할 프로젝트 작업을 설명하세요...",
+    "theme": "테마",
+    "themeDesc": "다크, 라이트 또는 시스템 모양 중에서 선택하세요",
+    "darkTheme": "다크",
+    "lightTheme": "라이트",
+    "systemTheme": "자동 (시스템)"
+  },
   "nl": {
     "newChat": "Nieuwe Chat",
     "previousChats": "Eerdere Chats",
@@ -777,8 +822,13 @@ window.KAI_ALL_LOCALES = {
     "placeholderChat": "Vraag Kai alles, bereken, converteer of zoek op het web...",
     "placeholderAsk": "Stel vragen over de codebase van je werkruimte...",
     "placeholderAgent": "Vraag Kai om code te bewerken, taken uit te voeren of commando's te draaien...",
-    "placeholderPlanning": "Beschrijf een projecttaak om een implementatieplan te genereren..."
-},
+    "placeholderPlanning": "Beschrijf een projecttaak om een implementatieplan te genereren...",
+    "theme": "Thema",
+    "themeDesc": "Kies tussen een donkere, lichte of systeemweergave",
+    "darkTheme": "Donker",
+    "lightTheme": "Licht",
+    "systemTheme": "Automatisch (Systeem)"
+  },
   "pl": {
     "newChat": "Nowy czat",
     "previousChats": "Poprzednie czaty",
@@ -842,8 +892,13 @@ window.KAI_ALL_LOCALES = {
     "placeholderChat": "Zapytaj Kai o cokolwiek, obliczaj, konwertuj lub przeszukuj sieć...",
     "placeholderAsk": "Zadawaj pytania dotyczące bazy kodu obszaru roboczego...",
     "placeholderAgent": "Poproś Kai o edycję kodu, wykonywanie zadań lub uruchamianie poleceń...",
-    "placeholderPlanning": "Opisz zadanie projektowe, aby wygenerować plan wdrożenia..."
-},
+    "placeholderPlanning": "Opisz zadanie projektowe, aby wygenerować plan wdrożenia...",
+    "theme": "Motyw",
+    "themeDesc": "Wybierz ciemny, jasny lub systemowy wygląd",
+    "darkTheme": "Ciemny",
+    "lightTheme": "Jasny",
+    "systemTheme": "Automatyczny (System)"
+  },
   "pt": {
     "newChat": "Novo Chat",
     "previousChats": "Chats Anteriores",
@@ -907,8 +962,13 @@ window.KAI_ALL_LOCALES = {
     "placeholderChat": "Pergunte qualquer coisa ao Kai, calcule, converta ou pesquise na web...",
     "placeholderAsk": "Faça perguntas sobre a base de código do seu espaço de trabalho...",
     "placeholderAgent": "Peça ao Kai para editar código, executar tarefas ou rodar comandos...",
-    "placeholderPlanning": "Descreva uma tarefa do projeto para gerar um plano de implementação..."
-},
+    "placeholderPlanning": "Descreva uma tarefa do projeto para gerar um plano de implementação...",
+    "theme": "Tema",
+    "themeDesc": "Escolha entre a aparência escura, clara ou do sistema",
+    "darkTheme": "Escuro",
+    "lightTheme": "Claro",
+    "systemTheme": "Automático (Sistema)"
+  },
   "ru": {
     "newChat": "Новый чат",
     "previousChats": "Предыдущие чаты",
@@ -972,8 +1032,13 @@ window.KAI_ALL_LOCALES = {
     "placeholderChat": "Спросите Kai о чем угодно, считайте, конвертируйте или ищите в интернете...",
     "placeholderAsk": "Задавайте вопросы о кодовой базе вашей рабочей области...",
     "placeholderAgent": "Попросите Kai редактировать код, выполнять задачи или запускать команды...",
-    "placeholderPlanning": "Опишите задачу проекта для создания плана реализации..."
-},
+    "placeholderPlanning": "Опишите задачу проекта для создания плана реализации...",
+    "theme": "Тема",
+    "themeDesc": "Выберите темное, светлое или системное оформление",
+    "darkTheme": "Темная",
+    "lightTheme": "Светлая",
+    "systemTheme": "Авто (Система)"
+  },
   "tr": {
     "newChat": "Yeni Sohbet",
     "previousChats": "Önceki Sohbetler",
@@ -1037,8 +1102,13 @@ window.KAI_ALL_LOCALES = {
     "placeholderChat": "Kai'ye her şeyi sorun, hesaplayın, dönüştürün veya web'de arayın...",
     "placeholderAsk": "Çalışma alanı kod tabanınız hakkında sorular sorun...",
     "placeholderAgent": "Kai'den kod düzenlemesini, görevleri veya komutları çalıştırmasını isteyin...",
-    "placeholderPlanning": "Uygulama planı oluşturmak için bir proje görevi açıklayın..."
-},
+    "placeholderPlanning": "Uygulama planı oluşturmak için bir proje görevi açıklayın...",
+    "theme": "Tema",
+    "themeDesc": "Koyu, açık veya sistem görünümü arasında seçim yapın",
+    "darkTheme": "Koyu",
+    "lightTheme": "Açık",
+    "systemTheme": "Otomatik (Sistem)"
+  },
   "zh_tw": {
     "newChat": "建立新對話",
     "previousChats": "歷史對話",
@@ -1103,7 +1173,7 @@ window.KAI_ALL_LOCALES = {
     "placeholderAsk": "詢問有關工作區程式碼庫的問題...",
     "placeholderAgent": "讓 Kai 編輯程式碼、執行任務或執行命令...",
     "placeholderPlanning": "描述專案任務以產生實作計劃..."
-},
+  },
   "zh": {
     "newChat": "新建对话",
     "previousChats": "历史对话",
@@ -1167,6 +1237,11 @@ window.KAI_ALL_LOCALES = {
     "placeholderChat": "向 Kai 询问任何问题、计算、转换或搜索网络...",
     "placeholderAsk": "询问有关工作区代码库的问题...",
     "placeholderAgent": "让 Kai 编辑代码、执行任务或运行命令...",
-    "placeholderPlanning": "描述项目任务以生成实施计划..."
-}
+    "placeholderPlanning": "描述项目任务以生成实施计划...",
+    "theme": "主题",
+    "themeDesc": "在深色、浅色或系统外观之间进行选择",
+    "darkTheme": "深色",
+    "lightTheme": "浅色",
+    "systemTheme": "自动 (系统)"
+  }
 };

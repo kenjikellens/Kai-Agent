@@ -62,3 +62,8 @@ graph TD
    - Run in Electron: `npm run dev` in `KAI Agent App`.
    - Run in Python preview: `python run_pc.py` in `KAI Agent App`.
    - Compile TypeScript: `npm run compile` in `KAI Agent App`.
+
+3. **Theme Architecture & Light Mode**:
+   - Integrated Theme Selector in General Settings (`SettingsController.js`): Dark, Light, and Auto/System (`prefers-color-scheme`).
+   - Theme is immediately applied on startup (`main.js`) with zero FOUC flikkering.
+   - 100% i18n parity across 18 languages in `AllLocales.js` and live Mermaid diagram theme re-rendering (`MermaidRenderer.js`).

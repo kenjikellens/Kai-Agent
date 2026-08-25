@@ -3,10 +3,16 @@
  * Instantiates and orchestrates ES6 OOP modules with collapsible Left Sidebar.
  */
 (function () {
+    // 0. Apply Saved UI Theme immediately on startup
+    if (typeof SettingsController !== 'undefined' && typeof SettingsController.applyTheme === 'function') {
+        SettingsController.applyTheme();
+    }
+
     // 1. Core State & Data Repositories
     const appState = new AppState();
     const formatter = new MarkdownFormatter();
     const mermaidRenderer = new MermaidRenderer();
+    window.mermaidRenderer = mermaidRenderer;
     const ipcBridge = new WebviewIPCBridge();
     const fileSummaryWidget = new FileSummaryWidget();
     const sessionRepository = new SessionRepository(ipcBridge);

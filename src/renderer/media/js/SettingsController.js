@@ -156,6 +156,27 @@ class SettingsController {
             });
         }
 
+        // 4b. Theme Custom Select Dropdown (Dark, Light, System)
+        const themeContainer = document.getElementById('theme-select-container');
+        if (themeContainer && typeof CustomSelectComponent !== 'undefined') {
+            const storedTheme = localStorage.getItem('kai.theme') || 'dark';
+            const themeOptions = [
+                { value: 'dark', label: (i18n.darkTheme || 'Dark') },
+                { value: 'light', label: (i18n.lightTheme || 'Light') },
+                { value: 'system', label: (i18n.systemTheme || 'Auto (System)') }
+            ];
+            this.themeSelectComponent = new CustomSelectComponent({
+                container: themeContainer,
+                id: 'theme-select-input',
+                options: themeOptions,
+                value: storedTheme,
+                onChange: (selectedTheme) => {
+                    localStorage.setItem('kai.theme', selectedTheme);
+                    SettingsController.applyTheme(selectedTheme);
+                }
+            });
+        }
+
         // 5. UI Scale Custom Select Dropdown (Scales text, buttons, icons, modals)
         const uiScaleContainer = document.getElementById('ui-scale-select-container');
         if (uiScaleContainer && typeof CustomSelectComponent !== 'undefined') {
@@ -602,6 +623,36 @@ class SettingsController {
     }
 
     /**
+     * Applies the given theme (dark, light, or system) to the application DOM.
+     * @param {string} themeName 'dark', 'light', or 'system'
+     */
+    static applyTheme(themeName) {
+        const theme = themeName || localStorage.getItem('kai.theme') || 'dark';
+        let effectiveTheme = theme;
+        if (theme === 'system') {
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            effectiveTheme = prefersDark ? 'dark' : 'light';
+        }
+
+        if (effectiveTheme === 'light') {
+            document.body.classList.add('kai-light-theme');
+            document.body.classList.add('vscode-light');
+            document.body.classList.remove('vscode-dark');
+            document.documentElement.setAttribute('data-theme', 'light');
+        } else {
+            document.body.classList.remove('kai-light-theme');
+            document.body.classList.remove('vscode-light');
+            document.body.classList.add('vscode-dark');
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+
+        // Notify MermaidRenderer if available to re-render diagrams in new theme
+        if (window.mermaidRenderer && typeof window.mermaidRenderer.updateTheme === 'function') {
+            window.mermaidRenderer.updateTheme();
+        }
+    }
+
+    /**
      * Persists all current settings values to host.
      */
     saveAllSettings() {
@@ -614,4 +665,14 @@ class SettingsController {
         };
         this.ipcBridge.updateSettings(payload);
     }
+}
+
+// Listen for system appearance changes if in system mode
+if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+        const currentTheme = localStorage.getItem('kai.theme') || 'dark';
+        if (currentTheme === 'system') {
+            SettingsController.applyTheme('system');
+        }
+    });
 }
