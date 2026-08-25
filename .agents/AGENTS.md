@@ -153,6 +153,10 @@ When implementing or modifying completions across providers, dynamically apply t
   - Above every base class definition in CSS, write a concise JSDoc-style comment listing all concrete features and modules that consume that component.
 - **Strict Container vs. Element Spacing**:
   - Always enforce container-to-content spacing via container `padding` (e.g., `padding: 2.5px`), never by adding outer `margin` to inner buttons or child elements.
+- **Strict Prohibition of `!important`**:
+  - The use of `!important` is **STRICTLY PROHIBITED** in all CSS stylesheets across the entire repository.
+  - Proper specificity, object-oriented CSS architecture, and clean cascading rules MUST be used instead.
+  - If removing `!important` causes a style to fail, it is considered a sign of poor structural CSS architecture that MUST be resolved by fixing specificity and element inheritance, never by forcing `!important`.
 - **Protected Theme & UI Features (Non-Negotiable Boundaries)**:
   - **Zero Button Regression & Pixel-Perfect UI**: Refactoring must NEVER alter computed visual styles (dimensions, padding, margins, border-radius, accent colors, hover shadows, or transitions) or break click/keyboard event listeners and DOM queries.
   - **VS Code Theme Tokens (Extension)**: The Extension stylesheet MUST always use VS Code theme variables (`var(--vscode-*)`). NEVER replace theme tokens with hardcoded hex colors or remove dynamic theme adaptability.

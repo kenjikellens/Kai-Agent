@@ -6,6 +6,16 @@ This document details the architecture, component roles, and file-by-file specif
 
 ## 1. Desktop App Runtime Architecture
 
+### E. CSS Architecture & Strict Prohibition of `!important`
+- **Zero `!important` Policy**: The use of `!important` is strictly prohibited across all stylesheets. Proper specificity, object-oriented CSS patterns, and clean cascading rules are required.
+- **Single Source of Truth**: All shared tokens must reside in `:root` and theme overrides, with exact single base classes per UI component.
+
+### F. Triple-File Documentation Synchronization Mandate
+Whenever architecture, UI components, runtime features, or system design guidelines are modified, all 3 `AGENTS.md` and all 3 `overview.md` files must be updated simultaneously in lockstep:
+1. Root workspace: `.agents/AGENTS.md` and `.agents/overview.md`
+2. Desktop App: `KAI Agent App/.agents/AGENTS.md` and `KAI Agent App/docs/overview.md`
+3. Extension: `Kai-Agent-extension/.agents/AGENTS.md` and `Kai-Agent-extension/docs/overview.md`
+
 The Desktop Application supports a dual runtime environment:
 1. **Production Mode (Electron Desktop EXE)**: Electron Main (`src/main/`) + Preload (`preload.ts`) + Renderer (`src/renderer/`).
 2. **Local Preview Mode (Python CORS Proxy & Static Server)**: `python run_pc.py` serves `src/renderer/` and proxies local filesystem/tool requests.
