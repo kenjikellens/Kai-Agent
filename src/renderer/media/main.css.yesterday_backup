@@ -49,8 +49,6 @@
   --app-mono: var(--vscode-editor-font-family, "Cascadia Code", "Fira Code", "JetBrains Mono", "Consolas", "Courier New", monospace);
 
   /* Component specific theme tokens for dark theme default */
-  --app-card-bg: rgba(255, 255, 255, 0.04);
-  --app-card-border: var(--app-border-strong);
   --app-code-bg: rgba(0, 0, 0, 0.35);
   --app-inline-code-bg: rgba(0, 0, 0, 0.3);
   --app-tool-dropdown-bg: rgba(0, 0, 0, 0.25);
@@ -63,37 +61,26 @@
   --app-file-summary-bg: var(--vscode-editor-background, #1e1e1e);
   --app-dropdown-bg: var(--vscode-dropdown-background, #252526);
   --app-dropdown-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
-  --app-dropdown-selected-bg: var(--app-surface-strong);
-  --app-dropdown-selected-fg: var(--app-fg);
   --app-flyout-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
   --app-scrollbar-thumb: rgba(255, 255, 255, 0.12);
   --app-scrollbar-thumb-hover: rgba(255, 255, 255, 0.22);
 }
 
-/* Light Theme Tokens Override for Desktop App & VS Code Light Themes */
+/* Light Theme Tokens Override for VS Code Light & High Contrast Light Themes */
 body.vscode-light,
-body.vscode-high-contrast-light,
-body.kai-light-theme,
-[data-theme="light"] {
-  --main-surface-card: #ffffff;
-  --main-surface-input: #ffffff;
-  --main-border-subtle: rgba(0, 0, 0, 0.08);
-
-  --app-bg: var(--vscode-sideBar-background, #f8f9fa);
-  --app-fg: var(--vscode-editor-foreground, var(--vscode-foreground, #1f2328));
-  --app-muted: var(--vscode-descriptionForeground, #656d76);
+body.vscode-high-contrast-light {
+  --app-bg: var(--vscode-sideBar-background, #f3f3f3);
+  --app-fg: var(--vscode-editor-foreground, var(--vscode-foreground, #24292e));
+  --app-muted: var(--vscode-descriptionForeground, #57606a);
   --app-border: var(--vscode-widget-border, rgba(0, 0, 0, 0.12));
-  --app-border-strong: var(--vscode-widget-border, rgba(0, 0, 0, 0.20));
-  --app-border-subtle: rgba(0, 0, 0, 0.06);
+  --app-border-strong: var(--vscode-widget-border, rgba(0, 0, 0, 0.22));
+  --app-border-subtle: rgba(0, 0, 0, 0.08);
   --app-surface: rgba(0, 0, 0, 0.03);
   --app-surface-strong: rgba(0, 0, 0, 0.06);
   --app-surface-hover: rgba(0, 0, 0, 0.08);
   --app-surface-active: rgba(0, 0, 0, 0.12);
-  --app-btn-inset: 0 0 0 1.5px rgba(0, 0, 0, 0.08);
   --app-input-bg: var(--vscode-input-background, #ffffff);
   --app-input-border: var(--vscode-input-border, rgba(0, 0, 0, 0.18));
-  --app-card-bg: rgba(0, 0, 0, 0.04);
-  --app-card-border: rgba(0, 0, 0, 0.12);
   --app-code-bg: var(--vscode-editor-background, #f6f8fa);
   --app-inline-code-bg: rgba(0, 0, 0, 0.05);
   --app-tool-dropdown-bg: rgba(0, 0, 0, 0.04);
@@ -105,10 +92,8 @@ body.kai-light-theme,
   --app-tool-error-text: #c62828;
   --app-file-summary-bg: var(--vscode-editor-background, #ffffff);
   --app-dropdown-bg: var(--vscode-dropdown-background, #ffffff);
-  --app-dropdown-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  --app-dropdown-selected-bg: rgba(0, 0, 0, 0.08);
-  --app-dropdown-selected-fg: var(--vscode-editor-foreground, var(--vscode-foreground, #000000));
-  --app-flyout-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --app-dropdown-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --app-flyout-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   --app-scrollbar-thumb: rgba(0, 0, 0, 0.15);
   --app-scrollbar-thumb-hover: rgba(0, 0, 0, 0.25);
 }
@@ -2339,8 +2324,7 @@ button:disabled {
 
 /* Shared Base Container for all Dropdown & Flyout Menus (Single Source of Truth) */
 .dropdown-menu,
-.thinking-flyout-menu-inner,
-.custom-select-menu {
+.thinking-flyout-menu-inner {
   background: var(--app-dropdown-bg);
   border-radius: 12px;
   padding: 2.5px;
@@ -2371,17 +2355,6 @@ button:disabled {
   left: auto;
   width: 260px;
   max-width: 300px;
-}
-
-/* Custom Select Dropdown Menu in Settings - Positioning & dimensions */
-.custom-select-menu {
-  position: fixed;
-  bottom: auto;
-  min-width: 140px;
-  max-height: 260px;
-  overflow-y: auto;
-  border: 1px solid var(--app-border-strong);
-  box-shadow: var(--app-dropdown-shadow);
 }
 
 /* Accordion provider group within the Model Selector Dropdown */
@@ -2425,14 +2398,13 @@ button:disabled {
 
 /* Rotating chevron icon for category accordion header */
 .dropdown-category-header .chevron-icon {
-  transition: transform 0.2s ease, color 0.15s ease;
+  transition: transform 0.2s ease;
   color: var(--app-muted);
   flex-shrink: 0;
 }
 
 /* Hover state for chevron icon */
-.dropdown-category-header:hover .chevron-icon,
-.dropdown-category-header:focus-visible .chevron-icon {
+.dropdown-category-header:hover .chevron-icon {
   color: var(--app-fg);
 }
 
@@ -2494,8 +2466,8 @@ button:disabled {
 /* Selected item state for dropdown options */
 .dropdown-item.selected,
 .flyout-option.selected {
-  color: var(--app-dropdown-selected-fg);
-  background: var(--app-dropdown-selected-bg);
+  color: var(--app-fg);
+  background: var(--app-surface-strong);
   border-radius: 999px;
   font-weight: 600;
 }
@@ -2505,7 +2477,7 @@ button:disabled {
 .dropdown-item.selected:focus-visible,
 .flyout-option.selected:hover,
 .flyout-option.selected:focus-visible {
-  background: var(--app-dropdown-selected-bg);
+  background: var(--app-surface-strong);
   border-color: var(--app-focus, #007acc);
 }
 
@@ -4855,46 +4827,6 @@ details[open]>summary>.custom-chevron {
 /* ==========================================================================
    SETTINGS ACCORDION CATEGORIES (.settings-category)
    ========================================================================== */
-.settings-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 100%;
-  background: var(--app-bg);
-  color: var(--app-fg);
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-.settings-scroll-wrapper {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 100%;
-  max-width: 820px;
-  margin: 0 auto;
-  padding: 16px 20px 40px 20px;
-  box-sizing: border-box;
-  overflow-y: auto;
-}
-
-.settings-panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--app-border);
-  color: var(--app-fg);
-}
-
-.settings-title {
-  margin: 0;
-  font-size: 1.15rem;
-  font-weight: 600;
-  color: var(--app-fg);
-}
-
 .settings-content-panel {
   display: flex;
   flex-direction: column;
@@ -4917,7 +4849,7 @@ details[open]>summary>.custom-chevron {
 
 /* When category is expanded, the wrapper gets the card background */
 .settings-category:not(.collapsed) {
-  background: var(--app-card-bg);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 /* Fully rounded pill-shaped container when category is collapsed */

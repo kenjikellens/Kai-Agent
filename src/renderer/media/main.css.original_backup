@@ -49,8 +49,6 @@
   --app-mono: var(--vscode-editor-font-family, "Cascadia Code", "Fira Code", "JetBrains Mono", "Consolas", "Courier New", monospace);
 
   /* Component specific theme tokens for dark theme default */
-  --app-card-bg: rgba(255, 255, 255, 0.04);
-  --app-card-border: var(--app-border-strong);
   --app-code-bg: rgba(0, 0, 0, 0.35);
   --app-inline-code-bg: rgba(0, 0, 0, 0.3);
   --app-tool-dropdown-bg: rgba(0, 0, 0, 0.25);
@@ -63,8 +61,6 @@
   --app-file-summary-bg: var(--vscode-editor-background, #1e1e1e);
   --app-dropdown-bg: var(--vscode-dropdown-background, #252526);
   --app-dropdown-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
-  --app-dropdown-selected-bg: var(--app-surface-strong);
-  --app-dropdown-selected-fg: var(--app-fg);
   --app-flyout-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
   --app-scrollbar-thumb: rgba(255, 255, 255, 0.12);
   --app-scrollbar-thumb-hover: rgba(255, 255, 255, 0.22);
@@ -89,11 +85,9 @@ body.kai-light-theme,
   --app-surface-strong: rgba(0, 0, 0, 0.06);
   --app-surface-hover: rgba(0, 0, 0, 0.08);
   --app-surface-active: rgba(0, 0, 0, 0.12);
-  --app-btn-inset: 0 0 0 1.5px rgba(0, 0, 0, 0.08);
+  --app-btn-inset: 0 0 0 1.5px var(--app-surface-hover);
   --app-input-bg: var(--vscode-input-background, #ffffff);
   --app-input-border: var(--vscode-input-border, rgba(0, 0, 0, 0.18));
-  --app-card-bg: rgba(0, 0, 0, 0.04);
-  --app-card-border: rgba(0, 0, 0, 0.12);
   --app-code-bg: var(--vscode-editor-background, #f6f8fa);
   --app-inline-code-bg: rgba(0, 0, 0, 0.05);
   --app-tool-dropdown-bg: rgba(0, 0, 0, 0.04);
@@ -106,8 +100,6 @@ body.kai-light-theme,
   --app-file-summary-bg: var(--vscode-editor-background, #ffffff);
   --app-dropdown-bg: var(--vscode-dropdown-background, #ffffff);
   --app-dropdown-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  --app-dropdown-selected-bg: rgba(0, 0, 0, 0.08);
-  --app-dropdown-selected-fg: var(--vscode-editor-foreground, var(--vscode-foreground, #000000));
   --app-flyout-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   --app-scrollbar-thumb: rgba(0, 0, 0, 0.15);
   --app-scrollbar-thumb-hover: rgba(0, 0, 0, 0.25);
@@ -224,7 +216,7 @@ body {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--app-surface-strong, #18181b);
+  background: var(--app-surface-strong);
   border-right: 1px solid var(--app-border);
   box-sizing: border-box;
   overflow: hidden;
@@ -940,9 +932,9 @@ button:disabled {
 
 .user-message {
   align-self: flex-end;
-  background: var(--app-surface-hover, #2a2a2e);
-  color: var(--app-fg, #e4e4e7);
-  border: 1px solid var(--app-border, rgba(255, 255, 255, 0.08));
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
+  border: 1px solid var(--app-border);
   border-radius: 999px;
   padding: 6px 14px !important;
   box-sizing: border-box;
@@ -951,7 +943,7 @@ button:disabled {
 }
 
 .user-message:hover {
-  background: var(--app-surface-active, #323238);
+  background: var(--app-surface-active);
   box-shadow: none !important;
 }
 
@@ -2339,8 +2331,7 @@ button:disabled {
 
 /* Shared Base Container for all Dropdown & Flyout Menus (Single Source of Truth) */
 .dropdown-menu,
-.thinking-flyout-menu-inner,
-.custom-select-menu {
+.thinking-flyout-menu-inner {
   background: var(--app-dropdown-bg);
   border-radius: 12px;
   padding: 2.5px;
@@ -2371,17 +2362,6 @@ button:disabled {
   left: auto;
   width: 260px;
   max-width: 300px;
-}
-
-/* Custom Select Dropdown Menu in Settings - Positioning & dimensions */
-.custom-select-menu {
-  position: fixed;
-  bottom: auto;
-  min-width: 140px;
-  max-height: 260px;
-  overflow-y: auto;
-  border: 1px solid var(--app-border-strong);
-  box-shadow: var(--app-dropdown-shadow);
 }
 
 /* Accordion provider group within the Model Selector Dropdown */
@@ -2425,14 +2405,13 @@ button:disabled {
 
 /* Rotating chevron icon for category accordion header */
 .dropdown-category-header .chevron-icon {
-  transition: transform 0.2s ease, color 0.15s ease;
+  transition: transform 0.2s ease;
   color: var(--app-muted);
   flex-shrink: 0;
 }
 
 /* Hover state for chevron icon */
-.dropdown-category-header:hover .chevron-icon,
-.dropdown-category-header:focus-visible .chevron-icon {
+.dropdown-category-header:hover .chevron-icon {
   color: var(--app-fg);
 }
 
@@ -2493,20 +2472,30 @@ button:disabled {
 
 /* Selected item state for dropdown options */
 .dropdown-item.selected,
-.flyout-option.selected {
-  color: var(--app-dropdown-selected-fg);
-  background: var(--app-dropdown-selected-bg);
+.flyout-option.selected,
+.custom-select-option.selected {
+  color: var(--app-fg) !important;
+  background: var(--app-surface-strong) !important;
   border-radius: 999px;
   font-weight: 600;
+}
+
+.dropdown-item.selected span,
+.flyout-option.selected span,
+.custom-select-option.selected span {
+  color: var(--app-fg) !important;
 }
 
 /* Selected item on hover: preserves selected background and gets blue border */
 .dropdown-item.selected:hover,
 .dropdown-item.selected:focus-visible,
 .flyout-option.selected:hover,
-.flyout-option.selected:focus-visible {
-  background: var(--app-dropdown-selected-bg);
-  border-color: var(--app-focus, #007acc);
+.flyout-option.selected:focus-visible,
+.custom-select-option.selected:hover,
+.custom-select-option.selected:focus-visible {
+  background: var(--app-surface-strong) !important;
+  border-color: var(--app-focus, #007acc) !important;
+  color: var(--app-fg) !important;
 }
 
 /* Checkmark indicator for selected options */
@@ -2561,7 +2550,8 @@ button:disabled {
   width: 32px;
   height: 18px;
   border-radius: 9px;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--app-surface-active);
+  border: 1px solid var(--app-border-strong);
   position: relative;
   transition: background-color 0.15s ease;
   flex-shrink: 0;
@@ -2570,6 +2560,7 @@ button:disabled {
 /* Active background color for toggle switch pill */
 .switch-pill.active {
   background: var(--app-accent);
+  border-color: var(--app-accent);
 }
 
 /* Circular handle inside boolean toggle switch pill */
@@ -2977,27 +2968,27 @@ button:disabled {
   box-sizing: border-box;
   margin: 4px 0;
   border-radius: 6px;
-  background: #181818;
-  border: 1px solid #2d2d2d;
+  background: var(--app-code-bg);
+  border: 1px solid var(--app-border);
   overflow: hidden;
 }
 
-/* Dark top bar with language label and action buttons */
+/* Dark / Light bar with language label and action buttons */
 .code-block-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 6px 12px;
-  background: #222222;
-  border-bottom: 1px solid #2d2d2d;
+  background: var(--app-surface-strong);
+  border-bottom: 1px solid var(--app-border-subtle);
 }
 
-/* Language identifier label (white, standard UI font, not monospace) */
+/* Language identifier label */
 .code-lang-label {
   font-family: inherit;
   font-size: 0.75rem;
   font-weight: 500;
-  color: #ffffff;
+  color: var(--app-fg);
   user-select: none;
 }
 
@@ -3018,11 +3009,11 @@ button:disabled {
   height: 24px;
   padding: 0;
   border-radius: 4px;
-  border: 1px solid #383838;
-  background: #2a2a2a;
-  color: #ffffff;
+  border: 1px solid var(--app-border-strong);
+  background: var(--app-surface-strong);
+  color: var(--app-muted);
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   user-select: none;
 }
 
@@ -3036,14 +3027,14 @@ button:disabled {
 /* Hover state for action buttons */
 .copy-code-btn:hover,
 .download-code-btn:hover {
-  background: #383838;
-  border-color: #505050;
-  color: #ffffff;
+  background: var(--app-surface-hover);
+  border-color: var(--app-focus);
+  color: var(--app-fg);
 }
 
 /* Feedback state when code is successfully copied */
 .copy-code-btn.copied {
-  background: #1e3a2f;
+  background: rgba(16, 185, 129, 0.15);
   color: #10b981;
   border-color: #10b981;
 }
@@ -3056,7 +3047,7 @@ button:disabled {
   margin: 0;
   padding: 12px 14px;
   overflow-x: auto;
-  background: #181818;
+  background: var(--app-code-bg);
 }
 
 /* Monospace code font and layout (Consolas only on code itself) */
@@ -3065,12 +3056,12 @@ button:disabled {
   font-family: 'Consolas', 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
   font-size: 0.82rem;
   line-height: 1.55;
-  color: #d4d4d4;
+  color: var(--app-fg);
   tab-size: 4;
   white-space: pre;
 }
 
-/* VS Code Dark+ Syntax Highlighting Tokens */
+/* VS Code Dark+ / Light Syntax Highlighting Tokens */
 .token.comment,
 .token.prolog,
 .token.cdata {
@@ -3130,15 +3121,63 @@ button:disabled {
   font-style: italic;
 }
 
+/* Light Theme Syntax Highlighting Overrides */
+body.vscode-light .token.keyword,
+body.vscode-light .token.doctype,
+body.vscode-light .token.tag,
+body.vscode-light .token.atrule,
+body.kai-light-theme .token.keyword,
+body.kai-light-theme .token.doctype,
+body.kai-light-theme .token.tag,
+body.kai-light-theme .token.atrule {
+  color: #0000ff;
+}
+
+body.vscode-light .token.string,
+body.vscode-light .token.attr-value,
+body.vscode-light .token.char,
+body.kai-light-theme .token.string,
+body.kai-light-theme .token.attr-value,
+body.kai-light-theme .token.char {
+  color: #a31515;
+}
+
+body.vscode-light .token.function,
+body.vscode-light .token.class-name,
+body.kai-light-theme .token.function,
+body.kai-light-theme .token.class-name {
+  color: #795e26;
+}
+
+body.vscode-light .token.number,
+body.kai-light-theme .token.number {
+  color: #098658;
+}
+
+body.vscode-light .token.comment,
+body.kai-light-theme .token.comment {
+  color: #008000;
+}
+
+body.vscode-light .token.property,
+body.kai-light-theme .token.property {
+  color: #001080;
+}
+
+body.vscode-light .token.variable,
+body.kai-light-theme .token.variable {
+  color: #001080;
+}
+
 /* Inline code snippet styling */
 :not(pre) > code {
-  background: rgba(255, 255, 255, 0.08);
-  color: #e0e7ff;
+  background: var(--app-inline-code-bg);
+  color: var(--app-fg);
   padding: 2px 6px;
   border-radius: 4px;
   font-family: 'Consolas', 'Fira Code', monospace;
   font-size: 0.85em;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--app-border-subtle);
 }
 
 /* ==========================================================================
@@ -3152,7 +3191,7 @@ button:disabled {
 .message-content h4,
 .message-content h5,
 .message-content h6 {
-  color: #f4f4f5;
+  color: var(--app-fg);
   font-weight: 600;
   line-height: 1.3;
   margin-top: 10px;
@@ -3172,8 +3211,8 @@ button:disabled {
 .message-content h1 {
   font-size: 1.15rem;
   font-weight: 700;
-  color: #ffffff;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--app-fg);
+  border-bottom: 1px solid var(--app-border-subtle);
   padding-bottom: 3px;
   margin-bottom: 6px;
 }
@@ -3181,25 +3220,25 @@ button:disabled {
 .message-content h2 {
   font-size: 1.05rem;
   font-weight: 650;
-  color: #f1f5f9;
+  color: var(--app-fg);
 }
 
 .message-content h3 {
   font-size: 0.95rem;
   font-weight: 600;
-  color: #e2e8f0;
+  color: var(--app-fg);
 }
 
 .message-content h4 {
   font-size: 0.88rem;
   font-weight: 600;
-  color: #cbd5e1;
+  color: var(--app-muted);
 }
 
 .message-content h5 {
   font-size: 0.82rem;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--app-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -3207,7 +3246,7 @@ button:disabled {
 .message-content h6 {
   font-size: 0.78rem;
   font-weight: 600;
-  color: #64748b;
+  color: var(--app-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -4621,10 +4660,10 @@ details[open]>summary>.custom-chevron {
   max-height: 88vh;
   display: flex;
   flex-direction: column;
-  background: var(--app-bg, #18181b);
-  border: 1px solid var(--app-border-strong, #333338);
+  background: var(--app-bg);
+  border: 1px solid var(--app-border-strong);
   border-radius: var(--app-radius-lg, 10px);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
   overflow: hidden;
 }
 
@@ -4633,8 +4672,8 @@ details[open]>summary>.custom-chevron {
   align-items: center;
   justify-content: space-between;
   padding: 14px 18px;
-  border-bottom: 1px solid var(--app-border-subtle, #27272a);
-  background: var(--app-surface-strong, #202024);
+  border-bottom: 1px solid var(--app-border-subtle);
+  background: var(--app-surface-strong);
 }
 
 .help-modal-title {
@@ -4643,12 +4682,12 @@ details[open]>summary>.custom-chevron {
   gap: 10px;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #f4f4f5;
+  color: var(--app-fg);
   letter-spacing: -0.01em;
 }
 
 .help-modal-title svg {
-  color: var(--app-muted, #a1a1aa);
+  color: var(--app-muted);
 }
 
 .help-close-btn {
@@ -4663,7 +4702,7 @@ details[open]>summary>.custom-chevron {
   border: 0 !important;
   border-radius: 999px;
   background: var(--app-surface-strong);
-  color: var(--app-muted, #a1a1aa);
+  color: var(--app-muted);
   cursor: pointer;
   outline: none;
   flex-shrink: 0;
@@ -4677,8 +4716,8 @@ details[open]>summary>.custom-chevron {
 }
 
 .help-close-btn:hover {
-  background: var(--app-surface-hover, #2e2e34);
-  color: var(--app-fg, #ffffff);
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
   box-shadow: var(--app-btn-inset);
 }
 
@@ -4695,7 +4734,7 @@ details[open]>summary>.custom-chevron {
   flex-direction: column;
   gap: 6px;
   padding-bottom: 14px;
-  border-bottom: 1px solid var(--app-border-subtle, #27272a);
+  border-bottom: 1px solid var(--app-border-subtle);
 }
 
 .help-section:last-child {
@@ -4706,13 +4745,13 @@ details[open]>summary>.custom-chevron {
 .help-section-title {
   font-size: 0.84rem;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--app-fg);
   letter-spacing: -0.01em;
 }
 
 .help-text-block {
   font-size: 0.78rem;
-  color: var(--app-muted, #a1a1aa);
+  color: var(--app-muted);
   line-height: 1.6;
 }
 
@@ -4725,18 +4764,18 @@ details[open]>summary>.custom-chevron {
 }
 
 .help-text-block strong {
-  color: #e4e4e7;
+  color: var(--app-fg);
   font-weight: 600;
 }
 
 .help-text-block code {
   padding: 2px 5px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--app-inline-code-bg);
+  border: 1px solid var(--app-border-subtle);
   font-family: var(--app-mono, monospace);
   font-size: 0.74rem;
-  color: #e4e4e7;
+  color: var(--app-fg);
 }
 
 .help-shortcuts-table {
@@ -4755,7 +4794,7 @@ details[open]>summary>.custom-chevron {
 }
 
 .help-shortcut-row span {
-  color: var(--app-muted, #a1a1aa);
+  color: var(--app-muted);
 }
 
 /* -------------------------------------------------------------
@@ -4764,13 +4803,13 @@ details[open]>summary>.custom-chevron {
 .command-approval-card {
   margin: 12px 0;
   padding: 14px 16px;
-  background: var(--app-surface, #1e1e24);
-  border: 1px solid var(--app-border, #3f3f46);
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
   border-radius: var(--app-radius-md, 8px);
   display: flex;
   flex-direction: column;
   gap: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .command-approval-header {
@@ -4790,12 +4829,12 @@ details[open]>summary>.custom-chevron {
 .command-approval-code {
   margin: 0;
   padding: 8px 12px;
-  background: var(--app-surface-subtle, #18181b);
-  border: 1px solid var(--app-border-subtle, #27272a);
+  background: var(--app-code-bg);
+  border: 1px solid var(--app-border-subtle);
   border-radius: 6px;
   font-family: var(--app-mono, monospace);
   font-size: 0.78rem;
-  color: #e4e4e7;
+  color: var(--app-fg);
   white-space: pre-wrap;
   word-break: break-all;
 }
@@ -4852,9 +4891,7 @@ details[open]>summary>.custom-chevron {
   border: 1px solid rgba(34, 197, 94, 0.3);
 }
 
-/* ==========================================================================
-   SETTINGS ACCORDION CATEGORIES (.settings-category)
-   ========================================================================== */
+/* Settings Container and Scroll Wrapper */
 .settings-container {
   display: flex;
   flex-direction: column;
@@ -4895,35 +4932,40 @@ details[open]>summary>.custom-chevron {
   color: var(--app-fg);
 }
 
+/* ==========================================================================
+   SETTINGS ACCORDION CATEGORIES (.settings-category)
+   ========================================================================== */
 .settings-content-panel {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 10px 14px 16px 14px;
+  gap: 12px;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 .settings-category {
   position: relative;
   margin: 0;
   padding: 0;
-  border: none !important;
+  border: 1px solid var(--app-border) !important;
   border-radius: 12px;
-  background: transparent;
+  background: var(--app-surface);
   box-sizing: border-box;
   width: 100%;
   overflow: visible;
-  transition: border-radius 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s ease;
+  transition: border-radius 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s ease, border-color 0.15s ease;
 }
 
-/* When category is expanded, the wrapper gets the card background */
+/* When category is expanded, the wrapper gets a distinct card surface */
 .settings-category:not(.collapsed) {
-  background: var(--app-card-bg);
+  background: var(--app-surface-strong);
+  border-color: var(--app-border-strong) !important;
 }
 
 /* Fully rounded pill-shaped container when category is collapsed */
 .settings-category.collapsed {
   border-radius: 22px;
-  background: transparent;
+  background: var(--app-surface);
 }
 
 /* Action button inside settings input row with smooth transition */
@@ -4931,8 +4973,8 @@ details[open]>summary>.custom-chevron {
 .settings-browse-btn {
   padding: 5px 12px;
   border-radius: var(--app-radius-sm);
-  background: var(--app-surface-strong, rgba(255, 255, 255, 0.06));
-  border: 1px solid var(--app-input-border, rgba(255, 255, 255, 0.1));
+  background: var(--app-surface-strong);
+  border: 1px solid var(--app-input-border);
   color: var(--app-fg);
   cursor: pointer;
   font-size: 0.78rem;
@@ -4955,10 +4997,10 @@ details[open]>summary>.custom-chevron {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  padding: 10px 10px 10px 10px;
+  padding: 10px 16px;
   margin: 0;
   background: transparent;
-  color: var(--app-muted);
+  color: var(--app-fg);
   font-size: 0.78rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -4966,40 +5008,32 @@ details[open]>summary>.custom-chevron {
   cursor: pointer;
   user-select: none;
   border: 0 !important;
-  border-radius: 0;
+  border-radius: 12px;
   outline: none;
   transition: color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-/* Pill-shaped header button when inside category - Exact same base & hover as sidebar buttons */
-.settings-category .category-header-btn {
-  padding: 10px 16px;
-  border-radius: 12px;
-  background: var(--app-surface-strong);
-  transition: border-radius 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .settings-category.collapsed .category-header-btn {
   border-radius: 22px;
 }
 
-/* Hover & focus states for unified category header with inset effect - EXACTLY same as sidebar buttons */
+/* Hover & focus states for unified category header */
 .category-header-btn:hover,
 .category-header-btn:focus-visible {
-  color: var(--app-fg, #ffffff);
+  color: var(--app-fg);
 }
 
 .settings-category .category-header-btn:hover,
 .settings-category .category-header-btn:focus-visible {
   background: var(--app-surface-hover) !important;
-  color: var(--app-fg, #ffffff);
+  color: var(--app-fg);
   border: none !important;
   box-shadow: var(--app-btn-inset);
 }
 
 .settings-category .category-header-btn:active {
   background: var(--app-surface-active) !important;
-  color: var(--app-fg, #ffffff);
+  color: var(--app-fg);
   box-shadow: none !important;
 }
 
@@ -5009,40 +5043,40 @@ details[open]>summary>.custom-chevron {
   font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: 0.5px;
-  color: inherit;
+  color: var(--app-fg);
   transition: color 0.15s ease;
 }
 
-/* When category is open/expanded: title is lighter */
+/* When category is open/expanded */
 .settings-category:not(.collapsed) .category-title {
-  color: var(--app-fg, #ffffff);
+  color: var(--app-fg);
 }
 
 /* Chevron icon for category accordion header */
 .category-chevron {
-  color: var(--app-muted, #888888);
+  color: var(--app-muted);
   flex-shrink: 0;
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease;
 }
 
 .category-header-btn:hover .category-chevron,
 .category-header-btn:focus-visible .category-chevron {
-  color: var(--app-fg, #ffffff);
+  color: var(--app-fg);
 }
 
 .settings-category.collapsed .category-chevron {
   transform: rotate(-90deg);
 }
 
-/* Category Content Container - Smooth top-down unroll & roll-up in 250ms */
+/* Category Content Container */
 .category-content {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  gap: 8px;
+  gap: 12px;
   max-height: 1000px;
   opacity: 1;
-  padding: 4px 16px 14px 16px;
+  padding: 6px 16px 16px 16px;
   box-sizing: border-box;
   overflow: hidden;
   transition: max-height 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, padding 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -5057,6 +5091,131 @@ details[open]>summary>.custom-chevron {
   pointer-events: none;
 }
 
+/* Setting Rows & Labels */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 0;
+  color: var(--app-fg);
+  box-sizing: border-box;
+}
+
+.setting-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.setting-label {
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: var(--app-fg);
+}
+
+.setting-subtitle {
+  font-size: 0.74rem;
+  color: var(--app-muted);
+  line-height: 1.4;
+}
+
+.setting-control {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.setting-control-stacked {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.setting-input-text {
+  padding: 6px 12px;
+  border-radius: var(--app-radius-sm);
+  background: var(--app-input-bg);
+  border: 1px solid var(--app-input-border);
+  color: var(--app-fg);
+  font-family: var(--app-font);
+  font-size: 0.8rem;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.setting-input-text:focus-visible {
+  border-color: var(--app-focus);
+  box-shadow: 0 0 0 1px var(--app-focus);
+}
+
+/* Custom Select Trigger & Dropdown Menu Elements */
+.custom-select-container {
+  position: relative;
+  display: inline-flex;
+  min-width: 140px;
+}
+
+.custom-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--app-surface-strong);
+  border: 1px solid var(--app-border) !important;
+  color: var(--app-fg);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  box-sizing: border-box;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.custom-select-trigger:hover,
+.custom-select-trigger:focus-visible,
+.custom-select-trigger.active {
+  background: var(--app-surface-hover);
+  border-color: var(--app-focus) !important;
+  color: var(--app-fg);
+  box-shadow: var(--app-btn-inset);
+}
+
+.custom-select-label {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--app-fg);
+}
+
+.custom-select-chevron {
+  color: var(--app-muted);
+  flex-shrink: 0;
+}
+
+.custom-select-menu {
+  background: var(--app-dropdown-bg);
+  border: 1px solid var(--app-border-strong);
+  border-radius: 12px;
+  padding: 4px;
+  box-shadow: var(--app-dropdown-shadow);
+  max-height: 260px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 /* Card container for missing API key warning notifications in chat */
 .api-key-notice-card {
   display: flex;
@@ -5064,8 +5223,8 @@ details[open]>summary>.custom-chevron {
   gap: 12px;
   margin: 12px 0;
   padding: 14px 16px;
-  background: var(--app-surface-hover, rgba(255, 255, 255, 0.04));
-  border: 1px solid var(--app-border-strong, #333333);
+  background: var(--app-surface-hover);
+  border: 1px solid var(--app-border-strong);
   border-left: 3px solid var(--app-accent, #e5a50a);
   border-radius: var(--app-radius-md, 8px);
   box-sizing: border-box;

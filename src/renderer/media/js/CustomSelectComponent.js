@@ -114,7 +114,7 @@ class CustomSelectComponent {
 
         // Menu Popup Container
         this.menuEl = document.createElement('div');
-        this.menuEl.className = 'custom-select-menu hidden';
+        this.menuEl.className = 'dropdown-menu custom-select-menu hidden';
         this.menuEl.setAttribute('role', 'listbox');
 
         this.updateOptionsList();
@@ -152,10 +152,10 @@ class CustomSelectComponent {
 
         this.options.forEach((opt) => {
             const isSelected = opt.value === this.value;
-            const itemBtn = document.createElement('button');
-            itemBtn.type = 'button';
-            itemBtn.className = `dropdown-item custom-select-option ${isSelected ? 'selected' : ''}`;
+            const itemBtn = document.createElement('div');
+            itemBtn.className = `dropdown-item ${isSelected ? 'selected' : ''}`;
             itemBtn.setAttribute('role', 'option');
+            itemBtn.setAttribute('tabindex', '0');
             itemBtn.setAttribute('aria-selected', isSelected ? 'true' : 'false');
 
             const itemLabel = document.createElement('span');
@@ -171,6 +171,15 @@ class CustomSelectComponent {
                 e.stopPropagation();
                 this.setValue(opt.value);
                 this.close();
+            });
+
+            itemBtn.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.setValue(opt.value);
+                    this.close();
+                }
             });
 
             this.menuEl.appendChild(itemBtn);
