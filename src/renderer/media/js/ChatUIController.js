@@ -488,24 +488,27 @@ class ChatUIController {
         const effectiveMode = mode || meta.mode || 'chat';
         const modeLabel = effectiveMode === 'planning' ? 'Plan' : (effectiveMode.charAt(0).toUpperCase() + effectiveMode.slice(1));
 
-        // Check dropdown options directly to see if this model has reasoning capabilities / flyout
-        const lowerModel = rawModelName.toLowerCase();
-        const isGemini = lowerModel.includes('gemini');
-        const isMistralReasoning = lowerModel.includes('magistral') || lowerModel.includes('codestral') || lowerModel.includes('mistral-small') || lowerModel.includes('mistral-medium');
-        const isMuseGlimmer = lowerModel.includes('muse') || lowerModel.includes('glimmer');
-        const thinkingStateObj = ThinkingStateFormatter.getThinkingState(rawModelName);
+        // Inspect thinking and reasoning capabilities
+        const caps = ThinkingStateFormatter.getCapabilitiesState(rawModelName);
+        const hasThinkingSupport = caps.hasThinkingToggle || caps.hasReasoningEffort;
         
-        // A model supports thinking if and only if it has a thinking flyout in the dropdown
-        const hasReasoningSupport = isGemini || isMistralReasoning || (thinkingStateObj.isThinkingCapable && !isMuseGlimmer);
+        let thinkingText = 'Not supported';
+        if (hasThinkingSupport) {
+            const isThinkingOn = meta.thinking !== undefined ? meta.thinking : caps.isThinkingOn;
+            thinkingText = isThinkingOn ? 'On' : 'Off';
+        }
 
-        let thinkingState = 'Not supported';
-        if (hasReasoningSupport) {
-            const effort = meta.reasoningEffort || thinkingStateObj.level || '';
-            const effortDisplay = (effort && effort !== 'none' && effort !== 'off' && effort !== 'minimal') ? ` (${effort})` : '';
-            const isThinkingOn = meta.thinking !== undefined ? meta.thinking : thinkingStateObj.isOn;
-            thinkingState = isThinkingOn ? `On${effortDisplay}` : 'Off';
-        } else {
-            thinkingState = 'Not supported';
+        // Only show the Reasoning row if the model actually has reasoning effort / levels
+        let reasoningRowHtml = '';
+        if (caps.hasReasoningEffort) {
+            const isThinkingOn = meta.thinking !== undefined ? meta.thinking : caps.isThinkingOn;
+            const effort = meta.reasoningEffort || caps.reasoningLevel || '';
+            const reasoningVal = !isThinkingOn ? 'Off' : (effort && effort !== 'none' ? effort : 'Default');
+            reasoningRowHtml = `
+                    <div class="info-popover-row">
+                        <span class="info-popover-label">Reasoning:</span>
+                        <span class="info-popover-value">${this.formatter.escapeHtml(reasoningVal)}</span>
+                    </div>`;
         }
 
         bar.innerHTML = `
@@ -532,9 +535,9 @@ class ChatUIController {
                         <span class="info-popover-value">${this.formatter.escapeHtml(modeLabel)}</span>
                     </div>
                     <div class="info-popover-row">
-                        <span class="info-popover-label">Thinking / Reasoning:</span>
-                        <span class="info-popover-value">${this.formatter.escapeHtml(thinkingState)}</span>
-                    </div>
+                        <span class="info-popover-label">Thinking:</span>
+                        <span class="info-popover-value">${this.formatter.escapeHtml(thinkingText)}</span>
+                    </div>${reasoningRowHtml}
                 </div>
             </div>
         `;
