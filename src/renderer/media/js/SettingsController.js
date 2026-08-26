@@ -316,6 +316,16 @@ class SettingsController {
                 node.textContent = translations[key];
             }
         });
+
+        // Re-localize theme custom select options
+        if (this.themeSelectComponent) {
+            const themeOptions = [
+                { value: 'dark', label: (translations.darkTheme || 'Dark') },
+                { value: 'light', label: (translations.lightTheme || 'Light') },
+                { value: 'system', label: (translations.systemTheme || 'Auto (System)') }
+            ];
+            this.themeSelectComponent.setOptions(themeOptions);
+        }
     }
 
     /**

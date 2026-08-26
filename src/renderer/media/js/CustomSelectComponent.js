@@ -222,6 +222,17 @@ class CustomSelectComponent {
     }
 
     /**
+     * Updates the options list and re-renders the options menu and trigger label.
+     * @param {Array<{value: string, label: string}>} newOptions Updated options array.
+     */
+    setOptions(newOptions) {
+        if (!Array.isArray(newOptions)) return;
+        this.options = newOptions;
+        this.updateTriggerText();
+        this.updateOptionsList();
+    }
+
+    /**
      * Retrieves current selected value string.
      * @returns {string} Selected option value.
      */
