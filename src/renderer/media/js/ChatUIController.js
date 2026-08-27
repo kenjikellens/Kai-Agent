@@ -512,17 +512,17 @@ class ChatUIController {
         }
 
         bar.innerHTML = `
-            <button type="button" class="msg-action-btn copy-response-btn" title="Copy response">
+            <button type="button" class="icon-btn copy-response-btn" title="Copy response">
                 ${copySvg}
             </button>
-            <button type="button" class="msg-action-btn toggle-raw-btn" title="View raw markdown">
+            <button type="button" class="icon-btn toggle-raw-btn" title="View raw markdown">
                 ${rawSvg}
             </button>
-            <button type="button" class="msg-action-btn retry-btn" title="Retry">
+            <button type="button" class="icon-btn retry-btn" title="Retry">
                 ${retrySvg}
             </button>
             <div class="message-info-container">
-                <button type="button" class="msg-info-btn" title="Message Details (Model & Settings)">
+                <button type="button" class="icon-btn" title="Message Details (Model & Settings)">
                     ${infoSvg}
                 </button>
                 <div class="msg-info-popover">

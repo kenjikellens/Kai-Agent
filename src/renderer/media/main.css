@@ -1096,7 +1096,9 @@ button:disabled {
   opacity: 1;
 }
 
-.msg-action-btn {
+/* Message action buttons & info button beneath messages */
+.msg-action-btn,
+.msg-info-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1105,15 +1107,17 @@ button:disabled {
   border-radius: var(--app-radius-sm);
   background: transparent;
   color: var(--app-muted);
-  border: 0 !important;
+  border: 0;
   outline: none;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.msg-action-btn:hover {
+.msg-action-btn:hover,
+.msg-info-btn:hover {
   background: var(--app-surface-hover);
   color: var(--app-fg);
+  box-shadow: var(--app-btn-inset);
 }
 
 .msg-action-btn.copied {
@@ -1143,26 +1147,6 @@ button:disabled {
   position: relative;
   display: inline-flex;
   align-items: center;
-}
-
-.msg-info-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: var(--app-radius-sm);
-  background: transparent;
-  color: var(--app-muted);
-  border: 0 !important;
-  outline: none;
-  cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
-}
-
-.msg-info-btn:hover {
-  background: var(--app-surface-hover);
-  color: var(--app-fg);
 }
 
 .msg-info-popover {

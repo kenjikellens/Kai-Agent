@@ -44,10 +44,14 @@ class PromptSubmissionOrchestrator {
         this.chatUIController.resetAssistantStream();
         this.chatUIController.setUiLoading(true, this.appState);
 
+        if (!this.appState.currentChatTitle) {
+            this.appState.currentChatTitle = textToSend.length > 30 ? textToSend.substring(0, 27) + '...' : textToSend;
+        }
+
         if (this.sessionRepository) {
             this.sessionRepository.saveSession({
                 id: this.appState.currentChatId,
-                title: this.appState.currentChatTitle || textToSend.substring(0, 30),
+                title: this.appState.currentChatTitle,
                 timestamp: Date.now(),
                 messages: this.appState.messages,
                 uiEvents: this.appState.uiEvents,

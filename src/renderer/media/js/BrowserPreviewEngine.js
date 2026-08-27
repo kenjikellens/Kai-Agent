@@ -27,7 +27,7 @@ class BrowserPreviewEngine {
                 return this.handleCheckConnection(message, emit);
 
             case 'saveChat':
-                return this.handleSaveChat(message.chat);
+                return this.handleSaveChat(message.chat, emit);
 
             case 'loadChatHistory':
                 return this.handleLoadChatHistory(emit);
@@ -196,13 +196,19 @@ class BrowserPreviewEngine {
         });
     }
 
-    handleSaveChat(chat) {
+    handleSaveChat(chat, emit) {
         if (!chat || !chat.id) return;
         const chats = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
         const idx = chats.findIndex(c => c.id === chat.id);
         if (idx >= 0) chats[idx] = chat;
         else chats.unshift(chat);
         localStorage.setItem('kai.savedChats', JSON.stringify(chats));
+        if (typeof emit === 'function') {
+            emit({
+                type: 'chatHistory',
+                chats: chats.map(c => ({ id: c.id, title: c.title || 'New Chat', timestamp: c.timestamp || Date.now() }))
+            });
+        }
     }
 
     handleLoadChatHistory(emit) {

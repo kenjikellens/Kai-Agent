@@ -187,7 +187,7 @@ class BrowserCompletionEngine {
         }
     }
 
-    /** Generates concise chat title asynchronously after turn completion. */
+    /** Generates concise chat title asynchronously after turn completion using JSON output. */
     async generateTitleAsync(rawMessages, model, serverUrl, targetChatId, emit) {
         if (rawMessages.length > 2) return;
         try {
@@ -202,11 +202,14 @@ class BrowserCompletionEngine {
             const titlePayload = {
                 model: cleanModel,
                 messages: [
-                    { role: 'system', content: 'Generate a short, descriptive 3-5 word title in English for this conversation. Return ONLY the title text.' },
-                    { role: 'user', content: firstUserMsg.content }
+                    {
+                        role: 'system',
+                        content: 'You are a title generator. Generate a concise 3-5 word title in English for the conversation based on the user prompt.\nYou MUST respond ONLY with a JSON object in this exact format:\n{"title": "Concise Conversation Title"}\nDo not include any extra text, markdown formatting, or thoughts outside the JSON object.'
+                    },
+                    { role: 'user', content: firstUserMsg.content.substring(0, 500) }
                 ],
                 stream: false,
-                max_tokens: 20
+                max_tokens: 150
             };
 
             const titleRes = await fetch(targetUrl, {
@@ -218,26 +221,100 @@ class BrowserCompletionEngine {
             if (titleRes.ok) {
                 const titleData = await titleRes.json();
                 const choice = titleData.choices?.[0]?.message;
-                let raw = (choice?.content || choice?.reasoning_content || '').trim().replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
-                const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-                let rawTitle = (lines.length > 0 ? lines[lines.length - 1] : raw)
-                    .replace(/^(title|topic)\s*:\s*/i, '')
-                    .replace(/["'`*_#]/g, ' ')
+                let raw = (choice?.content || choice?.reasoning_content || '').trim();
+
+                // Strip thinking tags if present
+                raw = raw.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+                raw = raw.replace(/^<think>[\s\S]*?$/gi, '').trim();
+
+                let extractedTitle = '';
+
+                // Stage 1: Match fenced markdown codeblocks ```json { "title": "..." } ```
+                const codeBlockMatch = raw.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/i);
+                if (codeBlockMatch && codeBlockMatch[1]) {
+                    try {
+                        const parsed = JSON.parse(codeBlockMatch[1]);
+                        if (parsed && typeof parsed.title === 'string' && parsed.title.trim()) {
+                            extractedTitle = parsed.title.trim();
+                        }
+                    } catch (e) {}
+                }
+
+                // Stage 2: Match raw JSON objects containing "title"
+                if (!extractedTitle) {
+                    const jsonObjectMatch = raw.match(/\{[\s\S]*?"title"\s*:\s*"[\s\S]*?"[\s\S]*?\}/i);
+                    if (jsonObjectMatch && jsonObjectMatch[0]) {
+                        try {
+                            const parsed = JSON.parse(jsonObjectMatch[0]);
+                            if (parsed && typeof parsed.title === 'string' && parsed.title.trim()) {
+                                extractedTitle = parsed.title.trim();
+                            }
+                        } catch (e) {}
+                    }
+                }
+
+                // Stage 3: Regex extract "title": "..."
+                if (!extractedTitle) {
+                    const regexMatch = raw.match(/"title"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/i);
+                    if (regexMatch && regexMatch[1]) {
+                        extractedTitle = regexMatch[1].replace(/\\"/g, '"').trim();
+                    }
+                }
+
+                // Stage 4: Fallback line cleaner
+                if (!extractedTitle && raw.length > 0) {
+                    const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+                    const lastLine = lines.length > 0 ? lines[lines.length - 1] : raw;
+                    extractedTitle = lastLine
+                        .replace(/^(title|topic)\s*:\s*/i, '')
+                        .replace(/["'`*_#{}[\]]/g, ' ')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+                }
+
+                // Sanitize and validate length
+                let cleanTitle = (extractedTitle || '')
+                    .replace(/^["'`]|["'`]$/g, '')
                     .replace(/\s+/g, ' ')
                     .trim();
 
-                if (rawTitle && rawTitle.length > 0 && rawTitle.length < 60) {
+                if (cleanTitle && cleanTitle.length > 0 && cleanTitle.length <= 60) {
                     const savedChats = JSON.parse(localStorage.getItem('kai.savedChats') || '[]');
                     const foundChat = (targetChatId ? savedChats.find(c => c.id === targetChatId) : null) || savedChats[0];
                     if (foundChat) {
-                        foundChat.title = rawTitle;
+                        foundChat.title = cleanTitle;
                         localStorage.setItem('kai.savedChats', JSON.stringify(savedChats));
-                        emit({
-                            type: 'chatHistory',
-                            chats: savedChats.map(c => ({ id: c.id, title: c.title || 'New Chat', timestamp: c.timestamp || Date.now() }))
-                        });
-                        emit({ type: 'chatTitleUpdated', chatId: foundChat.id, title: rawTitle });
                     }
+
+                    try {
+                        const fullSessions = JSON.parse(localStorage.getItem('kai.savedFullSessions') || '[]');
+                        const fullSession = (targetChatId ? fullSessions.find(c => c.id === targetChatId) : null) || fullSessions[0];
+                        if (fullSession) {
+                            fullSession.title = cleanTitle;
+                            localStorage.setItem('kai.savedFullSessions', JSON.stringify(fullSessions));
+                        }
+                    } catch (err) {}
+
+                    try {
+                        const summaries = JSON.parse(localStorage.getItem('kai.savedChatsSummary') || '[]');
+                        const summaryChat = (targetChatId ? summaries.find(c => c.id === targetChatId) : null) || summaries[0];
+                        if (summaryChat) {
+                            summaryChat.title = cleanTitle;
+                            localStorage.setItem('kai.savedChatsSummary', JSON.stringify(summaries));
+                        }
+                    } catch (err) {}
+
+                    const updatedHistory = savedChats.map(c => ({
+                        id: c.id,
+                        title: c.title || 'New Chat',
+                        timestamp: c.timestamp || Date.now()
+                    }));
+
+                    emit({
+                        type: 'chatHistory',
+                        chats: updatedHistory
+                    });
+                    emit({ type: 'chatTitleUpdated', chatId: (foundChat ? foundChat.id : targetChatId), title: cleanTitle });
                 }
             }
         } catch (e) {}
