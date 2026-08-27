@@ -174,3 +174,15 @@ When implementing or modifying completions across providers, dynamically apply t
   - `AllLocales.js` in `KAI Agent App/src/renderer/media/js/` and `Kai-Agent-extension/code/media/js/` must always be identical and 100% in sync.
 - **Batch Updates via Scratch Script**:
   - Per global agent rules, always update all locale dictionaries programmatically using a single batch script in `scratch/` and verify that all 18 locales contain every key.
+
+---
+
+## 15. Instant Sidebar Registration & JSON Title Generation Contract
+
+- **Instant Chat History Listing**:
+  - The Left Sidebar MUST register and render new chat sessions immediately upon prompt submission (`submitPrompt`), using prompt-derived preview titles with active row highlight, without waiting for the response generation cycle.
+- **JSON Title Output Contract**:
+  - Asynchronous title generation (`generateTitleAsync`) MUST request a strict JSON object payload (`{"title": "..."}`) and execute multi-stage parsing (stripping thinking tags, matching JSON codeblocks and objects) to ensure reasoning traces from smaller or thinking-enabled models never leak into conversation titles.
+- **Universal Icon Button Component**:
+  - All message action buttons (copy, retry, edit, raw toggle, info) strictly utilize the unified `.icon-btn` component class with the hover outset/inset shadow token (`box-shadow: var(--app-btn-inset)`).
+

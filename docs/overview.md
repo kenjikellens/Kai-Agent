@@ -77,3 +77,9 @@ graph TD
    - Integrated Theme Selector in General Settings (`SettingsController.js`): Dark, Light, and Auto/System (`prefers-color-scheme`).
    - Theme is immediately applied on startup (`main.js`) with zero FOUC flikkering.
    - 100% i18n parity across 18 languages in `AllLocales.js` and live Mermaid diagram theme re-rendering (`MermaidRenderer.js`).
+
+4. **Instant Sidebar Chat Addition & JSON Title Generation**:
+   - Chats appear in the Left Sidebar immediately upon sending a prompt with initial prompt fallback.
+   - `BrowserCompletionEngine.js` generates concise conversation titles using a mandatory JSON output contract (`{"title": "..."}`) with a multi-stage parser that discards thinking traces (`<think>...</think>`) and preamble from small/reasoning models.
+   - Response action buttons (copy, retry, edit, raw toggle, info) strictly reuse the universal `.icon-btn` component class with the hover outset/inset shadow (`box-shadow: var(--app-btn-inset)`).
+

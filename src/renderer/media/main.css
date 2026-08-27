@@ -124,6 +124,7 @@ body.kai-light-theme,
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -648,7 +649,8 @@ body {
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
-  direction: rtl; /* Align to right so end of path is visible */
+  direction: rtl;
+  /* Align to right so end of path is visible */
   text-align: left;
   letter-spacing: -0.01em;
   mask-image: linear-gradient(to right, transparent, black 28px);
@@ -1096,35 +1098,11 @@ button:disabled {
   opacity: 1;
 }
 
-/* Message action buttons & info button beneath messages */
-.msg-action-btn,
-.msg-info-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: var(--app-radius-sm);
-  background: transparent;
-  color: var(--app-muted);
-  border: 0;
-  outline: none;
-  cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.msg-action-btn:hover,
-.msg-info-btn:hover {
-  background: var(--app-surface-hover);
-  color: var(--app-fg);
-  box-shadow: var(--app-btn-inset);
-}
-
-.msg-action-btn.copied {
+.icon-btn.copied {
   color: #4caf50;
 }
 
-.msg-action-btn.toggle-raw-btn.active {
+.icon-btn.toggle-raw-btn.active {
   color: var(--app-accent, #38bdf8);
   background: var(--app-surface-hover);
 }
@@ -1947,16 +1925,19 @@ button:disabled {
 }
 
 .toolbar-mode-btn[data-mode="agent"] .mode-btn-icon {
-  color: #f59e0b; /* Warm Yellow for Agent Mode */
+  color: #f59e0b;
+  /* Warm Yellow for Agent Mode */
 }
 
 .toolbar-mode-btn[data-mode="planning"] .mode-btn-icon {
-  color: #38bdf8; /* Light Blue for Plan Mode */
+  color: #38bdf8;
+  /* Light Blue for Plan Mode */
 }
 
 .toolbar-mode-btn[data-mode="ask"] .mode-btn-icon,
 .toolbar-mode-btn[data-mode="chat"] .mode-btn-icon {
-  color: var(--app-muted, #9ca3af); /* White/Gray for Ask / Chat Mode */
+  color: var(--app-muted, #9ca3af);
+  /* White/Gray for Ask / Chat Mode */
 }
 
 .mode-btn-label {
@@ -2080,7 +2061,8 @@ button:disabled {
 .context-mode-item.disabled {
   opacity: 0.35;
   cursor: not-allowed !important;
-  pointer-events: auto; /* Ensures browser shows title tooltip on hover */
+  pointer-events: auto;
+  /* Ensures browser shows title tooltip on hover */
   background: transparent !important;
 }
 
@@ -2614,7 +2596,7 @@ button:disabled {
   border-color: var(--app-focus, #007acc);
 }
 
-.dropdown-item.model-hover-item.flyout-open > .thinking-flyout-menu {
+.dropdown-item.model-hover-item.flyout-open>.thinking-flyout-menu {
   display: flex;
 }
 
@@ -3115,7 +3097,7 @@ button:disabled {
 }
 
 /* Inline code snippet styling */
-:not(pre) > code {
+:not(pre)>code {
   background: rgba(255, 255, 255, 0.08);
   color: #e0e7ff;
   padding: 2px 6px;
@@ -3217,7 +3199,7 @@ button:disabled {
   margin: 2px 0 !important;
 }
 
-.tool-status-row + .tool-status-row {
+.tool-status-row+.tool-status-row {
   margin-top: 2px !important;
 }
 
@@ -5138,5 +5120,3 @@ details[open]>summary>.custom-chevron {
   margin: 0;
   padding: 0;
 }
-
-
