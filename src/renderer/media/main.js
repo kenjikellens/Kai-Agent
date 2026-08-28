@@ -526,16 +526,19 @@
             mode: currentMode,
             thinking: modelDetails.thinking,
             isThinkingCapable: modelDetails.isThinkingCapable,
-            reasoningEffort: modelDetails.reasoningEffort
+            reasoningEffort: modelDetails.reasoningEffort,
+            tokensPerSecond: message.tokensPerSecond || null
         };
 
         if (chatUIController.currentAssistantMsgElement && chatUIController.chatContainer && chatUIController.chatContainer.contains(chatUIController.currentAssistantMsgElement)) {
             if (formatted.trim()) {
                 chatUIController.currentAssistantMsgElement.dataset.rawContent = replyContent;
                 chatUIController.currentAssistantMsgElement.dataset.mode = currentMode;
-                if (!chatUIController.currentAssistantMsgElement.querySelector('.message-actions')) {
-                    chatUIController.currentAssistantMsgElement.appendChild(chatUIController.createAssistantActionBar(currentMode, meta));
+                const existingActions = chatUIController.currentAssistantMsgElement.querySelector('.message-actions');
+                if (existingActions) {
+                    existingActions.remove();
                 }
+                chatUIController.currentAssistantMsgElement.appendChild(chatUIController.createAssistantActionBar(currentMode, meta));
             } else {
                 chatUIController.currentAssistantMsgElement.remove();
             }

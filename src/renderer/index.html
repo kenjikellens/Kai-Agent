@@ -181,6 +181,13 @@
                                     </div>
                                     <div class="setting-control" id="ui-scale-select-container"></div>
                                 </div>
+                                <div class="setting-row">
+                                    <div class="setting-info">
+                                        <span class="setting-label" data-i18n="streamSettleDelay">Stream Lookahead Delay</span>
+                                        <span class="setting-subtitle" data-i18n="streamSettleDelayDesc">Buffer delay before streaming markdown formatting settles into the DOM</span>
+                                    </div>
+                                    <div class="setting-control" id="stream-settle-delay-select-container"></div>
+                                </div>
                             </div>
                         </div>
 
@@ -251,6 +258,17 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- External API Keys Overlay Panel -->
+                    <div id="keys-container" class="keys-container hidden">
+                        <div class="keys-panel-header">
+                            <span data-i18n="externalProviderApiKeys">External Provider API Keys</span>
+                            <button id="close-keys-btn" class="icon-btn icon-btn-header" title="Close">✕</button>
+                        </div>
+                        <div class="keys-content-panel">
+                            <div id="dynamic-keys-list"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -258,12 +276,16 @@
 
     <!-- Runtime Environment Bridge Setup -->
     <script>
-        // Apply saved UI Scale immediately on load (defaults to 1.0)
+        // Apply saved UI Scale and tokens immediately on load
         try {
             const savedScale = localStorage.getItem('kai.uiScale') || '1.0';
             document.documentElement.style.zoom = savedScale;
             const savedThinkingHeight = localStorage.getItem('kai.thinkingMaxHeight') || '150px';
             document.documentElement.style.setProperty('--app-thinking-max-height', savedThinkingHeight);
+            const savedExtraDelay = parseInt(localStorage.getItem('kai.streamSettleDelay') || '0', 10);
+            const baseDelay = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--stream-settle-base-delay'), 10) || 150;
+            const effectiveSettle = baseDelay + (isNaN(savedExtraDelay) ? 0 : savedExtraDelay);
+            document.documentElement.style.setProperty('--stream-settle-delay', `${effectiveSettle}ms`);
         } catch (e) {}
 
         window.KAI_SVGS = window.KAI_SVGS || {};

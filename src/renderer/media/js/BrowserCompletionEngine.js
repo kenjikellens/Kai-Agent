@@ -72,6 +72,7 @@ class BrowserCompletionEngine {
         const maxIterations = 25;
         const modifiedFiles = new Set();
         let lastResponseText = '';
+        let lastTokensPerSecond = null;
 
         try {
             while (iteration < maxIterations) {
@@ -114,13 +115,23 @@ class BrowserCompletionEngine {
                 emit({ type: 'agentProgress', progressType: 'status_update', text: 'Generating response...' });
 
                 const allowThinkingUI = !!message.thinking;
+                let tokenCount = 0;
+                const streamStartTime = Date.now();
                 const fullText = await BrowserStreamReader.readStream(response, abortSignal, {
                     isGemini,
                     allowThinkingUI,
                     onToken: (token) => {
+                        tokenCount++;
                         emit({ type: 'agentProgress', progressType: 'token', output: token });
                     }
                 });
+
+                if (!isGemini && !isCloudProvider) {
+                    const elapsedSec = Math.max(0.1, (Date.now() - streamStartTime) / 1000);
+                    lastTokensPerSecond = `${(tokenCount / elapsedSec).toFixed(1)} tok/s`;
+                } else {
+                    lastTokensPerSecond = null;
+                }
 
                 lastResponseText = fullText;
                 if (abortSignal.aborted) break;
@@ -174,7 +185,8 @@ class BrowserCompletionEngine {
             emit({
                 type: 'reply',
                 content: lastResponseText,
-                modifiedFiles: Array.from(modifiedFiles)
+                modifiedFiles: Array.from(modifiedFiles),
+                tokensPerSecond: lastTokensPerSecond
             });
 
             this.generateTitleAsync(rawMessages, model, serverUrl, message.chatId, emit);

@@ -67,7 +67,10 @@ window.KAI_ALL_LOCALES = {
     "themeDesc": "اختر بين المظهر الداكن أو الفاتح أو مظهر النظام",
     "darkTheme": "داكن",
     "lightTheme": "فاتح",
-    "systemTheme": "تلقائي (النظام)"
+    "systemTheme": "تلقائي (النظام)",
+    "streamSettleDelay": "تأخير استقرار التدفق",
+    "streamSettleDelayDesc": "تأخير مؤقت إضافي قبل استقرار عناصر التنسيق في DOM",
+    "speed": "السرعة"
   },
   "cs": {
     "newChat": "Nový chat",
@@ -132,7 +135,10 @@ window.KAI_ALL_LOCALES = {
     "placeholderChat": "Zeptejte se Kai na cokoliv, počítejte, převádějte nebo hledejte na webu...",
     "placeholderAsk": "Položte otázky týkající se vaší kódové základny...",
     "placeholderAgent": "Požádejte Kai o úpravu kódu, provádění úkolů nebo spouštění příkazů...",
-    "placeholderPlanning": "Popište projektový úkol pro vygenerování plánu implementace..."
+    "placeholderPlanning": "Popište projektový úkol pro vygenerování plánu implementace...",
+    "streamSettleDelay": "Zpoždění ustálení streamu",
+    "streamSettleDelayDesc": "Dodatečné zpoždění před vykreslením markdownu do DOM",
+    "speed": "Rychlost"
   },
   "de": {
     "newChat": "Neuer Chat",
@@ -202,7 +208,10 @@ window.KAI_ALL_LOCALES = {
     "themeDesc": "Wähle zwischen dunklem, hellem oder System-Erscheinungsbild",
     "darkTheme": "Dunkel",
     "lightTheme": "Hell",
-    "systemTheme": "Auto (System)"
+    "systemTheme": "Auto (System)",
+    "streamSettleDelay": "Stream-Lookahead-Verzögerung",
+    "streamSettleDelayDesc": "Zusätzliche Pufferverzögerung, bevor Markdown-Elemente im DOM formatiert werden",
+    "speed": "Geschwindigkeit"
   },
   "en": {
     "newChat": "New Chat",
@@ -272,7 +281,10 @@ window.KAI_ALL_LOCALES = {
     "themeDesc": "Choose between Dark, Light, or System appearance",
     "darkTheme": "Dark",
     "lightTheme": "Light",
-    "systemTheme": "Auto (System)"
+    "systemTheme": "Auto (System)",
+    "streamSettleDelay": "Stream Lookahead Delay",
+    "streamSettleDelayDesc": "Buffer delay before streaming markdown formatting settles into the DOM",
+    "speed": "Speed"
   },
   "es": {
     "newChat": "Nuevo Chat",
@@ -342,7 +354,10 @@ window.KAI_ALL_LOCALES = {
     "themeDesc": "Elige entre la apariencia oscura, clara o del sistema",
     "darkTheme": "Oscuro",
     "lightTheme": "Claro",
-    "systemTheme": "Automático (Sistema)"
+    "systemTheme": "Automático (Sistema)",
+    "streamSettleDelay": "Retardo de búfer de flujo",
+    "streamSettleDelayDesc": "Retardo de búfer adicional antes de procesar el formato markdown en el DOM",
+    "speed": "Velocidad"
   },
   "fr": {
     "newChat": "Nouvelle Discussion",
@@ -412,7 +427,10 @@ window.KAI_ALL_LOCALES = {
     "themeDesc": "Choisissez entre l'apparence sombre, claire ou système",
     "darkTheme": "Sombre",
     "lightTheme": "Clair",
-    "systemTheme": "Auto (Système)"
+    "systemTheme": "Auto (Système)",
+    "streamSettleDelay": "Délai tampon de flux",
+    "streamSettleDelayDesc": "Délai tampon supplémentaire avant que les éléments markdown ne soient appliqués au DOM",
+    "speed": "Vitesse"
   },
   "hi": {
     "newChat": "नया चैट",
@@ -482,7 +500,10 @@ window.KAI_ALL_LOCALES = {
     "themeDesc": "डार्क, लाइट या सिस्टम उपस्थिति के बीच चुनें",
     "darkTheme": "डार्क",
     "lightTheme": "लाइट",
-    "systemTheme": "ऑटो (सिस्टम)"
+    "systemTheme": "ऑटो (सिस्टम)",
+    "streamSettleDelay": "स्ट्रीम लुकअहेड देरी",
+    "streamSettleDelayDesc": "DOM में मार्कडाउन स्वरूपण व्यवस्थित होने से पहले अतिरिक्त बफर देरी",
+    "speed": "गति"
   },
   "hu": {
     "newChat": "Új csevegés",
@@ -547,7 +568,10 @@ window.KAI_ALL_LOCALES = {
     "placeholderChat": "Kérdezzen bármit a Kai-tól, számoljon, váltson át vagy keressen a weben...",
     "placeholderAsk": "Tegyen fel kérdéseket a munkaterület kódbázisáról...",
     "placeholderAgent": "Kérje meg a Kai-t kód szerkesztésére, feladatok végrehajtására vagy parancsok futtatására...",
-    "placeholderPlanning": "Írjon le egy projektfeladatot a megvalósítási terv generálásához..."
+    "placeholderPlanning": "Írjon le egy projektfeladatot a megvalósítási terv generálásához...",
+    "streamSettleDelay": "Folyam késleltetési puffer",
+    "streamSettleDelayDesc": "További puffer késleltetés a markdown elemek DOM-ba való illesztése előtt",
+    "speed": "Sebesség"
   },
   "it": {
     "newChat": "Nuova Chat",
@@ -617,7 +641,10 @@ window.KAI_ALL_LOCALES = {
     "themeDesc": "Scegli tra l'aspetto scuro, chiaro o di sistema",
     "darkTheme": "Scuro",
     "lightTheme": "Chiaro",
-    "systemTheme": "Auto (Sistema)"
+    "systemTheme": "Auto (Sistema)",
+    "streamSettleDelay": "Ritardo buffer di flusso",
+    "streamSettleDelayDesc": "Ritardo di buffer aggiuntivo prima che la formattazione markdown si stabilizzi nel DOM",
+    "speed": "Velocità"
   },
   "ja": {
     "newChat": "新規チャット",
@@ -687,7 +714,10 @@ window.KAI_ALL_LOCALES = {
     "themeDesc": "ダーク、ライト、またはシステム外観を選択します",
     "darkTheme": "ダーク",
     "lightTheme": "ライト",
-    "systemTheme": "自動 (システム)"
+    "systemTheme": "自動 (システム)",
+    "streamSettleDelay": "ストリーム先読み遅延",
+    "streamSettleDelayDesc": "Markdown要素がDOMに描画される前の追加バッファ遅延",
+    "speed": "生成速度"
   },
   "ko": {
     "newChat": "새 채팅",
@@ -757,7 +787,10 @@ window.KAI_ALL_LOCALES = {
     "themeDesc": "다크, 라이트 또는 시스템 모양 중에서 선택하세요",
     "darkTheme": "다크",
     "lightTheme": "라이트",
-    "systemTheme": "자동 (시스템)"
+    "systemTheme": "자동 (시스템)",
+    "streamSettleDelay": "스트림 룩어헤드 지연",
+    "streamSettleDelayDesc": "마크다운 마커가 DOM에 정착되기 전 추가 버퍼 지연",
+    "speed": "생성 속도"
   },
   "nl": {
     "newChat": "Nieuwe Chat",
@@ -827,7 +860,10 @@ window.KAI_ALL_LOCALES = {
     "themeDesc": "Kies tussen een donkere, lichte of systeemweergave",
     "darkTheme": "Donker",
     "lightTheme": "Licht",
-    "systemTheme": "Automatisch (Systeem)"
+    "systemTheme": "Automatisch (Systeem)",
+    "streamSettleDelay": "Stream Lookahead Vertraging",
+    "streamSettleDelayDesc": "Buffervertraging voordat streaming markdown-opmaak in de DOM wordt verwerkt",
+    "speed": "Snelheid"
   },
   "pl": {
     "newChat": "Nowy czat",
@@ -897,7 +933,10 @@ window.KAI_ALL_LOCALES = {
     "themeDesc": "Wybierz ciemny, jasny lub systemowy wygląd",
     "darkTheme": "Ciemny",
     "lightTheme": "Jasny",
-    "systemTheme": "Automatyczny (System)"
+    "systemTheme": "Automatyczny (System)",
+    "streamSettleDelay": "Opóźnienie bufora strumienia",
+    "streamSettleDelayDesc": "Dodatkowe opóźnienie bufora przed renderowaniem formatowania markdown w DOM",
+    "speed": "Szybkość"
   },
   "pt": {
     "newChat": "Novo Chat",
@@ -967,7 +1006,10 @@ window.KAI_ALL_LOCALES = {
     "themeDesc": "Escolha entre a aparência escura, clara ou do sistema",
     "darkTheme": "Escuro",
     "lightTheme": "Claro",
-    "systemTheme": "Automático (Sistema)"
+    "systemTheme": "Automático (Sistema)",
+    "streamSettleDelay": "Atraso de buffer de fluxo",
+    "streamSettleDelayDesc": "Atraso de buffer adicional antes que a formatação markdown se fixe no DOM",
+    "speed": "Velocidade"
   },
   "ru": {
     "newChat": "Новый чат",
@@ -1037,7 +1079,10 @@ window.KAI_ALL_LOCALES = {
     "themeDesc": "Выберите темное, светлое или системное оформление",
     "darkTheme": "Темная",
     "lightTheme": "Светлая",
-    "systemTheme": "Авто (Система)"
+    "systemTheme": "Авто (Система)",
+    "streamSettleDelay": "Задержка буфера потока",
+    "streamSettleDelayDesc": "Дополнительная задержка буфера перед форматированием markdown в DOM",
+    "speed": "Скорость"
   },
   "tr": {
     "newChat": "Yeni Sohbet",
@@ -1107,7 +1152,10 @@ window.KAI_ALL_LOCALES = {
     "themeDesc": "Koyu, açık veya sistem görünümü arasında seçim yapın",
     "darkTheme": "Koyu",
     "lightTheme": "Açık",
-    "systemTheme": "Otomatik (Sistem)"
+    "systemTheme": "Otomatik (Sistem)",
+    "streamSettleDelay": "Akış Önceden Bakış Gecikmesi",
+    "streamSettleDelayDesc": "Markdown biçimlendirmesinin DOM'a yerleşmesinden önceki ek arabellek gecikmesi",
+    "speed": "Hız"
   },
   "zh_tw": {
     "newChat": "建立新對話",
@@ -1242,6 +1290,9 @@ window.KAI_ALL_LOCALES = {
     "themeDesc": "在深色、浅色或系统外观之间进行选择",
     "darkTheme": "深色",
     "lightTheme": "浅色",
-    "systemTheme": "自动 (系统)"
+    "systemTheme": "自动 (系统)",
+    "streamSettleDelay": "流式预读缓冲延迟",
+    "streamSettleDelayDesc": "流式 Markdown 格式渲染至 DOM 前的额外缓冲延迟",
+    "speed": "生成速度"
   }
 };

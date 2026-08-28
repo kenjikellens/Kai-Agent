@@ -202,6 +202,36 @@ class SettingsController {
             });
         }
 
+        // 5b. Stream Lookahead Delay Custom Select Dropdown (None, 100ms, 300ms, 500ms, 750ms, 1s)
+        const streamDelayContainer = document.getElementById('stream-settle-delay-select-container');
+        if (streamDelayContainer && typeof CustomSelectComponent !== 'undefined') {
+            const storedDelay = localStorage.getItem('kai.streamSettleDelay') || '0';
+            const delayOptions = [
+                { value: '0', label: 'None' },
+                { value: '100', label: '100ms' },
+                { value: '300', label: '300ms' },
+                { value: '500', label: '500ms' },
+                { value: '750', label: '750ms' },
+                { value: '1000', label: '1s' }
+            ];
+            this.streamDelayComponent = new CustomSelectComponent({
+                container: streamDelayContainer,
+                id: 'stream-settle-delay-select-input',
+                options: delayOptions,
+                value: storedDelay,
+                onChange: (selectedExtraDelay) => {
+                    localStorage.setItem('kai.streamSettleDelay', selectedExtraDelay);
+                    const extraMs = parseInt(selectedExtraDelay, 10) || 0;
+                    const baseMs = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--stream-settle-base-delay'), 10) || 150;
+                    const effectiveMs = baseMs + extraMs;
+                    document.documentElement.style.setProperty('--stream-settle-delay', `${effectiveMs}ms`);
+                    if (window.chatUIController && typeof window.chatUIController.setStreamSettleDelay === 'function') {
+                        window.chatUIController.setStreamSettleDelay(extraMs);
+                    }
+                }
+            });
+        }
+
         // 6. Thinking Process Max Height Custom Select Dropdown (50px to 400px in steps of 50px)
         const maxHeightContainer = document.getElementById('thinking-max-height-select-container');
         if (maxHeightContainer && typeof CustomSelectComponent !== 'undefined') {

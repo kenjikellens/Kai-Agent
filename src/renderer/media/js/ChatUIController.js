@@ -35,7 +35,11 @@ class ChatUIController {
         this.currentAssistantMsgElement = null;
         this.currentAssistantText = '';
         this.renderedWordCount = 0;
-        this.streamPipeline = new StreamBufferPipeline((committedText) => this.renderStreamProgress(committedText), 180);
+
+        const storedExtraDelay = parseInt(localStorage.getItem('kai.streamSettleDelay') || '0', 10);
+        const baseDelay = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--stream-settle-base-delay'), 10) || 150;
+        const initialSettleDelay = baseDelay + (isNaN(storedExtraDelay) ? 0 : storedExtraDelay);
+        this.streamPipeline = new StreamBufferPipeline((committedText) => this.renderStreamProgress(committedText), initialSettleDelay);
 
         // Callbacks for retry and edit prompt
         this.onRetry = null;
@@ -43,6 +47,19 @@ class ChatUIController {
 
         this.initEventListeners();
         this.renderWelcomeHero();
+    }
+
+    /**
+     * Updates the stream buffer settle lookahead delay dynamically based on CSS root base delay + extra delay.
+     * @param {number} extraMs User-configured delay increment on top of base delay.
+     */
+    setStreamSettleDelay(extraMs) {
+        const validExtra = typeof extraMs === 'number' && !isNaN(extraMs) ? extraMs : 0;
+        const baseDelay = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--stream-settle-base-delay'), 10) || 150;
+        const effective = baseDelay + validExtra;
+        if (this.streamPipeline && typeof this.streamPipeline.setSettleDelay === 'function') {
+            this.streamPipeline.setSettleDelay(effective);
+        }
     }
 
     /**
@@ -624,6 +641,18 @@ class ChatUIController {
                     </div>`;
         }
 
+        // Speed (Tokens Per Second) row - strictly for local LM Studio models
+        let speedRowHtml = '';
+        const resolver = typeof ModelProviderResolver !== 'undefined' ? new ModelProviderResolver() : null;
+        const isCloudModel = resolver ? !!resolver.getProviderInfo(rawModelName) : false;
+        if (!isCloudModel && meta.tokensPerSecond) {
+            speedRowHtml = `
+                    <div class="info-popover-row">
+                        <span class="info-popover-label" data-i18n="speed">Speed:</span>
+                        <span class="info-popover-value">${this.formatter.escapeHtml(meta.tokensPerSecond)}</span>
+                    </div>`;
+        }
+
         bar.innerHTML = `
             <button type="button" class="icon-btn copy-response-btn" title="Copy response">
                 ${copySvg}
@@ -650,7 +679,7 @@ class ChatUIController {
                     <div class="info-popover-row">
                         <span class="info-popover-label">Thinking:</span>
                         <span class="info-popover-value">${this.formatter.escapeHtml(thinkingText)}</span>
-                    </div>${reasoningRowHtml}
+                    </div>${reasoningRowHtml}${speedRowHtml}
                 </div>
             </div>
         `;

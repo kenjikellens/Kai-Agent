@@ -34,6 +34,17 @@ export class LMStudioClient implements ILLMProvider {
         this.apiKey = apiKey || config.apiKey || process.env.GEMINI_API_KEY || '';
         this.geminiClient = new GeminiClient(this.apiKey);
         this.freeProviderClient = new FreeProviderClient();
+        this._lastTokensPerSecond = null;
+    }
+
+    private _lastTokensPerSecond: string | null = null;
+
+    /**
+     * Gets the generation speed (tokens per second) from the last local stream.
+     * @returns Speed string (e.g. '34.2 tok/s') or null if not applicable.
+     */
+    public getLastTokensPerSecond(): string | null {
+        return this._lastTokensPerSecond;
     }
 
     /**
@@ -345,11 +356,13 @@ export class LMStudioClient implements ILLMProvider {
         geminiThinkingLevel: string = 'high'
     ): Promise<string> {
         if (model && model.toLowerCase().startsWith('gemini')) {
+            this._lastTokensPerSecond = null;
             return this.geminiClient.chatCompletionStream(messages, model, temperature, onToken, signal, thinking, geminiThinkingLevel);
         }
 
         const freeProvider = this.freeProviderClient.resolveFreeProvider(model);
         if (freeProvider) {
+            this._lastTokensPerSecond = null;
             return this.freeProviderClient.chatCompletionStream(messages, model, temperature, onToken, signal, thinking, geminiThinkingLevel);
         }
 
@@ -363,7 +376,8 @@ export class LMStudioClient implements ILLMProvider {
                 model: cleanModel,
                 messages: messages,
                 temperature: temperature,
-                stream: true
+                stream: true,
+                stream_options: { include_usage: true }
             };
 
             this.applyThinkingParameters(requestParams, cleanModel, thinking, geminiThinkingLevel);
@@ -382,6 +396,10 @@ export class LMStudioClient implements ILLMProvider {
                 }
             };
 
+            const streamStartTime = Date.now();
+            let tokenCount = 0;
+            let lmStudioTps: number | null = null;
+
             const req = http.request(options, (res) => {
                 if (!res.statusCode || res.statusCode < 200 || res.statusCode >= 300) {
                     reject(new Error(`Server returned HTTP status ${res.statusCode}`));
@@ -394,11 +412,26 @@ export class LMStudioClient implements ILLMProvider {
                 const isMuseModel = MuseGlimmerStreamParser.isMuseGlimmerModel(model);
                 const museParser = new MuseGlimmerStreamParser(thinking, (token: string) => {
                     fullText += token;
+                    tokenCount++;
                     onToken(token);
                 });
                 let isMuseStreaming = isMuseModel;
 
                 const processParsedChunk = (parsed: any) => {
+                    if (parsed.usage) {
+                        if (typeof parsed.usage.tokens_per_second === 'number') {
+                            lmStudioTps = parsed.usage.tokens_per_second;
+                        } else if (typeof parsed.usage.predicted_per_second === 'number') {
+                            lmStudioTps = parsed.usage.predicted_per_second;
+                        }
+                        if (typeof parsed.usage.completion_tokens === 'number' && parsed.usage.completion_tokens > 0) {
+                            tokenCount = parsed.usage.completion_tokens;
+                        }
+                    }
+                    if (parsed.stats && typeof parsed.stats.tokens_per_second === 'number') {
+                        lmStudioTps = parsed.stats.tokens_per_second;
+                    }
+
                     if (parsed.choices && parsed.choices[0] && parsed.choices[0].delta) {
                         const delta = parsed.choices[0].delta;
                         if (delta.reasoning_content !== undefined && delta.reasoning_content !== null) {
@@ -409,6 +442,7 @@ export class LMStudioClient implements ILLMProvider {
                             }
                             text += delta.reasoning_content;
                             fullText += text;
+                            tokenCount++;
                             onToken(text);
                         } else if (delta.content !== undefined && delta.content !== null) {
                             if (!isMuseStreaming && delta.content.startsWith('to=self<|message|>')) {
@@ -425,6 +459,7 @@ export class LMStudioClient implements ILLMProvider {
                                 }
                                 text += delta.content;
                                 fullText += text;
+                                tokenCount++;
                                 onToken(text);
                             }
                         }
@@ -469,6 +504,11 @@ export class LMStudioClient implements ILLMProvider {
                         onToken('</think>');
                         inThinking = false;
                     }
+
+                    const elapsedSec = Math.max(0.1, (Date.now() - streamStartTime) / 1000);
+                    const calculatedTps = lmStudioTps !== null ? lmStudioTps : (tokenCount / elapsedSec);
+                    this._lastTokensPerSecond = `${calculatedTps.toFixed(1)} tok/s`;
+
                     resolve(fullText);
                 });
             });

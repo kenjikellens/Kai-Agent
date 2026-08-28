@@ -7,15 +7,25 @@ class StreamBufferPipeline {
     /**
      * Initializes the stream buffer container, lookahead delay, and callbacks.
      * @param {Function} [flushCallback] Callback invoked with committed text on frame/tick.
-     * @param {number} [settleDelayMs=180] Lookahead delay in ms to settle markdown delimiters.
+     * @param {number} [settleDelayMs=150] Lookahead delay in ms to settle markdown delimiters.
      */
-    constructor(flushCallback = null, settleDelayMs = 180) {
+    constructor(flushCallback = null, settleDelayMs = 150) {
         this.flushCallback = flushCallback;
         this.settleDelayMs = settleDelayMs;
         this.tokenQueue = [];
         this.committedText = '';
         this.accumulatedText = '';
         this.timerId = null;
+    }
+
+    /**
+     * Updates the lookahead settle delay window dynamically.
+     * @param {number} delayMs New settle delay in milliseconds.
+     */
+    setSettleDelay(delayMs) {
+        if (typeof delayMs === 'number' && !isNaN(delayMs) && delayMs >= 0) {
+            this.settleDelayMs = delayMs;
+        }
     }
 
     /**

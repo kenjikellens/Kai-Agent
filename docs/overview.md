@@ -92,9 +92,14 @@ graph TD
    - Accurately parses top-level and indented nested sub-bullets (`    *`, `  -`) into hierarchical `<ul class="md-list">` and `<ul class="md-list md-sublist">` trees.
 
 7. **Streaming Lookahead Delay Buffer & Syntax Settle Engine**:
-   - `StreamBufferPipeline` queues incoming tokens in a timestamped FIFO buffer (~180-250ms delay, `--stream-settle-delay`), allowing markdown markers to settle before DOM formatting.
+   - `StreamBufferPipeline` queues incoming tokens in a timestamped FIFO buffer with a user-customizable lookahead delay (`--stream-settle-delay`).
+   - Enforces a minimum base delay of 150ms with selectable increments (`None` -> 150ms, `100ms` -> 250ms default, `300ms` -> 450ms, `500ms` -> 650ms, `750ms` -> 900ms, `1s` -> 1150ms), allowing markdown markers to settle before DOM formatting.
    - Drains and commits all remaining tokens immediately on stream completion or tool start with zero latency.
    - Double-clicking any user chat bubble activates the inline prompt editor (`openInlineEditor`) to re-edit and resubmit prompts.
+
+8. **LM Studio Performance Telemetry (Tokens Per Second)**:
+   - Measures live token generation throughput for local LM Studio models and displays the metric (`Speed: XX.X tok/s`) in the assistant message Info popover.
+   - Omitted for external cloud provider APIs to maintain clean metadata.
 
 
 

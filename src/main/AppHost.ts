@@ -286,7 +286,8 @@ export class AppHost {
                 type: 'reply',
                 content: result.reply,
                 modifiedFiles: result.modifiedFiles,
-                mode: effectiveMode
+                mode: effectiveMode,
+                tokensPerSecond: result.tokensPerSecond
             });
         } catch (error: any) {
             if (error.name === 'AbortError') {
