@@ -115,7 +115,7 @@ class ChatUIController {
                         const chevron = header.querySelector('.thinking-chevron');
                         if (chevron) {
                             const isCollapsed = content.classList.contains('collapsed');
-                            chevron.innerHTML = isCollapsed 
+                            chevron.innerHTML = isCollapsed
                                 ? '<polyline points="6 9 12 15 18 9"></polyline>'
                                 : '<polyline points="18 15 12 9 6 15"></polyline>';
                             if (!isCollapsed) {
@@ -471,17 +471,15 @@ class ChatUIController {
     }
 
     /**
-     * Wraps newly streamed words with .kai-word-fade while preserving existing words without re-animating.
-     * Skips pre/code blocks and HTML tags to avoid breaking markup and syntax highlighting.
+     * Wraps words in HTML text nodes with .kai-word-fade during streaming.
+     * Skips pre/code blocks, svg, buttons, and HTML tags to avoid breaking markup and syntax highlighting.
      * @param {string} html Formatted HTML string.
-     * @returns {string} Processed HTML with word fade spans applied to newly detected words.
+     * @returns {string} Processed HTML with word fade spans applied to text tokens.
      */
     applyStreamingWordFade(html) {
         if (!html) return '';
-        let wordIndex = 0;
-        const previousCount = this.renderedWordCount || 0;
         const parts = html.split(/(<[^>]+>)/g);
-        let inPreOrCode = false;
+        let inCodeOrBlock = false;
         let result = '';
 
         for (let i = 0; i < parts.length; i++) {
@@ -489,29 +487,83 @@ class ChatUIController {
             if (!part) continue;
 
             if (part.startsWith('<')) {
-                if (/^<\s*(?:pre|code)\b/i.test(part)) {
-                    inPreOrCode = true;
-                } else if (/^<\/\s*(?:pre|code)\s*>/i.test(part)) {
-                    inPreOrCode = false;
+                if (/^<\s*(?:pre|code|svg|button|script|style)\b/i.test(part)) {
+                    inCodeOrBlock = true;
+                } else if (/^<\/\s*(?:pre|code|svg|button|script|style)\s*>/i.test(part)) {
+                    inCodeOrBlock = false;
                 }
                 result += part;
             } else {
-                if (inPreOrCode) {
+                if (inCodeOrBlock) {
                     result += part;
                 } else {
-                    const transformed = part.replace(/(\S+)/g, (match) => {
-                        const currentIdx = wordIndex++;
-                        if (currentIdx >= previousCount) {
-                            return `<span class="kai-word-fade">${match}</span>`;
-                        }
-                        return match;
-                    });
+                    const transformed = part.replace(/(\S+)/g, '<span class="kai-word-fade">$1</span>');
                     result += transformed;
                 }
             }
         }
-        this.renderedWordCount = wordIndex;
         return result;
+    }
+
+    /**
+     * Incrementally morphs target DOM element to match source DOM nodes without destroying untouched nodes.
+     * Preserves active CSS animations on existing elements while smoothly introducing newly appended nodes.
+     * @param {HTMLElement} target The existing DOM element to update.
+     * @param {DocumentFragment|HTMLElement} source The new DOM tree to sync from.
+     */
+    morphDOM(target, source) {
+        const targetNodes = Array.from(target.childNodes);
+        const sourceNodes = Array.from(source.childNodes);
+
+        // 1. Remove excess target nodes
+        while (targetNodes.length > sourceNodes.length) {
+            const excess = targetNodes.pop();
+            if (excess && excess.parentNode) excess.parentNode.removeChild(excess);
+        }
+
+        // 2. Diff and patch node by node
+        for (let i = 0; i < sourceNodes.length; i++) {
+            const sNode = sourceNodes[i];
+            const tNode = targetNodes[i];
+
+            if (!tNode) {
+                target.appendChild(sNode.cloneNode(true));
+                continue;
+            }
+
+            if (tNode.nodeType !== sNode.nodeType || tNode.nodeName !== sNode.nodeName) {
+                target.replaceChild(sNode.cloneNode(true), tNode);
+                continue;
+            }
+
+            if (tNode.nodeType === Node.TEXT_NODE) {
+                if (tNode.nodeValue !== sNode.nodeValue) {
+                    tNode.nodeValue = sNode.nodeValue;
+                }
+                continue;
+            }
+
+            if (tNode.nodeType === Node.ELEMENT_NODE) {
+                const tAttrs = tNode.attributes;
+                const sAttrs = sNode.attributes;
+
+                for (let a = tAttrs.length - 1; a >= 0; a--) {
+                    const attrName = tAttrs[a].name;
+                    if (!sNode.hasAttribute(attrName)) {
+                        tNode.removeAttribute(attrName);
+                    }
+                }
+
+                for (let a = 0; a < sAttrs.length; a++) {
+                    const attr = sAttrs[a];
+                    if (tNode.getAttribute(attr.name) !== attr.value) {
+                        tNode.setAttribute(attr.name, attr.value);
+                    }
+                }
+
+                this.morphDOM(tNode, sNode);
+            }
+        }
     }
 
     /**
@@ -537,7 +589,7 @@ class ChatUIController {
         // Inspect thinking and reasoning capabilities
         const caps = ThinkingStateFormatter.getCapabilitiesState(rawModelName);
         const hasThinkingSupport = caps.hasThinkingToggle || caps.hasReasoningEffort;
-        
+
         let thinkingText = 'Not supported';
         if (hasThinkingSupport) {
             const isThinkingOn = meta.thinking !== undefined ? meta.thinking : caps.isThinkingOn;
@@ -602,12 +654,12 @@ class ChatUIController {
 
         if (role === 'user') {
             this.resetAssistantStream();
-            if (!text || 
-                text.startsWith('[Tool Result') || 
-                text.startsWith('[Tool Execution') || 
-                text.startsWith('[Tool Error') || 
-                text.startsWith('[Execution Output') || 
-                text.startsWith('[Tool Call') || 
+            if (!text ||
+                text.startsWith('[Tool Result') ||
+                text.startsWith('[Tool Execution') ||
+                text.startsWith('[Tool Error') ||
+                text.startsWith('[Execution Output') ||
+                text.startsWith('[Tool Call') ||
                 text.includes('[Tool Result for')) {
                 return;
             }
@@ -701,7 +753,7 @@ class ChatUIController {
             this.removeActivityStatus();
             this.currentAssistantText += progress.output;
             appState.updateOrAddAssistantUiEvent(this.currentAssistantText);
-            
+
             let forceThinkingCollapsed = null;
             let forcePlanExpanded = null;
             if (this.currentAssistantMsgElement) {
@@ -715,10 +767,10 @@ class ChatUIController {
                 }
             }
 
-            const isStreamingThinking = this.currentAssistantMsgElement && 
-                                        this.currentAssistantMsgElement.querySelector('.thinking-content em') && 
-                                        !this.currentAssistantText.includes('</think>');
-            
+            const isStreamingThinking = this.currentAssistantMsgElement &&
+                this.currentAssistantMsgElement.querySelector('.thinking-content em') &&
+                !this.currentAssistantText.includes('</think>');
+
             if (isStreamingThinking) {
                 const thinkStartTag = '<think>';
                 const thinkStartIndex = this.currentAssistantText.indexOf(thinkStartTag);
@@ -726,7 +778,7 @@ class ChatUIController {
                     const rawThinkingText = this.currentAssistantText.substring(thinkStartIndex + thinkStartTag.length);
                     const escapedThinkingText = this.formatter.escapeHtml(rawThinkingText).trim().replace(/(\r?\n\s*){3,}/g, '\n');
                     this.currentAssistantMsgElement.querySelector('.thinking-content em').innerHTML = escapedThinkingText;
-                    
+
                     const thinkingContentEl = this.currentAssistantMsgElement.querySelector('.thinking-content');
                     if (thinkingContentEl && !thinkingContentEl.classList.contains('collapsed')) {
                         thinkingContentEl.scrollTop = thinkingContentEl.scrollHeight;
@@ -734,11 +786,11 @@ class ChatUIController {
                     this.scrollToBottom();
                 }
             } else {
-                const isThinkingChecked = (this.settingsController && this.settingsController.showThinkingToggle) 
-                    ? this.settingsController.showThinkingToggle.checked 
+                const isThinkingChecked = (this.settingsController && this.settingsController.showThinkingToggle)
+                    ? this.settingsController.showThinkingToggle.checked
                     : (localStorage.getItem('kai.showThinking') !== 'false');
                 const formatted = this.formatter.formatMarkdown(this.currentAssistantText, forceThinkingCollapsed, isThinkingChecked, forcePlanExpanded);
-                
+
                 if (formatted.trim()) {
                     if (!this.currentAssistantMsgElement || (this.chatContainer && !this.chatContainer.contains(this.currentAssistantMsgElement))) {
                         this.removeActivityStatus();
@@ -752,8 +804,11 @@ class ChatUIController {
                         }
                     }
                     this.currentAssistantMsgElement.dataset.rawContent = this.currentAssistantText;
+                    const contentEl = this.currentAssistantMsgElement.querySelector('.message-content');
                     const animatedHtml = this.applyStreamingWordFade(formatted);
-                    this.currentAssistantMsgElement.querySelector('.message-content').innerHTML = animatedHtml;
+                    const tmpl = document.createElement('template');
+                    tmpl.innerHTML = animatedHtml;
+                    this.morphDOM(contentEl, tmpl.content);
 
                     // Ensure action bar is removed while actively streaming
                     const existingActions = this.currentAssistantMsgElement.querySelector('.message-actions');
@@ -781,7 +836,7 @@ class ChatUIController {
                 }
             }
             this.resetAssistantStream();
-            
+
             let existingDiv = document.getElementById(progress.toolId);
             if (existingDiv) {
                 existingDiv.innerHTML = this.getToolDescription(progress.tool, progress.fileName, 'start');
@@ -809,7 +864,7 @@ class ChatUIController {
             }
         } else if (progress.progressType === 'tool_end') {
             const isError = progress.output && (
-                progress.output.startsWith('[Error') || 
+                progress.output.startsWith('[Error') ||
                 progress.output.startsWith('[Execution Cancelled]')
             );
 
@@ -823,7 +878,7 @@ class ChatUIController {
             if (statusDiv) {
                 statusDiv.className = `tool-status-row ${isError ? 'errored' : 'completed'}`;
                 statusDiv.innerHTML = this.getToolDescription(progress.tool, progress.fileName, isError ? 'error' : 'success');
-                
+
                 if (progress.output) {
                     const dropdownDiv = document.createElement('div');
                     dropdownDiv.className = 'tool-result-dropdown hidden';
@@ -850,7 +905,7 @@ class ChatUIController {
         const svgs = window.KAI_SVGS || (typeof KAI_CONSTANTS !== 'undefined' ? KAI_CONSTANTS.DEFAULT_SVGS : {}) || {};
         const iconSvg = svgs[tool] || svgs['default_tool'] || '';
         let verb = '';
-        
+
         switch (tool) {
             case 'read_file':
                 verb = state === 'start' ? 'analysing' : (state === 'success' ? 'analysed' : 'failed analysing');
@@ -908,12 +963,12 @@ class ChatUIController {
                 verb = state === 'start' ? 'running' : (state === 'success' ? 'completed' : 'failed');
         }
 
-        const prefixSvg = state === 'start' 
-            ? (svgs['spinner'] || '<span class="thinking-spinner"></span>') 
-            : (state === 'success' 
-                ? (svgs['success'] || '') 
+        const prefixSvg = state === 'start'
+            ? (svgs['spinner'] || '<span class="thinking-spinner"></span>')
+            : (state === 'success'
+                ? (svgs['success'] || '')
                 : (svgs['error'] || ''));
-        
+
         let target = targetName || '';
         if (tool === 'run_command' && target.length > 40) {
             target = target.substring(0, 37) + '...';
@@ -1058,8 +1113,8 @@ class ChatUIController {
                 this.sendBtn.title = 'Send message';
                 this.removeActivityStatus();
                 if (this.currentAssistantMsgElement && this.currentAssistantText) {
-                    const isThinkingChecked = (this.settingsController && this.settingsController.showThinkingToggle) 
-                        ? this.settingsController.showThinkingToggle.checked 
+                    const isThinkingChecked = (this.settingsController && this.settingsController.showThinkingToggle)
+                        ? this.settingsController.showThinkingToggle.checked
                         : (localStorage.getItem('kai.showThinking') !== 'false');
                     const cleanFormatted = this.formatter.formatMarkdown(this.currentAssistantText, null, isThinkingChecked, null);
                     const contentEl = this.currentAssistantMsgElement.querySelector('.message-content');

@@ -92,7 +92,7 @@ class HistoryManager {
         item.className = 'history-item';
         if (shouldAnimate) {
             item.classList.add('animate-zoom-in');
-            item.style.setProperty('--anim-delay', `${index * 50}ms`);
+            item.style.setProperty('--anim-delay', `calc(var(--history-item-anim-stagger, 50ms) * ${index})`);
             item.addEventListener('animationend', () => {
                 item.classList.remove('animate-zoom-in');
                 item.style.removeProperty('--anim-delay');
