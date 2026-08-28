@@ -315,6 +315,17 @@ class ChatUIController {
                     return;
                 }
             });
+
+            // Double-click on a user chat bubble to trigger inline editing
+            this.chatContainer.addEventListener('dblclick', (e) => {
+                const userBubble = e.target.closest('.user-message');
+                if (userBubble) {
+                    const userRow = userBubble.closest('.user-message-row');
+                    if (userRow && !userRow.classList.contains('is-editing')) {
+                        this.openInlineEditor(userRow);
+                    }
+                }
+            });
         }
     }
 

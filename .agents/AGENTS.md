@@ -188,33 +188,15 @@ When implementing or modifying completions across providers, dynamically apply t
 
 ---
 
-## 16. Staggered History Zoom-In & Stream Word Fade-In System
+## 16. Streaming Pipeline, Animations & Markdown Contracts
 
-- **Sidebar Chat History Entrance**:
-  - The Left Sidebar history list renders previous chat sessions with a top-to-bottom staggered zoom-in entrance (`@keyframes historyItemZoomIn` scaling from `0.92` to `1.0` with `opacity: 0` to `1`).
-  - Staggered timing is controlled dynamically via CSS variable `--anim-delay: ${index * 50}ms`.
-- **AI Streaming Word Fade-In**:
-  - During token streaming, newly detected words in formatted markdown text are wrapped with `<span class="kai-word-fade">` to smoothly fade in (`@keyframes kaiWordFadeIn`) without flickering or re-animating previously streamed tokens.
-  - HTML tags, `<pre>`, and `<code>` blocks are preserved intact without modifying syntax tokens.
+- **Sidebar & Stream Animations**:
+  - Sidebar history renders with staggered entrance (`@keyframes historyItemZoomIn`, `--anim-delay: ${index * 50}ms`). In-place diffing prevents re-render glitching.
+  - Streaming AI text wraps words in `<span class="kai-word-fade">` (`@keyframes kaiWordFadeIn`) without flickering. Never wipe DOM on stream end so active word fades finish smoothly.
+- **Markdown & Lookahead Delay**:
+  - Italic regex must enforce non-whitespace delimiters to isolate list asterisks (`*   ...`).
+  - `StreamBufferPipeline` uses a settle lookahead queue (`180ms`, `--stream-settle-delay`) to prevent premature delimiter jumps, and flushes immediately on turn end.
 
----
-
-## 17. Markdown Formatting & List Hierarchy Engine
-
-- **Strict Italic & List Isolation**:
-  - The markdown italic parser must strictly enforce CommonMark flanking delimiter rules (`/(?:^|[\s\(\[\{])\*(?!\s)([^\*\r\n]+?)(?<!\s)\*(?=[\s\)\.\,\!\?\]\}]|$)/g`) to prevent asterisk list markers (`*   ...`) from ever matching as opening italic delimiters.
-- **Nested & Indented Sub-Lists**:
-  - Bullet list parsing accurately groups top-level (`*`, `-`) and multi-level indented sub-bullets (`    *`, `  -`) into hierarchical `<ul class="md-list">` and `<ul class="md-list md-sublist">` structures.
-
----
-
-## 18. Streaming Lookahead Delay Buffer & Syntax Settle Engine
-
-- **Lookahead FIFO Queue**:
-  - `StreamBufferPipeline` maintains a timestamped FIFO queue with a settle delay (`settleDelayMs = 180`, configured via `--stream-settle-delay`).
-  - Tokens are held briefly before committing to the DOM formatter, allowing trailing markdown markers (`**...**`, `---`, `###`) to settle and eliminating premature layout jumping.
-- **Immediate End-of-Stream Flush**:
-  - On turn completion, tool execution (`tool_start`), or stream interruption, `flushImmediate()` drains and renders all remaining tokens instantly with zero trailing latency.
 
 
 

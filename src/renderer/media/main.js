@@ -533,7 +533,6 @@
             if (formatted.trim()) {
                 chatUIController.currentAssistantMsgElement.dataset.rawContent = replyContent;
                 chatUIController.currentAssistantMsgElement.dataset.mode = currentMode;
-                chatUIController.currentAssistantMsgElement.querySelector('.message-content').innerHTML = formatted;
                 if (!chatUIController.currentAssistantMsgElement.querySelector('.message-actions')) {
                     chatUIController.currentAssistantMsgElement.appendChild(chatUIController.createAssistantActionBar(currentMode, meta));
                 }

@@ -92,8 +92,10 @@ graph TD
    - Accurately parses top-level and indented nested sub-bullets (`    *`, `  -`) into hierarchical `<ul class="md-list">` and `<ul class="md-list md-sublist">` trees.
 
 7. **Streaming Lookahead Delay Buffer & Syntax Settle Engine**:
-   - `StreamBufferPipeline` queues incoming tokens in a timestamped FIFO buffer (~180ms delay, `--stream-settle-delay`), allowing markdown markers to settle before DOM formatting.
+   - `StreamBufferPipeline` queues incoming tokens in a timestamped FIFO buffer (~180-250ms delay, `--stream-settle-delay`), allowing markdown markers to settle before DOM formatting.
    - Drains and commits all remaining tokens immediately on stream completion or tool start with zero latency.
+   - Double-clicking any user chat bubble activates the inline prompt editor (`openInlineEditor`) to re-edit and resubmit prompts.
+
 
 
 
