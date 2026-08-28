@@ -370,6 +370,35 @@ body {
   box-sizing: border-box;
 }
 
+/* Keyframes: Staggered smooth zoom-in entrance for sidebar chat history */
+@keyframes historyItemZoomIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Keyframes: Smooth fade-in for streamed words */
+@keyframes kaiWordFadeIn {
+  0% {
+    opacity: 0;
+    filter: blur(1.5px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0px);
+  }
+}
+
+.kai-word-fade {
+  display: inline;
+  animation: kaiWordFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 /* Individual Chat History Row in Left Sidebar - Pill styling matching input field buttons */
 .history-item {
   display: flex;
@@ -382,7 +411,7 @@ body {
   max-height: 32px;
   padding: 0 12px;
   margin: 1.5px 0;
-  border: 0 !important;
+  border: 0;
   outline: none;
   border-radius: 999px;
   background: transparent;
@@ -395,6 +424,11 @@ body {
   white-space: nowrap;
   user-select: none;
   transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.history-item.animate-zoom-in {
+  animation: historyItemZoomIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--anim-delay, 0ms);
 }
 
 .history-item:hover {

@@ -34,6 +34,7 @@ class ChatUIController {
 
         this.currentAssistantMsgElement = null;
         this.currentAssistantText = '';
+        this.renderedWordCount = 0;
 
         // Callbacks for retry and edit prompt
         this.onRetry = null;
@@ -461,11 +462,56 @@ class ChatUIController {
     }
 
     /**
-     * Resets the active assistant streaming DOM element reference and accumulated text buffer.
+     * Resets the active assistant streaming DOM element reference, accumulated text buffer, and word counter.
      */
     resetAssistantStream() {
         this.currentAssistantMsgElement = null;
         this.currentAssistantText = '';
+        this.renderedWordCount = 0;
+    }
+
+    /**
+     * Wraps newly streamed words with .kai-word-fade while preserving existing words without re-animating.
+     * Skips pre/code blocks and HTML tags to avoid breaking markup and syntax highlighting.
+     * @param {string} html Formatted HTML string.
+     * @returns {string} Processed HTML with word fade spans applied to newly detected words.
+     */
+    applyStreamingWordFade(html) {
+        if (!html) return '';
+        let wordIndex = 0;
+        const previousCount = this.renderedWordCount || 0;
+        const parts = html.split(/(<[^>]+>)/g);
+        let inPreOrCode = false;
+        let result = '';
+
+        for (let i = 0; i < parts.length; i++) {
+            const part = parts[i];
+            if (!part) continue;
+
+            if (part.startsWith('<')) {
+                if (/^<\s*(?:pre|code)\b/i.test(part)) {
+                    inPreOrCode = true;
+                } else if (/^<\/\s*(?:pre|code)\s*>/i.test(part)) {
+                    inPreOrCode = false;
+                }
+                result += part;
+            } else {
+                if (inPreOrCode) {
+                    result += part;
+                } else {
+                    const transformed = part.replace(/(\S+)/g, (match) => {
+                        const currentIdx = wordIndex++;
+                        if (currentIdx >= previousCount) {
+                            return `<span class="kai-word-fade">${match}</span>`;
+                        }
+                        return match;
+                    });
+                    result += transformed;
+                }
+            }
+        }
+        this.renderedWordCount = wordIndex;
+        return result;
     }
 
     /**
@@ -706,7 +752,8 @@ class ChatUIController {
                         }
                     }
                     this.currentAssistantMsgElement.dataset.rawContent = this.currentAssistantText;
-                    this.currentAssistantMsgElement.querySelector('.message-content').innerHTML = formatted;
+                    const animatedHtml = this.applyStreamingWordFade(formatted);
+                    this.currentAssistantMsgElement.querySelector('.message-content').innerHTML = animatedHtml;
 
                     // Ensure action bar is removed while actively streaming
                     const existingActions = this.currentAssistantMsgElement.querySelector('.message-actions');
@@ -1010,6 +1057,16 @@ class ChatUIController {
                 this.sendBtn.innerHTML = window.KAI_SVGS['send'] || '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>';
                 this.sendBtn.title = 'Send message';
                 this.removeActivityStatus();
+                if (this.currentAssistantMsgElement && this.currentAssistantText) {
+                    const isThinkingChecked = (this.settingsController && this.settingsController.showThinkingToggle) 
+                        ? this.settingsController.showThinkingToggle.checked 
+                        : (localStorage.getItem('kai.showThinking') !== 'false');
+                    const cleanFormatted = this.formatter.formatMarkdown(this.currentAssistantText, null, isThinkingChecked, null);
+                    const contentEl = this.currentAssistantMsgElement.querySelector('.message-content');
+                    if (contentEl) {
+                        contentEl.innerHTML = cleanFormatted;
+                    }
+                }
             }
         }
     }

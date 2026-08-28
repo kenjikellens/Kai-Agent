@@ -186,3 +186,16 @@ When implementing or modifying completions across providers, dynamically apply t
 - **Universal Icon Button Component**:
   - All message action buttons (copy, retry, edit, raw toggle, info) strictly utilize the unified `.icon-btn` component class with the hover outset/inset shadow token (`box-shadow: var(--app-btn-inset)`).
 
+---
+
+## 16. Staggered History Zoom-In & Stream Word Fade-In System
+
+- **Sidebar Chat History Entrance**:
+  - The Left Sidebar history list renders previous chat sessions with a top-to-bottom staggered zoom-in entrance (`@keyframes historyItemZoomIn` scaling from `0.92` to `1.0` with `opacity: 0` to `1`).
+  - Staggered timing is controlled dynamically via CSS variable `--anim-delay: ${index * 50}ms`.
+- **AI Streaming Word Fade-In**:
+  - During token streaming, newly detected words in formatted markdown text are wrapped with `<span class="kai-word-fade">` to smoothly fade in (`@keyframes kaiWordFadeIn`) without flickering or re-animating previously streamed tokens.
+  - HTML tags, `<pre>`, and `<code>` blocks are preserved intact without modifying syntax tokens.
+  - When response generation finishes or loading state ends, the assistant message content is finalized with clean HTML to guarantee clean selection, copying, and persistence.
+
+

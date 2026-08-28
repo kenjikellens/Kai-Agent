@@ -78,16 +78,111 @@ class HistoryManager {
     }
 
     /**
-     * Renders the list of previous chat sessions in the Left Sidebar.
+     * Builds a single history item DOM node.
+     * @param {object} chat Chat record.
+     * @param {number} index Index in history list.
+     * @param {boolean} shouldAnimate True if entrance animation should be applied.
+     * @param {boolean} [isWaitingForResponse] Active generation status.
+     * @returns {HTMLElement} History item row.
+     */
+    createHistoryItemElement(chat, index, shouldAnimate = true, isWaitingForResponse = false) {
+        const chatSvg = `<svg class="history-item-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>`;
+
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        if (shouldAnimate) {
+            item.classList.add('animate-zoom-in');
+            item.style.setProperty('--anim-delay', `${index * 50}ms`);
+            item.addEventListener('animationend', () => {
+                item.classList.remove('animate-zoom-in');
+                item.style.removeProperty('--anim-delay');
+            }, { once: true });
+        }
+
+        if (chat.id === this.activeChatId) {
+            item.classList.add('active');
+        }
+        item.dataset.chatId = chat.id;
+        item.title = chat.title || 'New Chat';
+        
+        const content = document.createElement('div');
+        content.className = 'history-item-content';
+
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'history-item-icon-wrapper';
+        iconSpan.innerHTML = chatSvg;
+
+        const title = document.createElement('span');
+        title.className = 'history-item-title';
+        title.textContent = chat.title || 'New Chat';
+
+        const time = document.createElement('span');
+        time.className = 'history-item-time';
+        time.textContent = this.formatHistoryTime(chat.timestamp);
+
+        content.appendChild(iconSpan);
+        content.appendChild(title);
+        content.appendChild(time);
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'history-item-delete-btn';
+        deleteBtn.title = 'Delete Chat';
+        deleteBtn.innerHTML = window.KAI_SVGS['delete_item'] || `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+        
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const chatIdToDelete = chat.id;
+            const wasActive = (this.activeChatId === chatIdToDelete);
+
+            try {
+                let localSaved = JSON.parse(localStorage.getItem('kai.savedChatsSummary') || '[]');
+                localSaved = localSaved.filter(c => c.id !== chatIdToDelete);
+                localStorage.setItem('kai.savedChatsSummary', JSON.stringify(localSaved));
+                this.renderHistoryList(localSaved.map(c => ({
+                    id: c.id,
+                    title: c.title || 'New Chat',
+                    timestamp: c.timestamp || Date.now()
+                })));
+            } catch (err) {}
+
+            this.ipcBridge.deleteChat(chatIdToDelete);
+
+            if (wasActive && typeof this.onDeleteActiveChat === 'function') {
+                this.onDeleteActiveChat(chatIdToDelete);
+            }
+        });
+        
+        item.addEventListener('click', (e) => {
+            if (e.target && e.target.closest && e.target.closest('.history-item-delete-btn')) {
+                return;
+            }
+            if (typeof isWaitingForResponse !== 'undefined' && isWaitingForResponse) {
+                this.ipcBridge.abort();
+            }
+            this.setActiveChatId(chat.id);
+            if (typeof this.onSelectChat === 'function') {
+                this.onSelectChat(chat.id);
+            } else {
+                this.ipcBridge.loadChat(chat.id);
+            }
+        });
+        
+        item.appendChild(content);
+        item.appendChild(deleteBtn);
+        return item;
+    }
+
+    /**
+     * Renders or updates the list of previous chat sessions in the Left Sidebar without glitching.
      * @param {Array<object>} chats List of saved chat session records.
      * @param {boolean} isWaitingForResponse Active generation status.
      */
     renderHistoryList(chats, isWaitingForResponse) {
         this.cachedChats = chats || [];
         if (!this.historyList) return;
-        this.historyList.innerHTML = '';
 
         if (!chats || chats.length === 0) {
+            this.historyList.innerHTML = '';
             const i18n = window.KAI_I18N || {};
             const emptyDiv = document.createElement('div');
             emptyDiv.className = 'history-empty-state';
@@ -96,82 +191,58 @@ class HistoryManager {
             return;
         }
 
-        const chatSvg = `<svg class="history-item-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>`;
+        // Remove empty state if present
+        const emptyState = this.historyList.querySelector('.history-empty-state');
+        if (emptyState) emptyState.remove();
 
-        chats.forEach(chat => {
-            const item = document.createElement('div');
-            item.className = 'history-item';
-            if (chat.id === this.activeChatId) {
-                item.classList.add('active');
+        const existingItemsMap = new Map();
+        this.historyList.querySelectorAll('.history-item').forEach(el => {
+            if (el.dataset.chatId) {
+                existingItemsMap.set(el.dataset.chatId, el);
             }
-            item.dataset.chatId = chat.id;
-            item.title = chat.title || 'New Chat';
-            
-            const content = document.createElement('div');
-            content.className = 'history-item-content';
+        });
 
-            const iconSpan = document.createElement('span');
-            iconSpan.className = 'history-item-icon-wrapper';
-            iconSpan.innerHTML = chatSvg;
+        const isInitialRender = (existingItemsMap.size === 0);
+        const validChatIds = new Set(chats.map(c => c.id));
 
-            const title = document.createElement('span');
-            title.className = 'history-item-title';
-            title.textContent = chat.title || 'New Chat';
+        // Remove elements that are no longer in chats
+        existingItemsMap.forEach((el, id) => {
+            if (!validChatIds.has(id)) {
+                el.remove();
+            }
+        });
 
-            const time = document.createElement('span');
-            time.className = 'history-item-time';
-            time.textContent = this.formatHistoryTime(chat.timestamp);
-
-            content.appendChild(iconSpan);
-            content.appendChild(title);
-            content.appendChild(time);
-            
-            const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'history-item-delete-btn';
-            deleteBtn.title = 'Delete Chat';
-            deleteBtn.innerHTML = window.KAI_SVGS['delete_item'] || `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
-            
-            deleteBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const chatIdToDelete = chat.id;
-                const wasActive = (this.activeChatId === chatIdToDelete);
-
-                try {
-                    let localSaved = JSON.parse(localStorage.getItem('kai.savedChatsSummary') || '[]');
-                    localSaved = localSaved.filter(c => c.id !== chatIdToDelete);
-                    localStorage.setItem('kai.savedChatsSummary', JSON.stringify(localSaved));
-                    this.renderHistoryList(localSaved.map(c => ({
-                        id: c.id,
-                        title: c.title || 'New Chat',
-                        timestamp: c.timestamp || Date.now()
-                    })));
-                } catch (err) {}
-
-                this.ipcBridge.deleteChat(chatIdToDelete);
-
-                if (wasActive && typeof this.onDeleteActiveChat === 'function') {
-                    this.onDeleteActiveChat(chatIdToDelete);
+        // Add or update elements in order
+        chats.forEach((chat, index) => {
+            const existingEl = existingItemsMap.get(chat.id);
+            if (existingEl) {
+                // Update text and timestamp in-place without restarting animation
+                const titleSpan = existingEl.querySelector('.history-item-title');
+                if (titleSpan && titleSpan.textContent !== (chat.title || 'New Chat')) {
+                    titleSpan.textContent = chat.title || 'New Chat';
+                    existingEl.title = chat.title || 'New Chat';
                 }
-            });
-            
-            item.addEventListener('click', (e) => {
-                if (e.target && e.target.closest && e.target.closest('.history-item-delete-btn')) {
-                    return;
+                const timeSpan = existingEl.querySelector('.history-item-time');
+                if (timeSpan) {
+                    timeSpan.textContent = this.formatHistoryTime(chat.timestamp);
                 }
-                if (typeof isWaitingForResponse !== 'undefined' && isWaitingForResponse) {
-                    this.ipcBridge.abort();
-                }
-                this.setActiveChatId(chat.id);
-                if (typeof this.onSelectChat === 'function') {
-                    this.onSelectChat(chat.id);
+                if (chat.id === this.activeChatId) {
+                    existingEl.classList.add('active');
                 } else {
-                    this.ipcBridge.loadChat(chat.id);
+                    existingEl.classList.remove('active');
                 }
-            });
-            
-            item.appendChild(content);
-            item.appendChild(deleteBtn);
-            this.historyList.appendChild(item);
+            } else {
+                // New item: create and animate
+                const newEl = this.createHistoryItemElement(chat, index, isInitialRender || true, isWaitingForResponse);
+                
+                // Position element properly in order
+                const currentChildren = Array.from(this.historyList.children);
+                if (index < currentChildren.length) {
+                    this.historyList.insertBefore(newEl, currentChildren[index]);
+                } else {
+                    this.historyList.appendChild(newEl);
+                }
+            }
         });
     }
 }

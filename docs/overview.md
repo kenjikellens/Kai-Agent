@@ -83,3 +83,9 @@ graph TD
    - `BrowserCompletionEngine.js` generates concise conversation titles using a mandatory JSON output contract (`{"title": "..."}`) with a multi-stage parser that discards thinking traces (`<think>...</think>`) and preamble from small/reasoning models.
    - Response action buttons (copy, retry, edit, raw toggle, info) strictly reuse the universal `.icon-btn` component class with the hover outset/inset shadow (`box-shadow: var(--app-btn-inset)`).
 
+5. **Staggered History Zoom-In & AI Stream Word Fade-In System**:
+   - Chat history entries in the Left Sidebar enter with a smooth staggered zoom-in entrance (`@keyframes historyItemZoomIn` scaling from `0.92` to `1.0` and opacity `0` to `1`), timed dynamically with `--anim-delay: ${index * 50}ms`. In-place element diffing prevents re-render glitching when history syncs.
+   - Streaming AI tokens in Desktop App & Extension dynamically wrap newly detected words in `<span class="kai-word-fade">` to fade into view smoothly (`@keyframes kaiWordFadeIn`) without flickering or restarting animation on already-rendered words. Markdown syntax, tags, and codeblocks are preserved intact, and HTML is cleanly finalized upon completion.
+
+
+
