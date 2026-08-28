@@ -206,5 +206,16 @@ When implementing or modifying completions across providers, dynamically apply t
 - **Nested & Indented Sub-Lists**:
   - Bullet list parsing accurately groups top-level (`*`, `-`) and multi-level indented sub-bullets (`    *`, `  -`) into hierarchical `<ul class="md-list">` and `<ul class="md-list md-sublist">` structures.
 
+---
+
+## 18. Streaming Lookahead Delay Buffer & Syntax Settle Engine
+
+- **Lookahead FIFO Queue**:
+  - `StreamBufferPipeline` maintains a timestamped FIFO queue with a settle delay (`settleDelayMs = 180`, configured via `--stream-settle-delay`).
+  - Tokens are held briefly before committing to the DOM formatter, allowing trailing markdown markers (`**...**`, `---`, `###`) to settle and eliminating premature layout jumping.
+- **Immediate End-of-Stream Flush**:
+  - On turn completion, tool execution (`tool_start`), or stream interruption, `flushImmediate()` drains and renders all remaining tokens instantly with zero trailing latency.
+
+
 
 

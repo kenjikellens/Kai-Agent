@@ -1,76 +1,130 @@
 /**
- * StreamBufferPipeline provides high-throughput requestAnimationFrame token batching.
- * Buffers incoming LLM tokens in memory and flushes a single DOM update per frame (60 FPS).
+ * StreamBufferPipeline provides high-throughput token batching and a lookahead settle delay.
+ * Buffers incoming LLM tokens in a timestamped FIFO queue to allow trailing markdown delimiters
+ * and syntax blocks to settle before committing to the DOM formatter, preventing premature layout shifts.
  */
 class StreamBufferPipeline {
     /**
-     * Initializes the stream buffer container and callbacks.
-     * @param {Function} [flushCallback] Callback invoked with accumulated text on animation frame.
+     * Initializes the stream buffer container, lookahead delay, and callbacks.
+     * @param {Function} [flushCallback] Callback invoked with committed text on frame/tick.
+     * @param {number} [settleDelayMs=180] Lookahead delay in ms to settle markdown delimiters.
      */
-    constructor(flushCallback = null) {
+    constructor(flushCallback = null, settleDelayMs = 180) {
         this.flushCallback = flushCallback;
-        this.buffer = '';
+        this.settleDelayMs = settleDelayMs;
+        this.tokenQueue = [];
+        this.committedText = '';
         this.accumulatedText = '';
-        this.isRafScheduled = false;
-        this.rafId = null;
+        this.timerId = null;
     }
 
     /**
-     * Appends a new streaming text token chunk into the buffer and schedules a frame flush.
+     * Appends a new streaming text token chunk into the lookahead queue and schedules a processing tick.
      * @param {string} chunk New text chunk from LLM stream.
      */
     append(chunk) {
         if (!chunk) return;
-        this.buffer += chunk;
+        const now = Date.now();
+        this.tokenQueue.push({ text: chunk, timestamp: now });
         this.accumulatedText += chunk;
 
-        if (!this.isRafScheduled) {
-            this.isRafScheduled = true;
-            this.rafId = requestAnimationFrame(() => this.flush());
+        if (this.timerId === null) {
+            this.scheduleTick();
         }
     }
 
     /**
-     * Flushes buffered text immediately to the registered callback.
+     * Schedules a timer tick to evaluate settled tokens against the delay window.
      */
-    flush() {
-        this.isRafScheduled = false;
-        this.rafId = null;
-        if (typeof this.flushCallback === 'function') {
-            this.flushCallback(this.accumulatedText, this.buffer);
-        }
-        this.buffer = '';
+    scheduleTick() {
+        if (this.timerId !== null) return;
+        this.timerId = setTimeout(() => {
+            this.timerId = null;
+            this.processQueue();
+        }, 25);
     }
 
     /**
-     * Flushes any remaining tokens immediately without waiting for the next animation frame.
+     * Processes queued tokens that have settled past the settleDelayMs threshold.
+     */
+    processQueue() {
+        if (this.tokenQueue.length === 0) return;
+
+        const now = Date.now();
+        let newCommitted = '';
+
+        while (this.tokenQueue.length > 0) {
+            const first = this.tokenQueue[0];
+            if (now - first.timestamp >= this.settleDelayMs) {
+                newCommitted += first.text;
+                this.tokenQueue.shift();
+            } else {
+                break;
+            }
+        }
+
+        if (newCommitted.length > 0) {
+            this.committedText += newCommitted;
+            if (typeof this.flushCallback === 'function') {
+                this.flushCallback(this.committedText, newCommitted);
+            }
+        }
+
+        if (this.tokenQueue.length > 0) {
+            this.scheduleTick();
+        }
+    }
+
+    /**
+     * Flushes all remaining queued tokens immediately without waiting for the delay threshold.
+     * Invoked when generation completes, a tool starts, or the user interrupts.
      */
     flushImmediate() {
-        if (this.rafId !== null) {
-            cancelAnimationFrame(this.rafId);
-            this.rafId = null;
+        if (this.timerId !== null) {
+            clearTimeout(this.timerId);
+            this.timerId = null;
         }
-        this.flush();
+
+        let newCommitted = '';
+        while (this.tokenQueue.length > 0) {
+            const item = this.tokenQueue.shift();
+            newCommitted += item.text;
+        }
+
+        if (newCommitted.length > 0 || this.committedText !== this.accumulatedText) {
+            this.committedText = this.accumulatedText;
+            if (typeof this.flushCallback === 'function') {
+                this.flushCallback(this.committedText, newCommitted);
+            }
+        }
     }
 
     /**
-     * Resets internal buffers and cancels pending animation frames.
+     * Resets internal buffers, queues, and cancels pending timer ticks.
      */
     reset() {
-        if (this.rafId !== null) {
-            cancelAnimationFrame(this.rafId);
-            this.rafId = null;
+        if (this.timerId !== null) {
+            clearTimeout(this.timerId);
+            this.timerId = null;
         }
-        this.buffer = '';
+        this.tokenQueue = [];
+        this.committedText = '';
         this.accumulatedText = '';
-        this.isRafScheduled = false;
     }
 
     /**
-     * Gets total accumulated streaming text so far.
+     * Gets total accumulated streaming text so far (including unsettled tokens).
      * @returns {string} Accumulated stream text.
      */
     getAccumulatedText() {
         return this.accumulatedText;
+    }
+
+    /**
+     * Gets committed text released to the DOM renderer.
+     * @returns {string} Committed stream text.
+     */
+    getCommittedText() {
+        return this.committedText;
     }
 }

@@ -73,6 +73,7 @@
   --history-item-anim-duration: 220ms;
   --history-item-anim-stagger: 50ms;
   --stream-word-fade-duration: 1000ms;
+  --stream-settle-delay: 180ms;
 }
 
 /* Light Theme Tokens Override for Desktop App & VS Code Light Themes */

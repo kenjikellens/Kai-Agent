@@ -35,6 +35,7 @@ class ChatUIController {
         this.currentAssistantMsgElement = null;
         this.currentAssistantText = '';
         this.renderedWordCount = 0;
+        this.streamPipeline = new StreamBufferPipeline((committedText) => this.renderStreamProgress(committedText), 180);
 
         // Callbacks for retry and edit prompt
         this.onRetry = null;
@@ -465,6 +466,9 @@ class ChatUIController {
      * Resets the active assistant streaming DOM element reference, accumulated text buffer, and word counter.
      */
     resetAssistantStream() {
+        if (this.streamPipeline) {
+            this.streamPipeline.reset();
+        }
         this.currentAssistantMsgElement = null;
         this.currentAssistantText = '';
         this.renderedWordCount = 0;
@@ -753,80 +757,11 @@ class ChatUIController {
             this.removeActivityStatus();
             this.currentAssistantText += progress.output;
             appState.updateOrAddAssistantUiEvent(this.currentAssistantText);
-
-            let forceThinkingCollapsed = null;
-            let forcePlanExpanded = null;
-            if (this.currentAssistantMsgElement) {
-                const existingThinking = this.currentAssistantMsgElement.querySelector('.thinking-content');
-                if (existingThinking) {
-                    forceThinkingCollapsed = existingThinking.classList.contains('collapsed');
-                }
-                const existingPlan = this.currentAssistantMsgElement.querySelector('.kai-plan-card');
-                if (existingPlan) {
-                    forcePlanExpanded = existingPlan.classList.contains('expanded');
-                }
-            }
-
-            const isStreamingThinking = this.currentAssistantMsgElement &&
-                this.currentAssistantMsgElement.querySelector('.thinking-content em') &&
-                !this.currentAssistantText.includes('</think>');
-
-            if (isStreamingThinking) {
-                const thinkStartTag = '<think>';
-                const thinkStartIndex = this.currentAssistantText.indexOf(thinkStartTag);
-                if (thinkStartIndex !== -1) {
-                    const rawThinkingText = this.currentAssistantText.substring(thinkStartIndex + thinkStartTag.length);
-                    const escapedThinkingText = this.formatter.escapeHtml(rawThinkingText).trim().replace(/(\r?\n\s*){3,}/g, '\n');
-                    this.currentAssistantMsgElement.querySelector('.thinking-content em').innerHTML = escapedThinkingText;
-
-                    const thinkingContentEl = this.currentAssistantMsgElement.querySelector('.thinking-content');
-                    if (thinkingContentEl && !thinkingContentEl.classList.contains('collapsed')) {
-                        thinkingContentEl.scrollTop = thinkingContentEl.scrollHeight;
-                    }
-                    this.scrollToBottom();
-                }
-            } else {
-                const isThinkingChecked = (this.settingsController && this.settingsController.showThinkingToggle)
-                    ? this.settingsController.showThinkingToggle.checked
-                    : (localStorage.getItem('kai.showThinking') !== 'false');
-                const formatted = this.formatter.formatMarkdown(this.currentAssistantText, forceThinkingCollapsed, isThinkingChecked, forcePlanExpanded);
-
-                if (formatted.trim()) {
-                    if (!this.currentAssistantMsgElement || (this.chatContainer && !this.chatContainer.contains(this.currentAssistantMsgElement))) {
-                        this.removeActivityStatus();
-                        this.currentAssistantMsgElement = document.createElement('div');
-                        this.currentAssistantMsgElement.className = 'message assistant-message';
-                        const contentDiv = document.createElement('div');
-                        contentDiv.className = 'message-content';
-                        this.currentAssistantMsgElement.appendChild(contentDiv);
-                        if (this.chatContainer) {
-                            this.chatContainer.appendChild(this.currentAssistantMsgElement);
-                        }
-                    }
-                    this.currentAssistantMsgElement.dataset.rawContent = this.currentAssistantText;
-                    const contentEl = this.currentAssistantMsgElement.querySelector('.message-content');
-                    const animatedHtml = this.applyStreamingWordFade(formatted);
-                    const tmpl = document.createElement('template');
-                    tmpl.innerHTML = animatedHtml;
-                    this.morphDOM(contentEl, tmpl.content);
-
-                    // Ensure action bar is removed while actively streaming
-                    const existingActions = this.currentAssistantMsgElement.querySelector('.message-actions');
-                    if (existingActions) {
-                        existingActions.remove();
-                    }
-
-                    const thinkingContentEl = this.currentAssistantMsgElement.querySelector('.thinking-content');
-                    if (thinkingContentEl && !this.currentAssistantText.includes('</think>')) {
-                        if (!thinkingContentEl.classList.contains('collapsed')) {
-                            thinkingContentEl.scrollTop = thinkingContentEl.scrollHeight;
-                        }
-                    }
-
-                    this.scrollToBottom();
-                }
-            }
+            this.streamPipeline.append(progress.output);
         } else if (progress.progressType === 'tool_start') {
+            if (this.streamPipeline) {
+                this.streamPipeline.flushImmediate();
+            }
             this.removeActivityStatus();
             appState.finalizeAssistantUiEvent();
             if (this.currentAssistantMsgElement) {
@@ -892,6 +827,90 @@ class ChatUIController {
             this.appendMessage('system', warning);
         }
         this.scrollToBottom();
+    }
+
+    /**
+     * Renders committed streaming text to the active assistant message bubble.
+     * @param {string} committedText Text that has settled through the lookahead pipeline.
+     */
+    renderStreamProgress(committedText) {
+        if (!committedText) return;
+
+        let forceThinkingCollapsed = null;
+        let forcePlanExpanded = null;
+        if (this.currentAssistantMsgElement) {
+            const existingThinking = this.currentAssistantMsgElement.querySelector('.thinking-content');
+            if (existingThinking) {
+                forceThinkingCollapsed = existingThinking.classList.contains('collapsed');
+            }
+            const existingPlan = this.currentAssistantMsgElement.querySelector('.kai-plan-card');
+            if (existingPlan) {
+                forcePlanExpanded = existingPlan.classList.contains('expanded');
+            }
+        }
+
+        const isStreamingThinking = this.currentAssistantMsgElement &&
+            this.currentAssistantMsgElement.querySelector('.thinking-content em') &&
+            !committedText.includes('</think>');
+
+        if (isStreamingThinking) {
+            const thinkStartTag = '<think>';
+            const thinkStartIndex = committedText.indexOf(thinkStartTag);
+            if (thinkStartIndex !== -1) {
+                const rawThinkingText = committedText.substring(thinkStartIndex + thinkStartTag.length);
+                const escapedThinkingText = this.formatter.escapeHtml(rawThinkingText).trim().replace(/(\r?\n\s*){3,}/g, '\n');
+                const emEl = this.currentAssistantMsgElement.querySelector('.thinking-content em');
+                if (emEl) {
+                    emEl.innerHTML = escapedThinkingText;
+                }
+
+                const thinkingContentEl = this.currentAssistantMsgElement.querySelector('.thinking-content');
+                if (thinkingContentEl && !thinkingContentEl.classList.contains('collapsed')) {
+                    thinkingContentEl.scrollTop = thinkingContentEl.scrollHeight;
+                }
+                this.scrollToBottom();
+            }
+        } else {
+            const isThinkingChecked = (this.settingsController && this.settingsController.showThinkingToggle)
+                ? this.settingsController.showThinkingToggle.checked
+                : (localStorage.getItem('kai.showThinking') !== 'false');
+            const formatted = this.formatter.formatMarkdown(committedText, forceThinkingCollapsed, isThinkingChecked, forcePlanExpanded);
+
+            if (formatted.trim()) {
+                if (!this.currentAssistantMsgElement || (this.chatContainer && !this.chatContainer.contains(this.currentAssistantMsgElement))) {
+                    this.removeActivityStatus();
+                    this.currentAssistantMsgElement = document.createElement('div');
+                    this.currentAssistantMsgElement.className = 'message assistant-message';
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'message-content';
+                    this.currentAssistantMsgElement.appendChild(contentDiv);
+                    if (this.chatContainer) {
+                        this.chatContainer.appendChild(this.currentAssistantMsgElement);
+                    }
+                }
+                this.currentAssistantMsgElement.dataset.rawContent = committedText;
+                const contentEl = this.currentAssistantMsgElement.querySelector('.message-content');
+                const animatedHtml = this.applyStreamingWordFade(formatted);
+                const tmpl = document.createElement('template');
+                tmpl.innerHTML = animatedHtml;
+                this.morphDOM(contentEl, tmpl.content);
+
+                // Ensure action bar is removed while actively streaming
+                const existingActions = this.currentAssistantMsgElement.querySelector('.message-actions');
+                if (existingActions) {
+                    existingActions.remove();
+                }
+
+                const thinkingContentEl = this.currentAssistantMsgElement.querySelector('.thinking-content');
+                if (thinkingContentEl && !committedText.includes('</think>')) {
+                    if (!thinkingContentEl.classList.contains('collapsed')) {
+                        thinkingContentEl.scrollTop = thinkingContentEl.scrollHeight;
+                    }
+                }
+
+                this.scrollToBottom();
+            }
+        }
     }
 
     /**
@@ -1112,15 +1131,8 @@ class ChatUIController {
                 this.sendBtn.innerHTML = window.KAI_SVGS['send'] || '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>';
                 this.sendBtn.title = 'Send message';
                 this.removeActivityStatus();
-                if (this.currentAssistantMsgElement && this.currentAssistantText) {
-                    const isThinkingChecked = (this.settingsController && this.settingsController.showThinkingToggle)
-                        ? this.settingsController.showThinkingToggle.checked
-                        : (localStorage.getItem('kai.showThinking') !== 'false');
-                    const cleanFormatted = this.formatter.formatMarkdown(this.currentAssistantText, null, isThinkingChecked, null);
-                    const contentEl = this.currentAssistantMsgElement.querySelector('.message-content');
-                    if (contentEl) {
-                        contentEl.innerHTML = cleanFormatted;
-                    }
+                if (this.streamPipeline) {
+                    this.streamPipeline.flushImmediate();
                 }
             }
         }
