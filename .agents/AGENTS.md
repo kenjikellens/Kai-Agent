@@ -196,6 +196,15 @@ When implementing or modifying completions across providers, dynamically apply t
 - **AI Streaming Word Fade-In**:
   - During token streaming, newly detected words in formatted markdown text are wrapped with `<span class="kai-word-fade">` to smoothly fade in (`@keyframes kaiWordFadeIn`) without flickering or re-animating previously streamed tokens.
   - HTML tags, `<pre>`, and `<code>` blocks are preserved intact without modifying syntax tokens.
-  - When response generation finishes or loading state ends, the assistant message content is finalized with clean HTML to guarantee clean selection, copying, and persistence.
+
+---
+
+## 17. Markdown Formatting & List Hierarchy Engine
+
+- **Strict Italic & List Isolation**:
+  - The markdown italic parser must strictly enforce CommonMark flanking delimiter rules (`/(?:^|[\s\(\[\{])\*(?!\s)([^\*\r\n]+?)(?<!\s)\*(?=[\s\)\.\,\!\?\]\}]|$)/g`) to prevent asterisk list markers (`*   ...`) from ever matching as opening italic delimiters.
+- **Nested & Indented Sub-Lists**:
+  - Bullet list parsing accurately groups top-level (`*`, `-`) and multi-level indented sub-bullets (`    *`, `  -`) into hierarchical `<ul class="md-list">` and `<ul class="md-list md-sublist">` structures.
+
 
 

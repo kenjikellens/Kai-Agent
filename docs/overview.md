@@ -87,5 +87,10 @@ graph TD
    - Chat history entries in the Left Sidebar enter with a smooth staggered zoom-in entrance (`@keyframes historyItemZoomIn` scaling from `0.92` to `1.0` and opacity `0` to `1`), timed dynamically with `--anim-delay: ${index * 50}ms`. In-place element diffing prevents re-render glitching when history syncs.
    - Streaming AI tokens in Desktop App & Extension dynamically wrap newly detected words in `<span class="kai-word-fade">` to fade into view smoothly (`@keyframes kaiWordFadeIn`) without flickering or restarting animation on already-rendered words. Markdown syntax, tags, and codeblocks are preserved intact, and HTML is cleanly finalized upon completion.
 
+6. **Markdown Formatting & List Hierarchy Engine**:
+   - The markdown italic parser strictly enforces CommonMark non-whitespace delimiter rules (`/(?:^|[\s\(\[\{])\*(?!\s)([^\*\r\n]+?)(?<!\s)\*(?=[\s\)\.\,\!\?\]\}]|$)/g`), preventing list bullet markers (`*   ...`) from ever triggering italic blocks.
+   - Accurately parses top-level and indented nested sub-bullets (`    *`, `  -`) into hierarchical `<ul class="md-list">` and `<ul class="md-list md-sublist">` trees.
+
+
 
 

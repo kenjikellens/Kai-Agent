@@ -317,7 +317,7 @@ class MarkdownFormatter {
         // 5. Bold formatting
         escaped = escaped.replace(/\*\*([^\*\r\n]+?)\*\*/g, '<strong>$1</strong>');
         // 6. Italic formatting (supports *italic* and _italic_ cleanly across words and sentences)
-        escaped = escaped.replace(/(?:^|[^\*])\*([^\*\r\n]+?)\*(?!\*)/g, (match, p1) => {
+        escaped = escaped.replace(/(?:^|[\s\(\[\{])\*(?!\s)([^\*\r\n]+?)(?<!\s)\*(?=[\s\)\.\,\!\?\]\}]|$)/g, (match, p1) => {
             const prefix = match.startsWith('*') ? '' : match.charAt(0);
             return `${prefix}<em>${p1}</em>`;
         });
@@ -375,10 +375,31 @@ class MarkdownFormatter {
             return tableHtml;
         });
 
-        // 10. Bullet lists
-        escaped = escaped.replace(/(^[-\*]\s+.+(?:\r?\n^[-\*]\s+.+)*)/gm, (listMatch) => {
-            const items = listMatch.split(/\r?\n/).map(line => line.replace(/^[-\*]\s+/, '').trim());
-            return `<ul class="md-list">${items.map(item => `<li>${item}</li>`).join('')}</ul>`;
+        // 10. Bullet lists (supports top-level and indented sub-bullets)
+        escaped = escaped.replace(/((?:^[ \t]*[-\*]\s+.+(?:\r?\n|$))+)/gm, (listMatch) => {
+            const lines = listMatch.trim().split(/\r?\n/);
+            let listHtml = '<ul class="md-list">';
+            let inSublist = false;
+            for (const line of lines) {
+                const isSubItem = /^[ \t]{2,}[-\*]\s+/.test(line);
+                const content = line.replace(/^[ \t]*[-\*]\s+/, '').trim();
+                if (isSubItem) {
+                    if (!inSublist) {
+                        listHtml += '<ul class="md-list md-sublist">';
+                        inSublist = true;
+                    }
+                    listHtml += `<li>${content}</li>`;
+                } else {
+                    if (inSublist) {
+                        listHtml += '</ul>';
+                        inSublist = false;
+                    }
+                    listHtml += `<li>${content}</li>`;
+                }
+            }
+            if (inSublist) listHtml += '</ul>';
+            listHtml += '</ul>';
+            return listHtml;
         });
 
         // 11. Restore inline code, code blocks and plan card placeholders in proper order
