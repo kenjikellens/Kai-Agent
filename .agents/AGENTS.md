@@ -195,7 +195,28 @@ When implementing or modifying completions across providers, dynamically apply t
   - Streaming AI text wraps words in `<span class="kai-word-fade">` (`@keyframes kaiWordFadeIn`) without flickering. Never wipe DOM on stream end so active word fades finish smoothly.
 - **Markdown & Lookahead Delay**:
   - Italic regex must enforce non-whitespace delimiters to isolate list asterisks (`*   ...`).
-  - `StreamBufferPipeline` uses a settle lookahead queue (`180ms`, `--stream-settle-delay`) to prevent premature delimiter jumps, and flushes immediately on turn end.
+  - `StreamBufferPipeline` uses a settle lookahead queue (`--stream-settle-base-delay: 300ms`) to prevent premature delimiter jumps, and flushes immediately on turn end.
+
+---
+
+## 17. Reasoning & Thinking Markdown Architecture
+
+- **Thinking Markdown Support**:
+  - Reasoning traces inside `<think>...</think>` blocks are parsed and rendered as rich Markdown (headers, lists, inline code, code blocks, bold, italics, tables, blockquotes) using `MarkdownFormatter.formatThinkingMarkdown()`.
+  - Thinking blocks are isolated into `%%THINKBLOCK${idx}%%` placeholders during `formatMarkdown()` to prevent cross-delimiter collisions with outer response Markdown.
+  - Streaming thinking updates seamlessly via the unified `morphDOM` pipeline, respecting `--stream-settle-base-delay: 300ms` and auto-scrolling open thinking containers.
+
+---
+
+## 18. Unified Thinking Accordion Container Architecture
+
+- **OOCSS & Single Enclosed Container**:
+  - The reasoning thinking block strictly utilizes the unified `.thinking-block` container architecture modeled on `.settings-category`.
+  - In collapsed state (`.thinking-block.collapsed`), the component presents as a compact pill-shaped trigger (`background: transparent; max-width: fit-content; border: 0;`).
+  - In expanded state (`.thinking-block:not(.collapsed)`), the component forms a single continuous enclosed card container (`border: 1px solid var(--app-border-strong); border-radius: var(--app-radius-md); background: transparent; max-width: min(85%, 680px);`) wrapping both `.thinking-header` and `.thinking-content` with zero detached borders.
+  - Collapsed state is managed on the parent `.thinking-block` element via `ThinkingBlockComponent.toggle(header)`.
+
+
 
 
 

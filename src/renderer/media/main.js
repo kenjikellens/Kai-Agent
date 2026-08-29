@@ -503,7 +503,7 @@
         let forceThinkingCollapsed = null;
         let forcePlanExpanded = null;
         if (chatUIController.currentAssistantMsgElement) {
-            const existingThinking = chatUIController.currentAssistantMsgElement.querySelector('.thinking-content');
+            const existingThinking = chatUIController.currentAssistantMsgElement.querySelector('.thinking-block');
             if (existingThinking) {
                 forceThinkingCollapsed = existingThinking.classList.contains('collapsed');
             }

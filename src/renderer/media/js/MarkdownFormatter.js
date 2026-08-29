@@ -105,6 +105,153 @@ class MarkdownFormatter {
     }
 
     /**
+     * Formats reasoning and thinking markdown text into safe HTML while preserving
+     * code blocks, lists, headers, bold, italics, tables, and inline code.
+     * @param {string} text HTML-escaped thinking content.
+     * @returns {string} Formatted HTML.
+     */
+    formatThinkingMarkdown(text) {
+        if (!text) return '';
+        let esc = text.trim()
+            .replace(/^(\*+|#+)?\s*(thinking\s*process|thinking|thought|denkproces|gedachten)\s*:?\s*(\*+)?(?:\r?\n)*/i, '');
+
+        // 1. Extract triple backtick code blocks into isolated placeholders
+        const codeBlocks = [];
+        const copyIconSvg = `<svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+        const downloadIconSvg = `<svg class="download-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
+
+        // Closed code blocks
+        esc = esc.replace(/```([a-zA-Z0-9_\-\+]*)[ \t]*\r?\n([\s\S]*?)```/g, (match, lang, rawCode) => {
+            const languageLabel = (lang || 'code').trim().toLowerCase();
+            const trimmedCode = rawCode.replace(/\r?\n$/, '');
+            const highlighted = this.highlightSyntax(trimmedCode, languageLabel);
+            const blockHtml = `<div class="code-block-wrapper"><div class="code-block-header"><span class="code-lang-label">${this.escapeHtml(languageLabel)}</span><div class="code-block-actions"><button type="button" class="copy-code-btn" title="Copy code" aria-label="Copy code">${copyIconSvg}</button><button type="button" class="download-code-btn" title="Download snippet" aria-label="Download snippet" data-lang="${this.escapeHtml(languageLabel)}">${downloadIconSvg}</button></div></div><pre><code class="language-${this.escapeHtml(languageLabel)}">${highlighted}</code></pre></div>`;
+            const idx = codeBlocks.length;
+            codeBlocks.push(blockHtml);
+            return `\n%%THINK_CBLOCK${idx}%%\n`;
+        });
+
+        // Streaming unclosed code blocks at end
+        esc = esc.replace(/```([a-zA-Z0-9_\-\+]*)[ \t]*\r?\n([\s\S]*)$/g, (match, lang, rawCode) => {
+            const languageLabel = (lang || 'code').trim().toLowerCase();
+            const highlighted = this.highlightSyntax(rawCode, languageLabel);
+            const blockHtml = `<div class="code-block-wrapper"><div class="code-block-header"><span class="code-lang-label">${this.escapeHtml(languageLabel)}</span><div class="code-block-actions"><button type="button" class="copy-code-btn" title="Copy code" aria-label="Copy code">${copyIconSvg}</button><button type="button" class="download-code-btn" title="Download snippet" aria-label="Download snippet" data-lang="${this.escapeHtml(languageLabel)}">${downloadIconSvg}</button></div></div><pre><code class="language-${this.escapeHtml(languageLabel)}">${highlighted}</code></pre></div>`;
+            const idx = codeBlocks.length;
+            codeBlocks.push(blockHtml);
+            return `\n%%THINK_CBLOCK${idx}%%\n`;
+        });
+
+        // 2. Extract inline code into isolated placeholders
+        const inlineCodes = [];
+        esc = esc.replace(/`([^`\r\n]+)`/g, (match, inline) => {
+            const idx = inlineCodes.length;
+            inlineCodes.push(`<code>${inline}</code>`);
+            return `%%THINK_INLCODE${idx}%%`;
+        });
+
+        // 3. Horizontal rules
+        esc = esc.replace(/(?:^|\r?\n)(?:[\*\-_][ \t]*){3,}(?:\r?\n|$)/g, '\n<hr class="md-divider" />\n');
+
+        // 4. Links [text](url)
+        esc = esc.replace(/\[([^\]\r\n]+)\]\((https?:\/\/[^\s\)\"]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="md-link">$1</a>');
+
+        // 5. Bold formatting
+        esc = esc.replace(/\*\*([^\*\r\n]+?)\*\*/g, '<strong>$1</strong>');
+
+        // 6. Italic formatting
+        esc = esc.replace(/(?:^|[\s\(\[\{])\*(?!\s)([^\*\r\n]+?)(?<!\s)\*(?=[\s\)\.\,\!\?\]\}]|$)/g, (match, p1) => {
+            const prefix = match.startsWith('*') ? '' : match.charAt(0);
+            return `${prefix}<em>${p1}</em>`;
+        });
+        esc = esc.replace(/(?:^|[\s\(\[\{])_([^_]+?)_(?=[\s\)\.\,\!\?\]\}]|$)/g, (match, p1) => {
+            const prefix = match.startsWith('_') ? '' : match.charAt(0);
+            return `${prefix}<em>${p1}</em>`;
+        });
+
+        // 7. Headers formatting (h1-h6)
+        esc = esc.replace(/(?:^|\r?\n)######[ \t]+([^\r\n]+)/g, '\n<h6>$1</h6>');
+        esc = esc.replace(/(?:^|\r?\n)#####[ \t]+([^\r\n]+)/g, '\n<h5>$1</h5>');
+        esc = esc.replace(/(?:^|\r?\n)####[ \t]+([^\r\n]+)/g, '\n<h4>$1</h4>');
+        esc = esc.replace(/(?:^|\r?\n)###[ \t]+([^\r\n]+)/g, '\n<h3>$1</h3>');
+        esc = esc.replace(/(?:^|\r?\n)##[ \t]+([^\r\n]+)/g, '\n<h2>$1</h2>');
+        esc = esc.replace(/(?:^|\r?\n)#[ \t]+([^\r\n]+)/g, '\n<h1>$1</h1>');
+
+        // 8. Blockquotes
+        esc = esc.replace(/^&gt;\s*(.+)$/gm, '<blockquote>$1</blockquote>');
+
+        // 9. Markdown Tables
+        esc = esc.replace(/((?:\|[^\n]+\|\r?\n)+)/g, (tableMatch) => {
+            const lines = tableMatch.trim().split(/\r?\n/);
+            if (lines.length < 2) return tableMatch;
+
+            const isSeparator = (line) => /^\|?\s*(?::?-+:?\s*\|)+\s*(?::?-+:?\s*)?\|?$/.test(line.trim());
+            
+            let headerLine = '';
+            let rows = [];
+            
+            if (lines.length >= 2 && isSeparator(lines[1])) {
+                headerLine = lines[0];
+                rows = lines.slice(2);
+            } else {
+                rows = lines;
+            }
+
+            const parseRow = (rowStr, cellTag) => {
+                const parts = rowStr.split('|').map(c => c.trim());
+                if (parts.length > 2 && parts[0] === '' && parts[parts.length - 1] === '') {
+                    parts.shift();
+                    parts.pop();
+                }
+                if (parts.length === 0) return '';
+                return `<tr>${parts.map(c => `<${cellTag}>${c}</${cellTag}>`).join('')}</tr>`;
+            };
+
+            let tableHtml = '<table class="md-table">';
+            if (headerLine) {
+                tableHtml += `<thead>${parseRow(headerLine, 'th')}</thead>`;
+            }
+            if (rows.length > 0) {
+                tableHtml += `<tbody>${rows.map(r => parseRow(r, 'td')).join('')}</tbody>`;
+            }
+            tableHtml += '</table>';
+            return tableHtml;
+        });
+
+        // 10. Bullet lists
+        esc = esc.replace(/((?:^[ \t]*[-\*]\s+.+(?:\r?\n|$))+)/gm, (listMatch) => {
+            const lines = listMatch.trim().split(/\r?\n/);
+            let listHtml = '<ul class="md-list">';
+            let inSublist = false;
+            for (const line of lines) {
+                const isSubItem = /^[ \t]{2,}[-\*]\s+/.test(line);
+                const content = line.replace(/^[ \t]*[-\*]\s+/, '').trim();
+                if (isSubItem) {
+                    if (!inSublist) {
+                        listHtml += '<ul class="md-list md-sublist">';
+                        inSublist = true;
+                    }
+                    listHtml += `<li>${content}</li>`;
+                } else {
+                    if (inSublist) {
+                        listHtml += '</ul>';
+                        inSublist = false;
+                    }
+                    listHtml += `<li>${content}</li>`;
+                }
+            }
+            if (inSublist) listHtml += '</ul>';
+            listHtml += '</ul>';
+            return listHtml;
+        });
+
+        // 11. Restore placeholders
+        esc = esc.replace(/%%THINK_INLCODE(\d+)%%/g, (match, idx) => inlineCodes[Number(idx)] || '');
+        esc = esc.replace(/%%THINK_CBLOCK(\d+)%%/g, (match, idx) => codeBlocks[Number(idx)] || '');
+
+        return esc;
+    }
+
+    /**
      * Formats raw markdown text into safe rendered HTML.
      * @param {string} text Raw markdown text.
      * @param {boolean|null} forceThinkingCollapsed Optional collapse override.
@@ -146,6 +293,7 @@ class MarkdownFormatter {
         let escaped = this.escapeHtml(cleanText);
 
         // Check preferences to render or strip <think>...</think> blocks
+        const thinkingBlocks = [];
         if (isThinkingEnabled) {
             const showThinking = localStorage.getItem('kai.showThinking') !== 'false';
             const keepThinkingExpanded = localStorage.getItem('kai.keepThinkingExpanded') !== 'false';
@@ -161,24 +309,36 @@ class MarkdownFormatter {
             if (showThinking) {
                 // Completed thinking block
                 if (escaped.includes('&lt;/think&gt;')) {
-                    escaped = escaped.replace(/&lt;think&gt;([\s\S]*?)&lt;\/think&gt;(\r?\n)?/g, (match, p1) => {
-                        const cleanedContent = p1.trim().replace(/(\r?\n\s*){3,}/g, '\n');
+                    escaped = escaped.replace(/&lt;think&gt;([\s\S]*?)&lt;\/think&gt;[ \t]*(?:\r?\n)*/g, (match, p1) => {
+                        const cleanedContent = p1.trim()
+                            .replace(/^(\*+|#+)?\s*(thinking\s*process|thinking|thought|denkproces|gedachten)\s*:?\s*(\*+)?(?:\r?\n)*/i, '')
+                            .replace(/(\r?\n\s*){3,}/g, '\n');
+                        const formattedContent = this.formatThinkingMarkdown(cleanedContent);
                         const shouldRespectExistingState = forceThinkingCollapsed !== null && keepThinkingFinishedExpanded;
                         const isCollapsed = shouldRespectExistingState ? forceThinkingCollapsed : !keepThinkingFinishedExpanded;
                         const activeChevron = isCollapsed ? chevronDown : chevronUp;
                         const activeCollapsedClass = isCollapsed ? ' collapsed' : '';
-                        return `<div class="thinking-block"><div class="thinking-header">${thinkingProcessTitle}${activeChevron}</div><div class="thinking-content${activeCollapsedClass}"><em>${cleanedContent}</em></div></div>\n`;
+                        const blockHtml = `<div class="thinking-block${activeCollapsedClass}"><button type="button" class="thinking-header"><span class="thinking-title">${thinkingProcessTitle}</span>${activeChevron}</button><div class="thinking-content">${formattedContent}</div></div>`;
+                        const idx = thinkingBlocks.length;
+                        thinkingBlocks.push(blockHtml);
+                        return `%%THINKBLOCK${idx}%%`;
                     });
                 }
                 // Streaming thinking block
                 if (escaped.includes('&lt;think&gt;')) {
                     escaped = escaped.replace(/&lt;think&gt;([\s\S]*)$/g, (match, p1) => {
-                        const cleanedContent = p1.trim().replace(/(\r?\n\s*){3,}/g, '\n');
+                        const cleanedContent = p1.trim()
+                            .replace(/^(\*+|#+)?\s*(thinking\s*process|thinking|thought|denkproces|gedachten)\s*:?\s*(\*+)?(?:\r?\n)*/i, '')
+                            .replace(/(\r?\n\s*){3,}/g, '\n');
+                        const formattedContent = this.formatThinkingMarkdown(cleanedContent);
                         const shouldRespectExistingState = forceThinkingCollapsed !== null && keepThinkingExpanded;
                         const isCollapsed = shouldRespectExistingState ? forceThinkingCollapsed : !keepThinkingExpanded;
                         const activeChevron = isCollapsed ? chevronDown : chevronUp;
                         const activeCollapsedClass = isCollapsed ? ' collapsed' : '';
-                        return `<div class="thinking-block"><div class="thinking-header"><span class="thinking-spinner"></span>${thinkingTextTitle}${activeChevron}</div><div class="thinking-content${activeCollapsedClass}"><em>${cleanedContent}</em></div></div>\n`;
+                        const blockHtml = `<div class="thinking-block${activeCollapsedClass}"><button type="button" class="thinking-header"><span class="thinking-title"><span class="thinking-spinner"></span>${thinkingTextTitle}</span>${activeChevron}</button><div class="thinking-content">${formattedContent}</div></div>`;
+                        const idx = thinkingBlocks.length;
+                        thinkingBlocks.push(blockHtml);
+                        return `%%THINKBLOCK${idx}%%`;
                     });
                 }
             } else {
@@ -402,10 +562,11 @@ class MarkdownFormatter {
             return listHtml;
         });
 
-        // 11. Restore inline code, code blocks and plan card placeholders in proper order
+        // 11. Restore inline code, code blocks, plan card, and thinking block placeholders in proper order
         escaped = escaped.replace(/%%INLCODE(\d+)%%/g, (match, idx) => inlineCodes[Number(idx)] || '');
         escaped = escaped.replace(/%%CBLOCK(\d+)%%/g, (match, idx) => codeBlocks[Number(idx)] || '');
         escaped = escaped.replace(/%%PLANCARD(\d+)%%/g, (match, idx) => planCards[Number(idx)] || '');
+        escaped = escaped.replace(/%%THINKBLOCK(\d+)%%/g, (match, idx) => thinkingBlocks[Number(idx)] || '');
 
         return escaped;
     }

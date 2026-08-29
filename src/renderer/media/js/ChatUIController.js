@@ -127,20 +127,7 @@ class ChatUIController {
                 // 5. Collapsible thinking block trigger
                 const header = e.target.closest('.thinking-header');
                 if (header) {
-                    const content = header.nextElementSibling;
-                    if (content && content.classList.contains('thinking-content')) {
-                        content.classList.toggle('collapsed');
-                        const chevron = header.querySelector('.thinking-chevron');
-                        if (chevron) {
-                            const isCollapsed = content.classList.contains('collapsed');
-                            chevron.innerHTML = isCollapsed
-                                ? '<polyline points="6 9 12 15 18 9"></polyline>'
-                                : '<polyline points="18 15 12 9 6 15"></polyline>';
-                            if (!isCollapsed) {
-                                content.scrollTop = content.scrollHeight;
-                            }
-                        }
-                    }
+                    ThinkingBlockComponent.toggle(header);
                     return;
                 }
 
@@ -879,7 +866,7 @@ class ChatUIController {
         let forceThinkingCollapsed = null;
         let forcePlanExpanded = null;
         if (this.currentAssistantMsgElement) {
-            const existingThinking = this.currentAssistantMsgElement.querySelector('.thinking-content');
+            const existingThinking = this.currentAssistantMsgElement.querySelector('.thinking-block');
             if (existingThinking) {
                 forceThinkingCollapsed = existingThinking.classList.contains('collapsed');
             }
@@ -889,67 +876,45 @@ class ChatUIController {
             }
         }
 
-        const isStreamingThinking = this.currentAssistantMsgElement &&
-            this.currentAssistantMsgElement.querySelector('.thinking-content em') &&
-            !committedText.includes('</think>');
+        const isThinkingChecked = (this.settingsController && this.settingsController.showThinkingToggle)
+            ? this.settingsController.showThinkingToggle.checked
+            : (localStorage.getItem('kai.showThinking') !== 'false');
+        const formatted = this.formatter.formatMarkdown(committedText, forceThinkingCollapsed, isThinkingChecked, forcePlanExpanded);
 
-        if (isStreamingThinking) {
-            const thinkStartTag = '<think>';
-            const thinkStartIndex = committedText.indexOf(thinkStartTag);
-            if (thinkStartIndex !== -1) {
-                const rawThinkingText = committedText.substring(thinkStartIndex + thinkStartTag.length);
-                const escapedThinkingText = this.formatter.escapeHtml(rawThinkingText).trim().replace(/(\r?\n\s*){3,}/g, '\n');
-                const emEl = this.currentAssistantMsgElement.querySelector('.thinking-content em');
-                if (emEl) {
-                    emEl.innerHTML = escapedThinkingText;
+        if (formatted.trim()) {
+            if (!this.currentAssistantMsgElement || (this.chatContainer && !this.chatContainer.contains(this.currentAssistantMsgElement))) {
+                this.removeActivityStatus();
+                this.currentAssistantMsgElement = document.createElement('div');
+                this.currentAssistantMsgElement.className = 'message assistant-message';
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                this.currentAssistantMsgElement.appendChild(contentDiv);
+                if (this.chatContainer) {
+                    this.chatContainer.appendChild(this.currentAssistantMsgElement);
                 }
+            }
+            this.currentAssistantMsgElement.dataset.rawContent = committedText;
+            const contentEl = this.currentAssistantMsgElement.querySelector('.message-content');
+            const animatedHtml = this.applyStreamingWordFade(formatted);
+            const tmpl = document.createElement('template');
+            tmpl.innerHTML = animatedHtml;
+            this.morphDOM(contentEl, tmpl.content);
 
-                const thinkingContentEl = this.currentAssistantMsgElement.querySelector('.thinking-content');
-                if (thinkingContentEl && !thinkingContentEl.classList.contains('collapsed')) {
+            // Ensure action bar is removed while actively streaming
+            const existingActions = this.currentAssistantMsgElement.querySelector('.message-actions');
+            if (existingActions) {
+                existingActions.remove();
+            }
+
+            const thinkingBlockEl = this.currentAssistantMsgElement.querySelector('.thinking-block');
+            const thinkingContentEl = this.currentAssistantMsgElement.querySelector('.thinking-content');
+            if (thinkingBlockEl && thinkingContentEl && !committedText.includes('</think>')) {
+                if (!thinkingBlockEl.classList.contains('collapsed')) {
                     thinkingContentEl.scrollTop = thinkingContentEl.scrollHeight;
                 }
-                this.scrollToBottom();
             }
-        } else {
-            const isThinkingChecked = (this.settingsController && this.settingsController.showThinkingToggle)
-                ? this.settingsController.showThinkingToggle.checked
-                : (localStorage.getItem('kai.showThinking') !== 'false');
-            const formatted = this.formatter.formatMarkdown(committedText, forceThinkingCollapsed, isThinkingChecked, forcePlanExpanded);
 
-            if (formatted.trim()) {
-                if (!this.currentAssistantMsgElement || (this.chatContainer && !this.chatContainer.contains(this.currentAssistantMsgElement))) {
-                    this.removeActivityStatus();
-                    this.currentAssistantMsgElement = document.createElement('div');
-                    this.currentAssistantMsgElement.className = 'message assistant-message';
-                    const contentDiv = document.createElement('div');
-                    contentDiv.className = 'message-content';
-                    this.currentAssistantMsgElement.appendChild(contentDiv);
-                    if (this.chatContainer) {
-                        this.chatContainer.appendChild(this.currentAssistantMsgElement);
-                    }
-                }
-                this.currentAssistantMsgElement.dataset.rawContent = committedText;
-                const contentEl = this.currentAssistantMsgElement.querySelector('.message-content');
-                const animatedHtml = this.applyStreamingWordFade(formatted);
-                const tmpl = document.createElement('template');
-                tmpl.innerHTML = animatedHtml;
-                this.morphDOM(contentEl, tmpl.content);
-
-                // Ensure action bar is removed while actively streaming
-                const existingActions = this.currentAssistantMsgElement.querySelector('.message-actions');
-                if (existingActions) {
-                    existingActions.remove();
-                }
-
-                const thinkingContentEl = this.currentAssistantMsgElement.querySelector('.thinking-content');
-                if (thinkingContentEl && !committedText.includes('</think>')) {
-                    if (!thinkingContentEl.classList.contains('collapsed')) {
-                        thinkingContentEl.scrollTop = thinkingContentEl.scrollHeight;
-                    }
-                }
-
-                this.scrollToBottom();
-            }
+            this.scrollToBottom();
         }
     }
 
