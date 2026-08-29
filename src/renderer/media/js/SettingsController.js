@@ -202,17 +202,17 @@ class SettingsController {
             });
         }
 
-        // 5b. Stream Lookahead Delay Custom Select Dropdown (None, 100ms, 300ms, 500ms, 750ms, 1s)
+        // 5b. Stream Lookahead Delay Custom Select Dropdown (None, 200ms, 400ms, 750ms, 1000ms, 1500ms)
         const streamDelayContainer = document.getElementById('stream-settle-delay-select-container');
         if (streamDelayContainer && typeof CustomSelectComponent !== 'undefined') {
             const storedDelay = localStorage.getItem('kai.streamSettleDelay') || '0';
             const delayOptions = [
                 { value: '0', label: 'None' },
-                { value: '100', label: '100ms' },
-                { value: '300', label: '300ms' },
-                { value: '500', label: '500ms' },
+                { value: '200', label: '200ms' },
+                { value: '400', label: '400ms' },
                 { value: '750', label: '750ms' },
-                { value: '1000', label: '1s' }
+                { value: '1000', label: '1000ms' },
+                { value: '1500', label: '1500ms' }
             ];
             this.streamDelayComponent = new CustomSelectComponent({
                 container: streamDelayContainer,

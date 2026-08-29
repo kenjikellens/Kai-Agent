@@ -213,7 +213,7 @@ When implementing or modifying completions across providers, dynamically apply t
 - **OOCSS & Single Enclosed Container**:
   - The reasoning thinking block strictly utilizes the unified `.thinking-block` container architecture modeled on `.settings-category`.
   - In collapsed state (`.thinking-block.collapsed`), the component presents as a compact pill-shaped trigger (`background: transparent; max-width: fit-content; border: 0;`).
-  - In expanded state (`.thinking-block:not(.collapsed)`), the component forms a single continuous enclosed card container (`border: 1px solid var(--app-border-strong); border-radius: var(--app-radius-md); background: transparent; max-width: min(85%, 680px);`) wrapping both `.thinking-header` and `.thinking-content` with zero detached borders.
+  - In expanded state (`.thinking-block:not(.collapsed)`), `.thinking-content` spans the full chat width (`width: 100%; max-width: 100%;`) with a bottom border (`border: 0; border-bottom: 1px solid var(--app-border-strong); border-radius: 0; background: transparent;`) and symmetric padding.
   - Collapsed state is managed on the parent `.thinking-block` element via `ThinkingBlockComponent.toggle(header)`.
 
 

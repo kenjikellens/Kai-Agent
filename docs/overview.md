@@ -91,9 +91,11 @@ graph TD
    - The markdown italic parser strictly enforces CommonMark non-whitespace delimiter rules (`/(?:^|[\s\(\[\{])\*(?!\s)([^\*\r\n]+?)(?<!\s)\*(?=[\s\)\.\,\!\?\]\}]|$)/g`), preventing list bullet markers (`*   ...`) from ever triggering italic blocks.
    - Accurately parses top-level and indented nested sub-bullets (`    *`, `  -`) into hierarchical `<ul class="md-list">` and `<ul class="md-list md-sublist">` trees.
 
+
+
 7. **Streaming Lookahead Delay Buffer & Syntax Settle Engine**:
    - `StreamBufferPipeline` queues incoming tokens in a timestamped FIFO buffer with a user-customizable lookahead delay (`--stream-settle-delay`).
-   - Enforces a minimum base delay of 150ms with selectable increments (`None` -> 150ms, `100ms` -> 250ms default, `300ms` -> 450ms, `500ms` -> 650ms, `750ms` -> 900ms, `1s` -> 1150ms), allowing markdown markers to settle before DOM formatting.
+   - Enforces a base delay with selectable user increments (`None`, `200ms`, `400ms`, `750ms`, `1000ms`, `1500ms`), allowing markdown markers to settle before DOM formatting.
    - Drains and commits all remaining tokens immediately on stream completion or tool start with zero latency.
    - Double-clicking any user chat bubble activates the inline prompt editor (`openInlineEditor`) to re-edit and resubmit prompts.
 
@@ -107,10 +109,6 @@ graph TD
    - Live stream diffing updates smoothly via `morphDOM`, scrolling active thinking containers into view while preserving user collapse states and respecting the streaming delay pipeline.
 
 10. **Unified Thinking Accordion Container Architecture**:
-    - The thinking reasoning block is unified into a single `.thinking-block` accordion component modeled on `.settings-category`.
-    - When collapsed, it renders as a compact pill trigger (`background: transparent; max-width: fit-content; border: 0;`). When expanded, it forms a continuous bordered card container (`border: 1px solid var(--app-border-strong); border-radius: var(--app-radius-md); background: transparent; max-width: min(85%, 680px);`) housing both the `.thinking-header` trigger and the `.thinking-content` markdown body with zero detached borders.
-    - `ThinkingBlockComponent.toggle(header)` encapsulates collapsed state toggling and chevron rotation on the parent container.
-
-
-
-
+     - The thinking reasoning block is unified into a single `.thinking-block` accordion component modeled on `.settings-category`.
+     - When collapsed, it renders as a compact pill trigger (`background: transparent; max-width: fit-content; border: 0;`). When expanded, `.thinking-content` spans the full chat width (`width: 100%; max-width: 100%;`) with a bottom border (`border: 0; border-bottom: 1px solid var(--app-border-strong); border-radius: 0; background: transparent;`) and symmetric padding.
+     - `ThinkingBlockComponent.toggle(header)` encapsulates collapsed state toggling and chevron rotation on the parent container.
