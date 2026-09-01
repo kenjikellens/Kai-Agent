@@ -86,7 +86,7 @@ body.kai-light-theme,
   --main-surface-input: #ffffff;
   --main-border-subtle: transparent;
 
-  --app-bg: var(--vscode-sideBar-background, #f8f9fa);
+  --app-bg: var(--vscode-sideBar-background, #f3f4f6);
   --app-fg: var(--vscode-editor-foreground, var(--vscode-foreground, #0f172a));
   --app-muted: var(--vscode-descriptionForeground, #334155);
   --app-border: transparent;
@@ -1721,15 +1721,15 @@ button:disabled {
   margin: 0 auto;
   padding: 12px 16px;
   background: var(--app-input-bg);
-  border: 1px solid var(--app-border-strong);
+  border: 1px solid var(--app-input-border);
   border-radius: 18px;
-  box-shadow: none;
-  transition: border-color 0.15s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .input-card:focus-within {
   border-color: var(--app-focus);
-  box-shadow: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--app-focus);
 }
 
 /* Container bar rendering attached file preview badges above input */
