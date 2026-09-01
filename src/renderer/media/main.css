@@ -92,11 +92,11 @@ body.kai-light-theme,
   --app-border: transparent;
   --app-border-strong: transparent;
   --app-border-subtle: transparent;
-  --app-surface: rgba(0, 0, 0, 0.02);
-  --app-surface-strong: rgba(0, 0, 0, 0.04);
-  --app-surface-hover: rgba(0, 0, 0, 0.06);
-  --app-surface-active: rgba(0, 0, 0, 0.08);
-  --app-btn-inset: none;
+  --app-surface: rgba(0, 0, 0, 0.04);
+  --app-surface-strong: rgba(0, 0, 0, 0.08);
+  --app-surface-hover: rgba(0, 0, 0, 0.14);
+  --app-surface-active: rgba(0, 0, 0, 0.20);
+  --app-btn-inset: 0 0 0 1.5px var(--app-surface-hover);
   --app-input-bg: var(--vscode-input-background, #ffffff);
   --app-input-border: var(--vscode-input-border, rgba(0, 0, 0, 0.12));
   --app-card-bg: rgba(0, 0, 0, 0.02);
@@ -266,6 +266,7 @@ body {
 }
 
 /* Sidebar Toggle Icon Button (at the very top) */
+/* Sidebar Toggle Icon Button (at the very top) */
 .sidebar-icon-btn {
   display: inline-flex;
   align-items: center;
@@ -274,7 +275,7 @@ body {
   height: 36px;
   border-radius: var(--app-radius-md);
   background: transparent;
-  color: var(--app-muted);
+  color: var(--app-fg);
   cursor: pointer;
   flex-shrink: 0;
   border: 0 !important;
@@ -303,7 +304,7 @@ body {
   background: var(--app-surface-strong);
   border: 0 !important;
   outline: none;
-  color: var(--app-muted);
+  color: var(--app-fg);
   font-size: 0.86rem;
   font-weight: 500;
   cursor: pointer;
@@ -647,6 +648,7 @@ body {
   z-index: 5;
 }
 
+/* Top workspace path selector button */
 .top-workspace-bar {
   display: inline-flex;
   align-items: center;
@@ -657,7 +659,7 @@ body {
   border: 0 !important;
   outline: none;
   border-radius: 999px;
-  color: var(--app-muted);
+  color: var(--app-fg);
   font-family: var(--app-mono, monospace);
   font-size: 0.78rem;
   font-weight: 500;
@@ -675,11 +677,11 @@ body {
 
 .top-workspace-icon {
   flex-shrink: 0;
-  color: var(--app-muted, #71717a);
+  color: var(--app-fg);
 }
 
 .top-workspace-bar:hover .top-workspace-icon {
-  color: var(--app-fg, #f4f4f5);
+  color: var(--app-fg);
 }
 
 /* Left-fade text container so the rightmost folder name is always crystal clear */
@@ -864,11 +866,12 @@ button:disabled {
   background: var(--app-accent-hover);
 }
 
+/* Secondary utility button */
 .btn--secondary {
   padding: 5px 10px;
   border-radius: var(--app-radius-sm);
   background: var(--app-surface-strong);
-  color: var(--app-muted);
+  color: var(--app-fg);
   font-size: 0.75rem;
 }
 
@@ -1946,7 +1949,7 @@ button:disabled {
   cursor: pointer;
   box-sizing: border-box;
   flex-shrink: 0;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .toolbar-mode-btn:hover {
@@ -2010,11 +2013,11 @@ button:disabled {
   outline: none;
   border-radius: 999px;
   background: var(--app-surface-strong);
-  color: var(--app-muted);
+  color: var(--app-fg);
   cursor: pointer;
   box-sizing: border-box;
   flex-shrink: 0;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .toolbar-icon-btn svg {
@@ -2261,12 +2264,12 @@ button:disabled {
   outline: none;
   border-radius: 999px;
   background: var(--app-surface-strong);
-  color: var(--app-muted);
+  color: var(--app-fg);
   font-size: 0.86rem;
   text-align: left;
   cursor: pointer;
   user-select: none;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .dropdown-trigger:hover,
@@ -2338,9 +2341,10 @@ button:disabled {
   }
 }
 
+/* Rotating chevron icon for model dropdown & thinking trigger */
 .dropdown-trigger-chevron,
 .thinking-chevron {
-  color: var(--app-muted);
+  color: var(--app-fg);
   flex-shrink: 0;
 }
 
@@ -3831,7 +3835,7 @@ button:disabled {
   padding: 0 12px;
   background: var(--app-surface-strong, #2a2a2e);
   color: var(--app-fg);
-  border: 1px solid var(--app-border-strong, rgba(255, 255, 255, 0.1));
+  border: 0 !important;
   border-radius: var(--app-radius-md, 6px);
   box-shadow: none;
   font-family: var(--app-font);
@@ -3840,7 +3844,7 @@ button:disabled {
   cursor: pointer !important;
   user-select: none;
   outline: none;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .custom-select-trigger * {
@@ -3867,7 +3871,7 @@ button:disabled {
 
 /* Chevron icon indicator inside custom select trigger button */
 .custom-select-chevron {
-  color: var(--app-muted);
+  color: var(--app-fg);
   flex-shrink: 0;
   margin-left: 6px;
   cursor: pointer !important;
