@@ -34,7 +34,7 @@ class SettingsController {
     }
 
     /**
-     * Initializes setting toggles and custom selects from localStorage.
+     * Initializes setting controls and dropdowns from localStorage, applying user preferences to the UI state and configuration.
      */
     initSettings() {
         const i18n = window.KAI_I18N || {};
@@ -182,13 +182,13 @@ class SettingsController {
         if (uiScaleContainer && typeof CustomSelectComponent !== 'undefined') {
             const storedScale = localStorage.getItem('kai.uiScale') || '1.0';
             const scaleOptions = [
-                { value: '0.8', label: '80% (Compact)' },
+                { value: '0.8', label: '80%' },
                 { value: '0.9', label: '90%' },
-                { value: '1.0', label: '100% (Default)' },
+                { value: '1.0', label: '100%' },
                 { value: '1.1', label: '110%' },
-                { value: '1.2', label: '120% (Comfortable)' },
-                { value: '1.3', label: '130% (Large)' },
-                { value: '1.4', label: '140% (Extra Large)' }
+                { value: '1.2', label: '120%' },
+                { value: '1.3', label: '130%' },
+                { value: '1.4', label: '140%' }
             ];
             this.uiScaleComponent = new CustomSelectComponent({
                 container: uiScaleContainer,
@@ -197,7 +197,8 @@ class SettingsController {
                 value: storedScale,
                 onChange: (selectedScale) => {
                     localStorage.setItem('kai.uiScale', selectedScale);
-                    document.documentElement.style.zoom = selectedScale;
+                    document.documentElement.style.removeProperty('zoom');
+                    document.documentElement.style.setProperty('--app-ui-scale', selectedScale);
                 }
             });
         }

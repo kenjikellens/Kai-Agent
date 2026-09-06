@@ -279,7 +279,8 @@
         // Apply saved UI Scale and tokens immediately on load
         try {
             const savedScale = localStorage.getItem('kai.uiScale') || '1.0';
-            document.documentElement.style.zoom = savedScale;
+            document.documentElement.style.removeProperty('zoom');
+            document.documentElement.style.setProperty('--app-ui-scale', savedScale);
             const savedThinkingHeight = localStorage.getItem('kai.thinkingMaxHeight') || '150px';
             document.documentElement.style.setProperty('--app-thinking-max-height', savedThinkingHeight);
             const savedExtraDelay = parseInt(localStorage.getItem('kai.streamSettleDelay') || '0', 10);
