@@ -119,6 +119,20 @@ class AppState {
     }
 
     /**
+     * Clones data deeply and safely using native structuredClone with JSON fallback.
+     * @param {*} data Data structure to clone.
+     * @returns {*} Deep clone.
+     */
+    static deepClone(data) {
+        if (typeof structuredClone === 'function') {
+            try {
+                return structuredClone(data);
+            } catch (_) {}
+        }
+        return JSON.parse(JSON.stringify(data));
+    }
+
+    /**
      * Loads session state from a saved chat object.
      * @param {object} chat Saved chat object.
      */
@@ -126,8 +140,8 @@ class AppState {
         if (!chat) return;
         this.currentChatId = chat.id;
         this.currentChatTitle = chat.title || '';
-        this.messages = Array.isArray(chat.messages) ? JSON.parse(JSON.stringify(chat.messages)) : [];
-        this.uiEvents = Array.isArray(chat.uiEvents) ? JSON.parse(JSON.stringify(chat.uiEvents)) : [];
+        this.messages = Array.isArray(chat.messages) ? AppState.deepClone(chat.messages) : [];
+        this.uiEvents = Array.isArray(chat.uiEvents) ? AppState.deepClone(chat.uiEvents) : [];
         if (chat.model) {
             this.selectedModelValue = chat.model;
         }
@@ -172,8 +186,8 @@ class AppState {
         return {
             id: this.currentChatId,
             title: this.currentChatTitle || this.getChatTitle(),
-            messages: JSON.parse(JSON.stringify(this.messages || [])),
-            uiEvents: JSON.parse(JSON.stringify(this.uiEvents || [])),
+            messages: AppState.deepClone(this.messages || []),
+            uiEvents: AppState.deepClone(this.uiEvents || []),
             model: this.selectedModelValue,
             mode: this.activeMode,
             workspacePath: this.workspacePath,

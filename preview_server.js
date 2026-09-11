@@ -78,9 +78,6 @@ function parseBody(req) {
 }
 
 const server = http.createServer(async (req, res) => {
-    // Dynamically load fresh compiled modules on every request (supports instant Ctrl+F5 hot reload)
-    const { getRegisteredTools, TurnSnapshotManager, LMStudioClient, LMStudioManifestParser } = loadFreshDistModules();
-
     // Enable CORS preflight
     if (req.method === 'OPTIONS') {
         res.writeHead(204, {
@@ -93,7 +90,12 @@ const server = http.createServer(async (req, res) => {
     }
 
     const parsedUrl = url.parse(req.url, true);
-    const pathname = parsedUrl.pathname;
+    const pathname = parsedUrl.pathname || '';
+
+    // Dynamically load fresh compiled modules strictly for API requests (supports instant hot reload without overhead for static assets)
+    const { getRegisteredTools, TurnSnapshotManager, LMStudioClient, LMStudioManifestParser } = pathname.startsWith('/api/')
+        ? loadFreshDistModules()
+        : {};
 
     // 1. API: Capabilities
     if (pathname === '/api/capabilities' && req.method === 'GET') {

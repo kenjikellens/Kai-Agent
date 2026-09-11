@@ -19,6 +19,8 @@ class HistoryManager {
         this.historyList = document.getElementById('history-list');
         this.cachedChats = [];
 
+        this.isWaitingForResponse = false;
+
         // Instant render from localStorage cache on boot if available
         try {
             const localSaved = JSON.parse(localStorage.getItem('kai.savedChatsSummary') || '[]');
@@ -31,8 +33,61 @@ class HistoryManager {
             }
         } catch (e) {}
 
+        this._initDelegatedEvents();
+
         // Request initial history load on startup
         this.ipcBridge.loadChatHistory();
+    }
+
+    /**
+     * Initializes centralized event delegation on the history list container.
+     */
+    _initDelegatedEvents() {
+        if (!this.historyList) return;
+        this.historyList.addEventListener('click', (e) => {
+            const deleteBtn = e.target.closest('.history-item-delete-btn');
+            if (deleteBtn) {
+                e.stopPropagation();
+                const item = deleteBtn.closest('.history-item');
+                if (!item) return;
+                const chatIdToDelete = item.dataset.chatId;
+                if (!chatIdToDelete) return;
+
+                const wasActive = (this.activeChatId === chatIdToDelete);
+                try {
+                    let localSaved = JSON.parse(localStorage.getItem('kai.savedChatsSummary') || '[]');
+                    localSaved = localSaved.filter(c => c.id !== chatIdToDelete);
+                    localStorage.setItem('kai.savedChatsSummary', JSON.stringify(localSaved));
+                    this.renderHistoryList(localSaved.map(c => ({
+                        id: c.id,
+                        title: c.title || 'New Chat',
+                        timestamp: c.timestamp || Date.now()
+                    })));
+                } catch (err) {}
+
+                this.ipcBridge.deleteChat(chatIdToDelete);
+
+                if (wasActive && typeof this.onDeleteActiveChat === 'function') {
+                    this.onDeleteActiveChat(chatIdToDelete);
+                }
+                return;
+            }
+
+            const item = e.target.closest('.history-item');
+            if (item) {
+                const chatId = item.dataset.chatId;
+                if (!chatId) return;
+                if (this.isWaitingForResponse) {
+                    this.ipcBridge.abort();
+                }
+                this.setActiveChatId(chatId);
+                if (typeof this.onSelectChat === 'function') {
+                    this.onSelectChat(chatId);
+                } else {
+                    this.ipcBridge.loadChat(chatId);
+                }
+            }
+        });
     }
 
     /**
@@ -129,44 +184,6 @@ class HistoryManager {
         deleteBtn.title = 'Delete Chat';
         deleteBtn.innerHTML = window.KAI_SVGS['delete_item'] || `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
         
-        deleteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const chatIdToDelete = chat.id;
-            const wasActive = (this.activeChatId === chatIdToDelete);
-
-            try {
-                let localSaved = JSON.parse(localStorage.getItem('kai.savedChatsSummary') || '[]');
-                localSaved = localSaved.filter(c => c.id !== chatIdToDelete);
-                localStorage.setItem('kai.savedChatsSummary', JSON.stringify(localSaved));
-                this.renderHistoryList(localSaved.map(c => ({
-                    id: c.id,
-                    title: c.title || 'New Chat',
-                    timestamp: c.timestamp || Date.now()
-                })));
-            } catch (err) {}
-
-            this.ipcBridge.deleteChat(chatIdToDelete);
-
-            if (wasActive && typeof this.onDeleteActiveChat === 'function') {
-                this.onDeleteActiveChat(chatIdToDelete);
-            }
-        });
-        
-        item.addEventListener('click', (e) => {
-            if (e.target && e.target.closest && e.target.closest('.history-item-delete-btn')) {
-                return;
-            }
-            if (typeof isWaitingForResponse !== 'undefined' && isWaitingForResponse) {
-                this.ipcBridge.abort();
-            }
-            this.setActiveChatId(chat.id);
-            if (typeof this.onSelectChat === 'function') {
-                this.onSelectChat(chat.id);
-            } else {
-                this.ipcBridge.loadChat(chat.id);
-            }
-        });
-        
         item.appendChild(content);
         item.appendChild(deleteBtn);
         return item;
@@ -179,6 +196,9 @@ class HistoryManager {
      */
     renderHistoryList(chats, isWaitingForResponse) {
         this.cachedChats = chats || [];
+        if (typeof isWaitingForResponse !== 'undefined') {
+            this.isWaitingForResponse = !!isWaitingForResponse;
+        }
         if (!this.historyList) return;
 
         if (!chats || chats.length === 0) {
