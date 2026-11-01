@@ -106,7 +106,12 @@ class BrowserPreviewEngine {
         }
     }
 
-    /** Verifies provider connections and model manifests. */
+    /**
+     * Verifies provider connections, discovers local and cloud models, and loads LM Studio capabilities.
+     * Mutates application connection state and broadcasts connectionStatus event to UI subscribers.
+     * @param {object} message Incoming check connection message payload.
+     * @param {Function} emit Event emission callback.
+     */
     async handleCheckConnection(message, emit) {
         let connected = false;
         let lmStudioModels = [];
@@ -140,6 +145,23 @@ class BrowserPreviewEngine {
                     }
                 }
             } catch (e) {}
+        }
+
+        let lmStudioCapabilities = {};
+        try {
+            const capRes = await fetch('/api/capabilities');
+            if (capRes.ok) {
+                lmStudioCapabilities = await capRes.json();
+            }
+        } catch (e) {
+            lmStudioCapabilities = {};
+        }
+
+        if (lmStudioCapabilities && typeof lmStudioCapabilities === 'object' && Object.keys(lmStudioCapabilities).length > 0) {
+            window.KAI_LMSTUDIO_CAPABILITIES = lmStudioCapabilities;
+            if (typeof ThinkingStateFormatter !== 'undefined' && typeof ThinkingStateFormatter.setLMStudioCapabilities === 'function') {
+                ThinkingStateFormatter.setLMStudioCapabilities(lmStudioCapabilities);
+            }
         }
 
         const geminiKey = localStorage.getItem('kai.geminiApiKey') || '';
@@ -189,7 +211,7 @@ class BrowserPreviewEngine {
             apiKey: geminiKey,
             lmStudioCacheDir: localStorage.getItem('kai.lmStudioCacheDir') || '',
             lmStudioCacheStatus: { valid: true, message: 'Detected' },
-            lmStudioCapabilities: {},
+            lmStudioCapabilities,
             workspacePath: activeWorkspace,
             translations,
             language: activeLang

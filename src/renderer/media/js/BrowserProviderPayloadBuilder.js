@@ -4,7 +4,8 @@
  */
 class BrowserProviderPayloadBuilder {
     /**
-     * Builds request parameters for a specific provider turn.
+     * Builds request parameters, dynamic Jinja chat_template_kwargs, and payload for a specific provider turn.
+     * Mutates and returns endpoint URL, auth headers, and formatted JSON payload.
      * @param {object} params Configuration parameters.
      * @returns {{ targetUrl: string, fetchHeaders: object, payload: object, isGemini: boolean, isCloudProvider: boolean }}
      */
@@ -148,7 +149,35 @@ class BrowserProviderPayloadBuilder {
                 payload.chat_template_kwargs.reasoning_effort = effortVal;
             }
 
-            const caps = (window.KAI_LMSTUDIO_CAPABILITIES && window.KAI_LMSTUDIO_CAPABILITIES[cleanModel]) || null;
+            const capsMap = window.KAI_LMSTUDIO_CAPABILITIES || 
+                (typeof ThinkingStateFormatter !== 'undefined' ? ThinkingStateFormatter.lmStudioCapabilities : null) || {};
+            const cleanModelLower = cleanModel.toLowerCase();
+            const strippedSlash = cleanModel.includes('/') ? cleanModel.split('/').pop() : '';
+            const strippedAt = cleanModel.includes('@') ? cleanModel.split('@')[0] : '';
+            const strippedGguf = cleanModel.replace(/\.gguf$/i, '');
+            const bareBase = (strippedSlash || cleanModel).split('@')[0].replace(/\.gguf$/i, '');
+
+            const candidateKeys = [
+                cleanModel,
+                cleanModelLower,
+                strippedSlash,
+                strippedSlash ? strippedSlash.toLowerCase() : '',
+                strippedAt,
+                strippedAt ? strippedAt.toLowerCase() : '',
+                strippedGguf,
+                strippedGguf ? strippedGguf.toLowerCase() : '',
+                bareBase,
+                bareBase ? bareBase.toLowerCase() : ''
+            ].filter(Boolean);
+
+            let caps = null;
+            for (const key of candidateKeys) {
+                if (capsMap[key]) {
+                    caps = capsMap[key];
+                    break;
+                }
+            }
+
             if (caps && Array.isArray(caps.fields)) {
                 for (const field of caps.fields) {
                     if (field.type === 'boolean') {

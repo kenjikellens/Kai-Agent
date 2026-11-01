@@ -1,6 +1,8 @@
 node_modules/
 dist/
 build/
+release/
+release_temp/
 .env
 .env.local
 *.log

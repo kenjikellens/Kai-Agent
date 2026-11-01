@@ -35,9 +35,14 @@
     "appId": "com.kaiagent.app",
     "productName": "KAI Agent",
     "icon": "src/renderer/media/svg/kai_icon.ico",
+    "compression": "maximum",
     "win": {
       "target": "nsis",
       "icon": "src/renderer/media/svg/kai_icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false
     },
     "directories": {
       "output": "release"
@@ -45,7 +50,8 @@
     "files": [
       "dist/**/*",
       "src/renderer/**/*",
-      "prompts/**/*"
+      "prompts/**/*",
+      "!**/node_modules/mermaid/dist/*.map"
     ]
   }
 }
