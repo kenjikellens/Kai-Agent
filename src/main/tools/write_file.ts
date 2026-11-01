@@ -1,5 +1,4 @@
 import * as fs from 'fs';
-import * as path from 'path';
 import { Tool, ToolContext, FunctionDeclaration, resolveSafePath } from './Tool';
 import { FileToolUtils } from './FileToolUtils';
 import { TurnSnapshotManager } from '../services/TurnSnapshotManager';

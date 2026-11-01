@@ -71,7 +71,7 @@ export class UtilityToolsTool extends Tool {
      * @param context Execution context.
      * @returns Result string of the operation.
      */
-    public async execute(args: any, context?: ToolContext): Promise<string> {
+    public async execute(args: any, _context?: ToolContext): Promise<string> {
         const action = args.action;
 
         switch (action) {

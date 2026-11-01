@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import { Tool, ToolContext, FunctionDeclaration } from './Tool';
 
 /**
- * Tool for retrieving diagnostics in standalone mode.
+ * Tool for retrieving diagnostics, compiler errors, and linter warnings across the workspace.
  */
 export class GetDiagnosticsTool extends Tool {
     public readonly name = 'get_diagnostics';
@@ -29,9 +29,19 @@ export class GetDiagnosticsTool extends Tool {
     }
 
     /**
-     * Executes diagnostics check for workspace or specific file.
+     * Executes diagnostics retrieval via host services or standalone fallback.
+     * @param args Optional path filter.
+     * @param context Active tool execution context.
+     * @returns Formatted diagnostics summary.
      */
     public async execute(args: { path?: string }, context: ToolContext): Promise<string> {
+        if (context.hostServices) {
+            const targetPath = args.path
+                ? (path.isAbsolute(args.path) ? args.path : path.join(context.workspacePath, args.path))
+                : undefined;
+            return await context.hostServices.getDiagnostics(targetPath);
+        }
+
         if (args.path) {
             const targetPath = path.isAbsolute(args.path) ? args.path : path.join(context.workspacePath, args.path);
             if (!fs.existsSync(targetPath)) {
@@ -39,14 +49,14 @@ export class GetDiagnosticsTool extends Tool {
             }
             if (args.path.endsWith('.json')) {
                 try {
-                    JSON.parse(fs.readFileSync(targetPath, 'utf8'));
-                    return `File ${args.path} is valid JSON with 0 errors.`;
+                    const content = fs.readFileSync(targetPath, 'utf8');
+                    JSON.parse(content);
+                    return 'No syntax errors detected.';
                 } catch (e: any) {
-                    return `[ERROR] ${args.path}: JSON parse error: ${e.message}`;
+                    return `[ERROR] ${args.path}: Invalid JSON syntax - ${e.message}`;
                 }
             }
-            return `File ${args.path} exists and is readable (0 syntax errors detected).`;
         }
-        return 'Workspace diagnostics check: 0 fatal syntax errors detected in workspace.';
+        return 'No diagnostics found in workspace.';
     }
 }

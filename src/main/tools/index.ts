@@ -33,11 +33,11 @@ export * from './utility_tools';
 
 /**
  * Returns an array of available tools filtered by active mode and workspace context.
- * @param mode The active mode ('chat' | 'agent' | 'planning').
+ * @param mode The active mode ('chat' | 'agent' | 'planning' | 'ask').
  * @param hasWorkspace Whether a workspace directory is currently selected.
  * @returns Array of Tool instances.
  */
-export function getRegisteredTools(mode: 'chat' | 'agent' | 'planning' = 'agent', hasWorkspace: boolean = true): Tool[] {
+export function getRegisteredTools(mode: 'chat' | 'agent' | 'planning' | 'ask' | string = 'agent', hasWorkspace: boolean = true): Tool[] {
     const utilityTool = new UtilityToolsTool();
     const fetchUrlTool = new FetchUrlTool();
     const webSearchTool = new WebSearchTool();
@@ -51,8 +51,8 @@ export function getRegisteredTools(mode: 'chat' | 'agent' | 'planning' = 'agent'
         ];
     }
 
-    // 2. Chat Mode WITH Workspace: read-only workspace inspection + utilities + web
-    if (mode === 'chat' && hasWorkspace) {
+    // 2. Chat or Ask Mode WITH Workspace: read-only workspace inspection + utilities + web
+    if ((mode === 'chat' || mode === 'ask') && hasWorkspace) {
         return [
             new ReadFileTool(),
             new ListDirTool(),

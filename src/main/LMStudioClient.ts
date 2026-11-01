@@ -1,5 +1,5 @@
 import * as http from 'http';
-import { ConfigManager } from './ConfigManager';
+import { IHostServices } from './core/IHostServices';
 import { HttpClient } from './HttpClient';
 import { ILLMProvider } from './providers/ILLMProvider';
 import { GeminiClient } from './providers/GeminiClient';
@@ -12,12 +12,14 @@ export { FreeProvider, FREE_PROVIDERS };
 
 /**
  * LMStudioClient handles communication with the locally running LM Studio HTTP API server.
+ * Uses IHostServices for configuration retrieval, ensuring platform neutrality across VS Code and Standalone Desktop.
  */
 export class LMStudioClient implements ILLMProvider {
     /** Local models retain the existing text-based tool-call protocol. */
     public supportsNativeFunctionCalling(): boolean {
         return false;
     }
+    private hostServices?: IHostServices;
     private serverUrl: string;
     private apiKey: string;
     private geminiClient: GeminiClient;
@@ -27,11 +29,14 @@ export class LMStudioClient implements ILLMProvider {
      * Initializes a new instance of LMStudioClient.
      * @param serverUrl Base API URL of LM Studio.
      * @param apiKey Optional API key.
+     * @param hostServices Optional host services adapter for settings retrieval.
      */
-    constructor(serverUrl?: string, apiKey?: string) {
-        const config = ConfigManager.getInstance().getConfig();
-        this.serverUrl = serverUrl || config.serverUrl || 'http://localhost:1234/v1';
-        this.apiKey = apiKey || config.apiKey || process.env.GEMINI_API_KEY || '';
+    constructor(serverUrl?: string, apiKey?: string, hostServices?: IHostServices) {
+        this.hostServices = hostServices;
+        const configuredUrl = this.hostServices?.getConfiguration<string>('kai', 'serverUrl');
+        const configuredKey = this.hostServices?.getConfiguration<string>('kai', 'apiKey');
+        this.serverUrl = serverUrl || configuredUrl || 'http://localhost:1234/v1';
+        this.apiKey = apiKey || configuredKey || process.env.GEMINI_API_KEY || '';
         this.geminiClient = new GeminiClient(this.apiKey);
         this.freeProviderClient = new FreeProviderClient();
         this._lastTokensPerSecond = null;
@@ -107,7 +112,14 @@ export class LMStudioClient implements ILLMProvider {
             `http://${hostname}:${port}${pathPrefix}/models`,
             `http://${hostname === 'localhost' ? '127.0.0.1' : 'localhost'}:${port}${pathPrefix}/models`,
             `http://${hostname}:${port}/v1/models`,
-            `http://${hostname}:${port}/models`
+            `http://${hostname}:${port}/api/v0/models`,
+            `http://${hostname}:${port}/models`,
+            `http://127.0.0.1:${port || 1234}/v1/models`,
+            `http://127.0.0.1:${port || 1234}/api/v0/models`,
+            `http://127.0.0.1:${port || 1234}/models`,
+            `http://localhost:${port || 1234}/v1/models`,
+            `http://localhost:${port || 1234}/api/v0/models`,
+            `http://localhost:${port || 1234}/models`
         ];
 
         const uniqueUrls = Array.from(new Set(urlsToTry));
@@ -151,7 +163,9 @@ export class LMStudioClient implements ILLMProvider {
         const { hostname, port } = this.parseServerUrl();
         const urlsToTry = [
             `http://${hostname}:${port}/api/v0/models`,
-            `http://${hostname === 'localhost' ? '127.0.0.1' : 'localhost'}:${port}/api/v0/models`
+            `http://${hostname === 'localhost' ? '127.0.0.1' : 'localhost'}:${port}/api/v0/models`,
+            `http://127.0.0.1:${port || 1234}/api/v0/models`,
+            `http://localhost:${port || 1234}/api/v0/models`
         ];
 
         for (const url of Array.from(new Set(urlsToTry))) {
@@ -178,8 +192,7 @@ export class LMStudioClient implements ILLMProvider {
     private async getLocalLoadedModels(): Promise<string[]> {
         return new Promise((resolve) => {
             const { exec } = require('child_process');
-            const config = ConfigManager.getInstance().getConfig();
-            const customDir = config.lmStudioCacheDir || '';
+            const customDir = this.hostServices?.getConfiguration<string>('kai', 'lmStudioCacheDir') || '';
             const lmsPath = LMStudioManifestParser.resolveLmsExecutablePath(customDir);
             const command = (lmsPath.includes(' ') || lmsPath.includes('\\') || lmsPath.includes('/'))
                 ? `"${lmsPath}" ps --json`
@@ -223,8 +236,7 @@ export class LMStudioClient implements ILLMProvider {
             const loaded = await this.getLoadedModels();
             const isMatch = loaded.some(m => m.toLowerCase().includes(cleanTarget) || cleanTarget.includes(m.toLowerCase()));
             if (!isMatch && loaded.length > 0) {
-                const config = ConfigManager.getInstance().getConfig();
-                const customDir = config.lmStudioCacheDir || '';
+                const customDir = this.hostServices?.getConfiguration<string>('kai', 'lmStudioCacheDir') || '';
                 const lmsPath = LMStudioManifestParser.resolveLmsExecutablePath(customDir);
                 const { exec } = require('child_process');
                 await new Promise<void>((resolve) => {
@@ -232,7 +244,7 @@ export class LMStudioClient implements ILLMProvider {
                 });
             }
         } catch {
-            // ignore
+            // Ignore unload errors
         }
     }
 
@@ -479,7 +491,7 @@ export class LMStudioClient implements ILLMProvider {
                                 const parsed = JSON.parse(trimmed.slice(6));
                                 processParsedChunk(parsed);
                             } catch {
-                                // ignore partial lines
+                                // Ignore partial lines
                             }
                         }
                     }
@@ -494,7 +506,7 @@ export class LMStudioClient implements ILLMProvider {
                                 processParsedChunk(parsed);
                             }
                         } catch {
-                            // ignore
+                            // Ignore trailing incomplete buffers
                         }
                     }
                     if (isMuseStreaming) {
@@ -523,8 +535,7 @@ export class LMStudioClient implements ILLMProvider {
      * Dynamically applies thinking/reasoning parameters based on the target model family.
      */
     private applyThinkingParameters(requestParams: any, model: string, thinking: boolean, reasoningEffort?: string): void {
-        const config = ConfigManager.getInstance().getConfig();
-        const customDir = config.lmStudioCacheDir || '';
+        const customDir = this.hostServices?.getConfiguration<string>('kai', 'lmStudioCacheDir') || '';
         const capabilitiesMap = LMStudioManifestParser.parseModelCapabilities(customDir);
         const cap = capabilitiesMap[model] || capabilitiesMap[(model || '').toLowerCase()];
 

@@ -22,7 +22,7 @@ export class SymbolSearchTool extends Tool {
                     properties: {
                         query: {
                             type: 'string',
-                            description: 'Symbol name query (e.g. "LMStudioClient" or "chatCompletion").'
+                            description: 'Name or partial name of the symbol to search for.'
                         }
                     },
                     required: ['query']
@@ -32,16 +32,29 @@ export class SymbolSearchTool extends Tool {
     }
 
     /**
-     * Executes symbol search across workspace files using fast regex matching.
+     * Executes symbol search via host services (VS Code language provider) with fast regex AST fallback.
      * @param args Symbol query parameter.
      * @param context Workspace context.
      * @returns Formatted symbol location list.
      */
     public async execute(args: { query: string }, context: ToolContext): Promise<string> {
-        if (!args.query) {
+        if (!args.query || !args.query.trim()) {
             return 'Error: Symbol search query cannot be empty.';
         }
 
+        // 1. Try host services provider (VS Code language services)
+        if (context.hostServices) {
+            try {
+                const hostResult = await context.hostServices.searchWorkspaceSymbols(args.query, context.workspacePath);
+                if (hostResult && !hostResult.startsWith('Failed to execute')) {
+                    return this.truncateOutput(hostResult);
+                }
+            } catch {
+                // Fall back to local regex scanner
+            }
+        }
+
+        // 2. Standalone fallback regex scanner
         const results: string[] = [];
         const pattern = new RegExp(`\\b(class|function|interface|type|enum|const|let|var|def)\\s+(${args.query}\\w*)\\b`, 'i');
 
@@ -72,12 +85,12 @@ export class SymbolSearchTool extends Tool {
                                 }
                             }
                         } catch {
-                            // ignore unreadable file
+                            // Ignore unreadable file
                         }
                     }
                 }
             } catch {
-                // ignore unreadable dir
+                // Ignore unreadable dir
             }
         };
 

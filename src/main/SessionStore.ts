@@ -1,71 +1,26 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
+import { ISessionStorage, ChatSessionRecord } from './core/ISessionStorage';
+
+export { ChatSessionRecord };
 
 /**
- * Interface representing a chat session record stored in disk persistence.
- */
-export interface ChatSessionRecord {
-    /** Unique session identifier. */
-    id: string;
-    /** Display title for the session. */
-    title: string;
-    /** Array of stored chat message objects. */
-    messages: any[];
-    /** Array of stored UI event logs. */
-    uiEvents?: any[];
-    /** Active model identifier used in session. */
-    model?: string;
-    /** Reasoning thinking toggle flag. */
-    thinking?: boolean;
-    /** Timestamp of last interaction in milliseconds. */
-    timestamp: number;
-}
-
-/**
- * SessionStore encapsulates reading, writing, and deleting persistent chat history
- * records from a local JSON file in `~/.kai-agent/sessions.json`.
+ * SessionStore encapsulates reading, writing, and deleting persistent chat history records.
+ * Uses a pluggable ISessionStorage driver (e.g. Memento in VS Code, JSON file in Standalone Desktop).
  */
 export class SessionStore {
-    private storagePath: string;
     private cache: Record<string, ChatSessionRecord> = {};
 
     /**
      * Initializes a new instance of SessionStore.
+     * @param storage Pluggable storage driver implementing ISessionStorage.
      */
-    constructor() {
-        const homeDir = os.homedir();
-        const baseDir = path.join(homeDir, '.kai-agent');
-        if (!fs.existsSync(baseDir)) {
-            fs.mkdirSync(baseDir, { recursive: true });
-        }
-        this.storagePath = path.join(baseDir, 'sessions.json');
-        this.load();
-    }
-
-    /**
-     * Reads all sessions from disk into memory cache.
-     */
-    private load(): void {
-        try {
-            if (fs.existsSync(this.storagePath)) {
-                const data = fs.readFileSync(this.storagePath, 'utf8');
-                this.cache = JSON.parse(data);
+    constructor(private readonly storage?: ISessionStorage) {
+        if (this.storage) {
+            const loaded = this.storage.load();
+            if (loaded instanceof Promise) {
+                loaded.then(data => { this.cache = data || {}; });
+            } else {
+                this.cache = loaded || {};
             }
-        } catch (e) {
-            console.error('Failed to load sessions.json:', e);
-            this.cache = {};
-        }
-    }
-
-    /**
-     * Writes memory cache back to disk.
-     */
-    private save(): void {
-        try {
-            fs.writeFileSync(this.storagePath, JSON.stringify(this.cache, null, 2), 'utf8');
-        } catch (e) {
-            console.error('Failed to save sessions.json:', e);
         }
     }
 
@@ -78,8 +33,8 @@ export class SessionStore {
     }
 
     /**
-     * Retrieves a specific chat session record by its unique ID.
-     * @param chatId The unique chat session ID.
+     * Retrieves a single chat session by its unique ID.
+     * @param chatId The session ID to look up.
      * @returns The ChatSessionRecord if found, or undefined.
      */
     public getChat(chatId: string): ChatSessionRecord | undefined {
@@ -87,10 +42,10 @@ export class SessionStore {
     }
 
     /**
-     * Saves or updates a chat session record in persistent storage.
-     * @param chat The ChatSessionRecord object to persist.
+     * Saves or updates a chat session record in storage.
+     * @param chat The session record to persist.
      */
-    public async saveChat(chat: any): Promise<void> {
+    public async saveChat(chat: ChatSessionRecord): Promise<void> {
         if (!chat || !chat.id) {
             return;
         }
@@ -99,18 +54,20 @@ export class SessionStore {
             id: chat.id,
             title: chat.title || 'New Chat',
             messages: Array.isArray(chat.messages) ? chat.messages : (previous?.messages || []),
-            uiEvents: Array.isArray(chat.uiEvents) ? chat.uiEvents : (previous?.uiEvents || []),
-            model: chat.model || '',
+            mode: chat.mode || previous?.mode || 'agent',
+            model: chat.model || previous?.model || 'default',
             thinking: chat.thinking !== false,
             timestamp: chat.timestamp || Date.now()
         };
-        this.save();
+        if (this.storage) {
+            await this.storage.save(this.cache);
+        }
     }
 
     /**
-     * Deletes a chat session record by its unique ID from persistent storage.
-     * @param chatId The ID of the chat session to remove.
-     * @returns Updated sorted array of remaining chat session records.
+     * Deletes a chat session from storage by ID.
+     * @param chatId The session ID to delete.
+     * @returns Updated list of remaining sessions.
      */
     public async deleteChat(chatId: string): Promise<ChatSessionRecord[]> {
         if (!chatId) {
@@ -118,7 +75,9 @@ export class SessionStore {
         }
         if (this.cache[chatId]) {
             delete this.cache[chatId];
-            this.save();
+            if (this.storage) {
+                await this.storage.save(this.cache);
+            }
         }
         return this.getHistoryList();
     }
