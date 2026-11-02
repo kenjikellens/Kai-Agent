@@ -36,10 +36,22 @@ class PromptSubmissionOrchestrator {
         const attachedFiles = this.fileUploadController ? this.fileUploadController.getAttachedFiles() : [];
         if (this.fileUploadController) this.fileUploadController.clear();
 
-        // Add user message to state and UI
-        this.appState.addMessage({ role: 'user', content: textToSend });
-        this.appState.addUiEvent({ type: 'user', text: textToSend });
-        this.chatUIController.appendMessage('user', textToSend);
+        // Store attachedFiles in appState for UI rendering
+        this.appState.lastAttachedFiles = [...attachedFiles];
+        if (typeof window !== 'undefined') window.appState = this.appState;
+
+        // Format prompt with attached text files
+        const textFiles = attachedFiles.filter(f => !f.isImage && (!f.content || !f.content.startsWith('data:image/')));
+        let fullPromptContent = textToSend;
+        if (textFiles.length > 0) {
+            const filesContext = textFiles.map(f => `[Attached File: ${f.fileName}]\n\`\`\`\n${f.content || ''}\n\`\`\``).join('\n\n');
+            fullPromptContent = fullPromptContent ? `${fullPromptContent}\n\n${filesContext}` : filesContext;
+        }
+
+        // Add user message to state and UI with attachedFiles
+        this.appState.addMessage({ role: 'user', content: fullPromptContent, attachedFiles: attachedFiles });
+        this.appState.addUiEvent({ type: 'user', text: textToSend, attachedFiles: attachedFiles });
+        this.chatUIController.appendMessage('user', textToSend, attachedFiles);
 
         this.chatUIController.resetAssistantStream();
         this.chatUIController.setUiLoading(true, this.appState);

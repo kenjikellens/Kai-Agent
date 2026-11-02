@@ -7,7 +7,7 @@ class BrowserToolParser {
         'utility_tools', 'web_search', 'search_web', 'fetch_url', 'get_time', 'calculate',
         'text_stats', 'unit_converter', 'uuid_random', 'read_file', 'write_file', 'edit_file',
         'replace_file_content', 'multi_replace_file_content', 'list_dir', 'grep_search',
-        'symbol_search', 'get_diagnostics', 'run_command', 'delete_item'
+        'symbol_search', 'get_diagnostics', 'run_command', 'delete_item', 'ask_user'
     ];
 
     /**
@@ -92,13 +92,89 @@ class BrowserToolParser {
     }
 
     /**
+     * Escapes unescaped literal newline and carriage return characters within JSON string literals.
+     * Sanitizes in-memory string without modifying application state or DOM.
+     * @param {string} jsonText JSON candidate string.
+     * @returns {string} Sanitized JSON string.
+     */
+    static escapeRawNewlinesInStrings(jsonText) {
+        let inString = false;
+        let isEscaped = false;
+        let result = '';
+        for (let i = 0; i < jsonText.length; i++) {
+            const char = jsonText[i];
+            if (char === '"' && !isEscaped) {
+                inString = !inString;
+                result += char;
+            } else if (inString && (char === '\n' || char === '\r')) {
+                if (char === '\r' && jsonText[i + 1] === '\n') continue;
+                result += '\\n';
+            } else {
+                result += char;
+            }
+            if (char === '\\' && !isEscaped) isEscaped = true;
+            else isEscaped = false;
+        }
+        return result;
+    }
+
+    /**
+     * Attempts heuristic repairs on malformed JSON containing unescaped newlines, single quotes, or trailing commas.
+     * Sanitizes raw text string without mutating application state or DOM elements.
+     * @param {string} raw Raw JSON string candidate.
+     * @returns {string} Repaired JSON string.
+     */
+    static repairJson(raw) {
+        if (!raw) return '';
+        let cleaned = raw.trim();
+        cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+        cleaned = cleaned.replace(/'([^'\\]*(?:\\.[^'\\]*)*)'(?=\s*:)/g, '"$1"');
+        cleaned = cleaned.replace(/:\s*'([^'\\]*(?:\\.[^'\\]*)*)'/g, ': "$1"');
+        cleaned = this.escapeRawNewlinesInStrings(cleaned);
+        cleaned = cleaned.replace(/,\s*([}\]])/g, '$1');
+        return cleaned;
+    }
+
+    /**
+     * Normalizes parameter aliases to canonical tool schema keys.
+     * @param {object} args Raw tool arguments.
+     * @returns {object} Normalized arguments.
+     */
+    static normalizeArgs(args) {
+        if (!args || typeof args !== 'object' || Array.isArray(args)) return args;
+        const normalized = {};
+        const aliases = {
+            'file': 'path', 'filename': 'path', 'filepath': 'path', 'target_file': 'path',
+            'code': 'content', 'text': 'content', 'data': 'content', 'body': 'content',
+            'cmd': 'command', 'command_line': 'command', 'script': 'command',
+            'pattern': 'query', 'search_term': 'query',
+            'target': 'targetContent', 'old_content': 'targetContent', 'oldContent': 'targetContent',
+            'replacement': 'replacementContent', 'new_content': 'replacementContent', 'newContent': 'replacementContent',
+            'start': 'startLine', 'start_line': 'startLine', 'end': 'endLine', 'end_line': 'endLine'
+        };
+        for (const [key, val] of Object.entries(args)) {
+            const canon = aliases[key] || key;
+            normalized[canon] = val;
+        }
+        return normalized;
+    }
+
+    /**
      * Parses a JSON string into a structured tool call object.
      * @param {string} jsonStr Raw JSON string.
      * @returns {{ name: string, args: object, query: string } | null}
      */
     static parseJsonToolCall(jsonStr) {
         try {
-            const parsed = JSON.parse(jsonStr.trim());
+            let parsed = null;
+            try {
+                parsed = JSON.parse(jsonStr.trim());
+            } catch (e1) {
+                try {
+                    const repaired = this.repairJson(jsonStr);
+                    parsed = JSON.parse(repaired);
+                } catch (e2) {}
+            }
             if (!parsed || typeof parsed !== 'object') return null;
 
             let type = parsed.type || parsed.action || parsed.tool || parsed.name || parsed.function;
@@ -107,6 +183,10 @@ class BrowserToolParser {
                 const normalized = type.toLowerCase();
                 if (normalized === 'full-web-search' || normalized === 'websearch' || normalized === 'search_web') {
                     type = 'web_search';
+                } else if (['clarify', 'question', 'ask_user', 'user_input', 'prompt_user'].includes(normalized)) {
+                    type = 'ask_user';
+                } else if (['bash', 'terminal', 'cmd', 'shell', 'execute_command', 'run_command'].includes(normalized)) {
+                    type = 'run_command';
                 } else {
                     type = normalized;
                 }
@@ -114,6 +194,7 @@ class BrowserToolParser {
 
             // Fallback inference if type is omitted
             if (!type) {
+                if (parsed.question) type = 'ask_user';
                 if (parsed.expression) type = 'calculate';
                 else if (parsed.from_unit && parsed.to_unit) type = 'unit_converter';
                 else if (parsed.query && !parsed.command) type = 'web_search';
@@ -124,7 +205,7 @@ class BrowserToolParser {
             }
 
             if (type && this.SUPPORTED_TOOLS.includes(type)) {
-                const args = { ...parsed };
+                const args = this.normalizeArgs({ ...parsed });
                 delete args.type;
                 delete args.tool;
                 delete args.name;
@@ -136,7 +217,8 @@ class BrowserToolParser {
                 }
 
                 let query = `Executing ${effectiveTool}`;
-                if (args.query) query = `${effectiveTool}: ${args.query}`;
+                if (args.question) query = `${effectiveTool}: ${args.question}`;
+                else if (args.query) query = `${effectiveTool}: ${args.query}`;
                 else if (args.url) query = `${effectiveTool}: ${args.url}`;
                 else if (args.expression) query = `${effectiveTool}: ${args.expression}`;
                 else if (args.action) query = `${effectiveTool}: ${args.action}`;
@@ -167,6 +249,7 @@ class BrowserToolParser {
         if (['read_file', 'write_file', 'edit_file', 'replace_file_content', 'multi_replace_file_content', 'list_dir', 'delete_item'].includes(tool)) {
             return args.path ? (args.path.split(/[\\/]/).pop() || args.path) : '';
         }
+        if (tool === 'ask_user') return args.question || 'Clarification';
         if (tool === 'run_command') return args.command || '';
         if (tool === 'grep_search') return args.query ? `"${args.query}"` : '';
         return '';

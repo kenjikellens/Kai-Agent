@@ -18,6 +18,10 @@ URL = f"http://localhost:{PORT}/index.html"
 
 
 def main():
+    """
+    Main entry point for local browser preview launcher.
+    Compiles TypeScript if missing, frees existing processes on port 5173, starts Node.js preview server, and launches browser.
+    """
     print("=" * 60)
     print("  KAI Agent Browser Preview Launcher")
     print("=" * 60)
@@ -28,7 +32,15 @@ def main():
         print("[Launcher] Compiling TypeScript backend...")
         subprocess.run(["cmd", "/c", "npm", "run", "compile"], cwd=str(APP_DIR))
 
-    # 2. Launch pure Node.js preview server
+    # 2. Ensure port 5173 is freed from any lingering preview process
+    if sys.platform == "win32":
+        try:
+            kill_cmd = f"Get-NetTCPConnection -LocalPort {PORT} -ErrorAction SilentlyContinue | ForEach-Object {{ Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }}"
+            subprocess.run(["powershell", "-NoProfile", "-Command", kill_cmd], capture_output=True, timeout=5)
+        except Exception:
+            pass
+
+    # 3. Launch pure Node.js preview server
     print(f"[Launcher] Starting Node.js Preview Server on port {PORT}...")
     try:
         proc = subprocess.Popen(
@@ -39,7 +51,7 @@ def main():
         print(f"[Launcher Error]: Failed to start node: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # 3. Open browser
+    # 4. Open browser
     time.sleep(0.8)
     print(f"[Launcher] Opening browser at {URL}...")
     try:

@@ -215,11 +215,16 @@ if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
 } else {
     [Console]::Out.WriteLine('CANCELED')
 }
+$dialog.Dispose()
 `;
-        const ps = spawn('powershell.exe', ['-STA', '-NoProfile', '-NonInteractive', '-Command', script]);
+        const ps = spawn('powershell.exe', ['-STA', '-NoProfile', '-Command', script]);
         let output = '';
+        const timer = setTimeout(() => {
+            try { ps.kill(); } catch (e) {}
+        }, 120000);
         ps.stdout.on('data', data => { output += data.toString(); });
         ps.on('close', () => {
+            clearTimeout(timer);
             const picked = output.trim();
             if (picked && picked !== 'CANCELED' && !picked.includes('Exception')) {
                 return sendJson(res, 200, { canceled: false, workspacePath: picked });

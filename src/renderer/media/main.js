@@ -10,6 +10,7 @@
 
     // 1. Core State & Data Repositories
     const appState = new AppState();
+    window.appState = appState;
     const formatter = new MarkdownFormatter();
     const mermaidRenderer = new MermaidRenderer();
     window.mermaidRenderer = mermaidRenderer;
@@ -440,6 +441,8 @@
         if (message.isFolderPicked && message.workspacePath) {
             updateWorkspaceUi(message.workspacePath);
             saveCurrentChat();
+        } else if (message.workspacePath) {
+            updateWorkspaceUi(message.workspacePath);
         } else {
             updateWorkspaceUi(appState.workspacePath || '');
         }
@@ -572,7 +575,18 @@
         chatUIController.resetAssistantStream();
     };
 
-    ipcBridge.on('reply', handleReply);
+    
+        ipcBridge.on('ask_user_request', (message) => {
+            chatUIController.renderAskUserDock(message, (answer) => {
+                ipcBridge.postMessage({
+                    type: 'ask_user_response',
+                    requestId: message.requestId,
+                    answer: answer
+                });
+            });
+        });
+
+        ipcBridge.on('reply', handleReply);
     ipcBridge.on('replyComplete', handleReply);
 
     ipcBridge.on('replyError', (message) => {

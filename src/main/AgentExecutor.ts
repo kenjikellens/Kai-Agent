@@ -2,15 +2,18 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { LLMProviderFactory } from './providers/LLMProviderFactory';
 import { LMStudioClient } from './LMStudioClient';
+import { IHostServices } from './core/IHostServices';
 import { Tool, getRegisteredTools } from './tools';
 import { ContextManager, ContextMessage } from './ContextManager';
 import { EditorContextProvider, EditorContext } from './EditorContextProvider';
 import { DiagnosticsHelper } from './tools/DiagnosticsHelper';
+import { JsonRepairPipeline } from './core/JsonRepairPipeline';
+import { ToolAliasDictionary } from './core/ToolAliasDictionary';
 
 /**
- * AgentExecutor coordinates the autonomous AI agent loop in the standalone desktop app.
- * It executes multi-step tool calls (file operations, search, terminal commands, web search, MCP),
- * parses responses, manages context token budgeting, and streams events back to the UI.
+ * AgentExecutor coordinates the autonomous AI agent loop.
+ * It manages polymorphic tool execution (file operations, search, terminal commands, diagnostics, AST symbols),
+ * formats system prompts, parses tool calls, and reports updates back to the UI.
  */
 export class AgentExecutor {
     private workspacePath: string;
@@ -20,21 +23,23 @@ export class AgentExecutor {
     private onProgress: (event: { type: string; text?: string; tool?: string; query?: string; output?: string; toolId?: string; fileName?: string }) => void;
     private tools: Tool[];
     private contextManager: ContextManager;
+    private hostServices?: IHostServices;
 
     /**
-     * Initializes a new instance of AgentExecutor.
-     * @param workspacePath Absolute path to active workspace root.
-     * @param extensionPath Absolute path to app root.
-     * @param serverUrl LLM provider / LM Studio server endpoint.
-     * @param temperature Sampling temperature.
-     * @param onProgress Callback to report progress events to the frontend.
+     * Initializes a new instance of the AgentExecutor.
+     * @param workspacePath The absolute path to the active workspace directory.
+     * @param extensionPath The absolute path to the extension's root directory.
+     * @param serverUrl The base API URL for LM Studio / LLM provider.
+     * @param temperature The sampling temperature parameter.
+     * @param onProgress Callback function to report agent steps and execution logs back to the sidebar.
      */
     constructor(
         workspacePath: string,
         extensionPath: string,
         serverUrl: string,
         temperature: number,
-        onProgress: (event: { type: string; text?: string; tool?: string; query?: string; output?: string; toolId?: string; fileName?: string }) => void
+        onProgress: (event: { type: string; text?: string; tool?: string; query?: string; output?: string; toolId?: string; fileName?: string }) => void,
+        hostServices?: IHostServices
     ) {
         this.workspacePath = workspacePath;
         this.extensionPath = extensionPath;
@@ -42,11 +47,21 @@ export class AgentExecutor {
         this.temperature = temperature;
         this.onProgress = onProgress;
         this.tools = getRegisteredTools();
+        this.hostServices = hostServices;
         this.contextManager = new ContextManager();
     }
 
     /**
-     * Main execution loop of the agent.
+     * The main execution loop of the agent.
+     * Continuously calls the LLM, parses tool calls, executes them polymorphically, feeds results back,
+     * and stops when the model decides it has finished.
+     * @param userPrompt The instruction or request from the user.
+     * @param chatHistory The active message log array.
+     * @param model The target model selected in the dropdown.
+     * @param signal AbortSignal to cancel HTTP requests.
+     * @param activeFile Active text editor file path details (without content).
+     * @param thinking Toggle parameter for model reasoning phase.
+     * @returns A promise that resolves to the final assistant response.
      */
     public async run(
         userPrompt: string,
@@ -59,24 +74,21 @@ export class AgentExecutor {
         planningMode: boolean = false,
         attachedFiles?: any[],
         maxContextTokens: number = 16000,
-        mode: 'chat' | 'agent' | 'planning' = 'agent',
+        mode: string = 'agent',
         turnId?: string
     ): Promise<{ reply: string; messages: { role: string; content: string }[]; modifiedFiles: string[]; tokensPerSecond?: string | null }> {
+        // Deep copy history to avoid mutating the original until loop is complete
         let messages: ContextMessage[] = [...chatHistory];
         const activeTurnId = turnId || `turn-${Date.now()}`;
         this.contextManager = new ContextManager(maxContextTokens);
-
-        // Dynamically instantiate registered tools matching the active mode and workspace state
-        const hasWorkspace = Boolean(this.workspacePath && fs.existsSync(this.workspacePath));
-        const effectiveMode = planningMode ? 'planning' : mode;
-        this.tools = getRegisteredTools(effectiveMode, hasWorkspace);
-
         const provider = LLMProviderFactory.getProvider(model, this.serverUrl);
         const useNativeFunctionCalling = Boolean(
             provider.supportsNativeFunctionCalling?.() && provider.chatCompletionStreamWithTools
         );
 
-        let systemContent = this.getSystemPrompt(effectiveMode, hasWorkspace, useNativeFunctionCalling);
+        this.tools = getRegisteredTools(mode);
+        // Find existing system prompt or inject ours at the beginning
+        let systemContent = this.getSystemPrompt(mode, useNativeFunctionCalling);
         const now = new Date();
         const currentDayTimeStr = `[Temporal Context & Knowledge Cutoff]\n- Current Date and Time: ${now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}, ${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}\n- Your internal training cutoff is in the past. Events, releases, and information dated prior to the current date are historical facts, not future speculation.\n- NEVER state that an event, product, or topic prior to the current date is unreleased or speculative based on training cutoff limitations. Use available search tools if current details are required.`;
         systemContent += `\n\n${currentDayTimeStr}\n`;
@@ -94,22 +106,26 @@ export class AgentExecutor {
             });
         }
 
+        // Build workspace root & active file indicator context for first new chat message
         const isFirstMessage = messages.filter((m) => m.role === 'user' || m.role === 'assistant').length === 0;
         let contextPrefix = '';
 
-        if (planningMode) {
+        if (planningMode || mode === 'planning') {
             contextPrefix += `[STRICT PLANNING MODE ACTIVE]\n`;
             contextPrefix += `You are operating in strict Planning Mode. Follow this protocol strictly:\n`;
             contextPrefix += `1. RESEARCH PHASE: First, inspect the codebase using read-only tools (view_file, list_dir, grep_search) to understand context.\n`;
-            contextPrefix += `2. ARTIFACT CREATION: Create a structured implementation plan in '.kai/artifacts/implementation_plan.md'.\n`;
-            contextPrefix += `3. ARTIFACT FORMATTING: The plan MUST follow standard headings:\n`;
+            contextPrefix += `2. ARTIFACT CREATION: Create a dedicated directory '.kai/artifacts/' in the workspace if it does not exist, and write a comprehensive, structured implementation plan to '.kai/artifacts/implementation_plan.md'.\n`;
+            contextPrefix += `3. ARTIFACT FORMATTING: The plan file MUST follow standard markdown headings:\n`;
             contextPrefix += `   # Implementation Plan: [Goal Description]\n`;
-            contextPrefix += `   ## User Review Required\n`;
+            contextPrefix += `   ## User Review Required (highlight critical choices / breaking changes)\n`;
             contextPrefix += `   ## Open Questions\n`;
-            contextPrefix += `   ## Proposed Changes\n`;
-            contextPrefix += `   ## Verification Plan\n`;
-            contextPrefix += `4. CHAT OUTPUT: In chat, output ONLY a brief 2-sentence summary pointing to the plan.\n`;
-            contextPrefix += `5. GUARDRAIL: Do NOT modify code until approved.\n\n`;
+            contextPrefix += `   ## Proposed Changes (grouped by component with [MODIFY] [NEW] [DELETE] file scheme links)\n`;
+            contextPrefix += `   ## Verification Plan (Automated and Manual checks)\n`;
+            contextPrefix += `4. CHAT OUTPUT: Enclose the summary in <implementation_plan title="Implementation Plan">...</implementation_plan> tags.\n`;
+            contextPrefix += `5. GUARDRAIL: Do NOT make any code modifications or run invasive commands until the user reviews and approves the plan.\n\n`;
+        } else if (mode === 'ask') {
+            contextPrefix += `[ASK MODE ACTIVE]\n`;
+            contextPrefix += `You are in Ask mode. You may inspect workspace files using read-only tools (read_file, list_dir, grep_search, symbol_search) to answer user questions, but do NOT execute write/edit tools or run modifying commands.\n\n`;
         }
 
         if (isFirstMessage && this.workspacePath && fs.existsSync(this.workspacePath)) {
@@ -135,7 +151,7 @@ export class AgentExecutor {
                     contextPrefix += `Files: ${files.join(', ')}\n`;
                 }
             } catch {
-                // ignore
+                // ignore readdir errors
             }
         }
 
@@ -159,6 +175,8 @@ export class AgentExecutor {
             }
         }
 
+        this.contextManager.configureForModel(model, provider);
+
         let promptWithContext = userPrompt;
         if (contextPrefix) {
             promptWithContext = `${contextPrefix}\n${userPrompt}`;
@@ -166,6 +184,8 @@ export class AgentExecutor {
         messages.push({ role: 'user', content: promptWithContext });
 
         let iteration = 0;
+        // File analysis/editing often needs several read -> edit -> verify cycles.
+        // Keep a safety limit, but do not stop ordinary multi-file tasks at 10 calls.
         const maxIterations = 25;
         let lastAssistantResponse = '';
         const modifiedFiles = new Set<string>();
@@ -186,6 +206,7 @@ export class AgentExecutor {
             this.onProgress({ type: 'status_update', text: 'Processing...' });
         }
 
+        let parseRetryCount = 0;
         while (iteration < maxIterations) {
             iteration++;
             this.onProgress({ type: 'status_update', text: 'Processing...' });
@@ -237,6 +258,21 @@ export class AgentExecutor {
             lastAssistantResponse = response;
 
             if (!toolCall) {
+                const toolCallIntentRegex = /(?:<\|?tool_call\|?>|call:\w+|\{\s*["'](?:type|action|tool|name|path|command|chunks|query)["'])/i;
+                if (toolCallIntentRegex.test(response) && parseRetryCount < 2) {
+                    parseRetryCount++;
+                    messages.push({ role: 'assistant', content: response });
+                    messages.push({
+                        role: 'user',
+                        content: 'System Notice: A tool call was detected in your response, but the JSON payload could not be parsed. Please output a valid JSON tool call with double-quoted keys and properly escaped newlines.'
+                    });
+                    this.onProgress({
+                        type: 'status_update',
+                        text: `Retrying tool call syntax (attempt ${parseRetryCount}/2)...`
+                    });
+                    continue;
+                }
+                // No tools requested, agent is done
                 if (!response.trim()) {
                     this.onProgress({
                         type: 'agent_warning',
@@ -247,6 +283,10 @@ export class AgentExecutor {
                 break;
             }
 
+            parseRetryCount = 0;
+
+            // Preserve native call metadata so the provider can associate the tool result
+            // with the exact call on the following model turn.
             if (nativeToolCallId) {
                 messages.push({
                     role: 'assistant',
@@ -269,6 +309,7 @@ export class AgentExecutor {
             const activeToolId = `tool-${Date.now()}-${iteration}`;
             const targetName = this.getToolTarget(toolCall.name, toolCall.args);
 
+            // Report the tool invocation to the UI
             this.onProgress({
                 type: 'tool_start',
                 tool: toolCall.name,
@@ -277,8 +318,11 @@ export class AgentExecutor {
                 fileName: targetName
             });
 
+            // Yield to the event loop so the webview IPC can flush the tool_start
+            // render before we block on the actual tool execution
             await new Promise<void>(resolve => setTimeout(resolve, 0));
 
+            // Execute the tool polymorphically
             let toolResult = '';
             try {
                 toolResult = await this.executeTool(toolCall.name, toolCall.args, activeTurnId);
@@ -301,6 +345,7 @@ export class AgentExecutor {
                 }
             }
 
+            // Report results back to the UI
             this.onProgress({
                 type: 'tool_end',
                 tool: toolCall.name,
@@ -309,6 +354,7 @@ export class AgentExecutor {
                 fileName: targetName
             });
 
+            // Feed native results back with their call ID; legacy providers keep the existing text protocol.
             if (nativeToolCallId) {
                 messages.push({
                     role: 'tool',
@@ -335,6 +381,7 @@ export class AgentExecutor {
             lastAssistantResponse += `\n\n⚠ ${warning}`;
         }
 
+        // Append the final assistant response to the message history
         messages.push({ role: 'assistant', content: lastAssistantResponse });
 
         let tokensPerSecond: string | null = null;
@@ -351,20 +398,17 @@ export class AgentExecutor {
     }
 
     /**
-     * Constructs the system prompt by loading the appropriate mode-specific markdown file from the prompts directory.
-     * @param mode Active execution mode ('chat' | 'agent' | 'planning' | 'ask').
-     * @param hasWorkspace Whether a workspace folder is open.
+     * Constructs the system prompt by loading the appropriate mode-specific markdown file from prompts/.
+     * @param mode Active execution mode ('agent' | 'planning' | 'ask' | 'chat').
      * @param nativeFunctionCalling Whether the provider handles native function schemas.
+     * @returns The formatting guide system instructions.
      */
     private getSystemPrompt(
-        mode: 'chat' | 'agent' | 'planning' | 'ask' | string = 'agent',
-        hasWorkspace: boolean = true,
+        mode: 'agent' | 'planning' | 'ask' | 'chat' | string = 'agent',
         nativeFunctionCalling: boolean = false
     ): string {
         let fileName = 'system_prompt_agent.md';
-        if (mode === 'chat') {
-            fileName = hasWorkspace ? 'system_prompt_chat_workspace.md' : 'system_prompt_chat.md';
-        } else if (mode === 'ask') {
+        if (mode === 'ask') {
             fileName = 'system_prompt_ask.md';
         } else if (mode === 'planning') {
             fileName = 'system_prompt_planning.md';
@@ -375,22 +419,19 @@ export class AgentExecutor {
             path.join(process.cwd(), 'prompts', fileName),
             path.join(__dirname, '..', '..', 'prompts', fileName),
             path.join(__dirname, 'prompts', fileName),
-            path.join(__dirname, fileName),
             path.join(this.extensionPath, fileName),
             path.join(process.cwd(), fileName),
-            // Fallback candidate paths
+            // Fallbacks
             path.join(this.extensionPath, 'prompts', 'system_prompt.md'),
             path.join(process.cwd(), 'prompts', 'system_prompt.md'),
-            path.join(__dirname, '..', '..', 'prompts', 'system_prompt.md'),
-            path.join(__dirname, 'system_prompt.md'),
             path.join(this.extensionPath, 'system_prompt.md'),
             path.join(process.cwd(), 'system_prompt.md')
         ];
 
-        for (const p of candidatePaths) {
+        for (const promptPath of candidatePaths) {
             try {
-                if (fs.existsSync(p)) {
-                    const prompt = fs.readFileSync(p, 'utf8');
+                if (fs.existsSync(promptPath)) {
+                    const prompt = fs.readFileSync(promptPath, 'utf8');
                     return nativeFunctionCalling ? this.getNativeFunctionCallingPrompt(prompt) : prompt;
                 }
             } catch {
@@ -398,11 +439,13 @@ export class AgentExecutor {
             }
         }
 
-        return `You are Kai, an autonomous AI Developer Agent operating directly within the user's workspace directory.`;
+        return `You are Kai, an autonomous AI Developer Agent operating directly within the user's workspace directory. You have full access to view, list, search, and edit the workspace using tools.`;
     }
 
     /**
-     * Removes text-protocol instructions when providers receive native tool schemas.
+     * Removes text-protocol instructions when providers receive native tool schemas separately.
+     * @param prompt The base system prompt string.
+     * @returns Cleaned system prompt for native function calling.
      */
     private getNativeFunctionCallingPrompt(prompt: string): string {
         return prompt
@@ -418,17 +461,18 @@ export class AgentExecutor {
             .replace(/\n## ACTION SCHEMAS[\s\S]*?\n## JSON ESCAPING RULES/, '\n## JSON ESCAPING RULES');
     }
 
-    /**
-     * Returns the native function declarations for all registered tools.
-     */
+    /** Returns the native function declarations for all registered tools. */
     private getToolSchemas() {
         return this.tools.map((tool) => tool.getFunctionDeclaration());
     }
 
     /**
-     * Parses the assistant reply text to extract the first JSON tool call.
+     * Parses the assistant's reply text to extract the first JSON tool call.
+     * @param text The model's response.
+     * @returns An object representing the tool call name, args, and a readable query, or null if none found.
      */
     private parseToolCall(text: string): { name: string; args: any; query: string } | null {
+        // 1. Primary: Extract tool call payload enclosed in <|tool_call|> ... <|tool_call|> or <tool_call> ... </tool_call> tags
         const explicitTagRegex = /<\|?tool_call\|?>\s*([\s\S]*?)\s*(?:<\|?\/tool_call\|?>|<\|?tool_call\|?>|$)/i;
         const explicitTagMatch = explicitTagRegex.exec(text);
         if (explicitTagMatch) {
@@ -436,6 +480,7 @@ export class AgentExecutor {
             if (parsed) return parsed;
         }
 
+        // 2. Secondary: Regex to extract tool call JSON payload surrounded by optional call:name or loose tags
         const tagRegex = /(?:<\|?tool_call\|?>)?\s*(?:call:\w+)?\s*(\{[\s\S]*?\})\s*(?:<\|?tool_call\|?>)?/i;
         const tagMatch = tagRegex.exec(text);
         if (tagMatch) {
@@ -443,6 +488,7 @@ export class AgentExecutor {
             if (parsed) return parsed;
         }
 
+        // 3. Fallback: Extract JSON block inside ```json ... ``` code fences
         const jsonBlockRegex = /```json\s*([\s\S]*?)\s*(?:```|$)/i;
         const match = jsonBlockRegex.exec(text);
         if (match) {
@@ -450,6 +496,7 @@ export class AgentExecutor {
             if (parsed) return parsed;
         }
 
+        // 4. Fallback: Try extracting using brace counting starting at any JSON object containing known keys
         const braceJson = this.extractJsonBlock(text);
         if (braceJson) {
             const parsed = this.parseJsonString(braceJson);
@@ -507,61 +554,53 @@ export class AgentExecutor {
 
     /**
      * Polymorphically matches JSON payload with registered Tool instances.
+     * Auto-infers tool type from payload schema if "type" field is omitted by the model.
      */
     private parseJsonString(jsonStr: string): { name: string; args: any; query: string } | null {
-        try {
-            const parsed = JSON.parse(jsonStr.trim());
-            if (parsed && typeof parsed === 'object') {
-                let type = parsed.type || parsed.action || parsed.tool || parsed.name || parsed.function;
-                
-                if (!type) {
-                    if (Array.isArray(parsed.chunks) || (parsed.targetContent && parsed.replacementContent)) {
-                        type = parsed.chunks && parsed.chunks.length > 1 ? 'multi_replace_file_content' : 'replace_file_content';
-                    } else if ((parsed.path || parsed.paths) && (parsed.action === 'delete' || parsed.paths !== undefined)) {
-                        type = 'delete_item';
-                    } else if (parsed.path && parsed.content !== undefined) {
-                        type = 'write_file';
-                    } else if (parsed.path && parsed.content === undefined) {
-                        type = 'read_file';
-                    } else if (parsed.command) {
-                        type = 'run_command';
-                    } else if (parsed.query && !parsed.command) {
-                        type = 'grep_search';
-                    }
-                }
-
-                if (type && typeof type === 'string') {
-                    const normalizedType = type.toLowerCase() === 'full-web-search' || type.toLowerCase() === 'websearch'
-                        ? 'web_search'
-                        : type.toLowerCase();
-                    const matchedTool = this.tools.find(t => t.name.toLowerCase() === normalizedType);
-                    if (matchedTool) {
-                        const args = { ...parsed };
-                        delete args.type;
-                        delete args.action;
-                        delete args.tool;
-                        delete args.name;
-                        delete args.function;
-
-                        let query = `Executing ${matchedTool.name}`;
-                        if (args.path) query = `${matchedTool.name}: ${Array.isArray(args.path) ? args.path.join(', ') : args.path}`;
-                        else if (args.paths) query = `${matchedTool.name}: ${Array.isArray(args.paths) ? args.paths.join(', ') : args.paths}`;
-                        else if (args.command) query = `${matchedTool.name}: ${args.command}`;
-                        else if (args.query) query = `${matchedTool.name}: ${args.query}`;
-                        else if (args.url) query = `${matchedTool.name}: ${args.url}`;
-
-                        return { name: matchedTool.name, args, query };
-                    }
-                }
-            }
-        } catch {
-            // Ignore syntax errors
+        const repairResult = JsonRepairPipeline.parseWithRepair(jsonStr);
+        if (!repairResult || !repairResult.parsed || typeof repairResult.parsed !== 'object') {
+            return null;
         }
+
+        const parsed = repairResult.parsed;
+        let type = parsed.type || parsed.action || parsed.tool || parsed.name || parsed.function;
+        if (!type) {
+            type = ToolAliasDictionary.inferToolType(parsed);
+        }
+
+        if (type && typeof type === 'string') {
+            const canonicalName = ToolAliasDictionary.resolveToolName(type);
+            const matchedTool = this.tools.find(t => t.name.toLowerCase() === canonicalName.toLowerCase());
+            if (matchedTool) {
+                const args = { ...parsed };
+                delete args.type;
+                delete args.action;
+                delete args.tool;
+                delete args.name;
+                delete args.function;
+
+                const normalizedArgs = ToolAliasDictionary.normalizeArgs(args);
+
+                let query = `Executing ${matchedTool.name}`;
+                if (normalizedArgs.path) query = `${matchedTool.name}: ${Array.isArray(normalizedArgs.path) ? normalizedArgs.path.join(', ') : normalizedArgs.path}`;
+                else if (normalizedArgs.paths) query = `${matchedTool.name}: ${Array.isArray(normalizedArgs.paths) ? normalizedArgs.paths.join(', ') : normalizedArgs.paths}`;
+                else if (normalizedArgs.command) query = `${matchedTool.name}: ${normalizedArgs.command}`;
+                else if (normalizedArgs.query) query = `${matchedTool.name}: ${normalizedArgs.query}`;
+                else if (normalizedArgs.url) query = `${matchedTool.name}: ${normalizedArgs.url}`;
+                else if (normalizedArgs.question) query = `${matchedTool.name}: ${normalizedArgs.question}`;
+
+                return { name: matchedTool.name, args: normalizedArgs, query };
+            }
+        }
+
         return null;
     }
 
     /**
-     * Executes the requested tool polymorphically.
+     * Executes the requested tool polymorphically via Tool interface.
+     * @param tool The name of the tool.
+     * @param args The arguments object parsed from the JSON blocks.
+     * @returns A promise resolving to the execution result text.
      */
     private async executeTool(tool: string, args: any, turnId?: string): Promise<string> {
         const matchedTool = this.tools.find((t) => t.name === tool);
@@ -572,7 +611,8 @@ export class AgentExecutor {
         let result = await matchedTool.execute(args, {
             workspacePath: this.workspacePath,
             extensionPath: this.extensionPath,
-            turnId: turnId
+            turnId: turnId,
+            hostServices: this.hostServices
         });
         const absoluteMaxBytes = 10000;
         if (Buffer.byteLength(result, 'utf8') > absoluteMaxBytes) {
@@ -581,9 +621,7 @@ export class AgentExecutor {
         return result;
     }
 
-    /**
-     * Applies a final size guard for tools that do not enforce their own output limits.
-     */
+    /** Applies a final size guard for tools that do not enforce their own output limits. */
     private truncateToolOutput(output: string, maxBytes: number): string {
         const lines = output.split('\n');
         const marker = `\n\n... [AgentExecutor: output truncated from ${lines.length} lines] ...\n\n`;

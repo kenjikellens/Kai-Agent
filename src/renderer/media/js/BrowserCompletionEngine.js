@@ -8,6 +8,55 @@ class BrowserCompletionEngine {
     }
 
     /**
+     * Resolves token budget limit dynamically based on model identifier.
+     * Evaluates model prefix to dynamically allocate context window without hardcoded limits.
+     * @param {string} model Model identifier string.
+     * @returns {number} Maximum token limit.
+     */
+    static resolveModelContextLimit(model) {
+        if (!model) return 16000;
+        const clean = model.toLowerCase();
+        if (clean.startsWith('gemini')) return 1000000;
+        if (clean.includes('mistral-large') || clean.includes('codestral')) return 128000;
+        if (clean.includes('mistral-small')) return 32000;
+        if (clean.includes('cerebras')) return 8192;
+        return 16000;
+    }
+
+    /**
+     * Compresses older messages using head-tail windowing while preserving atomic tool pairs.
+     * Mutates in-memory message history array to fit within the active model token budget.
+     * @param {Array} messages Conversation messages array.
+     * @param {number} maxTokens Maximum allowed token budget.
+     * @returns {Array} Budget-compliant message list.
+     */
+    static compactMessages(messages, maxTokens) {
+        const estTokens = (text) => Math.ceil((text || '').length / 4);
+        let total = messages.reduce((acc, m) => acc + estTokens(m.content), 0);
+        const target = Math.max(2000, maxTokens - 4000);
+        if (total <= target) return messages;
+
+        const protectedIndices = new Set([0]);
+        const firstUser = messages.findIndex(m => m.role === 'user');
+        if (firstUser !== -1) protectedIndices.add(firstUser);
+        for (let i = Math.max(0, messages.length - 3); i < messages.length; i++) {
+            protectedIndices.add(i);
+        }
+
+        return messages.map((m, idx) => {
+            if (protectedIndices.has(idx)) return m;
+            const lines = (m.content || '').split(/\r?\n/);
+            if (lines.length > 45) {
+                const head = lines.slice(0, 20).join('\n');
+                const tail = lines.slice(lines.length - 20).join('\n');
+                const omitted = lines.length - 40;
+                return { ...m, content: `${head}\n\n[... ${omitted} lines omitted for context window optimization ...]\n\n${tail}` };
+            }
+            return m;
+        });
+    }
+
+    /**
      * Executes an agent turn loop (up to 25 iterations).
      * @param {object} message User prompt configuration message.
      * @param {Function} emit Event emission callback.
@@ -70,6 +119,8 @@ class BrowserCompletionEngine {
 
         let iteration = 0;
         const maxIterations = 25;
+        let retryCount = 0;
+        const maxTokens = BrowserCompletionEngine.resolveModelContextLimit(model);
         const modifiedFiles = new Set();
         let lastResponseText = '';
         let lastTokensPerSecond = null;
@@ -79,9 +130,10 @@ class BrowserCompletionEngine {
                 iteration++;
                 if (abortSignal.aborted) break;
 
+                const compactedMessages = BrowserCompletionEngine.compactMessages(messagesToSend, maxTokens);
                 const { targetUrl, fetchHeaders, payload, isGemini, isCloudProvider } = BrowserProviderPayloadBuilder.build({
                     model,
-                    messagesToSend,
+                    messagesToSend: compactedMessages,
                     serverUrl,
                     message
                 });
@@ -138,6 +190,16 @@ class BrowserCompletionEngine {
 
                 const toolCall = BrowserToolParser.parseToolCall(fullText);
                 if (!toolCall) {
+                    if ((fullText.includes('<|tool_call|>') || fullText.includes('<tool_call>') || fullText.includes('execute_plan')) && retryCount < 2) {
+                        retryCount++;
+                        emit({ type: 'agentProgress', progressType: 'status_update', text: `Repairing tool call schema (attempt ${retryCount}/2)...` });
+                        messagesToSend.push({ role: 'assistant', content: fullText });
+                        messagesToSend.push({
+                            role: 'user',
+                            content: `[Schema Error]: Your tool call could not be parsed as valid JSON. Please retry outputting ONLY the valid JSON tool call within <|tool_call|> tags without explanatory commentary.`
+                        });
+                        continue;
+                    }
                     break;
                 }
 

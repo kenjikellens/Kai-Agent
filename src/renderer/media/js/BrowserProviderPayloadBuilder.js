@@ -47,10 +47,21 @@ class BrowserProviderPayloadBuilder {
             }
 
             payload = {
-                contents: messagesToSend.map(m => ({
-                    role: m.role === 'assistant' ? 'model' : 'user',
-                    parts: [{ text: m.content }]
-                })),
+                contents: messagesToSend.map(m => {
+                    const parts = [];
+                    if (m.content) parts.push({ text: m.content });
+                    if (Array.isArray(m.attachedFiles)) {
+                        for (const f of m.attachedFiles) {
+                            if (f.content && f.content.startsWith('data:image/')) {
+                                const match = f.content.match(/^data:([^;]+);base64,(.+)$/);
+                                if (match) {
+                                    parts.push({ inlineData: { mimeType: match[1], data: match[2] } });
+                                }
+                            }
+                        }
+                    }
+                    return { role: m.role === 'assistant' ? 'model' : 'user', parts: parts.length > 0 ? parts : [{ text: '' }] };
+                }),
                 generationConfig: {
                     temperature: 0.2,
                     ...(thinkingConfig ? { thinkingConfig } : {})
@@ -63,7 +74,19 @@ class BrowserProviderPayloadBuilder {
             fetchHeaders['Authorization'] = `Bearer ${mistralKey}`;
             payload = {
                 model: model.replace(/^mistral\//i, ''),
-                messages: messagesToSend.map(m => ({ role: m.role, content: m.content })),
+                messages: messagesToSend.map(m => {
+                    const images = (m.attachedFiles || []).filter(f => f.content && f.content.startsWith('data:image/'));
+                    if (images.length > 0 && m.role === 'user') {
+                        return {
+                            role: m.role,
+                            content: [
+                                { type: 'text', text: m.content || '' },
+                                ...images.map(img => ({ type: 'image_url', image_url: { url: img.content } }))
+                            ]
+                        };
+                    }
+                    return { role: m.role, content: m.content };
+                }),
                 stream: true
             };
         } else if (isOpenRouter) {
@@ -76,7 +99,19 @@ class BrowserProviderPayloadBuilder {
 
             payload = {
                 model: model.replace(/^openrouter\//i, ''),
-                messages: messagesToSend.map(m => ({ role: m.role, content: m.content })),
+                messages: messagesToSend.map(m => {
+                    const images = (m.attachedFiles || []).filter(f => f.content && f.content.startsWith('data:image/'));
+                    if (images.length > 0 && m.role === 'user') {
+                        return {
+                            role: m.role,
+                            content: [
+                                { type: 'text', text: m.content || '' },
+                                ...images.map(img => ({ type: 'image_url', image_url: { url: img.content } }))
+                            ]
+                        };
+                    }
+                    return { role: m.role, content: m.content };
+                }),
                 stream: true
             };
 
@@ -91,7 +126,19 @@ class BrowserProviderPayloadBuilder {
             fetchHeaders['Authorization'] = `Bearer ${zhipuKey}`;
             payload = {
                 model: model.replace(/^zhipu\//i, ''),
-                messages: messagesToSend.map(m => ({ role: m.role, content: m.content })),
+                messages: messagesToSend.map(m => {
+                    const images = (m.attachedFiles || []).filter(f => f.content && f.content.startsWith('data:image/'));
+                    if (images.length > 0 && m.role === 'user') {
+                        return {
+                            role: m.role,
+                            content: [
+                                { type: 'text', text: m.content || '' },
+                                ...images.map(img => ({ type: 'image_url', image_url: { url: img.content } }))
+                            ]
+                        };
+                    }
+                    return { role: m.role, content: m.content };
+                }),
                 stream: true
             };
         } else if (isCohere) {
@@ -111,7 +158,19 @@ class BrowserProviderPayloadBuilder {
             fetchHeaders['Authorization'] = `Bearer ${cerebrasKey}`;
             payload = {
                 model: model.replace(/^cerebras\//i, ''),
-                messages: messagesToSend.map(m => ({ role: m.role, content: m.content })),
+                messages: messagesToSend.map(m => {
+                    const images = (m.attachedFiles || []).filter(f => f.content && f.content.startsWith('data:image/'));
+                    if (images.length > 0 && m.role === 'user') {
+                        return {
+                            role: m.role,
+                            content: [
+                                { type: 'text', text: m.content || '' },
+                                ...images.map(img => ({ type: 'image_url', image_url: { url: img.content } }))
+                            ]
+                        };
+                    }
+                    return { role: m.role, content: m.content };
+                }),
                 stream: true
             };
         } else if (isOmniRoute) {
@@ -120,7 +179,19 @@ class BrowserProviderPayloadBuilder {
             if (omniKey) fetchHeaders['Authorization'] = `Bearer ${omniKey}`;
             payload = {
                 model: model.replace(/^omniroute\//i, ''),
-                messages: messagesToSend.map(m => ({ role: m.role, content: m.content })),
+                messages: messagesToSend.map(m => {
+                    const images = (m.attachedFiles || []).filter(f => f.content && f.content.startsWith('data:image/'));
+                    if (images.length > 0 && m.role === 'user') {
+                        return {
+                            role: m.role,
+                            content: [
+                                { type: 'text', text: m.content || '' },
+                                ...images.map(img => ({ type: 'image_url', image_url: { url: img.content } }))
+                            ]
+                        };
+                    }
+                    return { role: m.role, content: m.content };
+                }),
                 stream: true
             };
         } else {
@@ -129,7 +200,19 @@ class BrowserProviderPayloadBuilder {
             const cleanModel = (model || '').endsWith(' (thinking)') ? model.slice(0, -11) : model;
             payload = {
                 model: cleanModel,
-                messages: messagesToSend.map(m => ({ role: m.role, content: m.content })),
+                messages: messagesToSend.map(m => {
+                    const images = (m.attachedFiles || []).filter(f => f.content && f.content.startsWith('data:image/'));
+                    if (images.length > 0 && m.role === 'user') {
+                        return {
+                            role: m.role,
+                            content: [
+                                { type: 'text', text: m.content || '' },
+                                ...images.map(img => ({ type: 'image_url', image_url: { url: img.content } }))
+                            ]
+                        };
+                    }
+                    return { role: m.role, content: m.content };
+                }),
                 stream: true
             };
 

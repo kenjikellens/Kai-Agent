@@ -10,6 +10,7 @@ import { SessionStore } from './SessionStore';
 import { WorkspaceManager } from './WorkspaceManager';
 import { ConfigManager } from './ConfigManager';
 import { TurnSnapshotManager } from './services/TurnSnapshotManager';
+import { StandaloneHostServices } from './adapters/StandaloneHostServices';
 
 /**
  * AppHost coordinates bidirectional IPC messaging between the Electron Main process
@@ -35,6 +36,7 @@ export class AppHost {
         this.workspaceManager = workspaceManager;
         this.sessionStore = new SessionStore();
         this.configManager = ConfigManager.getInstance();
+        StandaloneHostServices.setActiveWebview(this);
     }
 
     /**
@@ -55,6 +57,10 @@ export class AppHost {
         if (!data || !data.type) return;
 
         switch (data.type) {
+            case 'ask_user_response': {
+                StandaloneHostServices.resolveAskUser(data.requestId, data.answer);
+                break;
+            }
             case 'sendMessage': {
                 await this.handleSendMessage(
                     data.messages,
@@ -241,6 +247,7 @@ export class AppHost {
 
         this.activeAbortController = new AbortController();
 
+        const hostServices = new StandaloneHostServices();
         const executor = new AgentExecutor(
             workspacePath,
             appPath,
@@ -257,7 +264,8 @@ export class AppHost {
                     toolId: event.toolId,
                     fileName: event.fileName
                 });
-            }
+            },
+            hostServices
         );
 
         this.currentStreamingText = '';

@@ -15,6 +15,24 @@ class BrowserToolsExecutor {
      * @returns {Promise<string>} Execution output text.
      */
     async execute(name, args) {
+        if (name === 'ask_user') {
+            return new Promise((resolve) => {
+                const uiController = window.chatUIController;
+                if (uiController && typeof uiController.renderAskUserCard === 'function') {
+                    uiController.renderAskUserCard({
+                        requestId: 'ask_' + Date.now(),
+                        question: args.question || 'Please provide clarification:',
+                        options: args.options || [],
+                        allowCustom: args.allowCustom !== false
+                    }, (answer) => {
+                        resolve(`User response: ${answer}`);
+                    });
+                } else {
+                    resolve(`[Ask User Error]: Interactive UI is not available.`);
+                }
+            });
+        }
+
         if (name === 'utility_tools') {
             const action = args.action || '';
             switch (action) {
@@ -159,34 +177,12 @@ class BrowserToolsExecutor {
 
     /** Searches web via run_pc.py backend proxy. */
     async toolWebSearch(query, limit) {
-        try {
-            const res = await fetch('/api/tools/web_search', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query, limit })
-            });
-            if (!res.ok) throw new Error(`Proxy returned ${res.status}`);
-            const data = await res.json();
-            return data.result || JSON.stringify(data, null, 2);
-        } catch (e) {
-            return `[Error searching web]: ${e.message}`;
-        }
+        return this.toolExecuteWorkspaceTool('web_search', { query, limit: limit || 5 });
     }
 
     /** Fetches web page content via backend proxy. */
     async toolFetchUrl(url) {
-        try {
-            const res = await fetch('/api/tools/fetch_url', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url })
-            });
-            if (!res.ok) throw new Error(`Proxy returned ${res.status}`);
-            const data = await res.json();
-            return data.result || JSON.stringify(data, null, 2);
-        } catch (e) {
-            return `[Error fetching URL]: ${e.message}`;
-        }
+        return this.toolExecuteWorkspaceTool('fetch_url', { url });
     }
 
     /** Triggers rollback of snapshot changes for given turn IDs. */

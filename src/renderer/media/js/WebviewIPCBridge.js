@@ -71,7 +71,11 @@ class WebviewIPCBridge {
      */
     postMessage(message) {
         if (this._isElectron && window.electronAPI) {
-            window.electronAPI.sendMessage(message);
+            if (typeof window.electronAPI.postMessage === 'function') {
+                window.electronAPI.postMessage(message);
+            } else if (typeof window.electronAPI.sendMessage === 'function') {
+                window.electronAPI.sendMessage(message);
+            }
         } else if (this.vscode) {
             this.vscode.postMessage(message);
         } else if (this.previewEngine) {

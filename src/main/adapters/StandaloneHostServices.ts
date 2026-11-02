@@ -149,6 +149,70 @@ export class StandaloneHostServices implements IHostServices {
             return defaultValue as T;
         }
     }
+
+    private static pendingRequests: Map<string, { resolve: (val: string) => void; timer: NodeJS.Timeout }> = new Map();
+    private static activeWebview?: { postMessage: (msg: any) => void };
+
+    /**
+     * Registers the active webview or IPC host to receive interactive clarification requests.
+     * Mutates static reference used by askUser to post prompts to the Electron renderer.
+     * @param webview Webview or host container with postMessage capability.
+     */
+    public static setActiveWebview(webview: { postMessage: (msg: any) => void }): void {
+        this.activeWebview = webview;
+    }
+
+    /**
+     * Resolves a pending ask_user prompt with the developer's selected choice or typed text.
+     * Clears the timeout timer and resolves the suspended execution promise.
+     * @param requestId The correlation ID of the pending prompt.
+     * @param answer The developer's response string.
+     * @returns True if request was found and resolved.
+     */
+    public static resolveAskUser(requestId: string, answer: string): boolean {
+        const pending = this.pendingRequests.get(requestId);
+        if (pending) {
+            clearTimeout(pending.timer);
+            this.pendingRequests.delete(requestId);
+            pending.resolve(answer);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Suspends agent execution to request human clarification or multiple-choice selection from the developer.
+     * Dispatches an interactive prompt card to the UI and resolves with the chosen answer string.
+     * @param question The clarification question or prompt for the user.
+     * @param options Optional list of multiple-choice answers for the user to click.
+     * @param allowCustom Whether the user can type a custom response (default true).
+     * @returns The user's selected or typed answer string.
+     */
+    public askUser(question: string, options?: string[], allowCustom?: boolean): Promise<string> {
+        return new Promise<string>((resolve) => {
+            const requestId = `ask-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+            const timer = setTimeout(() => {
+                StandaloneHostServices.pendingRequests.delete(requestId);
+                resolve('[ask_user: Timed out waiting for developer response]');
+            }, 300000);
+
+            StandaloneHostServices.pendingRequests.set(requestId, { resolve, timer });
+
+            if (StandaloneHostServices.activeWebview) {
+                StandaloneHostServices.activeWebview.postMessage({
+                    type: 'ask_user_request',
+                    requestId,
+                    question,
+                    options: Array.isArray(options) ? options : [],
+                    allowCustom: allowCustom !== false
+                });
+            } else {
+                clearTimeout(timer);
+                StandaloneHostServices.pendingRequests.delete(requestId);
+                resolve(`[ask_user: Webview UI is not available. Question was: ${question}]`);
+            }
+        });
+    }
 }
 
 /**
