@@ -10,7 +10,7 @@ let appHost: AppHost | null = null;
  * Creates and initializes the main desktop application window.
  */
 function createWindow(): void {
-    const workspaceManager = new WorkspaceManager(process.cwd());
+    const workspaceManager = new WorkspaceManager('');
 
     const iconPath = path.resolve(__dirname, '../../src/renderer/media/svg/kai_icon.png');
 

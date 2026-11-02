@@ -86,7 +86,8 @@ export class AgentExecutor {
             provider.supportsNativeFunctionCalling?.() && provider.chatCompletionStreamWithTools
         );
 
-        this.tools = getRegisteredTools(mode);
+        const hasWorkspace = Boolean(this.workspacePath);
+        this.tools = getRegisteredTools(mode, hasWorkspace);
         // Find existing system prompt or inject ours at the beginning
         let systemContent = this.getSystemPrompt(mode, useNativeFunctionCalling);
         const now = new Date();
@@ -408,8 +409,9 @@ export class AgentExecutor {
         nativeFunctionCalling: boolean = false
     ): string {
         let fileName = 'system_prompt_agent.md';
+        const hasWorkspace = Boolean(this.workspacePath);
         if (mode === 'ask') {
-            fileName = 'system_prompt_ask.md';
+            fileName = hasWorkspace ? 'system_prompt_ask.md' : 'system_prompt_chat.md';
         } else if (mode === 'planning') {
             fileName = 'system_prompt_planning.md';
         }

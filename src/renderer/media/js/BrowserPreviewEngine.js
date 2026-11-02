@@ -58,6 +58,15 @@ class BrowserPreviewEngine {
                 break;
             }
 
+            case 'setWorkspace': {
+                if (message.workspacePath) {
+                    localStorage.setItem('kai.workspacePath', message.workspacePath);
+                } else {
+                    localStorage.removeItem('kai.workspacePath');
+                }
+                break;
+            }
+
             case 'browseLMStudioFolder': {
                 const lmsPath = await BrowserNativeDialogs.openLMStudioFolderPicker();
                 if (lmsPath) {
@@ -193,9 +202,14 @@ class BrowserPreviewEngine {
             translations = allLocales.en || {};
         }
 
-        let activeWorkspace = localStorage.getItem('kai.workspacePath') || '';
+        let activeWorkspace = '';
         if (message && message.isFolderPicked && message.workspacePath) {
             activeWorkspace = message.workspacePath;
+            try { localStorage.setItem('kai.workspacePath', activeWorkspace); } catch (e) {}
+        } else if (message && message.workspacePath !== undefined) {
+            activeWorkspace = message.workspacePath;
+        } else if (typeof window !== 'undefined' && window.appState && window.appState.workspacePath) {
+            activeWorkspace = window.appState.workspacePath;
         }
 
         emit({

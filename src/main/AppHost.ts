@@ -119,6 +119,10 @@ export class AppHost {
                 await this.handleBrowseWorkspaceFolder();
                 break;
             }
+            case 'setWorkspace': {
+                this.workspaceManager.setWorkspacePath(data.workspacePath || '');
+                break;
+            }
             case 'openFilePicker': {
                 await this.handleOpenFilePicker();
                 break;

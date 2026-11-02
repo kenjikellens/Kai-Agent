@@ -14,9 +14,9 @@ class AppState {
         this.selectedCodeContext = '';
         this.isWaitingForResponse = false;
         this.selectedModelValue = localStorage.getItem('kai.selectedModel') || 'local-model';
-        this.activeMode = localStorage.getItem('kai.activeMode') || 'chat';
         this.workspacePath = '';
         this.hasActiveWorkspace = false;
+        this.activeMode = 'ask';
         this.accordionStates = {};
     }
 
@@ -40,6 +40,7 @@ class AppState {
         this.selectedCodeContext = '';
         this.workspacePath = '';
         this.hasActiveWorkspace = false;
+        this.activeMode = 'ask';
         this.isWaitingForResponse = false;
     }
 
@@ -145,11 +146,15 @@ class AppState {
         if (chat.model) {
             this.selectedModelValue = chat.model;
         }
-        if (chat.mode) {
-            this.activeMode = chat.mode;
-        }
         this.workspacePath = chat.workspacePath || '';
         this.hasActiveWorkspace = !!this.workspacePath;
+        if (!this.hasActiveWorkspace) {
+            this.activeMode = 'ask';
+        } else if (chat.mode) {
+            this.activeMode = chat.mode === 'chat' ? 'ask' : chat.mode;
+        } else {
+            this.activeMode = 'ask';
+        }
         this.selectedCodeContext = '';
         this.isWaitingForResponse = false;
     }

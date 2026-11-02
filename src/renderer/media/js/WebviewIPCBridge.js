@@ -109,6 +109,10 @@ class WebviewIPCBridge {
         this.postMessage({ type: 'browseWorkspaceFolder' });
     }
 
+    setWorkspace(workspacePath) {
+        this.postMessage({ type: 'setWorkspace', workspacePath });
+    }
+
     browseLMStudioFolder() {
         this.postMessage({ type: 'browseLMStudioFolder' });
     }

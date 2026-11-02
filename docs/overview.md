@@ -123,3 +123,14 @@ graph TD
       - **RAF Token Scheduling & Layout Thrashing Elimination**: `StreamBufferPipeline.js` commits lookahead token batches on `requestAnimationFrame` ticks. `ChatUIController.js` batches scroll operations in RAF, decoupling DOM writes from scroll height measurements to eliminate forced layout reflows.
       - **Deep State Cloning & Session In-Memory Caching**: Native `structuredClone` in `AppState.deepClone()` accelerates state duplication, and `SessionRepository.js` keeps an in-memory session cache (`_sessionsCache`) to avoid repetitive JSON disk parsing.
       - **Central Event Delegation & Fast-Path Preview**: `HistoryManager.js` uses centralized event delegation on `this.historyList` for chat selection and deletion, eliminating per-row click handlers. `preview_server.js` restricts dynamic module reloads strictly to `/api/*` requests, serving static assets with zero require overhead.
+
+13. **Interactive Prompt Options Card Architecture (Claude Code Parity)**:
+      - **Standalone Card Elevation & Docking**: The interactive clarification prompt (`#ask-user-dock`) is mounted directly above `.input-card` within `.input-panel`, eliminating nested borders and textarea focus outline bleed while creating a dedicated elevated card.
+      - **Vertical Numbered Options**: Options are presented as full-width interactive rows (`.ask-option-item`) with subtle dividers, numbered rounded badges (`1`..`9`), and hover states.
+      - **Custom Input & Keyboard Navigation**: Features a bottom custom input row (`.ask-custom-input-wrap` with pencil icon) and pill skip button (`.ask-skip-btn`). Pressing number keys (`1`..`9`) triggers choices immediately, `Escape` dismisses the prompt, and `Enter` in the custom input submits user text. Complete 18-language i18n parity maintained.
+
+
+13. **Workspace Mode Gating & No-Workspace Ask Mode Enforcement**:
+       - **Mode Menu Gating**: When no workspace folder is active (`hasActiveWorkspace === false`), the mode dropdown selector container (`#context-options-dropdown-container`) is strictly hidden via `.hidden` (`display: none`).
+       - **Lock to Ask Mode**: With no workspace active, operational mode is locked to `ask` (`activeMode = 'ask'`), ensuring safe, read-only conversational interactions with utility, web search, and user clarification tools without workspace code mutation.
+       - **Workspace State Sync**: `WorkspaceManager` starts with an empty directory (`''`) instead of auto-binding `process.cwd()`, and chat sessions synchronize workspace presence bidirectionally with the backend and local storage via the `setWorkspace` IPC message.

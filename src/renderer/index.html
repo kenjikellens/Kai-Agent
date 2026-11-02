@@ -103,12 +103,12 @@
                             </div>
                             <div class="toolbar-right">
                                 <!-- Context & Capabilities Dropdown (Active Mode Button - only visible when a folder is attached) -->
-                                <div class="custom-dropdown hidden" id="context-options-dropdown-container">
-                                    <button type="button" class="toolbar-mode-btn" id="at-mention-trigger-btn" title="Select mode (@)">
+                                <div class="custom-dropdown hidden" id="context-options-dropdown-container" style="display: none;">
+                                    <button type="button" class="toolbar-mode-btn hidden" id="at-mention-trigger-btn" title="Select mode (@)" style="display: none;">
                                         <span class="mode-btn-icon" id="active-mode-icon">
                                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                                         </span>
-                                        <span class="mode-btn-label" id="active-mode-text">Chat</span>
+                                        <span class="mode-btn-label" id="active-mode-text">Ask</span>
                                         <svg class="mode-btn-chevron" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                     </button>
                                     <div class="dropdown-menu hidden" id="context-options-menu">

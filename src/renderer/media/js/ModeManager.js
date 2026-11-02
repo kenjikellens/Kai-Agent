@@ -1,6 +1,6 @@
 /**
- * ModeManager manages context mode state ('chat', 'ask', 'agent', 'planning'),
- * input placeholders, mode badges, and UI item selections.
+ * ModeManager manages context mode state ('ask', 'agent', 'planning'),
+ * input placeholders, mode badges, and UI item selections in Desktop App.
  */
 class ModeManager {
     /**
@@ -27,9 +27,8 @@ class ModeManager {
             this.onModeChange = null;
         }
 
-        this.modeLabels = { chat: 'Chat', ask: 'Ask', agent: 'Agent', planning: 'Plan' };
+        this.modeLabels = { ask: 'Ask', agent: 'Agent', planning: 'Plan' };
         this.modeIcons = {
-            chat: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
             ask: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
             agent: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>',
             planning: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>'
@@ -40,12 +39,21 @@ class ModeManager {
 
     /**
      * Updates active mode, persists to localStorage, and updates UI placeholders and icons.
-     * @param {'chat'|'ask'|'agent'|'planning'} mode Target mode.
+     * @param {'ask'|'agent'|'planning'} mode Target mode.
      */
     setActiveMode(mode) {
         if (!this.appState.hasActiveWorkspace) {
-            mode = 'chat';
-        } else if (mode === 'chat') {
+            mode = 'ask';
+            const modeContainer = document.getElementById('context-options-dropdown-container');
+            if (modeContainer) {
+                modeContainer.classList.add('hidden');
+                modeContainer.style.display = 'none';
+            }
+            if (this.atMentionTriggerBtn) {
+                this.atMentionTriggerBtn.classList.add('hidden');
+                this.atMentionTriggerBtn.style.display = 'none';
+            }
+        } else if (!['ask', 'agent', 'planning'].includes(mode)) {
             mode = 'ask';
         }
         this.appState.activeMode = mode;
@@ -57,7 +65,7 @@ class ModeManager {
         if (this.contextModeSelector) {
             this.contextModeSelector.querySelectorAll('.context-mode-item').forEach(btn => {
                 const itemMode = btn.dataset.mode;
-                btn.classList.toggle('active', itemMode === mode || (itemMode === 'ask' && mode === 'ask'));
+                btn.classList.toggle('active', itemMode === mode);
             });
         }
 
@@ -72,7 +80,7 @@ class ModeManager {
                 textEl.textContent = this.modeLabels[mode] || 'Ask';
             }
             this.atMentionTriggerBtn.title = `Mode: ${this.modeLabels[mode] || 'Ask'} (@)`;
-            this.atMentionTriggerBtn.classList.toggle('active-mode', mode !== 'chat' && mode !== 'ask');
+            this.atMentionTriggerBtn.classList.toggle('active-mode', mode !== 'ask');
         }
 
         this.updatePlaceholder();
@@ -89,12 +97,12 @@ class ModeManager {
     updatePlaceholder(customTranslations = null) {
         if (!this.messageInput) return;
         const i18n = customTranslations || window.KAI_I18N || {};
-        const mode = this.appState.activeMode || 'chat';
+        const mode = this.appState.activeMode || 'ask';
 
-        if (mode === 'chat') {
-            this.messageInput.placeholder = i18n.placeholderChat || 'Ask Kai anything, calculate, convert, or search the web...';
-        } else if (mode === 'ask') {
-            this.messageInput.placeholder = i18n.placeholderAsk || 'Ask questions about your workspace codebase...';
+        if (mode === 'ask') {
+            this.messageInput.placeholder = this.appState.hasActiveWorkspace
+                ? (i18n.placeholderAsk || 'Ask questions about your workspace codebase...')
+                : (i18n.placeholderChat || 'Ask Kai anything, calculate, convert, or search the web...');
         } else if (mode === 'agent') {
             this.messageInput.placeholder = i18n.placeholderAgent || 'Ask Kai to edit code, execute tasks, or run commands...';
         } else if (mode === 'planning') {
@@ -107,14 +115,18 @@ class ModeManager {
      * @param {boolean} hasWorkspace Whether a workspace is currently active.
      */
     setWorkspaceState(hasWorkspace) {
-        const modeOptAgent = document.getElementById('mode-opt-agent');
-        const modeOptPlanning = document.getElementById('mode-opt-planning');
         const modeContainer = document.getElementById('context-options-dropdown-container');
-
         if (modeContainer) {
             modeContainer.classList.toggle('hidden', !hasWorkspace);
+            modeContainer.style.display = hasWorkspace ? 'inline-flex' : 'none';
+        }
+        if (this.atMentionTriggerBtn) {
+            this.atMentionTriggerBtn.classList.toggle('hidden', !hasWorkspace);
+            this.atMentionTriggerBtn.style.display = hasWorkspace ? 'inline-flex' : 'none';
         }
 
+        const modeOptAgent = document.getElementById('mode-opt-agent');
+        const modeOptPlanning = document.getElementById('mode-opt-planning');
         if (modeOptAgent) {
             modeOptAgent.disabled = !hasWorkspace;
             modeOptAgent.classList.toggle('disabled', !hasWorkspace);
@@ -127,9 +139,11 @@ class ModeManager {
         }
 
         if (!hasWorkspace) {
-            this.setActiveMode('chat');
-        } else if (this.appState.activeMode === 'chat') {
             this.setActiveMode('ask');
+            if (this.contextOptionsMenu) {
+                this.contextOptionsMenu.classList.add('hidden');
+                this.contextOptionsMenu.style.display = 'none';
+            }
         }
     }
 
@@ -144,7 +158,7 @@ class ModeManager {
                 if (!item || !item.dataset.mode) return;
 
                 const targetMode = item.dataset.mode;
-                if (item.disabled || item.classList.contains('disabled') || (!this.appState.hasActiveWorkspace && targetMode !== 'chat')) {
+                if (item.disabled || item.classList.contains('disabled') || (!this.appState.hasActiveWorkspace && targetMode !== 'ask')) {
                     e.preventDefault();
                     e.stopPropagation();
                     return;

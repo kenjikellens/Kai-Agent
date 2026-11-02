@@ -10,11 +10,11 @@ export class WorkspaceManager {
     private activeWorkspacePath: string = '';
 
     /**
-     * Initializes the workspace manager with a default directory (e.g. cwd).
+     * Initializes the workspace manager with an optional initial directory (empty string by default).
      * @param initialPath Optional starting directory path.
      */
-    constructor(initialPath?: string) {
-        this.activeWorkspacePath = initialPath || process.cwd();
+    constructor(initialPath: string = '') {
+        this.activeWorkspacePath = initialPath;
     }
 
     /**
@@ -25,11 +25,15 @@ export class WorkspaceManager {
     }
 
     /**
-     * Sets the active workspace directory path if it exists.
-     * @param targetPath Absolute path to directory.
+     * Sets the active workspace directory path if it exists, or clears it if empty.
+     * @param targetPath Absolute path to directory or empty string.
      */
     public setWorkspacePath(targetPath: string): boolean {
-        if (targetPath && fs.existsSync(targetPath)) {
+        if (!targetPath) {
+            this.activeWorkspacePath = '';
+            return true;
+        }
+        if (fs.existsSync(targetPath)) {
             this.activeWorkspacePath = path.resolve(targetPath);
             return true;
         }
@@ -42,6 +46,9 @@ export class WorkspaceManager {
      */
     public resolvePath(relativeOrAbsolute: string): string {
         if (path.isAbsolute(relativeOrAbsolute)) {
+            return relativeOrAbsolute;
+        }
+        if (!this.activeWorkspacePath) {
             return relativeOrAbsolute;
         }
         return path.join(this.activeWorkspacePath, relativeOrAbsolute);

@@ -49,7 +49,7 @@
         (chatId) => { openSessionById(chatId); }
     );
 
-    // 3. Mode Manager (4 modes in Desktop App: chat, ask, agent, planning)
+    // 3. Mode Manager (Desktop App: ask, agent, planning)
     const modeManager = new ModeManager({
         appState: appState,
         contextModeSelector: document.getElementById('context-mode-selector'),
@@ -60,6 +60,7 @@
             saveCurrentChat();
         }
     });
+    modeManager.setWorkspaceState(appState.hasActiveWorkspace);
 
     // 4. Prompt Submission Orchestrator
     const promptOrchestrator = new PromptSubmissionOrchestrator({
@@ -156,6 +157,14 @@
         }
 
         modeManager.setWorkspaceState(hasWs);
+        if (!hasWs) {
+            try {
+                localStorage.removeItem('kai.workspacePath');
+            } catch (e) {}
+        }
+        if (ipcBridge && typeof ipcBridge.setWorkspace === 'function') {
+            ipcBridge.setWorkspace(appState.workspacePath);
+        }
     }
 
     /**
@@ -441,7 +450,7 @@
         if (message.isFolderPicked && message.workspacePath) {
             updateWorkspaceUi(message.workspacePath);
             saveCurrentChat();
-        } else if (message.workspacePath) {
+        } else if (message.workspacePath !== undefined) {
             updateWorkspaceUi(message.workspacePath);
         } else {
             updateWorkspaceUi(appState.workspacePath || '');
