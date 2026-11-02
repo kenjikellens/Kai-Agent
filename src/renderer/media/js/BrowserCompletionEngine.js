@@ -221,6 +221,7 @@ class BrowserCompletionEngine {
                 try {
                     toolResult = await this.toolsExecutor.execute(toolCall.name, toolCall.args);
                 } catch (toolErr) {
+                    console.error(`[KAI Browser Tool Error] Tool ${toolCall.name} execution failed:`, toolErr);
                     toolResult = `[Error executing ${toolCall.name}]: ${toolErr.message || toolErr}`;
                 }
 
@@ -254,6 +255,7 @@ class BrowserCompletionEngine {
             this.generateTitleAsync(rawMessages, model, serverUrl, message.chatId, emit);
         } catch (err) {
             if (err.name !== 'AbortError') {
+                console.error('[KAI BrowserCompletionEngine Error]:', err);
                 emit({ type: 'replyError', message: `Fout bij verzenden: ${err.message}` });
             }
         } finally {

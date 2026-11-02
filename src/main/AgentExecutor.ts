@@ -328,6 +328,7 @@ export class AgentExecutor {
             try {
                 toolResult = await this.executeTool(toolCall.name, toolCall.args, activeTurnId);
             } catch (err: any) {
+                console.error(`[KAI Agent Tool Error] Tool ${toolCall.name} execution failed:`, err);
                 toolResult = `[Error executing tool ${toolCall.name}]: ${err.message || err}`;
             }
 

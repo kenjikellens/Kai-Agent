@@ -3,6 +3,14 @@
  * Instantiates and orchestrates ES6 OOP modules with collapsible Left Sidebar.
  */
 (function () {
+    // Global error diagnostic listener
+    window.addEventListener('error', (event) => {
+        console.error('[KAI Desktop Global Error]:', event.error || event.message, event);
+    });
+    window.addEventListener('unhandledrejection', (event) => {
+        console.error('[KAI Desktop Unhandled Rejection]:', event.reason);
+    });
+
     // 0. Apply Saved UI Theme immediately on startup
     if (typeof SettingsController !== 'undefined' && typeof SettingsController.applyTheme === 'function') {
         SettingsController.applyTheme();

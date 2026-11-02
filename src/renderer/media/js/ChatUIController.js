@@ -263,7 +263,7 @@ class ChatUIController {
                         if (contentEl) {
                             const isRaw = assistantMsg.classList.toggle('show-raw-mode');
                             rawToggleBtn.classList.toggle('active', isRaw);
-                            const rawText = assistantMsg.dataset.rawContent || '';
+                            const rawText = assistantMsg.dataset.rawContent || (contentEl ? contentEl.innerText : '') || '';
                             if (isRaw) {
                                 contentEl.dataset.formattedHtml = contentEl.innerHTML;
                                 const existingThinking = contentEl.querySelector('.thinking-block');
@@ -609,7 +609,7 @@ class ChatUIController {
         const rawSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>';
         const infoSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
 
-        const rawModelName = meta.model || (this.settingsController ? this.settingsController.getSelectedModel() : '') || localStorage.getItem('kai.selectedModel') || 'Local Model';
+        const rawModelName = meta.model || (this.modelDropdownController?.getSelectedModel?.()) || (this.settingsController?.getSelectedModel?.()) || localStorage.getItem('kai.selectedModel') || 'Local Model';
         const displayModelName = this.formatter.formatModelName(rawModelName);
         const effectiveMode = mode || meta.mode || 'chat';
         const modeLabel = effectiveMode === 'planning' ? 'Plan' : (effectiveMode.charAt(0).toUpperCase() + effectiveMode.slice(1));
@@ -850,12 +850,18 @@ class ChatUIController {
                             .replace(/<\|[\s\S]*$/gi, '')
                             .trim();
                         let fullText = baseText;
-                        if (questionText && !baseText.includes(questionText)) {
+                        const normBase = baseText.replace(/\s+/g, ' ').trim().toLowerCase();
+                        const normQ = questionText.replace(/\s+/g, ' ').trim().toLowerCase();
+                        if (normQ && !normBase.includes(normQ)) {
                             fullText = baseText ? `${baseText}\n\n${questionText}` : questionText;
                         }
                         this.currentAssistantText = fullText;
+                        this.currentAssistantMsgElement.dataset.rawContent = fullText;
                         contentEl.innerHTML = this.formatter.formatMarkdown(fullText);
                         appState.updateOrAddAssistantUiEvent(fullText);
+                        if (!this.currentAssistantMsgElement.querySelector('.message-actions')) {
+                            this.currentAssistantMsgElement.appendChild(this.createAssistantActionBar(this.currentAssistantMsgElement.dataset.mode || 'agent'));
+                        }
                     }
                 } else if (questionText) {
                     this.appendMessage('assistant', questionText);
@@ -915,6 +921,11 @@ class ChatUIController {
         } else if (progress.progressType === 'tool_end') {
             if (progress.tool === 'ask_user') {
                 this.removeActivityStatus();
+                if (progress.output && (progress.output.startsWith('[Error') || progress.output.startsWith('[ask_user error'))) {
+                    const errMsg = progress.output;
+                    appState.addUiEvent({ type: 'system', content: errMsg });
+                    this.appendMessage('system', errMsg);
+                }
                 return;
             }
             const isError = progress.output && (
@@ -1398,25 +1409,36 @@ class ChatUIController {
 
         // Ensure the question text is displayed as an assistant message bubble in the chat
         if (req.question) {
-            if (!this.currentAssistantMsgElement) {
+            const normQ = req.question.replace(/\s+/g, ' ').trim().toLowerCase();
+            const lastAssistantMsg = this.currentAssistantMsgElement ||
+                (this.chatContainer ? this.chatContainer.querySelector('.message.assistant-message:last-of-type') : null);
+
+            if (lastAssistantMsg) {
+                const contentEl = lastAssistantMsg.querySelector('.message-content');
+                const rawContent = (lastAssistantMsg.dataset.rawContent || (contentEl ? contentEl.innerText : '') || '').replace(/\s+/g, ' ').toLowerCase();
+                if (!rawContent.includes(normQ)) {
+                    const base = (lastAssistantMsg.dataset.rawContent || this.currentAssistantText || '').trim();
+                    const full = base ? `${base}\n\n${req.question}` : req.question;
+                    lastAssistantMsg.dataset.rawContent = full;
+                    if (contentEl) {
+                        contentEl.innerHTML = this.formatter.formatMarkdown(full);
+                    }
+                    const state = this.appState || (typeof window !== 'undefined' ? window.appState : null);
+                    if (state) state.updateOrAddAssistantUiEvent(full);
+                } else {
+                    if (!lastAssistantMsg.dataset.rawContent && this.currentAssistantText) {
+                        lastAssistantMsg.dataset.rawContent = this.currentAssistantText;
+                    }
+                }
+                if (!lastAssistantMsg.querySelector('.message-actions')) {
+                    lastAssistantMsg.appendChild(this.createAssistantActionBar(lastAssistantMsg.dataset.mode || 'agent'));
+                }
+            } else {
                 this.appendMessage('assistant', req.question);
                 const state = this.appState || (typeof window !== 'undefined' ? window.appState : null);
                 if (state) {
                     state.addUiEvent({ type: 'assistant', content: req.question });
                     state.addMessage({ role: 'assistant', content: req.question });
-                }
-            } else {
-                const contentEl = this.currentAssistantMsgElement.querySelector('.message-content');
-                if (contentEl) {
-                    const currentHtml = contentEl.innerText || contentEl.textContent || '';
-                    if (!currentHtml.includes(req.question)) {
-                        const base = (this.currentAssistantText || '').trim();
-                        const full = base ? `${base}\n\n${req.question}` : req.question;
-                        this.currentAssistantText = full;
-                        contentEl.innerHTML = this.formatter.formatMarkdown(full);
-                        const state = this.appState || (typeof window !== 'undefined' ? window.appState : null);
-                        if (state) state.updateOrAddAssistantUiEvent(full);
-                    }
                 }
             }
         }

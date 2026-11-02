@@ -30,7 +30,13 @@ class WebviewIPCBridge {
         const dispatch = (message) => {
             if (message && message.type && this.listeners.has(message.type)) {
                 const callbacks = this.listeners.get(message.type);
-                callbacks.forEach(cb => cb(message));
+                callbacks.forEach(cb => {
+                    try {
+                        cb(message);
+                    } catch (err) {
+                        console.error(`[KAI WebviewIPCBridge Error] Error in listener for "${message.type}":`, err, message);
+                    }
+                });
             }
         };
 
