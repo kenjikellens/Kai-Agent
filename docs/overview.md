@@ -125,9 +125,10 @@ graph TD
       - **Central Event Delegation & Fast-Path Preview**: `HistoryManager.js` uses centralized event delegation on `this.historyList` for chat selection and deletion, eliminating per-row click handlers. `preview_server.js` restricts dynamic module reloads strictly to `/api/*` requests, serving static assets with zero require overhead.
 
 13. **Interactive Prompt Options Card Architecture (Claude Code Parity)**:
-      - **Standalone Card Elevation & Docking**: The interactive clarification prompt (`#ask-user-dock`) is mounted directly above `.input-card` within `.input-panel`, eliminating nested borders and textarea focus outline bleed while creating a dedicated elevated card.
+      - **Standalone Card Elevation & Docking**: The interactive clarification prompt (`#ask-user-dock`) is mounted directly above `.input-card` within `.input-panel`, eliminating nested borders and textarea focus outline bleed while creating a dedicated elevated card styled with standardized tokens (`var(--app-input-bg)`, `var(--app-input-border)`).
       - **Vertical Numbered Options**: Options are presented as full-width interactive rows (`.ask-option-item`) with subtle dividers, numbered rounded badges (`1`..`9`), and hover states.
-      - **Custom Input & Keyboard Navigation**: Features a bottom custom input row (`.ask-custom-input-wrap` with pencil icon) and pill skip button (`.ask-skip-btn`). Pressing number keys (`1`..`9`) triggers choices immediately, `Escape` dismisses the prompt, and `Enter` in the custom input submits user text. Complete 18-language i18n parity maintained.
+      - **Single Unified Input & Conversational Flow**: Redundant inner custom input fields are eliminated in favor of using `#message-input` as the single unified input with dynamic placeholder (`askUserCustomPlaceholder`), while the dock footer cleanly retains the right-aligned skip button (`.ask-skip-btn`). Answering a question renders an authentic `.user-message-bubble`, keeping the chat transcript conversational while preserving intermediate turns in `appState.messages` and `fullHistory` for seamless multi-turn retry and edit rollback.
+      - **Keyboard Navigation & i18n Parity**: Number keys (`1`..`9`) trigger choices immediately, `Escape` dismisses the prompt, and `Enter` in the main message input submits custom responses. Full parity maintained across 18 languages in `AllLocales.js`.
 
 
 13. **Workspace Mode Gating & No-Workspace Ask Mode Enforcement**:
@@ -135,9 +136,9 @@ graph TD
        - **Lock to Ask Mode**: With no workspace active, operational mode is locked to `ask` (`activeMode = 'ask'`), ensuring safe, read-only conversational interactions with utility, web search, and user clarification tools without workspace code mutation.
        - **Workspace State Sync**: `WorkspaceManager` starts with an empty directory (`''`) instead of auto-binding `process.cwd()`, and chat sessions synchronize workspace presence bidirectionally with the backend and local storage via the `setWorkspace` IPC message.
 
-14. **Direct Tool Invocation & Professional System Prompt Contracts**:
-       - **Immediate Tool Execution Mandate**: In all system prompt variants (`ask`, `agent`, `planning`), models are strictly instructed to emit tool calls directly within `<|tool_call|>` without conversational preambles ("Let me check...", "I will inspect..."), eliminating hesitation and narrative filler.
-       - **Refined `ask_user` Protocol**: Interactive clarification is strictly scoped to genuine, blocking architectural decisions or branching design requirements where human input is indispensable. Routine answers and unprompted confirmations never trigger `ask_user`.
+14. **Direct Tool Invocation & Interactive Prompt Protocol**:
+       - **Immediate Tool Execution Mandate**: In all system prompt variants (`ask`, `agent`, `planning`, `chat`), models are strictly instructed to emit tool calls directly within `<|tool_call|>` without conversational preambles ("Let me check...", "I will inspect..."), eliminating hesitation and narrative filler.
+       - **Interactive Question & Multiple-Choice Mandate (`ask_user`)**: Whenever presenting the user with multiple choices, preset answers, or running interactive flows (games like Akinator, quizzes, branching decisions, or task selection), models are mandated to invoke `ask_user` with structured options instead of dumping plain text markdown lists. Simple direct answers and greetings reply in plain text without `ask_user`.
        - **Mode Separation Contracts**:
          - **Ask Mode**: Authoritative, read-only code intelligence and external documentation lookup. File modification is strictly barred.
          - **Planning Mode**: Two-phase architecture. Phase 1 conducts read-only research and outputs `<implementation_plan title="...">` with proposed diffs and verification steps; zero code modifications are permitted before explicit user approval.

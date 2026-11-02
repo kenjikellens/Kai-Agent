@@ -245,6 +245,9 @@
         sessionRepository.saveSession(payload);
         historyManager.setActiveChatId(appState.currentChatId);
     }
+    window.saveCurrentChat = saveCurrentChat;
+    chatUIController.saveCurrentChat = saveCurrentChat;
+    chatUIController.appState = appState;
 
     /**
      * Sends user prompt input to extension host or aborts ongoing generation.

@@ -299,7 +299,8 @@ export class AppHost {
                 content: result.reply,
                 modifiedFiles: result.modifiedFiles,
                 mode: effectiveMode,
-                tokensPerSecond: result.tokensPerSecond
+                tokensPerSecond: result.tokensPerSecond,
+                fullHistory: result.messages
             });
         } catch (error: any) {
             if (error.name === 'AbortError') {
