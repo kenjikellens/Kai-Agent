@@ -73,7 +73,7 @@ class BrowserCompletionEngine {
 
         // Load prompt file
         let promptFile = 'system_prompt_chat.md';
-        const hasWs = !!(localStorage.getItem('kai.workspacePath'));
+        const hasWs = Boolean(message.workspacePath || (typeof window !== 'undefined' && window.appState && window.appState.hasActiveWorkspace && window.appState.workspacePath));
         if (mode === 'ask') promptFile = hasWs ? 'system_prompt_ask.md' : 'system_prompt_chat.md';
         else if (isPlanning) promptFile = 'system_prompt_planning.md';
         else if (mode === 'agent') promptFile = 'system_prompt_agent.md';

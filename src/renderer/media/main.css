@@ -2036,7 +2036,7 @@ button:disabled {
   gap: 6px;
   height: 32px;
   padding: 0 12px;
-  border: 0 !important;
+  border: 0;
   outline: none;
   border-radius: 999px;
   background: var(--app-surface-strong);
@@ -2049,6 +2049,8 @@ button:disabled {
   transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
+#context-options-dropdown-container,
+#at-mention-trigger-btn,
 #context-options-dropdown-container.hidden,
 #at-mention-trigger-btn.hidden,
 .toolbar-mode-btn.hidden {
