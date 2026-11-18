@@ -22,22 +22,22 @@
   --main-surface-input: #252526;
   --main-border-subtle: rgba(255, 255, 255, 0.08);
 
-  --app-bg: var(--vscode-sideBar-background, #141416);
-  --app-fg: var(--vscode-editor-foreground, var(--vscode-foreground, #e4e4e7));
-  --app-muted: var(--vscode-descriptionForeground, #9ca3af);
-  --app-border: rgba(255, 255, 255, 0.09);
-  --app-border-strong: rgba(255, 255, 255, 0.16);
-  --app-border-subtle: rgba(255, 255, 255, 0.06);
-  --app-surface: rgba(255, 255, 255, 0.04);
-  --app-surface-strong: rgba(255, 255, 255, 0.07);
-  --app-surface-hover: rgba(255, 255, 255, 0.10);
-  --app-surface-active: rgba(255, 255, 255, 0.14);
+  --app-bg: var(--vscode-sideBar-background, #1e1e1e);
+  --app-fg: var(--vscode-editor-foreground, var(--vscode-foreground, #cccccc));
+  --app-muted: var(--vscode-descriptionForeground, #888888);
+  --app-border: rgba(255, 255, 255, 0.08);
+  --app-border-strong: rgba(255, 255, 255, 0.14);
+  --app-border-subtle: rgba(255, 255, 255, 0.05);
+  --app-surface: rgba(255, 255, 255, 0.03);
+  --app-surface-strong: rgba(255, 255, 255, 0.06);
+  --app-surface-hover: rgba(255, 255, 255, 0.08);
+  --app-surface-active: rgba(255, 255, 255, 0.12);
   --app-btn-inset: 0 0 0 1.5px var(--app-surface-hover);
-  --app-accent: var(--vscode-button-background, #2563eb);
-  --app-accent-hover: var(--vscode-button-hoverBackground, #1d4ed8);
-  --app-input-bg: var(--vscode-input-background, #1c1c20);
-  --app-input-border: var(--vscode-input-border, rgba(255, 255, 255, 0.12));
-  --app-focus: var(--vscode-focusBorder, #3b82f6);
+  --app-accent: var(--vscode-button-background, #007acc);
+  --app-accent-hover: var(--vscode-button-hoverBackground, #0062a3);
+  --app-input-bg: var(--vscode-input-background, #252526);
+  --app-input-border: var(--vscode-input-border, rgba(255, 255, 255, 0.08));
+  --app-focus: var(--vscode-focusBorder, #007acc);
   --app-radius-sm: 4px;
   --app-radius-md: 6px;
   --app-radius-lg: 8px;
@@ -3758,10 +3758,12 @@ button:disabled {
   gap: 8px;
 }
 
-/* Provider Label Link with External Top-Right Arrow */
+/* Provider Label Link - Wraps text and external arrow without stretching full row width */
 .provider-label-link {
   display: inline-flex;
   align-items: center;
+  align-self: flex-start;
+  width: fit-content;
   gap: 6px;
   text-decoration: none;
   color: var(--app-fg);
@@ -4377,16 +4379,7 @@ button:disabled {
   padding: 4px;
 }
 
-.setting-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--app-muted);
-  font-size: 0.8rem;
-  user-select: none;
-  cursor: pointer;
-}
-
+/* Settings row checkbox - Shows pointer only on direct checkbox input */
 .setting-row input[type="checkbox"] {
   cursor: pointer;
 }
@@ -4964,15 +4957,17 @@ details[open]>summary>.custom-chevron {
 /* Settings outer shell - Full-height centered container for header and two-column body */
 .settings-container { display: flex; flex-direction: column; height: 100%; width: 100%; background: var(--app-bg); color: var(--app-fg); box-sizing: border-box; overflow: hidden; }
 /* Settings inner shell - Uses full available width and stacks top header over split body */
-.settings-shell { display: flex; flex-direction: column; height: 100%; width: 100%; padding: 20px 32px 24px; box-sizing: border-box; overflow: hidden; }
+.settings-shell { display: flex; flex-direction: column; height: 100%; width: 100%; padding: 28px 44px 32px; box-sizing: border-box; overflow: hidden; }
 /* Settings top header - Displays page title and close button above split layout */
-.settings-panel-header { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--app-border); color: var(--app-fg); }
+.settings-panel-header { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; margin-bottom: 24px; padding-bottom: 14px; border-bottom: 1px solid var(--app-border); color: var(--app-fg); }
 /* Settings main title - Prominent page heading typography */
-.settings-title { margin: 0; font-size: 1.55rem; font-weight: 600; letter-spacing: -0.02em; color: var(--app-fg); }
+.settings-title { margin: 0; font-size: 1.65rem; font-weight: 600; letter-spacing: -0.02em; color: var(--app-fg); }
 /* Settings split body - Positions category sidebar left and active tab pane right */
-.settings-body { display: flex; flex: 1 1 auto; min-height: 0; gap: 28px; overflow: hidden; }
+.settings-body { display: flex; flex: 1 1 auto; min-height: 0; gap: 40px; overflow: hidden; }
 /* Settings left category sidebar - Vertical tab rail reusing .sidebar-footer-btn with visible hover rings */
-.settings-sidebar { width: 228px; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; padding: 2px 18px 2px 2px; border-right: 1px solid var(--app-border); box-sizing: border-box; overflow: visible; }
+.settings-sidebar { width: 250px; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; padding: 2px 24px 2px 2px; border-right: 1px solid var(--app-border); box-sizing: border-box; overflow: visible; }
+/* Settings sidebar tab sizing - Matches larger settings typography and comfortable click target */
+.settings-sidebar .sidebar-footer-btn { height: 38px; min-height: 38px; max-height: 38px; padding: 0 14px; font-size: 0.92rem; }
 /* Inactive settings tab modifier - Keeps unselected sidebar tabs flat and muted */
 .settings-sidebar .sidebar-footer-btn:not(.active) { background: transparent; color: var(--app-muted); }
 /* Inactive settings tab hover - Restores standard sidebar hover fill and inset spread */
@@ -4984,13 +4979,21 @@ details[open]>summary>.custom-chevron {
 /* Settings category panel - Flat borderless container directly on page canvas */
 .settings-category { position: relative; margin: 0; padding: 0; border: none; background: transparent; box-sizing: border-box; width: 100%; overflow: visible; }
 /* Settings active category heading - Clean section title inside right content panel */
-.settings-section-heading { margin: 0 0 8px; padding-bottom: 10px; border-bottom: 1px solid var(--app-border); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--app-muted); }
+.settings-section-heading { margin: 0 0 6px; padding-bottom: 12px; border-bottom: 1px solid var(--app-border); font-size: 1.05rem; font-weight: 600; color: var(--app-fg); }
 /* Settings category rows container - Vertical stack with visible overflow for selects */
 .settings-body .category-content { display: flex; flex-direction: column; gap: 0; padding: 0; overflow: visible; }
-/* Settings tab rows - Clean hairline dividers replacing outer card container */
-.settings-body .setting-row { padding: 14px 0; border-bottom: 1px solid var(--app-border-subtle); }
+/* Settings tab rows - Generous spacing and hairline dividers replacing outer card container */
+.settings-body .setting-row { gap: 32px; padding: 18px 0; border-bottom: 1px solid var(--app-border-subtle); }
 /* Settings last tab row - Omits trailing bottom divider */
 .settings-body .setting-row:last-child { border-bottom: none; }
+/* Settings row title - Slightly larger readable label in full-page layout */
+.settings-body .setting-label { font-size: 1rem; }
+/* Settings row subtitle - Readable description copy aligned under label */
+.settings-body .setting-subtitle { font-size: 0.85rem; line-height: 1.45; margin-top: 3px; }
+/* Settings row controls - Consistent right-aligned width across inputs and selects */
+.settings-body .setting-control:has(.setting-input-text),
+.settings-body .setting-control:has(.custom-select-container),
+.settings-body .setting-control-stacked { min-width: 340px; max-width: 440px; }
 
 /* Compact viewport fallback - Stacks settings tabs horizontally on narrow windows */
 @media (max-width: 680px) {
