@@ -11,6 +11,7 @@ import { WorkspaceManager } from './WorkspaceManager';
 import { ConfigManager } from './ConfigManager';
 import { TurnSnapshotManager } from './services/TurnSnapshotManager';
 import { StandaloneHostServices } from './adapters/StandaloneHostServices';
+import { resolveSafePath } from './tools/Tool';
 
 /**
  * AppHost coordinates bidirectional IPC messaging between the Electron Main process
@@ -59,6 +60,10 @@ export class AppHost {
         switch (data.type) {
             case 'ask_user_response': {
                 StandaloneHostServices.resolveAskUser(data.requestId, data.answer);
+                break;
+            }
+            case 'command_approval_response': {
+                StandaloneHostServices.resolveCommandApproval(data.requestId, Boolean(data.allowed));
                 break;
             }
             case 'sendMessage': {
@@ -132,9 +137,8 @@ export class AppHost {
                 break;
             }
             case 'openExternalUrl': {
-                if (data.url) {
+                if (data.url && this.isSafeExternalUrl(data.url)) {
                     try {
-                        const { shell } = require('electron');
                         shell.openExternal(data.url);
                     } catch (e) {}
                 }
@@ -211,24 +215,38 @@ export class AppHost {
                 break;
             }
             case 'openFile': {
-                if (data.filePath) {
-                    const absPath = this.workspaceManager.resolvePath(data.filePath);
-                    if (fs.existsSync(absPath)) {
-                        shell.openPath(absPath);
+                const workspacePath = this.workspaceManager.getWorkspacePath();
+                if (data.filePath && workspacePath) {
+                    try {
+                        const absPath = resolveSafePath(data.filePath, workspacePath);
+                        const blockedExts = new Set(['.exe', '.bat', '.cmd', '.ps1', '.vbs', '.msi', '.com', '.scr']);
+                        if (fs.existsSync(absPath) && fs.statSync(absPath).isFile() && !blockedExts.has(path.extname(absPath).toLowerCase())) {
+                            shell.openPath(absPath);
+                        }
+                    } catch {
+                        // Reject files outside the active workspace
                     }
                 }
                 break;
             }
-            case 'openFilePicker': {
-                await this.handleOpenFilePicker();
-                break;
-            }
             case 'openExternal': {
-                if (data.url) {
+                if (data.url && this.isSafeExternalUrl(data.url)) {
                     shell.openExternal(data.url);
                 }
                 break;
             }
+        }
+    }
+
+    /**
+     * Validates that external URLs strictly use HTTP or HTTPS protocols.
+     */
+    private isSafeExternalUrl(rawUrl: string): boolean {
+        try {
+            const parsed = new URL(rawUrl);
+            return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+        } catch {
+            return false;
         }
     }
 

@@ -151,6 +151,7 @@ export class StandaloneHostServices implements IHostServices {
     }
 
     private static pendingRequests: Map<string, { resolve: (val: string) => void; timer: NodeJS.Timeout }> = new Map();
+    private static pendingApprovals: Map<string, { resolve: (allowed: boolean) => void; timer: NodeJS.Timeout }> = new Map();
     private static activeWebview?: { postMessage: (msg: any) => void };
 
     /**
@@ -210,6 +211,50 @@ export class StandaloneHostServices implements IHostServices {
                 clearTimeout(timer);
                 StandaloneHostServices.pendingRequests.delete(requestId);
                 resolve(`[ask_user: Webview UI is not available. Question was: ${question}]`);
+            }
+        });
+    }
+
+    /**
+     * Resolves a pending command approval request from the Electron renderer.
+     * @param requestId Correlation ID of the approval prompt.
+     * @param allowed Whether the user allowed execution.
+     */
+    public static resolveCommandApproval(requestId: string, allowed: boolean): boolean {
+        const pending = this.pendingApprovals.get(requestId);
+        if (pending) {
+            clearTimeout(pending.timer);
+            this.pendingApprovals.delete(requestId);
+            pending.resolve(Boolean(allowed));
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Prompts the developer in the Electron UI before running a shell command.
+     * @param command Shell command string.
+     */
+    public requestCommandApproval(command: string): Promise<boolean> {
+        return new Promise<boolean>((resolve) => {
+            const requestId = `cmd-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+            const timer = setTimeout(() => {
+                StandaloneHostServices.pendingApprovals.delete(requestId);
+                resolve(false);
+            }, 300000);
+
+            StandaloneHostServices.pendingApprovals.set(requestId, { resolve, timer });
+
+            if (StandaloneHostServices.activeWebview) {
+                StandaloneHostServices.activeWebview.postMessage({
+                    type: 'command_approval_request',
+                    requestId,
+                    command
+                });
+            } else {
+                clearTimeout(timer);
+                StandaloneHostServices.pendingApprovals.delete(requestId);
+                resolve(false);
             }
         });
     }

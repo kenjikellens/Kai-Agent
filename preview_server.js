@@ -11,10 +11,21 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
+const crypto = require('crypto');
 
 const APP_DIR = __dirname;
-const RENDERER_DIR = path.join(APP_DIR, 'src', 'renderer');
-const PROMPTS_DIR = path.join(APP_DIR, 'prompts');
+const RENDERER_DIR = path.resolve(APP_DIR, 'src', 'renderer');
+const PROMPTS_DIR = path.resolve(APP_DIR, 'prompts');
+const PORT = 5173;
+const HOST = '127.0.0.1';
+const MAX_BODY_BYTES = 10 * 1024 * 1024;
+const PREVIEW_SESSION_TOKEN = crypto.randomBytes(24).toString('hex');
+const ALLOWED_ORIGINS = new Set([`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`]);
+const WORKSPACE_TOOLS = new Set([
+    'get_workspace_structure', 'list_dir', 'read_file', 'write_file', 'edit_file',
+    'replace_file_content', 'multi_replace_file_content', 'grep_search',
+    'symbol_search', 'get_diagnostics', 'run_command', 'delete_item'
+]);
 
 function loadFreshDistModules() {
     try {
@@ -51,46 +62,184 @@ const MIME_TYPES = {
     '.md': 'text/markdown; charset=utf-8'
 };
 
-function sendJson(res, statusCode, data) {
+/**
+ * Returns strict same-origin CORS headers for allowed localhost origins.
+ */
+function getCorsHeaders(req) {
+    const origin = req && req.headers ? req.headers.origin : '';
+    const headers = {
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, X-KAI-Token',
+        'Vary': 'Origin'
+    };
+    if (origin && ALLOWED_ORIGINS.has(origin)) {
+        headers['Access-Control-Allow-Origin'] = origin;
+    }
+    return headers;
+}
+
+/**
+ * Validates Origin header and per-session X-KAI-Token on mutating API calls.
+ */
+function isAuthorizedApiPost(req) {
+    const origin = req.headers.origin;
+    if (origin && !ALLOWED_ORIGINS.has(origin)) {
+        return false;
+    }
+    const token = String(req.headers['x-kai-token'] || '');
+    const expectedBuf = Buffer.from(PREVIEW_SESSION_TOKEN, 'utf8');
+    const actualBuf = Buffer.from(token, 'utf8');
+    if (actualBuf.length !== expectedBuf.length) {
+        return false;
+    }
+    return crypto.timingSafeEqual(actualBuf, expectedBuf);
+}
+
+/**
+ * Resolves a request path safely inside a base directory, rejecting traversal.
+ */
+function resolveSafeStaticPath(baseDir, rawRelPath) {
+    let decoded;
+    try {
+        decoded = decodeURIComponent(rawRelPath);
+    } catch {
+        return null;
+    }
+    const cleanRel = decoded.replace(/^[/\\]+/, '');
+    const resolvedBase = path.resolve(baseDir);
+    const targetPath = path.resolve(resolvedBase, cleanRel);
+    const rel = path.relative(resolvedBase, targetPath);
+    if (rel.startsWith('..') || path.isAbsolute(rel)) {
+        return null;
+    }
+    return targetPath;
+}
+
+/**
+ * Spawns a Windows FolderBrowserDialog with a TopMost owner form so it stays visible above browser windows.
+ */
+function openWindowsFolderPicker(description, showNewFolderButton) {
+    return new Promise((resolve) => {
+        const { spawn } = require('child_process');
+        const safeDesc = String(description || 'Select Folder').replace(/'/g, "''");
+        const newBtnFlag = showNewFolderButton ? '$true' : '$false';
+        const script = `
+Add-Type -AssemblyName System.Windows.Forms | Out-Null
+$owner = New-Object System.Windows.Forms.Form
+$owner.TopMost = $true
+$owner.StartPosition = 'Manual'
+$owner.Location = New-Object System.Drawing.Point(-32000, -32000)
+$owner.Size = New-Object System.Drawing.Size(1, 1)
+$owner.ShowInTaskbar = $false
+$dialog = New-Object System.Windows.Forms.FolderBrowserDialog
+$dialog.Description = '${safeDesc}'
+$dialog.ShowNewFolderButton = ${newBtnFlag}
+$result = $dialog.ShowDialog($owner)
+if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
+    [Console]::Out.WriteLine($dialog.SelectedPath)
+} else {
+    [Console]::Out.WriteLine('CANCELED')
+}
+$dialog.Dispose()
+$owner.Dispose()
+`;
+        const ps = spawn('powershell.exe', ['-STA', '-NoProfile', '-Command', script]);
+        let output = '';
+        let settled = false;
+        const finish = (val) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            resolve(val);
+        };
+        const timer = setTimeout(() => {
+            try { ps.kill(); } catch (e) {}
+            finish(null);
+        }, 120000);
+        ps.stdout.on('data', data => { output += data.toString(); });
+        ps.on('error', () => finish(null));
+        ps.on('close', () => {
+            const picked = output.trim();
+            if (picked && picked !== 'CANCELED' && !picked.includes('Exception')) {
+                finish(picked);
+            } else {
+                finish(null);
+            }
+        });
+    });
+}
+
+function sendJson(req, res, statusCode, data) {
     res.writeHead(statusCode, {
         'Content-Type': 'application/json; charset=utf-8',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': '*',
+        ...getCorsHeaders(req),
         'Cache-Control': 'no-cache'
     });
     res.end(JSON.stringify(data));
 }
 
-function parseBody(req) {
+function readRawBody(req, maxBytes = MAX_BODY_BYTES) {
     return new Promise((resolve, reject) => {
-        let body = '';
-        req.on('data', chunk => { body += chunk.toString(); });
+        const chunks = [];
+        let totalBytes = 0;
+        let aborted = false;
+
+        req.on('data', chunk => {
+            if (aborted) return;
+            totalBytes += chunk.length;
+            if (totalBytes > maxBytes) {
+                aborted = true;
+                const err = new Error('Request payload exceeds maximum allowed size.');
+                err.code = 'PAYLOAD_TOO_LARGE';
+                req.destroy();
+                reject(err);
+                return;
+            }
+            chunks.push(chunk);
+        });
         req.on('end', () => {
-            try {
-                resolve(body ? JSON.parse(body) : {});
-            } catch (err) {
-                resolve({});
+            if (!aborted) {
+                resolve(Buffer.concat(chunks).toString('utf8'));
             }
         });
         req.on('error', reject);
     });
 }
 
+async function parseBody(req) {
+    const raw = await readRawBody(req);
+    if (!raw || !raw.trim()) {
+        return {};
+    }
+    try {
+        return JSON.parse(raw);
+    } catch {
+        const err = new Error('Invalid JSON payload.');
+        err.code = 'INVALID_JSON';
+        throw err;
+    }
+}
+
 const server = http.createServer(async (req, res) => {
-    // Enable CORS preflight
+    // Enable CORS preflight strictly for allowed local origins
     if (req.method === 'OPTIONS') {
-        res.writeHead(204, {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': '*'
-        });
+        res.writeHead(204, getCorsHeaders(req));
         res.end();
         return;
     }
 
     const parsedUrl = url.parse(req.url, true);
     const pathname = parsedUrl.pathname || '';
+
+    // Health check endpoint for launcher readiness polling
+    if (pathname === '/api/health' && req.method === 'GET') {
+        return sendJson(req, res, 200, { status: 'ok', port: PORT });
+    }
+
+    // Enforce per-session CSRF token + origin verification on all POST /api/* endpoints
+    if (pathname.startsWith('/api/') && req.method === 'POST' && !isAuthorizedApiPost(req)) {
+        return sendJson(req, res, 403, { error: 'Forbidden: Invalid origin or missing session token.' });
+    }
 
     // Dynamically load fresh compiled modules strictly for API requests (supports instant hot reload without overhead for static assets)
     const { getRegisteredTools, TurnSnapshotManager, LMStudioClient, LMStudioManifestParser } = pathname.startsWith('/api/')
@@ -101,9 +250,9 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/capabilities' && req.method === 'GET') {
         try {
             const caps = LMStudioManifestParser ? LMStudioManifestParser.parseModelCapabilities() : {};
-            return sendJson(res, 200, caps);
+            return sendJson(req, res, 200, caps);
         } catch (e) {
-            return sendJson(res, 200, {});
+            return sendJson(req, res, 200, {});
         }
     }
 
@@ -133,45 +282,58 @@ const server = http.createServer(async (req, res) => {
                 state: loadedModels.some(lm => lm.toLowerCase() === id.toLowerCase()) ? 'loaded' : 'downloaded'
             }));
             const isServerOnline = uniqueModels.length > 0 || loadedModels.length > 0;
-            return sendJson(res, 200, { connected: isServerOnline, data });
+            return sendJson(req, res, 200, { connected: isServerOnline, data });
         } catch (e) {
-            return sendJson(res, 200, { connected: false, data: [] });
+            return sendJson(req, res, 200, { connected: false, data: [] });
         }
     }
 
     // 3. API: Tool Execution via JavaScript Tool classes
     if (pathname === '/api/tools/execute' && req.method === 'POST') {
-        const body = await parseBody(req);
+        let body;
+        try {
+            body = await parseBody(req);
+        } catch (err) {
+            return sendJson(req, res, err.code === 'PAYLOAD_TOO_LARGE' ? 413 : 400, { error: err.message });
+        }
+
         const toolName = body.tool || body.name;
         const args = body.args || body;
-        const workspacePath = body.workspacePath || process.cwd();
+        const rawWorkspacePath = typeof body.workspacePath === 'string' ? body.workspacePath.trim() : '';
         const turnId = body.turnId || body.chatId || 'default';
+
+        if (!toolName || typeof toolName !== 'string') {
+            return sendJson(req, res, 400, { result: '[Error]: Missing tool name.' });
+        }
+
+        if (WORKSPACE_TOOLS.has(toolName) && (!rawWorkspacePath || !fs.existsSync(rawWorkspacePath))) {
+            return sendJson(req, res, 400, { result: '[Error]: Valid workspacePath is required for workspace tools.' });
+        }
+        const workspacePath = rawWorkspacePath ? path.resolve(rawWorkspacePath) : '';
 
         if (toolName === 'get_workspace_structure') {
             try {
-                if (fs.existsSync(workspacePath)) {
-                    const entries = fs.readdirSync(workspacePath, { withFileTypes: true });
-                    const folders = [];
-                    const files = [];
-                    for (const entry of entries) {
-                        if (['.git', 'node_modules', '.vscode', '__pycache__', '.kai'].includes(entry.name)) continue;
-                        if (entry.isDirectory()) folders.push(entry.name + '/');
-                        else if (entry.isFile()) files.push(entry.name);
-                    }
-                    let result = '[Workspace Root Structure]\n';
-                    if (folders.length > 0) result += `Folders: ${folders.join(', ')}\n`;
-                    if (files.length > 0) result += `Files: ${files.join(', ')}\n`;
-                    return sendJson(res, 200, { result });
+                const entries = fs.readdirSync(workspacePath, { withFileTypes: true });
+                const folders = [];
+                const files = [];
+                for (const entry of entries) {
+                    if (['.git', 'node_modules', '.vscode', '__pycache__', '.kai'].includes(entry.name)) continue;
+                    if (entry.isDirectory()) folders.push(entry.name + '/');
+                    else if (entry.isFile()) files.push(entry.name);
                 }
+                let result = '[Workspace Root Structure]\n';
+                if (folders.length > 0) result += `Folders: ${folders.join(', ')}\n`;
+                if (files.length > 0) result += `Files: ${files.join(', ')}\n`;
+                return sendJson(req, res, 200, { result });
             } catch (e) {}
-            return sendJson(res, 200, { result: '' });
+            return sendJson(req, res, 200, { result: '' });
         }
 
         try {
-            const allTools = getRegisteredTools ? getRegisteredTools('agent', true) : [];
+            const allTools = getRegisteredTools ? getRegisteredTools('agent', Boolean(workspacePath)) : [];
             const matchedTool = allTools.find(t => t.name === toolName);
             if (!matchedTool) {
-                return sendJson(res, 400, { result: `[Error]: Unknown tool '${toolName}'` });
+                return sendJson(req, res, 400, { result: `[Error]: Unknown tool '${toolName}'` });
             }
 
             const toolOutput = await matchedTool.execute(args, {
@@ -180,91 +342,58 @@ const server = http.createServer(async (req, res) => {
                 turnId: turnId
             });
 
-            return sendJson(res, 200, { result: toolOutput });
+            return sendJson(req, res, 200, { result: toolOutput });
         } catch (err) {
-            return sendJson(res, 500, { result: `[Error executing ${toolName}]: ${err.message || err}` });
+            return sendJson(req, res, 500, { result: `[Error executing ${toolName}]: ${err.message || err}` });
         }
     }
 
     // 4. API: Turn Rollback via TurnSnapshotManager
     if (pathname === '/api/tools/rollback' && req.method === 'POST') {
-        const body = await parseBody(req);
+        let body;
+        try {
+            body = await parseBody(req);
+        } catch (err) {
+            return sendJson(req, res, err.code === 'PAYLOAD_TOO_LARGE' ? 413 : 400, { error: err.message });
+        }
         const turnIds = body.turnIds || (body.chatId ? [body.chatId] : ['default']);
         try {
             if (TurnSnapshotManager) {
                 const result = await TurnSnapshotManager.getInstance().rollbackTurn(turnIds);
-                return sendJson(res, 200, result);
+                return sendJson(req, res, 200, result);
             }
         } catch (e) {
             console.error('[PreviewServer] Rollback error:', e);
         }
-        return sendJson(res, 200, { status: 'ok', reverted: [] });
+        return sendJson(req, res, 200, { status: 'ok', reverted: [] });
     }
 
     // 4b. API: Workspace Folder Picker (Windows Native Folder Picker Dialog)
     if (pathname === '/api/workspace/pick' && req.method === 'POST') {
-        const { spawn } = require('child_process');
-        const script = `
-[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms') | Out-Null
-$dialog = New-Object System.Windows.Forms.FolderBrowserDialog
-$dialog.Description = 'Select Workspace Folder'
-$dialog.ShowNewFolderButton = $true
-$result = $dialog.ShowDialog()
-if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
-    [Console]::Out.WriteLine($dialog.SelectedPath)
-} else {
-    [Console]::Out.WriteLine('CANCELED')
-}
-$dialog.Dispose()
-`;
-        const ps = spawn('powershell.exe', ['-STA', '-NoProfile', '-Command', script]);
-        let output = '';
-        const timer = setTimeout(() => {
-            try { ps.kill(); } catch (e) {}
-        }, 120000);
-        ps.stdout.on('data', data => { output += data.toString(); });
-        ps.on('close', () => {
-            clearTimeout(timer);
-            const picked = output.trim();
-            if (picked && picked !== 'CANCELED' && !picked.includes('Exception')) {
-                return sendJson(res, 200, { canceled: false, workspacePath: picked });
-            }
-            return sendJson(res, 200, { canceled: true });
-        });
-        return;
+        const picked = await openWindowsFolderPicker('Select Workspace Folder', true);
+        if (picked) {
+            return sendJson(req, res, 200, { canceled: false, workspacePath: picked });
+        }
+        return sendJson(req, res, 200, { canceled: true });
     }
 
     // 4c. API: LM Studio Cache Folder Picker
     if (pathname === '/api/lmstudio/pick' && req.method === 'POST') {
-        const { spawn } = require('child_process');
-        const script = `
-[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms') | Out-Null
-$dialog = New-Object System.Windows.Forms.FolderBrowserDialog
-$dialog.Description = 'Select LM Studio Directory'
-$dialog.ShowNewFolderButton = $false
-$result = $dialog.ShowDialog()
-if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
-    [Console]::Out.WriteLine($dialog.SelectedPath)
-} else {
-    [Console]::Out.WriteLine('CANCELED')
-}
-`;
-        const ps = spawn('powershell.exe', ['-STA', '-NoProfile', '-NonInteractive', '-Command', script]);
-        let output = '';
-        ps.stdout.on('data', data => { output += data.toString(); });
-        ps.on('close', () => {
-            const picked = output.trim();
-            if (picked && picked !== 'CANCELED' && !picked.includes('Exception')) {
-                return sendJson(res, 200, { canceled: false, lmStudioCacheDir: picked });
-            }
-            return sendJson(res, 200, { canceled: true });
-        });
-        return;
+        const picked = await openWindowsFolderPicker('Select LM Studio Directory', false);
+        if (picked) {
+            return sendJson(req, res, 200, { canceled: false, lmStudioCacheDir: picked });
+        }
+        return sendJson(req, res, 200, { canceled: true });
     }
 
     // 5. API: Switch LM Studio Model (enforcing max 1 loaded model)
     if (pathname === '/api/lmstudio/switch' && req.method === 'POST') {
-        const body = await parseBody(req);
+        let body;
+        try {
+            body = await parseBody(req);
+        } catch (err) {
+            return sendJson(req, res, err.code === 'PAYLOAD_TOO_LARGE' ? 413 : 400, { error: err.message });
+        }
         const targetModel = body.model;
         if (targetModel && LMStudioClient) {
             try {
@@ -274,60 +403,71 @@ if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
                 console.error('[PreviewServer] Switch error:', e);
             }
         }
-        return sendJson(res, 200, { status: 'ok' });
+        return sendJson(req, res, 200, { status: 'ok' });
     }
 
     // 6. API: LM Studio Chat Completions Proxy (Streaming SSE)
     if ((pathname === '/api/lmstudio/chat' || pathname === '/api/proxy/chat') && req.method === 'POST') {
         let rawBody = '';
-        req.on('data', chunk => { rawBody += chunk.toString(); });
-        req.on('end', async () => {
-            try {
-                const parsed = JSON.parse(rawBody);
-                if (parsed.model && LMStudioClient) {
-                    const client = new LMStudioClient();
-                    await client.ensureSingleLoadedModel(parsed.model);
-                }
-            } catch (e) {}
+        try {
+            rawBody = await readRawBody(req);
+        } catch (err) {
+            return sendJson(req, res, err.code === 'PAYLOAD_TOO_LARGE' ? 413 : 400, { error: err.message });
+        }
 
-            const proxyReq = http.request({
-                hostname: '127.0.0.1',
-                port: 1234,
-                path: '/v1/chat/completions',
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Content-Length': Buffer.byteLength(rawBody),
-                    'Accept': 'text/event-stream'
-                }
-            }, proxyRes => {
-                res.writeHead(proxyRes.statusCode || 200, {
-                    'Content-Type': 'text/event-stream; charset=utf-8',
-                    'Cache-Control': 'no-cache',
-                    'Connection': 'keep-alive',
-                    'Access-Control-Allow-Origin': '*'
-                });
-                proxyRes.pipe(res);
+        try {
+            const parsed = JSON.parse(rawBody);
+            if (parsed.model && LMStudioClient) {
+                const client = new LMStudioClient();
+                await client.ensureSingleLoadedModel(parsed.model);
+            }
+        } catch (e) {
+            return sendJson(req, res, 400, { error: 'Invalid JSON payload.' });
+        }
+
+        const proxyReq = http.request({
+            hostname: '127.0.0.1',
+            port: 1234,
+            path: '/v1/chat/completions',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(rawBody),
+                'Accept': 'text/event-stream'
+            }
+        }, proxyRes => {
+            res.writeHead(proxyRes.statusCode || 200, {
+                'Content-Type': 'text/event-stream; charset=utf-8',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+                ...getCorsHeaders(req)
             });
-
-            proxyReq.on('error', err => {
-                sendJson(res, 502, { error: `Failed to connect to LM Studio: ${err.message}` });
-            });
-
-            proxyReq.write(rawBody);
-            proxyReq.end();
+            proxyRes.pipe(res);
         });
+
+        proxyReq.on('error', err => {
+            sendJson(req, res, 502, { error: `Failed to connect to LM Studio: ${err.message}` });
+        });
+
+        proxyReq.write(rawBody);
+        proxyReq.end();
         return;
     }
 
-    // 7. Static file serving (Renderer assets & Prompts)
-    let filePath = '';
+    // 7. Static file serving (Renderer assets & Prompts) with strict boundary validation
+    let filePath = null;
     if (pathname.startsWith('/prompts/')) {
-        filePath = path.join(PROMPTS_DIR, pathname.slice(9));
+        filePath = resolveSafeStaticPath(PROMPTS_DIR, pathname.slice(9));
     } else if (pathname === '/' || pathname === '/index.html') {
         filePath = path.join(RENDERER_DIR, 'index.html');
     } else {
-        filePath = path.join(RENDERER_DIR, pathname.slice(1));
+        filePath = resolveSafeStaticPath(RENDERER_DIR, pathname.slice(1));
+    }
+
+    if (!filePath) {
+        res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('403 Forbidden');
+        return;
     }
 
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
@@ -339,17 +479,24 @@ if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
             'Pragma': 'no-cache',
             'Expires': '0',
             'Surrogate-Control': 'no-store',
-            'Access-Control-Allow-Origin': '*'
+            ...getCorsHeaders(req)
         });
-        fs.createReadStream(filePath).pipe(res);
+        if (filePath === path.join(RENDERER_DIR, 'index.html')) {
+            const html = fs.readFileSync(filePath, 'utf8').replace(
+                '</head>',
+                `    <meta name="kai-preview-token" content="${PREVIEW_SESSION_TOKEN}">\n</head>`
+            );
+            res.end(html);
+        } else {
+            fs.createReadStream(filePath).pipe(res);
+        }
     } else {
         res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
         res.end(`404 Not Found: ${pathname}`);
     }
 });
 
-const PORT = 5173;
-server.listen(PORT, () => {
+server.listen(PORT, HOST, () => {
     console.log('========================================================');
     console.log('  KAI Agent - Pure Node.js Preview Server');
     console.log('========================================================');

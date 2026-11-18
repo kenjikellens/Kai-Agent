@@ -60,6 +60,7 @@ class BrowserNativeDialogs {
                 const timeoutId = setTimeout(() => controller.abort(), 120000);
                 const res = await fetch('/api/workspace/pick', {
                     method: 'POST',
+                    headers: typeof DOMUtils !== 'undefined' && DOMUtils.getPreviewAuthHeaders ? DOMUtils.getPreviewAuthHeaders() : {},
                     signal: controller.signal
                 });
                 clearTimeout(timeoutId);
@@ -89,7 +90,10 @@ class BrowserNativeDialogs {
         return new Promise(async (resolve) => {
             // Method 1: Backend Windows PowerShell FolderBrowserDialog (/api/lmstudio/pick)
             try {
-                const res = await fetch('/api/lmstudio/pick', { method: 'POST' });
+                const res = await fetch('/api/lmstudio/pick', {
+                    method: 'POST',
+                    headers: typeof DOMUtils !== 'undefined' && DOMUtils.getPreviewAuthHeaders ? DOMUtils.getPreviewAuthHeaders() : {}
+                });
                 if (res.ok) {
                     const data = await res.json();
                     if (data && !data.canceled && data.lmStudioCacheDir) {

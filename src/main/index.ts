@@ -26,10 +26,18 @@ function createWindow(): void {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,
             contextIsolation: true,
-            sandbox: false
+            sandbox: true
         },
         autoHideMenuBar: true
     });
+
+    // Block in-app navigation and popups to external origins
+    mainWindow.webContents.on('will-navigate', (event, targetUrl) => {
+        if (!targetUrl.startsWith('file://')) {
+            event.preventDefault();
+        }
+    });
+    mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
 
     appHost = new AppHost(mainWindow, workspaceManager);
 

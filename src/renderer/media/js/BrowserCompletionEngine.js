@@ -93,7 +93,9 @@ class BrowserCompletionEngine {
                 const savedWs = localStorage.getItem('kai.workspacePath');
                 const wsRes = await fetch('/api/tools/execute', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: typeof DOMUtils !== 'undefined' && DOMUtils.getPreviewAuthHeaders
+                        ? DOMUtils.getPreviewAuthHeaders({ 'Content-Type': 'application/json' })
+                        : { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ tool: 'get_workspace_structure', workspacePath: savedWs })
                 });
                 if (wsRes.ok) {
@@ -150,7 +152,9 @@ class BrowserCompletionEngine {
                     if (!isCloudProvider) {
                         response = await fetch('/api/lmstudio/chat', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: typeof DOMUtils !== 'undefined' && DOMUtils.getPreviewAuthHeaders
+                                ? DOMUtils.getPreviewAuthHeaders({ 'Content-Type': 'application/json' })
+                                : { 'Content-Type': 'application/json' },
                             body: JSON.stringify(payload),
                             signal: abortSignal
                         });

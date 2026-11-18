@@ -80,7 +80,9 @@ class BrowserToolsExecutor {
         try {
             const res = await fetch('/api/tools/execute', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: typeof DOMUtils !== 'undefined' && DOMUtils.getPreviewAuthHeaders
+                    ? DOMUtils.getPreviewAuthHeaders({ 'Content-Type': 'application/json' })
+                    : { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     tool: tool,
                     args: args,
@@ -191,7 +193,9 @@ class BrowserToolsExecutor {
             const ids = Array.isArray(turnIds) ? turnIds : [turnIds];
             const res = await fetch('/api/tools/rollback', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: typeof DOMUtils !== 'undefined' && DOMUtils.getPreviewAuthHeaders
+                    ? DOMUtils.getPreviewAuthHeaders({ 'Content-Type': 'application/json' })
+                    : { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ turnIds: ids })
             });
             if (!res.ok) throw new Error(`Rollback HTTP error ${res.status}`);

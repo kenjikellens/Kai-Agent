@@ -82,7 +82,9 @@ class BrowserPreviewEngine {
                 try {
                     await fetch('/api/lmstudio/switch', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: typeof DOMUtils !== 'undefined' && DOMUtils.getPreviewAuthHeaders
+                            ? DOMUtils.getPreviewAuthHeaders({ 'Content-Type': 'application/json' })
+                            : { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ model: message.model })
                     });
                 } catch (e) {}

@@ -292,4 +292,21 @@ class DOMUtils {
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
     }
+
+    /**
+     * Returns auth headers containing the preview server session token for same-origin POST requests.
+     * @param {object} [extraHeaders={}] Additional headers to merge.
+     * @returns {object} Request headers object.
+     */
+    static getPreviewAuthHeaders(extraHeaders = {}) {
+        const headers = { ...extraHeaders };
+        if (typeof document !== 'undefined') {
+            const meta = document.querySelector('meta[name="kai-preview-token"]');
+            const token = meta ? meta.getAttribute('content') : '';
+            if (token) {
+                headers['X-KAI-Token'] = token;
+            }
+        }
+        return headers;
+    }
 }

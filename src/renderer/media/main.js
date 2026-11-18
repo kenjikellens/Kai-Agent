@@ -454,6 +454,9 @@
     });
 
     ipcBridge.on('connectionStatus', (message) => {
+        if (message.svgs) {
+            window.KAI_SVGS = { ...(window.KAI_SVGS || {}), ...message.svgs };
+        }
         if (message.translations) {
             window.applyAllTranslations(message.translations);
         }
@@ -603,6 +606,15 @@
                     requestId: message.requestId,
                     answer: answer
                 });
+            });
+        });
+
+        ipcBridge.on('command_approval_request', async (message) => {
+            const allowed = await chatUIController.requestCommandApproval(message.command || '');
+            ipcBridge.postMessage({
+                type: 'command_approval_response',
+                requestId: message.requestId,
+                allowed: allowed
             });
         });
 

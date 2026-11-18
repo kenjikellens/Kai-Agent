@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' http://127.0.0.1:* http://localhost:* https:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';">
     <title>KAI Agent</title>
     <link rel="icon" type="image/svg+xml" href="media/svg/kai_icon.svg">
     <link rel="alternate icon" type="image/png" href="media/svg/kai_icon.png">
@@ -370,35 +371,5 @@
     <script src="media/js/PromptSubmissionOrchestrator.js?v=2.1"></script>
     <script src="media/js/HashRouter.js?v=2.1"></script>
     <script src="media/main.js?v=2.1"></script>
-
-    <!-- Dynamic Connection Status Handler -->
-    <script>
-        const handleDynamicStatus = (msg) => {
-            if (msg && msg.type === 'connectionStatus') {
-                if (msg.svgs) {
-                    window.KAI_SVGS = { ...window.KAI_SVGS, ...msg.svgs };
-                }
-                if (msg.translations) {
-                    window.KAI_I18N = msg.translations;
-                }
-                if (msg.workspaceName) {
-                    const el = document.getElementById('active-workspace-name');
-                    if (el) el.textContent = msg.workspaceName;
-                }
-                if (msg.workspacePath) {
-                    const wsBtn = document.getElementById('workspace-badge-btn');
-                    if (wsBtn) wsBtn.title = `Active Workspace: ${msg.workspacePath} (Click to change)`;
-                    const topWsText = document.getElementById('top-workspace-path');
-                    if (topWsText) topWsText.textContent = msg.workspacePath;
-                    const topWsBtn = document.getElementById('top-workspace-btn');
-                    if (topWsBtn) topWsBtn.title = `Active Workspace: ${msg.workspacePath} (Click to change)`;
-                }
-            }
-        };
-
-        if (window.electronAPI) {
-            window.electronAPI.onMessage(handleDynamicStatus);
-        }
-    </script>
 </body>
 </html>
