@@ -10,9 +10,9 @@ This repository contains two independent implementations of the KAI Agent ecosys
 1. **`Kai-Agent-extension/`**: VS Code & Antigravity IDE Extension (**stays in TypeScript / JavaScript**).
    - Backend / Host: `Kai-Agent-extension/code/src/` (TypeScript).
    - Frontend / Webview: `Kai-Agent-extension/code/media/` (HTML, CSS, JS).
-2. **`KAI Agent App/`**: Standalone Desktop Application (migrating backend to **Rust + Tauri** while retaining `src/renderer/` UI).
+2. **`KAI Agent App/`**: Standalone Desktop Application powered by **Rust + Tauri** while retaining `src/renderer/` UI.
    - Rust Core & Tauri Shell: `KAI Agent App/kai-core/` and `KAI Agent App/src-tauri/` (Rust OOP traits & structs).
-   - Legacy Electron / Preview Shell: `KAI Agent App/src/` (TypeScript/JS) and `KAI Agent App/run_pc.py`.
+   - Frontend UI: `KAI Agent App/src/renderer/` (HTML, CSS, JS).
 3. **`docs/`**: Shared documentation and reference configurations (`model_reference.json`).
 
 ---
@@ -23,9 +23,9 @@ This repository contains two independent implementations of the KAI Agent ecosys
 - **Extension Fast Sync**:
   - Compile extension changes: Run `npm run compile` within `Kai-Agent-extension/code`.
   - Sync to IDE extension folder: Execute `Kai-Agent-extension/update.bat`.
-- **Desktop App Preview**:
-  - Run via Electron: `npm run dev` in `KAI Agent App`.
-  - Run via Python preview: `python run_pc.py` in `KAI Agent App`.
+- **Desktop App (`KAI Agent App/`)**:
+  - Run via Tauri: `cargo tauri dev` in `KAI Agent App` (or `cargo tauri build` for release).
+  - Run Rust tests: `cargo test -p kai-core` in `KAI Agent App`.
 
 ---
 

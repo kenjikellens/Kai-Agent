@@ -8,7 +8,7 @@ This document serves as the master architectural reference and system design gui
 
 The KAI Agent workspace maintains two **independent** target runtime implementations that do **not** need to be identical:
 - **`Kai-Agent-extension/`**: Remains in **TypeScript / JavaScript** for the VS Code Extension Host.
-- **`KAI Agent App/`**: Standalone Desktop App migrating backend execution to **Rust + Tauri** (`KAI Agent App/kai-core/` and `KAI Agent App/src-tauri/`) while retaining `src/renderer/` UI (with legacy Electron/Preview scripts during transition).
+- **`KAI Agent App/`**: Standalone Desktop App powered by **Rust + Tauri** (`KAI Agent App/kai-core/` and `KAI Agent App/src-tauri/`) with `src/renderer/` UI (legacy Electron `src/main/`, `run_pc.py`, and `preview_server.js` removed).
 
 ```text
                                   ┌──────────────────────────────────────────────┐
