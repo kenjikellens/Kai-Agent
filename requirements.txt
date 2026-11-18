@@ -1,0 +1,11 @@
+# KAI Agent Desktop App (Rust + Tauri v2) - Windows Build & Runtime Requirements
+# Format: ID|CHECK_KIND|CHECK_TARGET|WINGET_ID|FALLBACK_URL|INSTALL_ARGS
+#
+# CHECK_KIND values:
+#   cmd      - Verifies executable on PATH (with %USERPROFILE%\.cargo\bin prepended)
+#   msvc     - Verifies cl.exe on PATH or Visual Studio C++ Build Tools via vswhere.exe
+#   webview2 - Verifies Microsoft Edge WebView2 Runtime in Windows Registry
+
+rust|cmd|cargo|Rustlang.Rustup|https://win.rustup.rs/x86_64|-y --default-toolchain stable
+msvc_tools|msvc|Microsoft.VisualStudio.Component.VC.Tools.x86.x64|Microsoft.VisualStudio.2022.BuildTools|https://aka.ms/vs/17/release/vs_BuildTools.exe|--wait --quiet --norestart --nocache --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended
+webview2|webview2|{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}|Microsoft.EdgeWebView2Runtime|https://go.microsoft.com/fwlink/p/?LinkId=2124703|/silent /install
