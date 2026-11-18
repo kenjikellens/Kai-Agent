@@ -4,3 +4,19 @@ members = [
     "src-tauri",
 ]
 resolver = "2"
+
+# Fast incremental release profile for daily local builds via start_kai_rust.bat
+[profile.release]
+opt-level = 2
+lto = false
+codegen-units = 16
+incremental = true
+strip = true
+
+# Maximum-optimization distribution profile (`cargo build --profile dist -p kai-agent-tauri`)
+[profile.dist]
+inherits = "release"
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+incremental = false

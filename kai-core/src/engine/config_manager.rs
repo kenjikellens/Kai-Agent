@@ -27,9 +27,11 @@ pub struct KaiConfig {
 }
 
 impl Default for KaiConfig {
+    /// Builds default runtime configuration pointing LM Studio to the standard `/v1` API prefix.
+    /// Initializes empty API keys and safe Ask-mode defaults in memory.
     fn default() -> Self {
         Self {
-            server_url: "http://127.0.0.1:1234".to_string(),
+            server_url: "http://127.0.0.1:1234/v1".to_string(),
             lm_studio_cache_dir: String::new(),
             api_key: String::new(),
             mistral_api_key: String::new(),
@@ -50,6 +52,7 @@ impl Default for KaiConfig {
 }
 
 /// Manages persistent non-secret settings on disk and API keys in the OS credential vault.
+#[derive(Clone)]
 pub struct ConfigManager {
     config_path: PathBuf,
 }

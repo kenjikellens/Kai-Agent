@@ -1,8 +1,30 @@
 use futures_util::StreamExt;
 use reqwest::Client;
+use serde::Deserialize;
 use serde_json::{json, Value};
 
+use super::shared_streaming_client;
 use crate::traits::{ChatRequest, CompletionResult, ProviderError, StreamSink};
+
+#[derive(Deserialize)]
+struct SseStreamChunk {
+    #[serde(default)]
+    choices: Vec<SseStreamChoice>,
+}
+
+#[derive(Deserialize)]
+struct SseStreamChoice {
+    #[serde(default)]
+    delta: SseStreamDelta,
+}
+
+#[derive(Default, Deserialize)]
+struct SseStreamDelta {
+    reasoning: Option<String>,
+    thought: Option<String>,
+    reasoning_content: Option<String>,
+    content: Option<String>,
+}
 
 /// Composable HTTP/SSE client shared by OpenAI-compatible cloud and local providers.
 #[derive(Clone)]
@@ -14,10 +36,11 @@ pub struct OpenAiCompatClient {
 }
 
 impl OpenAiCompatClient {
-    /// Creates a new OpenAI-compatible streaming client.
+    /// Creates a new OpenAI-compatible streaming client backed by the shared pooled HTTP client.
+    /// Reuses TCP/TLS connections across requests while normalizing `base_url`.
     pub fn new(base_url: impl Into<String>, api_key: impl Into<String>) -> Self {
         Self {
-            http: Client::new(),
+            http: shared_streaming_client(),
             base_url: base_url.into().trim_end_matches('/').to_string(),
             api_key: api_key.into(),
             extra_headers: Vec::new(),
@@ -101,23 +124,31 @@ impl OpenAiCompatClient {
             let chunk = chunk_res?;
             buffer.push_str(&String::from_utf8_lossy(&chunk));
 
-            while let Some(pos) = buffer.find('\n') {
-                let line = buffer[..pos].trim().to_string();
-                buffer.drain(..=pos);
+            let mut offset = 0;
+            let mut done = false;
+            while let Some(rel_pos) = buffer[offset..].find('\n') {
+                let end = offset + rel_pos;
+                let line = buffer[offset..end].trim();
+                offset = end + 1;
 
-                if !line.starts_with("data:") {
+                let Some(raw_data) = line.strip_prefix("data:") else {
                     continue;
-                }
-                let data = line.trim_start_matches("data:").trim();
+                };
+                let data = raw_data.trim();
                 if data == "[DONE]" {
+                    done = true;
                     break;
                 }
-                if let Ok(parsed) = serde_json::from_str::<Value>(data) {
-                    let delta = &parsed["choices"][0]["delta"];
-                    let reasoning = delta["reasoning"]
-                        .as_str()
-                        .or_else(|| delta["thought"].as_str())
-                        .or_else(|| delta["reasoning_content"].as_str());
+                if let Ok(parsed) = serde_json::from_str::<SseStreamChunk>(data) {
+                    let Some(choice) = parsed.choices.first() else {
+                        continue;
+                    };
+                    let delta = &choice.delta;
+                    let reasoning = delta
+                        .reasoning
+                        .as_deref()
+                        .or(delta.thought.as_deref())
+                        .or(delta.reasoning_content.as_deref());
 
                     if let Some(r) = reasoning {
                         if !in_thinking {
@@ -129,7 +160,7 @@ impl OpenAiCompatClient {
                         sink.on_token(r);
                     }
 
-                    if let Some(content) = delta["content"].as_str() {
+                    if let Some(content) = delta.content.as_deref() {
                         if in_thinking {
                             in_thinking = false;
                             full_text.push_str("</think>");
@@ -139,6 +170,12 @@ impl OpenAiCompatClient {
                         sink.on_token(content);
                     }
                 }
+            }
+            if offset > 0 {
+                buffer.drain(..offset);
+            }
+            if done {
+                break;
             }
         }
 

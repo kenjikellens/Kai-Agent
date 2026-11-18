@@ -1,4 +1,5 @@
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::sync::OnceLock;
 use std::time::Duration;
 
 use async_trait::async_trait;
@@ -12,6 +13,7 @@ use crate::traits::agent_tool::{
 
 const MAX_REDIRECTS: usize = 3;
 const MAX_BODY_BYTES: usize = 1_048_576; // 1 MiB
+static FETCH_HTTP_CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
 
 /// Fetches public HTTP/HTTPS resources with strict SSRF IP/DNS blocklists and size caps.
 pub struct FetchUrlTool {
@@ -140,6 +142,7 @@ impl AgentTool for FetchUrlTool {
         }
     }
 
+    /// Fetches a validated public URL with pooled no-redirect HTTP client and 1 MiB streaming cap.
     async fn execute(&self, args: Value, _ctx: &ToolContext) -> Result<String, ToolError> {
         let raw_url = args
             .get("url")
@@ -147,14 +150,17 @@ impl AgentTool for FetchUrlTool {
             .ok_or_else(|| ToolError::InvalidArguments("Missing 'url'.".to_string()))?;
 
         let mut current = Self::validate_public_url(raw_url).await?;
-        let client = reqwest::Client::builder()
-            .timeout(Duration::from_secs(15))
-            .redirect(Policy::none())
-            .build()
-            .map_err(|e| ToolError::ExecutionFailed(e.to_string()))?;
+        let client = FETCH_HTTP_CLIENT.get_or_init(|| {
+            reqwest::Client::builder()
+                .connect_timeout(Duration::from_secs(10))
+                .timeout(Duration::from_secs(15))
+                .redirect(Policy::none())
+                .build()
+                .expect("valid static fetch_url client")
+        });
 
         for _ in 0..=MAX_REDIRECTS {
-            let resp = client
+            let mut resp = client
                 .get(current.clone())
                 .header("User-Agent", "KAI-Agent/1.0")
                 .send()
@@ -181,16 +187,23 @@ impl AgentTool for FetchUrlTool {
                 )));
             }
 
-            let bytes = resp
-                .bytes()
+            let mut buf = Vec::new();
+            while let Some(chunk) = resp
+                .chunk()
                 .await
-                .map_err(|e| ToolError::ExecutionFailed(format!("Read error: {e}")))?;
-            let capped = if bytes.len() > MAX_BODY_BYTES {
-                &bytes[..MAX_BODY_BYTES]
-            } else {
-                &bytes[..]
-            };
-            let text = String::from_utf8_lossy(capped);
+                .map_err(|e| ToolError::ExecutionFailed(format!("Read error: {e}")))?
+            {
+                let remaining = MAX_BODY_BYTES.saturating_sub(buf.len());
+                if remaining == 0 {
+                    break;
+                }
+                let take = chunk.len().min(remaining);
+                buf.extend_from_slice(&chunk[..take]);
+                if buf.len() >= MAX_BODY_BYTES {
+                    break;
+                }
+            }
+            let text = String::from_utf8_lossy(&buf);
             return Ok(self.truncator.truncate(&text));
         }
 

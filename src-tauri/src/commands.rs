@@ -5,7 +5,7 @@ use kai_core::engine::agent_executor::ExecutorEventSink;
 use kai_core::engine::config_manager::KaiConfig;
 use kai_core::providers::factory::ProviderFactory;
 use kai_core::providers::gemini::GeminiProvider;
-use kai_core::providers::lm_studio::LMStudioProvider;
+use kai_core::providers::lm_studio::{build_cache_status_payload, LMStudioProvider};
 use kai_core::tools::path_guard::WorkspacePathGuard;
 use kai_core::traits::llm_provider::{ChatMessage, LlmProvider};
 use kai_core::traits::session_storage::ChatSessionRecord;
@@ -136,14 +136,16 @@ pub async fn kai_post_message(
             emit_full_connection_status(&state, false).await;
         }
         "updateSettings" | "saveSettings" => {
-            {
+            let cfg_snapshot = {
                 let mut cfg = state.config.write().await;
                 apply_settings_updates(&mut cfg, &message);
-                state
-                    .config_manager
-                    .save(&cfg)
-                    .map_err(|e| e.to_string())?;
-            }
+                cfg.clone()
+            };
+            let cm = state.config_manager.clone();
+            tokio::task::spawn_blocking(move || cm.save(&cfg_snapshot))
+                .await
+                .map_err(|e| e.to_string())?
+                .map_err(|e| e.to_string())?;
             emit_full_connection_status(&state, false).await;
         }
         "testProviderConnection" => {
@@ -169,8 +171,11 @@ pub async fn kai_post_message(
                 .get("model")
                 .and_then(|v| v.as_str())
                 .unwrap_or_default();
-            let server_url = state.config.read().await.server_url.clone();
-            LMStudioProvider::new(&server_url)
+            let (server_url, cache_dir) = {
+                let cfg = state.config.read().await;
+                (cfg.server_url.clone(), cfg.lm_studio_cache_dir.clone())
+            };
+            LMStudioProvider::with_cache_dir(&server_url, &cache_dir)
                 .ensure_single_loaded_model(model_id)
                 .await;
             emit_full_connection_status(&state, false).await;
@@ -378,6 +383,10 @@ pub async fn kai_pick_lm_studio_folder(app: AppHandle) -> Result<Option<String>,
     Ok(picked.map(|p| p.to_string()))
 }
 
+/// Queries LM Studio, Gemini, and cloud provider status concurrently and emits `connectionStatus` to the webview.
+/// Reuses `geminiApiKey` status from `build_free_providers_status` to avoid duplicate Gemini validation requests.
+/// Aggregates live LM Studio, Gemini, cloud provider, and local cache status and emits `connectionStatus` to the renderer.
+/// Passes configured `lm_studio_cache_dir` so cross-PC `lms` resolution and auto-start work seamlessly.
 async fn emit_full_connection_status(state: &State<'_, AppRuntimeState>, is_folder_picked: bool) {
     let cfg = state.config.read().await.clone();
     let ws = state.workspace_path.read().await.clone();
@@ -388,21 +397,26 @@ async fn emit_full_connection_status(state: &State<'_, AppRuntimeState>, is_fold
         .unwrap_or(&ws_str)
         .to_string();
 
-    let lm_models = LMStudioProvider::new(&cfg.server_url)
-        .list_models()
-        .await
-        .unwrap_or_default();
-    let lm_connected = !lm_models.is_empty();
-    let gemini_models = GeminiProvider::new(&cfg.api_key)
-        .list_models()
-        .await
-        .unwrap_or_default();
-    let gemini_connected = if !cfg.api_key.trim().is_empty() {
-        ProviderFactory::validate_provider("geminiApiKey", &cfg.api_key, &cfg).await
-    } else {
-        false
+    let lm_provider = LMStudioProvider::with_cache_dir(&cfg.server_url, &cfg.lm_studio_cache_dir);
+    let gemini_provider = GeminiProvider::new(&cfg.api_key);
+    let (lm_res, gemini_res, free_providers) = tokio::join!(
+        lm_provider.list_models(),
+        gemini_provider.list_models(),
+        ProviderFactory::build_free_providers_status(&cfg)
+    );
+
+    let lm_connected = lm_res.is_ok();
+    let lm_models = match lm_res {
+        Ok(models) => models,
+        Err(_) => lm_provider.list_local_cli_models().await,
     };
-    let free_providers = ProviderFactory::build_free_providers_status(&cfg).await;
+    let lm_cache_status = build_cache_status_payload(&cfg.lm_studio_cache_dir, lm_models.len());
+    let gemini_models = gemini_res.unwrap_or_default();
+    let gemini_connected = free_providers
+        .iter()
+        .find(|p| p.get("configKey").and_then(|v| v.as_str()) == Some("geminiApiKey"))
+        .and_then(|p| p.get("connected").and_then(|v| v.as_bool()))
+        .unwrap_or(false);
 
     let loaded_models = if lm_connected {
         lm_models.clone()
@@ -437,6 +451,7 @@ async fn emit_full_connection_status(state: &State<'_, AppRuntimeState>, is_fold
             "serverUrl": cfg.server_url,
             "apiKey": cfg.api_key,
             "lmStudioCacheDir": cfg.lm_studio_cache_dir,
+            "lmStudioCacheStatus": lm_cache_status,
             "language": cfg.language,
             "workspacePath": ws_str,
             "workspaceName": ws_name,

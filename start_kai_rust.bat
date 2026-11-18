@@ -25,16 +25,14 @@ for /f "usebackq eol=# tokens=1-6 delims=|" %%A in ("%REQ_FILE%") do (
     )
 )
 
-if not exist "%EXE_PATH%" (
-    echo.
-    echo Building KAI Agent Rust release binary...
-    cargo build --release -p kai-agent-tauri
-    if !errorlevel! neq 0 (
-        echo Build failed.
-        pause
-        popd
-        exit /b 1
-    )
+echo.
+echo Building KAI Agent Rust release binary (incremental if unchanged)...
+cargo build --release -p kai-agent-tauri
+if !errorlevel! neq 0 (
+    echo Build failed.
+    pause
+    popd
+    exit /b 1
 )
 
 start "" "%EXE_PATH%"

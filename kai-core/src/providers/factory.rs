@@ -1,11 +1,12 @@
 use std::sync::Arc;
 
+use futures_util::future::join_all;
 use serde_json::{json, Value};
 
 use super::{
     cerebras::CerebrasProvider, cohere::CohereProvider, gemini::GeminiProvider,
     lm_studio::LMStudioProvider, mistral::MistralProvider, omniroute::OmniRouteProvider,
-    openrouter::OpenRouterProvider, zhipu::ZhipuProvider,
+    openrouter::OpenRouterProvider, shared_validation_client, zhipu::ZhipuProvider,
 };
 use crate::engine::config_manager::KaiConfig;
 use crate::traits::LlmProvider;
@@ -35,23 +36,21 @@ impl ProviderFactory {
                 &config.omniroute_api_key,
             ))
         } else {
-            Arc::new(LMStudioProvider::new(&config.server_url))
+            Arc::new(LMStudioProvider::with_cache_dir(
+                &config.server_url,
+                &config.lm_studio_cache_dir,
+            ))
         }
     }
 
     /// Validates a provider API key by querying its live `/models` endpoint with timeout protection.
+    /// Reuses the shared validation HTTP client for TLS and connection pooling.
     pub async fn validate_provider(config_key: &str, api_key: &str, config: &KaiConfig) -> bool {
         let key = api_key.trim();
         if key.is_empty() && config_key != "omnirouteApiKey" {
             return false;
         }
-        let client = match reqwest::Client::builder()
-            .timeout(std::time::Duration::from_secs(8))
-            .build()
-        {
-            Ok(c) => c,
-            Err(_) => return false,
-        };
+        let client = shared_validation_client();
 
         if config_key == "geminiApiKey" {
             return client
@@ -79,7 +78,8 @@ impl ProviderFactory {
             .is_ok_and(|res| res.is_ok())
     }
 
-    /// Returns metadata + masked key/connectivity summary for all cloud providers matching UI `DEFAULT_FREE_PROVIDERS`.
+    /// Concurrently validates all cloud providers and returns metadata plus connectivity status matching `DEFAULT_FREE_PROVIDERS`.
+    /// Runs all provider `/models` checks in parallel via `join_all` to avoid sequential startup delays.
     pub async fn build_free_providers_status(config: &KaiConfig) -> Vec<Value> {
         let defs: [(&str, &str, &str, &str, Vec<&str>); 7] = [
             (
@@ -161,23 +161,24 @@ impl ProviderFactory {
             ),
         ];
 
-        let mut list = Vec::with_capacity(defs.len());
-        for (name, config_key, key_hint, api_key, models) in defs {
-            let trimmed = api_key.trim();
-            let connected = if !trimmed.is_empty() {
-                Self::validate_provider(config_key, trimmed, config).await
-            } else {
-                false
-            };
-            list.push(json!({
-                "name": name,
-                "configKey": config_key,
-                "keyHint": key_hint,
-                "models": models,
-                "apiKey": trimmed,
-                "connected": connected,
-            }));
-        }
-        list
+        let checks = defs.into_iter().map(
+            |(name, config_key, key_hint, api_key, models)| async move {
+                let trimmed = api_key.trim();
+                let connected = if !trimmed.is_empty() {
+                    Self::validate_provider(config_key, trimmed, config).await
+                } else {
+                    false
+                };
+                json!({
+                    "name": name,
+                    "configKey": config_key,
+                    "keyHint": key_hint,
+                    "models": models,
+                    "apiKey": trimmed,
+                    "connected": connected,
+                })
+            },
+        );
+        join_all(checks).await
     }
 }

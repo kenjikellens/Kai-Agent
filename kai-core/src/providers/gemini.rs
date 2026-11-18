@@ -1,9 +1,36 @@
 use async_trait::async_trait;
 use futures_util::StreamExt;
 use reqwest::Client;
+use serde::Deserialize;
 use serde_json::{json, Value};
 
+use super::shared_streaming_client;
 use crate::traits::{ChatRequest, CompletionResult, LlmProvider, ProviderError, StreamSink};
+
+#[derive(Deserialize)]
+struct GeminiSseChunk {
+    #[serde(default)]
+    candidates: Vec<GeminiCandidate>,
+}
+
+#[derive(Deserialize)]
+struct GeminiCandidate {
+    #[serde(default)]
+    content: GeminiContent,
+}
+
+#[derive(Default, Deserialize)]
+struct GeminiContent {
+    #[serde(default)]
+    parts: Vec<GeminiPart>,
+}
+
+#[derive(Deserialize)]
+struct GeminiPart {
+    text: Option<String>,
+    #[serde(default)]
+    thought: bool,
+}
 
 /// Dedicated Google Gemini provider using `x-goog-api-key` headers and native thinkingConfig.
 pub struct GeminiProvider {
@@ -12,9 +39,10 @@ pub struct GeminiProvider {
 }
 
 impl GeminiProvider {
+    /// Creates a new `GeminiProvider` reusing the shared pooled HTTP client.
     pub fn new(api_key: impl Into<String>) -> Self {
         Self {
-            http: Client::new(),
+            http: shared_streaming_client(),
             api_key: api_key.into(),
         }
     }
@@ -136,39 +164,45 @@ impl LlmProvider for GeminiProvider {
             let chunk = chunk_res?;
             buffer.push_str(&String::from_utf8_lossy(&chunk));
 
-            while let Some(pos) = buffer.find('\n') {
-                let line = buffer[..pos].trim().to_string();
-                buffer.drain(..=pos);
-                if !line.starts_with("data:") {
+            let mut offset = 0;
+            while let Some(rel_pos) = buffer[offset..].find('\n') {
+                let end = offset + rel_pos;
+                let line = buffer[offset..end].trim();
+                offset = end + 1;
+
+                let Some(raw_data) = line.strip_prefix("data:") else {
                     continue;
-                }
-                let data = line.trim_start_matches("data:").trim();
-                if let Ok(parsed) = serde_json::from_str::<Value>(data) {
-                    if let Some(parts) = parsed["candidates"][0]["content"]["parts"].as_array() {
-                        for part in parts {
-                            if let Some(text) = part["text"].as_str() {
-                                let is_thought = part["thought"].as_bool().unwrap_or(false);
-                                if is_thought {
-                                    if !in_thinking {
-                                        in_thinking = true;
-                                        full_text.push_str("<think>");
-                                        sink.on_token("<think>");
-                                    }
-                                    full_text.push_str(text);
-                                    sink.on_token(text);
-                                } else {
-                                    if in_thinking {
-                                        in_thinking = false;
-                                        full_text.push_str("</think>");
-                                        sink.on_token("</think>");
-                                    }
-                                    full_text.push_str(text);
-                                    sink.on_token(text);
+                };
+                let data = raw_data.trim();
+                if let Ok(parsed) = serde_json::from_str::<GeminiSseChunk>(data) {
+                    let Some(candidate) = parsed.candidates.first() else {
+                        continue;
+                    };
+                    for part in &candidate.content.parts {
+                        if let Some(text) = part.text.as_deref() {
+                            if part.thought {
+                                if !in_thinking {
+                                    in_thinking = true;
+                                    full_text.push_str("<think>");
+                                    sink.on_token("<think>");
                                 }
+                                full_text.push_str(text);
+                                sink.on_token(text);
+                            } else {
+                                if in_thinking {
+                                    in_thinking = false;
+                                    full_text.push_str("</think>");
+                                    sink.on_token("</think>");
+                                }
+                                full_text.push_str(text);
+                                sink.on_token(text);
                             }
                         }
                     }
                 }
+            }
+            if offset > 0 {
+                buffer.drain(..offset);
             }
         }
 

@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use regex::Regex;
 use serde_json::{json, Value};
@@ -54,11 +54,13 @@ impl AgentExecutor {
         }
     }
 
-    /// Parses `<|tool_call|>{...}<|/tool_call|>` blocks embedded in model output.
+    /// Parses `<|tool_call|>{...}<|/tool_call|>` blocks embedded in model output using a compiled static regex.
     fn extract_embedded_tool_calls(text: &str) -> Vec<ToolCall> {
-        let Ok(re) = Regex::new(r"(?s)<\|?tool_call\|?>([\s\S]*?)<\|?/tool_call\|?>") else {
-            return Vec::new();
-        };
+        static TOOL_CALL_RE: OnceLock<Regex> = OnceLock::new();
+        let re = TOOL_CALL_RE.get_or_init(|| {
+            Regex::new(r"(?s)<\|?tool_call\|?>([\s\S]*?)<\|?/tool_call\|?>")
+                .expect("valid static tool call regex")
+        });
         let mut calls = Vec::new();
         for cap in re.captures_iter(text) {
             if let Some(body) = cap.get(1) {
@@ -133,7 +135,7 @@ impl AgentExecutor {
         let mut modified_files: Vec<String> = Vec::new();
 
         for _ in 0..MAX_TOOL_ITERATIONS {
-            let compacted = self.context_manager.fit_messages(messages.clone());
+            let compacted = self.context_manager.fit_messages_slice(&messages);
             let req = ChatRequest {
                 model: model_id.to_string(),
                 messages: compacted,

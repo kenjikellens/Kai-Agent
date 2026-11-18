@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use tokio::sync::RwLock;
+use tokio::sync::{Mutex, RwLock};
 
 use crate::traits::session_storage::{ChatSessionRecord, SessionStorage, StorageError};
 
@@ -47,14 +47,17 @@ impl SessionStorage for FileSessionStorage {
 pub struct SessionStore {
     storage: Arc<dyn SessionStorage>,
     cache: RwLock<Option<HashMap<String, ChatSessionRecord>>>,
+    save_lock: Mutex<()>,
 }
 
 impl SessionStore {
     /// Creates a `SessionStore` that loads persisted sessions on first async access.
+    /// Initializes an ordered `save_lock` to serialize disk flushes without cloning the cache map.
     pub fn new(storage: Arc<dyn SessionStorage>) -> Self {
         Self {
             storage,
             cache: RwLock::new(None),
+            save_lock: Mutex::new(()),
         }
     }
 
@@ -91,28 +94,38 @@ impl SessionStore {
             .and_then(|m| m.get(id).cloned())
     }
 
-    /// Inserts or updates a session and flushes to storage.
+    /// Inserts or updates a session and flushes to storage under `save_lock` without cloning the entire map.
+    /// Acquires a brief write lock to mutate the cache, then borrows the read lock for persistence.
     pub async fn upsert_session(&self, record: ChatSessionRecord) -> Result<(), StorageError> {
         self.ensure_loaded().await;
-        let snapshot = {
+        let _io_guard = self.save_lock.lock().await;
+        {
             let mut guard = self.cache.write().await;
             let map = guard.get_or_insert_with(HashMap::new);
             map.insert(record.id.clone(), record);
-            map.clone()
-        };
-        self.storage.save(&snapshot).await
+        }
+        let guard = self.cache.read().await;
+        if let Some(map) = guard.as_ref() {
+            self.storage.save(map).await?;
+        }
+        Ok(())
     }
 
-    /// Deletes a session by ID and persists the change.
+    /// Deletes a session by ID and persists the change without deep-cloning the session cache.
+    /// Serializes persistence via `save_lock` so concurrent writes remain ordered.
     pub async fn delete_session(&self, id: &str) -> Result<(), StorageError> {
         self.ensure_loaded().await;
-        let snapshot = {
+        let _io_guard = self.save_lock.lock().await;
+        {
             let mut guard = self.cache.write().await;
             let map = guard.get_or_insert_with(HashMap::new);
             map.remove(id);
-            map.clone()
-        };
-        self.storage.save(&snapshot).await
+        }
+        let guard = self.cache.read().await;
+        if let Some(map) = guard.as_ref() {
+            self.storage.save(map).await?;
+        }
+        Ok(())
     }
 }
 

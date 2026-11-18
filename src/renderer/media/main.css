@@ -586,13 +586,8 @@ body {
   overflow: hidden;
 }
 
+/* Chat View - Anchors floating UI overlays without overriding .content-view hidden display rules */
 #chat-view {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
   position: relative;
 }
 
@@ -5503,13 +5498,15 @@ details[open]>summary>.custom-chevron {
   border-color: var(--app-border-strong);
 }
 
-/* Global hidden utility overrides placed last in cascade */
+/* Global hidden utility overrides - Ensures views, dropdowns, and panels hide cleanly */
 .hidden,
 .dropdown-menu.hidden,
 .custom-select-menu.hidden,
 .toolbar-mode-btn.hidden,
 .attached-files-bar.hidden,
 .content-view.hidden,
+#chat-view.hidden,
+#settings-container.hidden,
 .ask-user-dock.hidden,
 .help-container.hidden,
 #context-options-dropdown-container.hidden {
