@@ -3,13 +3,10 @@
   "productName": "KAI Agent",
   "version": "1.0.0",
   "description": "Standalone AI Developer Assistant desktop application",
-  "main": "dist/main/index.js",
   "scripts": {
-    "compile": "tsc",
-    "watch": "tsc -w",
-    "start": "tsc && electron .",
-    "build": "tsc && electron-builder --dir",
-    "dist": "tsc && electron-builder --win"
+    "dev": "cargo tauri dev",
+    "build": "cargo tauri build",
+    "test": "node --test tests/security.test.js && cargo test -p kai-core"
   },
   "keywords": [
     "ai",
