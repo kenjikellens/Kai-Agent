@@ -6,12 +6,13 @@ class WebviewIPCBridge {
     constructor() {
         this.listeners = new Map();
         this._isElectron = typeof window !== 'undefined' && Boolean(window.electronAPI);
+        this._isTauri = typeof window !== 'undefined' && Boolean(window.__TAURI__);
         this.vscode = (typeof acquireVsCodeApi === 'function') ? acquireVsCodeApi() : null;
         this._activeTurnId = null;
         this.onCommandApprovalRequest = null;
 
         // Initialize Browser Preview Engine if running standalone in browser
-        if (!this._isElectron && !this.vscode && typeof BrowserToolsExecutor !== 'undefined' && typeof BrowserPreviewEngine !== 'undefined') {
+        if (!this._isElectron && !this._isTauri && !this.vscode && typeof BrowserToolsExecutor !== 'undefined' && typeof BrowserPreviewEngine !== 'undefined') {
             this.toolsExecutor = new BrowserToolsExecutor(
                 () => this._activeTurnId,
                 (cmd) => this.onCommandApprovalRequest ? this.onCommandApprovalRequest(cmd) : Promise.resolve(true)
@@ -42,6 +43,10 @@ class WebviewIPCBridge {
 
         if (this._isElectron && window.electronAPI) {
             window.electronAPI.onMessage(dispatch);
+        } else if (this._isTauri && window.__TAURI__?.event?.listen) {
+            window.__TAURI__.event.listen('kai://ipc', (event) => {
+                dispatch(event?.payload);
+            });
         } else {
             window.addEventListener('message', (event) => {
                 dispatch(event.data);
@@ -82,6 +87,10 @@ class WebviewIPCBridge {
             } else if (typeof window.electronAPI.sendMessage === 'function') {
                 window.electronAPI.sendMessage(message);
             }
+        } else if (this._isTauri && window.__TAURI__?.core?.invoke) {
+            window.__TAURI__.core.invoke('kai_post_message', { message }).catch((err) => {
+                console.error('Tauri IPC invoke error:', err);
+            });
         } else if (this.vscode) {
             this.vscode.postMessage(message);
         } else if (this.previewEngine) {
@@ -90,6 +99,15 @@ class WebviewIPCBridge {
     }
 
     // Public API Methods
+
+    /**
+     * Convenience wrapper sending `{ type, ...payload }` to the active host bridge.
+     * @param {string} type Message type identifier.
+     * @param {object} [payload] Additional message fields.
+     */
+    sendMessage(type, payload = {}) {
+        this.postMessage({ type, ...(payload || {}) });
+    }
 
     sendUserPrompt(messages, model, thinking, geminiThinkingLevel = 'high', planningMode = false, attachedFiles = [], chatId = null, mode = 'agent', workspacePath = '') {
         this._activeTurnId = chatId;

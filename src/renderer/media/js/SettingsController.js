@@ -340,8 +340,12 @@ class SettingsController {
      */
     applyTranslations(translations) {
         if (!translations) return;
-        const i18nNodes = document.querySelectorAll('[data-i18n]');
+        const root = document.getElementById('settings-container') || document;
+        const i18nNodes = root.querySelectorAll('[data-i18n]');
         i18nNodes.forEach(node => {
+            if (node.id === 'top-workspace-path' && window.appState && window.appState.hasActiveWorkspace) {
+                return;
+            }
             const key = node.getAttribute('data-i18n');
             if (translations[key]) {
                 node.textContent = translations[key];

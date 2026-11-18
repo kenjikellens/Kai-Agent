@@ -120,7 +120,10 @@ class BrowserPreviewEngine {
                 if (message.serverUrl !== undefined) localStorage.setItem('kai.serverUrl', message.serverUrl);
                 if (message.apiKey !== undefined) localStorage.setItem('kai.geminiApiKey', message.apiKey);
                 if (message.lmStudioCacheDir !== undefined) localStorage.setItem('kai.lmStudioCacheDir', message.lmStudioCacheDir);
-                if (message.language !== undefined) localStorage.setItem('kai.language', message.language);
+                if (message.language !== undefined) {
+                    localStorage.setItem('kai.language', message.language);
+                    await this.handleCheckConnection({}, emit);
+                }
                 break;
             }
         }

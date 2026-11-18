@@ -1,0 +1,19 @@
+[package]
+name = "kai-agent-tauri"
+version = "0.1.0"
+edition = "2021"
+description = "Tauri v2 desktop shell for KAI Agent App"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+async-trait = "0.1"
+kai-core = { path = "../kai-core" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tokio = { version = "1", features = ["full"] }
+url = "2"
+uuid = { version = "1", features = ["v4"] }

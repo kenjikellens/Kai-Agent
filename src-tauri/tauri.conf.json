@@ -1,0 +1,31 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "KAI Agent",
+  "version": "0.1.0",
+  "identifier": "com.kai.agent.app",
+  "build": {
+    "frontendDist": "../src/renderer"
+  },
+  "bundle": {
+    "icon": [
+      "../src/renderer/media/svg/kai_icon.ico",
+      "../src/renderer/media/svg/kai_icon.png"
+    ]
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "KAI Agent",
+        "width": 1280,
+        "height": 840,
+        "minWidth": 900,
+        "minHeight": 620
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' ipc: http://ipc.localhost http://127.0.0.1:* http://localhost:*"
+    }
+  }
+}

@@ -414,6 +414,19 @@
             thinkingLabel.textContent = translations.thinkingToggle;
         }
 
+        const heroTitle = document.querySelector('.welcome-hero-title');
+        if (heroTitle && translations.welcomeTitle) {
+            heroTitle.textContent = translations.welcomeTitle;
+        }
+        const heroSubtitle = document.querySelector('.welcome-hero-subtitle');
+        if (heroSubtitle && translations.welcomeSubtitleApp) {
+            heroSubtitle.textContent = translations.welcomeSubtitleApp;
+        }
+        const emptyHistory = document.querySelector('#history-list .history-empty');
+        if (emptyHistory && translations.noPreviousChats) {
+            emptyHistory.textContent = translations.noPreviousChats;
+        }
+
         if (settingsController && typeof settingsController.applyTranslations === 'function') {
             settingsController.applyTranslations(translations);
         }

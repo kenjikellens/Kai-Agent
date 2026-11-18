@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"Default runtime permissions for KAI Agent Tauri desktop shell","local":true,"windows":["main"],"permissions":["core:default","dialog:default"]}}
