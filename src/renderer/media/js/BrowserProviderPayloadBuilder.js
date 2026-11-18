@@ -90,7 +90,7 @@ class BrowserProviderPayloadBuilder {
                 stream: true
             };
         } else if (isOpenRouter) {
-            const openRouterKey = (localStorage.getItem('kai.openRouterApiKey') || '').trim();
+            const openRouterKey = (localStorage.getItem('kai.openrouterApiKey') || localStorage.getItem('kai.openRouterApiKey') || '').trim();
             if (!openRouterKey) throw new Error('OpenRouter API-sleutel ontbreekt. Voer je OpenRouter API key in via Instellingen.');
             targetUrl = 'https://openrouter.ai/api/v1/chat/completions';
             fetchHeaders['Authorization'] = `Bearer ${openRouterKey}`;

@@ -379,6 +379,9 @@
         window.KAI_I18N = translations;
 
         document.querySelectorAll('[data-i18n]').forEach(el => {
+            if (el.id === 'top-workspace-path' && appState.hasActiveWorkspace) {
+                return;
+            }
             const key = el.getAttribute('data-i18n');
             if (translations[key]) {
                 el.textContent = translations[key];

@@ -309,4 +309,40 @@ class DOMUtils {
         }
         return headers;
     }
+
+    /**
+     * Executes a same-origin /api/ fetch with X-KAI-Token and retries once if the server restarted with a new token.
+     * @param {string} url Request path.
+     * @param {RequestInit} [options={}] Fetch options.
+     * @returns {Promise<Response>} Fetch response.
+     */
+    static async fetchWithPreviewAuth(url, options = {}) {
+        const mergedOptions = {
+            ...options,
+            headers: DOMUtils.getPreviewAuthHeaders(options.headers || {})
+        };
+        let res = await fetch(url, mergedOptions);
+        if (res.status === 403 && typeof document !== 'undefined') {
+            try {
+                const tokenRes = await fetch('/api/session-token');
+                if (tokenRes.ok) {
+                    const tokenData = await tokenRes.json();
+                    if (tokenData && tokenData.token) {
+                        let meta = document.querySelector('meta[name="kai-preview-token"]');
+                        if (!meta && document.head) {
+                            meta = document.createElement('meta');
+                            meta.setAttribute('name', 'kai-preview-token');
+                            document.head.appendChild(meta);
+                        }
+                        if (meta) meta.setAttribute('content', tokenData.token);
+                        res = await fetch(url, {
+                            ...options,
+                            headers: DOMUtils.getPreviewAuthHeaders(options.headers || {})
+                        });
+                    }
+                }
+            } catch (_) {}
+        }
+        return res;
+    }
 }

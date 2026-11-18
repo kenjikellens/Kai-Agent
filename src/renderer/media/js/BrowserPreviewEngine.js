@@ -52,7 +52,12 @@ class BrowserPreviewEngine {
             case 'browseWorkspaceFolder': {
                 const wsPath = await BrowserNativeDialogs.openWorkspaceFolderPicker();
                 if (wsPath) {
-                    localStorage.setItem('kai.workspacePath', wsPath);
+                    try { localStorage.setItem('kai.workspacePath', wsPath); } catch (e) {}
+                    emit({
+                        type: 'connectionStatus',
+                        isFolderPicked: true,
+                        workspacePath: wsPath
+                    });
                     await this.handleCheckConnection({ isFolderPicked: true, workspacePath: wsPath }, emit);
                 }
                 break;
@@ -80,13 +85,17 @@ class BrowserPreviewEngine {
 
             case 'switchLMStudioModel': {
                 try {
-                    await fetch('/api/lmstudio/switch', {
-                        method: 'POST',
-                        headers: typeof DOMUtils !== 'undefined' && DOMUtils.getPreviewAuthHeaders
-                            ? DOMUtils.getPreviewAuthHeaders({ 'Content-Type': 'application/json' })
-                            : { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ model: message.model })
-                    });
+                    await (typeof DOMUtils !== 'undefined' && DOMUtils.fetchWithPreviewAuth
+                        ? DOMUtils.fetchWithPreviewAuth('/api/lmstudio/switch', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ model: message.model })
+                        })
+                        : fetch('/api/lmstudio/switch', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ model: message.model })
+                        }));
                 } catch (e) {}
                 await this.handleCheckConnection({}, emit);
                 break;
@@ -212,6 +221,8 @@ class BrowserPreviewEngine {
             activeWorkspace = message.workspacePath;
         } else if (typeof window !== 'undefined' && window.appState && window.appState.workspacePath) {
             activeWorkspace = window.appState.workspacePath;
+        } else {
+            try { activeWorkspace = localStorage.getItem('kai.workspacePath') || ''; } catch (e) {}
         }
 
         emit({
@@ -228,6 +239,7 @@ class BrowserPreviewEngine {
             lmStudioCacheDir: localStorage.getItem('kai.lmStudioCacheDir') || '',
             lmStudioCacheStatus: { valid: true, message: 'Detected' },
             lmStudioCapabilities,
+            isFolderPicked: Boolean(message && message.isFolderPicked),
             workspacePath: activeWorkspace,
             translations,
             language: activeLang

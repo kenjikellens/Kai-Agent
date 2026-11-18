@@ -85,7 +85,8 @@ export class StandaloneHostServices implements IHostServices {
         }
 
         const results: string[] = [];
-        const pattern = new RegExp(`\\b(class|function|interface|type|enum|const|let|var|def)\\s+(${query}\\w*)\\b`, 'i');
+        const escapedQuery = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const pattern = new RegExp(`\\b(class|function|interface|type|enum|const|let|var|def)\\s+(${escapedQuery}\\w*)\\b`, 'i');
 
         const scanDir = (dir: string) => {
             if (results.length >= 50) return;

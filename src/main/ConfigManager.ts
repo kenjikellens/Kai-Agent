@@ -12,6 +12,17 @@ export class ConfigManager {
     private configPath: string;
     private config: KaiConfig;
 
+    private static readonly SECRET_KEYS: (keyof KaiConfig)[] = [
+        'apiKey',
+        'mistralApiKey',
+        'cohereApiKey',
+        'cerebrasApiKey',
+        'zhipuApiKey',
+        'openrouterApiKey',
+        'omnirouteApiKey'
+    ];
+    private static readonly ENC_PREFIX = 'enc:v1:';
+
     /**
      * Initializes config directory and loads existing config file or defaults.
      */
@@ -19,10 +30,59 @@ export class ConfigManager {
         const homeDir = os.homedir();
         const baseDir = path.join(homeDir, '.kai-agent');
         if (!fs.existsSync(baseDir)) {
-            fs.mkdirSync(baseDir, { recursive: true });
+            fs.mkdirSync(baseDir, { recursive: true, mode: 0o700 });
         }
         this.configPath = path.join(baseDir, 'config.json');
         this.config = this.loadConfig();
+    }
+
+    /** Returns Electron safeStorage when running inside Electron Main, otherwise null. */
+    private getSafeStorage(): { isEncryptionAvailable: () => boolean; encryptString: (s: string) => Buffer; decryptString: (b: Buffer) => string } | null {
+        try {
+            const electron = require('electron');
+            if (electron && electron.safeStorage && electron.safeStorage.isEncryptionAvailable()) {
+                return electron.safeStorage;
+            }
+        } catch {}
+        return null;
+    }
+
+    /** Decrypts enc:v1: secret fields in memory when safeStorage is available. */
+    private decryptSecrets(cfg: KaiConfig): KaiConfig {
+        const safe = this.getSafeStorage();
+        const out: any = { ...cfg };
+        for (const key of ConfigManager.SECRET_KEYS) {
+            const val = out[key];
+            if (typeof val === 'string' && val.startsWith(ConfigManager.ENC_PREFIX)) {
+                if (safe) {
+                    try {
+                        const raw = Buffer.from(val.slice(ConfigManager.ENC_PREFIX.length), 'base64');
+                        out[key] = safe.decryptString(raw);
+                    } catch {
+                        out[key] = '';
+                    }
+                } else {
+                    out[key] = '';
+                }
+            }
+        }
+        return out as KaiConfig;
+    }
+
+    /** Encrypts secret fields before persisting config.json to disk. */
+    private encryptSecrets(cfg: KaiConfig): KaiConfig {
+        const safe = this.getSafeStorage();
+        if (!safe) return { ...cfg };
+        const out: any = { ...cfg };
+        for (const key of ConfigManager.SECRET_KEYS) {
+            const val = out[key];
+            if (typeof val === 'string' && val.length > 0 && !val.startsWith(ConfigManager.ENC_PREFIX)) {
+                try {
+                    out[key] = ConfigManager.ENC_PREFIX + safe.encryptString(val).toString('base64');
+                } catch {}
+            }
+        }
+        return out as KaiConfig;
     }
 
     /**
@@ -42,7 +102,7 @@ export class ConfigManager {
         try {
             if (fs.existsSync(this.configPath)) {
                 const raw = fs.readFileSync(this.configPath, 'utf8');
-                return { ...DEFAULT_CONFIG, ...JSON.parse(raw) };
+                return this.decryptSecrets({ ...DEFAULT_CONFIG, ...JSON.parse(raw) });
             }
         } catch (e) {
             console.error('Failed to parse config.json, using defaults:', e);
@@ -72,7 +132,8 @@ export class ConfigManager {
     public update(updates: Partial<KaiConfig>): void {
         this.config = { ...this.config, ...updates };
         try {
-            fs.writeFileSync(this.configPath, JSON.stringify(this.config, null, 2), 'utf8');
+            const toPersist = this.encryptSecrets(this.config);
+            fs.writeFileSync(this.configPath, JSON.stringify(toPersist, null, 2), { encoding: 'utf8', mode: 0o600 });
         } catch (e) {
             console.error('Failed to write config.json:', e);
         }

@@ -78,18 +78,27 @@ class BrowserToolsExecutor {
         const savedWs = localStorage.getItem('kai.workspacePath') || '';
         const currentTurnId = (this.activeTurnIdGetter ? this.activeTurnIdGetter() : '') || localStorage.getItem('kai.activeChatId') || '';
         try {
-            const res = await fetch('/api/tools/execute', {
-                method: 'POST',
-                headers: typeof DOMUtils !== 'undefined' && DOMUtils.getPreviewAuthHeaders
-                    ? DOMUtils.getPreviewAuthHeaders({ 'Content-Type': 'application/json' })
-                    : { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    tool: tool,
-                    args: args,
-                    workspacePath: savedWs,
-                    turnId: currentTurnId
+            const res = await (typeof DOMUtils !== 'undefined' && DOMUtils.fetchWithPreviewAuth
+                ? DOMUtils.fetchWithPreviewAuth('/api/tools/execute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tool: tool,
+                        args: args,
+                        workspacePath: savedWs,
+                        turnId: currentTurnId
+                    })
                 })
-            });
+                : fetch('/api/tools/execute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tool: tool,
+                        args: args,
+                        workspacePath: savedWs,
+                        turnId: currentTurnId
+                    })
+                }));
             if (!res.ok) throw new Error(`Proxy error ${res.status}`);
             const data = await res.json();
             return data.result || JSON.stringify(data, null, 2);
@@ -109,16 +118,108 @@ class BrowserToolsExecutor {
         }, null, 2);
     }
 
-    /** Evaluates mathematical expression securely. */
+    /** Evaluates arithmetic expression securely without dynamic code execution. */
     toolCalculate(expression) {
         try {
-            const sanitized = expression.replace(/[^0-9+\-*/().%\s^,eE]/g, '');
-            if (!sanitized.trim()) return '[Error]: Empty expression';
-            const result = Function('"use strict"; return (' + sanitized + ')')();
+            const raw = String(expression || '').trim();
+            if (!raw) return '[Error]: Empty expression';
+            const result = BrowserToolsExecutor._evaluateArithmetic(raw);
             return `Expression: ${expression}\nResult: ${result}`;
         } catch (e) {
             return `[Error calculating]: ${e.message}`;
         }
+    }
+
+    /** Tokenizes and evaluates basic arithmetic (+ - * / % ^ and parentheses) safely. */
+    static _evaluateArithmetic(expr) {
+        const tokens = [];
+        let i = 0;
+        while (i < expr.length) {
+            const ch = expr[i];
+            if (/\s/.test(ch)) {
+                i++;
+                continue;
+            }
+            if (/[0-9.]/.test(ch)) {
+                const match = expr.slice(i).match(/^(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/);
+                if (!match) throw new Error(`Invalid number at position ${i}`);
+                tokens.push({ type: 'num', val: Number(match[0]) });
+                i += match[0].length;
+                continue;
+            }
+            if ('+-*/%^()'.includes(ch)) {
+                tokens.push({ type: 'op', val: ch });
+                i++;
+                continue;
+            }
+            throw new Error(`Unsupported character "${ch}" in expression`);
+        }
+
+        let pos = 0;
+        const peek = () => tokens[pos];
+        const consume = () => tokens[pos++];
+
+        const parseExpr = () => {
+            let left = parseTerm();
+            while (peek() && peek().type === 'op' && (peek().val === '+' || peek().val === '-')) {
+                const op = consume().val;
+                const right = parseTerm();
+                left = op === '+' ? left + right : left - right;
+            }
+            return left;
+        };
+
+        const parseTerm = () => {
+            let left = parsePower();
+            while (peek() && peek().type === 'op' && (peek().val === '*' || peek().val === '/' || peek().val === '%')) {
+                const op = consume().val;
+                const right = parsePower();
+                if ((op === '/' || op === '%') && right === 0) throw new Error('Division by zero');
+                left = op === '*' ? left * right : (op === '/' ? left / right : left % right);
+            }
+            return left;
+        };
+
+        const parsePower = () => {
+            let base = parseUnary();
+            if (peek() && peek().type === 'op' && peek().val === '^') {
+                consume();
+                const exp = parsePower();
+                base = Math.pow(base, exp);
+            }
+            return base;
+        };
+
+        const parseUnary = () => {
+            if (peek() && peek().type === 'op' && (peek().val === '+' || peek().val === '-')) {
+                const op = consume().val;
+                const val = parseUnary();
+                return op === '-' ? -val : val;
+            }
+            return parsePrimary();
+        };
+
+        const parsePrimary = () => {
+            const tok = peek();
+            if (!tok) throw new Error('Unexpected end of expression');
+            if (tok.type === 'num') {
+                consume();
+                return tok.val;
+            }
+            if (tok.type === 'op' && tok.val === '(') {
+                consume();
+                const val = parseExpr();
+                const closing = consume();
+                if (!closing || closing.val !== ')') throw new Error('Mismatched parentheses');
+                return val;
+            }
+            throw new Error(`Unexpected token "${tok.val}"`);
+        };
+
+        const value = parseExpr();
+        if (pos < tokens.length) throw new Error(`Unexpected trailing token "${tokens[pos].val}"`);
+        if (!Number.isFinite(value)) throw new Error('Result is not finite');
+        return value;
     }
 
     /** Converts units across distance, weight, and temperature. */
@@ -191,13 +292,17 @@ class BrowserToolsExecutor {
     async rollbackTurnChanges(turnIds) {
         try {
             const ids = Array.isArray(turnIds) ? turnIds : [turnIds];
-            const res = await fetch('/api/tools/rollback', {
-                method: 'POST',
-                headers: typeof DOMUtils !== 'undefined' && DOMUtils.getPreviewAuthHeaders
-                    ? DOMUtils.getPreviewAuthHeaders({ 'Content-Type': 'application/json' })
-                    : { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ turnIds: ids })
-            });
+            const res = await (typeof DOMUtils !== 'undefined' && DOMUtils.fetchWithPreviewAuth
+                ? DOMUtils.fetchWithPreviewAuth('/api/tools/rollback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ turnIds: ids })
+                })
+                : fetch('/api/tools/rollback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ turnIds: ids })
+                }));
             if (!res.ok) throw new Error(`Rollback HTTP error ${res.status}`);
             return await res.json();
         } catch (e) {

@@ -58,11 +58,9 @@ class BrowserNativeDialogs {
             try {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 120000);
-                const res = await fetch('/api/workspace/pick', {
-                    method: 'POST',
-                    headers: typeof DOMUtils !== 'undefined' && DOMUtils.getPreviewAuthHeaders ? DOMUtils.getPreviewAuthHeaders() : {},
-                    signal: controller.signal
-                });
+                const res = await (typeof DOMUtils !== 'undefined' && DOMUtils.fetchWithPreviewAuth
+                    ? DOMUtils.fetchWithPreviewAuth('/api/workspace/pick', { method: 'POST', signal: controller.signal })
+                    : fetch('/api/workspace/pick', { method: 'POST', signal: controller.signal }));
                 clearTimeout(timeoutId);
                 if (res.ok) {
                     const data = await res.json();
@@ -72,6 +70,8 @@ class BrowserNativeDialogs {
                     if (data && data.canceled) {
                         return resolve(null);
                     }
+                } else {
+                    console.warn('Workspace folder picker HTTP error:', res.status);
                 }
             } catch (e) {
                 console.warn('Backend folder picker unavailable or timed out:', e);
@@ -90,10 +90,9 @@ class BrowserNativeDialogs {
         return new Promise(async (resolve) => {
             // Method 1: Backend Windows PowerShell FolderBrowserDialog (/api/lmstudio/pick)
             try {
-                const res = await fetch('/api/lmstudio/pick', {
-                    method: 'POST',
-                    headers: typeof DOMUtils !== 'undefined' && DOMUtils.getPreviewAuthHeaders ? DOMUtils.getPreviewAuthHeaders() : {}
-                });
+                const res = await (typeof DOMUtils !== 'undefined' && DOMUtils.fetchWithPreviewAuth
+                    ? DOMUtils.fetchWithPreviewAuth('/api/lmstudio/pick', { method: 'POST' })
+                    : fetch('/api/lmstudio/pick', { method: 'POST' }));
                 if (res.ok) {
                     const data = await res.json();
                     if (data && !data.canceled && data.lmStudioCacheDir) {

@@ -91,13 +91,17 @@ class BrowserCompletionEngine {
         if (hasWs) {
             try {
                 const savedWs = localStorage.getItem('kai.workspacePath');
-                const wsRes = await fetch('/api/tools/execute', {
-                    method: 'POST',
-                    headers: typeof DOMUtils !== 'undefined' && DOMUtils.getPreviewAuthHeaders
-                        ? DOMUtils.getPreviewAuthHeaders({ 'Content-Type': 'application/json' })
-                        : { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tool: 'get_workspace_structure', workspacePath: savedWs })
-                });
+                const wsRes = await (typeof DOMUtils !== 'undefined' && DOMUtils.fetchWithPreviewAuth
+                    ? DOMUtils.fetchWithPreviewAuth('/api/tools/execute', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ tool: 'get_workspace_structure', workspacePath: savedWs })
+                    })
+                    : fetch('/api/tools/execute', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ tool: 'get_workspace_structure', workspacePath: savedWs })
+                    }));
                 if (wsRes.ok) {
                     const wsData = await wsRes.json();
                     if (wsData.result) systemPrompt += `\n\n${wsData.result}\n`;
@@ -150,14 +154,19 @@ class BrowserCompletionEngine {
                     });
                 } catch (fetchErr) {
                     if (!isCloudProvider) {
-                        response = await fetch('/api/lmstudio/chat', {
-                            method: 'POST',
-                            headers: typeof DOMUtils !== 'undefined' && DOMUtils.getPreviewAuthHeaders
-                                ? DOMUtils.getPreviewAuthHeaders({ 'Content-Type': 'application/json' })
-                                : { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload),
-                            signal: abortSignal
-                        });
+                        response = await (typeof DOMUtils !== 'undefined' && DOMUtils.fetchWithPreviewAuth
+                            ? DOMUtils.fetchWithPreviewAuth('/api/lmstudio/chat', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload),
+                                signal: abortSignal
+                            })
+                            : fetch('/api/lmstudio/chat', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload),
+                                signal: abortSignal
+                            }));
                     } else {
                         throw fetchErr;
                     }

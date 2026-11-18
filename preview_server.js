@@ -124,13 +124,19 @@ function openWindowsFolderPicker(description, showNewFolderButton) {
         const safeDesc = String(description || 'Select Folder').replace(/'/g, "''");
         const newBtnFlag = showNewFolderButton ? '$true' : '$false';
         const script = `
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Add-Type -AssemblyName System.Windows.Forms | Out-Null
+Add-Type -AssemblyName System.Drawing | Out-Null
+[System.Windows.Forms.Application]::EnableVisualStyles()
 $owner = New-Object System.Windows.Forms.Form
 $owner.TopMost = $true
-$owner.StartPosition = 'Manual'
-$owner.Location = New-Object System.Drawing.Point(-32000, -32000)
+$owner.Opacity = 0
+$owner.FormBorderStyle = 'None'
+$owner.StartPosition = 'CenterScreen'
 $owner.Size = New-Object System.Drawing.Size(1, 1)
 $owner.ShowInTaskbar = $false
+$owner.Show()
+$owner.Activate()
 $dialog = New-Object System.Windows.Forms.FolderBrowserDialog
 $dialog.Description = '${safeDesc}'
 $dialog.ShowNewFolderButton = ${newBtnFlag}
@@ -141,10 +147,13 @@ if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
     [Console]::Out.WriteLine('CANCELED')
 }
 $dialog.Dispose()
+$owner.Close()
 $owner.Dispose()
 `;
-        const ps = spawn('powershell.exe', ['-STA', '-NoProfile', '-Command', script]);
+        const encoded = Buffer.from(script, 'utf16le').toString('base64');
+        const ps = spawn('powershell.exe', ['-STA', '-NoProfile', '-EncodedCommand', encoded]);
         let output = '';
+        let errOutput = '';
         let settled = false;
         const finish = (val) => {
             if (settled) return;
@@ -156,13 +165,20 @@ $owner.Dispose()
             try { ps.kill(); } catch (e) {}
             finish(null);
         }, 120000);
-        ps.stdout.on('data', data => { output += data.toString(); });
-        ps.on('error', () => finish(null));
-        ps.on('close', () => {
+        ps.stdout.on('data', data => { output += data.toString('utf8'); });
+        ps.stderr.on('data', data => { errOutput += data.toString('utf8'); });
+        ps.on('error', (err) => {
+            console.error('[PreviewServer] Folder picker spawn error:', err);
+            finish(null);
+        });
+        ps.on('close', (code) => {
             const picked = output.trim();
             if (picked && picked !== 'CANCELED' && !picked.includes('Exception')) {
                 finish(picked);
             } else {
+                if (code !== 0 && errOutput.trim()) {
+                    console.error('[PreviewServer] Folder picker stderr:', errOutput.trim());
+                }
                 finish(null);
             }
         });
@@ -234,6 +250,16 @@ const server = http.createServer(async (req, res) => {
     // Health check endpoint for launcher readiness polling
     if (pathname === '/api/health' && req.method === 'GET') {
         return sendJson(req, res, 200, { status: 'ok', port: PORT });
+    }
+
+    // Same-origin session token refresh endpoint (protected by Sec-Fetch-Site / Origin and non-wildcard CORS)
+    if (pathname === '/api/session-token' && req.method === 'GET') {
+        const fetchSite = req.headers['sec-fetch-site'];
+        const origin = req.headers.origin;
+        if ((fetchSite && fetchSite !== 'same-origin') || (origin && !ALLOWED_ORIGINS.has(origin))) {
+            return sendJson(req, res, 403, { error: 'Forbidden' });
+        }
+        return sendJson(req, res, 200, { token: PREVIEW_SESSION_TOKEN });
     }
 
     // Enforce per-session CSRF token + origin verification on all POST /api/* endpoints
