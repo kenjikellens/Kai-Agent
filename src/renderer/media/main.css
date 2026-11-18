@@ -223,9 +223,9 @@ body {
   outline-offset: 2px;
 }
 
-/* Global utility class for hidden DOM elements */
+/* Global utility class for hidden DOM elements (re-asserted at bottom for cascade priority) */
 .hidden {
-  display: none !important;
+  display: none;
 }
 
 /* App Layout Shell: Left Sidebar + Main Content Area */
@@ -279,30 +279,6 @@ body {
   gap: 4px;
 }
 
-/* Sidebar Toggle Icon Button (at the very top) */
-/* Sidebar Toggle Icon Button (at the very top) */
-.sidebar-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--app-radius-md);
-  background: transparent;
-  color: var(--app-fg);
-  cursor: pointer;
-  flex-shrink: 0;
-  border: 0 !important;
-  outline: none;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.sidebar-icon-btn:hover {
-  background: var(--app-surface-hover);
-  color: var(--app-fg);
-  box-shadow: var(--app-btn-inset);
-}
-
 /* Sidebar Action Buttons (New Chat, Workspace Selector, Settings) - Matching input field pill buttons */
 .sidebar-action-btn,
 .sidebar-footer-btn {
@@ -316,7 +292,7 @@ body {
   padding: 0 12px;
   border-radius: 999px;
   background: var(--app-surface-strong);
-  border: 0 !important;
+  border: 0;
   outline: none;
   color: var(--app-fg);
   font-size: 0.86rem;
@@ -521,7 +497,7 @@ body {
   justify-content: center;
   color: var(--app-muted);
   cursor: pointer;
-  border: 0 !important;
+  border: 0;
   background: transparent;
   flex-shrink: 0;
   transition: background-color 0.15s ease, color 0.15s ease;
@@ -531,35 +507,6 @@ body {
   background: var(--app-surface-hover);
   color: var(--app-fg);
   box-shadow: var(--app-btn-inset);
-}
-
-.history-item-delete-btn {
-  opacity: 0;
-  width: 24px;
-  height: 24px;
-  min-width: 24px;
-  min-height: 24px;
-  padding: 0;
-  border-radius: 999px;
-  color: var(--app-muted);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 0 !important;
-  outline: none;
-  background: transparent;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: opacity 0.15s ease, color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.history-item:hover .history-item-delete-btn {
-  opacity: 1;
-}
-
-.history-item-delete-btn:hover {
-  color: #ff6b6b;
-  background: rgba(255, 107, 107, 0.15);
 }
 
 .history-empty-state {
@@ -591,9 +538,10 @@ body {
 .app-sidebar.collapsed .sidebar-section-title,
 .app-sidebar.collapsed .history-item-title,
 .app-sidebar.collapsed .history-item-time,
-.app-sidebar.collapsed .history-item-delete-btn,
+.app-sidebar.collapsed .icon-btn--delete,
+.app-sidebar.collapsed .history-item:hover .icon-btn--delete,
 .app-sidebar.collapsed .history-empty-state {
-  display: none !important;
+  display: none;
 }
 
 .app-sidebar.collapsed .sidebar-toggle-row {
@@ -670,7 +618,7 @@ body {
   max-width: 480px;
   padding: 6px 14px;
   background: var(--app-surface-strong);
-  border: 0 !important;
+  border: 0;
   outline: none;
   border-radius: 999px;
   color: var(--app-fg);
@@ -720,12 +668,13 @@ body {
 /* -----------------------------
    Icons / buttons
 ------------------------------ */
+/* Base interactive button element reset and transition */
 button {
-  border: 0 !important;
+  border: 0;
   outline: none;
   cursor: pointer;
   border-radius: var(--app-radius-sm);
-  transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
 }
 
 button:disabled {
@@ -735,11 +684,14 @@ button:disabled {
 
 /**
  * Single Unified Component: .icon-btn
- * Standardized icon-only clickable button across the entire UI.
- * 
+ * Standardized icon-only clickable button across the entire Desktop UI.
+ *
  * Applied in:
- * - Header action buttons (.icon-btn, .icon-btn--header)
+ * - Sidebar toggle button (.icon-btn, .icon-btn--sidebar)
+ * - Header & modal action buttons (.icon-btn, .icon-btn--header)
+ * - Input prompt toolbar buttons (.icon-btn, .icon-btn--toolbar)
  * - Sidebar history item deletion (.icon-btn, .icon-btn--delete)
+ * - Modal & dock dismiss buttons (.icon-btn, .icon-btn--close, .icon-btn--close-pill)
  */
 .icon-btn {
   display: inline-flex;
@@ -747,7 +699,7 @@ button:disabled {
   justify-content: center;
   background: transparent;
   color: var(--app-muted);
-  border: 0 !important;
+  border: 0;
   outline: none;
   cursor: pointer;
   box-sizing: border-box;
@@ -768,6 +720,14 @@ button:disabled {
 }
 
 /* Modifiers on .icon-btn */
+.icon-btn--sidebar {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: var(--app-fg);
+  border-radius: var(--app-radius-md);
+}
+
 .icon-btn--header {
   padding: 0;
   width: 32px;
@@ -782,24 +742,73 @@ button:disabled {
   flex-shrink: 0;
 }
 
+.icon-btn--toolbar {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  max-width: 32px;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  border-radius: 999px;
+  background: var(--app-surface-strong);
+  color: var(--app-fg);
+}
+
+.icon-btn--toolbar svg {
+  width: 16px;
+  height: 16px;
+}
+
+.icon-btn--toolbar.active-mode {
+  color: var(--vscode-button-foreground, #ffffff);
+  background: var(--app-accent);
+}
+
 .icon-btn--delete {
   width: 24px;
   height: 24px;
+  margin-left: 4px;
   border-radius: 4px;
   opacity: 0;
+  flex: 0 0 auto;
 }
 
 .history-item:hover .icon-btn--delete {
   opacity: 1;
 }
 
-.icon-btn--delete:hover {
+.icon-btn--delete:hover:not(:disabled) {
   color: #ff6b6b;
   background: rgba(255, 107, 107, 0.15);
 }
 
-.icon-btn:active {
-  background: var(--app-surface-active);
+.icon-btn--close {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: var(--app-radius-sm, 4px);
+}
+
+.icon-btn--close:hover:not(:disabled) {
+  box-shadow: none;
+}
+
+.icon-btn--close-pill {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+  padding: 0;
+  border-radius: 999px;
+  background: var(--app-surface-strong);
+  color: var(--app-muted, #a1a1aa);
+}
+
+.icon-btn--close-pill svg {
+  display: block;
+  pointer-events: none;
 }
 
 #send-btn {
@@ -814,7 +823,7 @@ button:disabled {
   justify-content: center;
   flex-shrink: 0;
   border-radius: var(--app-radius-md);
-  border: 0 !important;
+  border: 0;
   outline: none;
   background: var(--app-accent);
   color: var(--vscode-button-foreground, #ffffff);
@@ -833,13 +842,13 @@ button:disabled {
 
 #send-btn:disabled {
   opacity: 0.4;
-  box-shadow: none !important;
+  box-shadow: none;
 }
 
 /**
  * Single Unified Component: .btn
  * Standardized clickable button base for action, primary, and secondary buttons.
- * 
+ *
  * Applied in:
  * - Primary Action / Manage Keys Button (.btn, .btn--primary)
  * - Secondary Utility Buttons (.btn, .btn--secondary)
@@ -850,7 +859,7 @@ button:disabled {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border: 0 !important;
+  border: 0;
   outline: none;
   cursor: pointer;
   box-sizing: border-box;
@@ -1058,7 +1067,7 @@ button:disabled {
   color: var(--app-fg, #e4e4e7);
   border: 1px solid var(--app-border, rgba(255, 255, 255, 0.08));
   border-radius: 999px;
-  padding: 6px 14px !important;
+  padding: 6px 14px;
   box-sizing: border-box;
   word-break: break-word;
   transition: background-color 0.15s ease, border-color 0.15s ease;
@@ -1066,7 +1075,7 @@ button:disabled {
 
 .user-message:hover {
   background: var(--app-surface-active, #323238);
-  box-shadow: none !important;
+  box-shadow: none;
 }
 
 .user-message.is-multiline,
@@ -1076,11 +1085,11 @@ button:disabled {
 .user-message:has(ol),
 .user-message:has(pre) {
   border-radius: 14px;
-  padding: 8px 14px !important;
+  padding: 8px 14px;
 }
 
 .user-message .message-content {
-  padding: 0 !important;
+  padding: 0;
   line-height: 1.45;
 }
 
@@ -1094,7 +1103,7 @@ button:disabled {
   border-radius: var(--app-radius-sm);
   background: transparent;
   color: var(--app-muted);
-  border: 0 !important;
+  border: 0;
   outline: none;
   cursor: pointer;
   opacity: 0;
@@ -1159,7 +1168,7 @@ button:disabled {
   border-radius: var(--app-radius-sm);
   background: transparent;
   color: var(--app-muted);
-  border: 0 !important;
+  border: 0;
   outline: none;
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease;
@@ -1193,7 +1202,7 @@ button:disabled {
   background: transparent;
   border: 0;
   color: var(--app-fg);
-  padding: 0 !important;
+  padding: 0;
   box-sizing: border-box;
 }
 
@@ -1923,7 +1932,7 @@ button:disabled {
   font-size: 0.75rem;
   padding: 0;
   margin-left: 4px;
-  border: 0 !important;
+  border: 0;
   cursor: pointer;
   flex-shrink: 0;
   transition: color 0.15s ease, background-color 0.15s ease;
@@ -2001,7 +2010,7 @@ button:disabled {
   max-width: 32px;
   aspect-ratio: 1 / 1;
   padding: 0;
-  border: 0 !important;
+  border: 0;
   outline: none;
   border-radius: 999px;
   background: var(--app-accent, #007acc);
@@ -2026,7 +2035,7 @@ button:disabled {
 
 #send-btn:disabled {
   opacity: 0.4;
-  box-shadow: none !important;
+  box-shadow: none;
 }
 
 /* Toolbar Mode Selector Button (Shows active mode icon + label text + chevron) - Full rounded pill */
@@ -2103,45 +2112,6 @@ button:disabled {
   color: var(--app-muted);
 }
 
-/* Compact icon buttons for file upload (+) and capabilities (@) - Full circle pill */
-.toolbar-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  max-width: 32px;
-  aspect-ratio: 1 / 1;
-  padding: 0;
-  border: 0 !important;
-  outline: none;
-  border-radius: 999px;
-  background: var(--app-surface-strong);
-  color: var(--app-fg);
-  cursor: pointer;
-  box-sizing: border-box;
-  flex-shrink: 0;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.toolbar-icon-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-.toolbar-icon-btn:hover {
-  background: var(--app-surface-hover);
-  color: var(--app-fg);
-  box-shadow: var(--app-btn-inset);
-}
-
-/* Active indicator highlight when Planning Mode is enabled */
-.toolbar-icon-btn.active-mode {
-  color: var(--vscode-button-foreground, #ffffff);
-  background: var(--app-accent);
-}
-
 /* Context & capabilities popup menu (@ button menu) */
 #context-options-menu {
   position: absolute;
@@ -2187,7 +2157,7 @@ button:disabled {
   border-radius: 999px;
   background: transparent;
   color: var(--app-muted, #888888);
-  border: 0 !important;
+  border: 0;
   outline: none;
   cursor: pointer;
   text-align: left;
@@ -2209,22 +2179,22 @@ button:disabled {
 .context-mode-item:disabled,
 .context-mode-item.disabled {
   opacity: 0.35;
-  cursor: not-allowed !important;
+  cursor: not-allowed;
   pointer-events: auto;
   /* Ensures browser shows title tooltip on hover */
-  background: transparent !important;
+  background: transparent;
 }
 
 .context-mode-item:disabled *,
 .context-mode-item.disabled * {
-  cursor: not-allowed !important;
+  cursor: not-allowed;
   pointer-events: none;
 }
 
 .context-mode-item:disabled:hover,
 .context-mode-item.disabled:hover {
-  background: transparent !important;
-  color: var(--app-muted, #888888) !important;
+  background: transparent;
+  color: var(--app-muted, #888888);
 }
 
 .mode-item-svg {
@@ -2309,7 +2279,7 @@ button:disabled {
   padding: 0 12px;
   border-radius: 999px;
   background: var(--app-surface-strong);
-  border: 0 !important;
+  border: 0;
   outline: none;
   color: var(--app-muted);
   font-size: 0.76rem;
@@ -2365,7 +2335,7 @@ button:disabled {
   justify-content: flex-start;
   gap: 8px;
   padding: 0 14px;
-  border: 0 !important;
+  border: 0;
   outline: none;
   border-radius: 999px;
   background: var(--app-surface-strong);
@@ -2424,7 +2394,7 @@ button:disabled {
 .dropdown-trigger:hover .model-text-container.has-overflow .model-text-inner,
 .dropdown-item:hover .model-text-container.has-overflow .model-text-inner,
 .model-text-container.has-overflow:hover .model-text-inner {
-  animation: modelTextPingPong var(--scroll-duration, 8s) ease-in-out infinite !important;
+  animation: modelTextPingPong var(--scroll-duration, 8s) ease-in-out infinite;
 }
 
 /* Keyframes for no-delay, smooth continuous ping-pong scroll on hover */
@@ -2516,7 +2486,7 @@ button:disabled {
   gap: 12px;
   padding: 12px 10px 12px 10px;
   margin: 0;
-  background: transparent !important;
+  background: transparent;
   color: var(--app-muted);
   font-size: 0.78rem;
   font-weight: 600;
@@ -2524,7 +2494,7 @@ button:disabled {
   letter-spacing: 0.5px;
   cursor: pointer;
   user-select: none;
-  border: 0 !important;
+  border: 0;
   border-radius: 0;
   outline: none;
   width: 100%;
@@ -2535,7 +2505,7 @@ button:disabled {
 /* Hover state for category header toggle button */
 .dropdown-category-header:hover,
 .dropdown-category-header:focus-visible {
-  background: transparent !important;
+  background: transparent;
   color: var(--app-fg);
 }
 
@@ -2737,7 +2707,7 @@ button:disabled {
 
 /* Divider inside Thinking Flyout menu - Removed for seamless appearance */
 .flyout-divider {
-  display: none !important;
+  display: none;
 }
 
 /* Active open state on parent item when flyout submenu is visible */
@@ -2750,9 +2720,11 @@ button:disabled {
   display: flex;
 }
 
+.dropdown-category-content.collapsed .dropdown-item.model-hover-item.flyout-open>.thinking-flyout-menu,
+.dropdown-menu.hidden .dropdown-item.model-hover-item.flyout-open>.thinking-flyout-menu,
 .dropdown-category-content.collapsed .thinking-flyout-menu,
 .dropdown-menu.hidden .thinking-flyout-menu {
-  display: none !important;
+  display: none;
 }
 
 .dropdown-item .status-dot {
@@ -3447,11 +3419,11 @@ button:disabled {
 
 /* Compact spacing between tool cards and adjacent text */
 .tool-status-row {
-  margin: 2px 0 !important;
+  margin: 2px 0;
 }
 
 .tool-status-row+.tool-status-row {
-  margin-top: 2px !important;
+  margin-top: 2px;
 }
 
 .message.assistant-message {
@@ -3459,7 +3431,7 @@ button:disabled {
 }
 
 .assistant-message .message-content {
-  padding: 2px 0 !important;
+  padding: 2px 0;
 }
 
 .assistant-message .message-content p {
@@ -3502,7 +3474,7 @@ button:disabled {
   margin: 0;
   flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto !important;
+  overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
   font-family: var(--app-font);
@@ -3556,7 +3528,7 @@ button:disabled {
   padding: 6px 14px;
   border-radius: 999px;
   background: var(--app-surface-strong);
-  border: 0 !important;
+  border: 0;
   outline: none;
   color: var(--app-fg);
   font-family: var(--app-font);
@@ -3619,7 +3591,7 @@ button:disabled {
   gap: 16px;
   padding: 11px 0;
   border-bottom: 1px solid var(--app-border-subtle);
-  cursor: default !important;
+  cursor: default;
   user-select: text;
 }
 
@@ -3634,16 +3606,16 @@ button:disabled {
   gap: 2px;
   flex: 1;
   min-width: 0;
-  cursor: default !important;
+  cursor: default;
   user-select: text;
 }
 
 .setting-label {
   font-family: var(--app-font);
-  font-size: 0.95rem !important;
-  font-weight: 500 !important;
-  color: var(--app-fg) !important;
-  cursor: default !important;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--app-fg);
+  cursor: default;
   user-select: text;
   pointer-events: auto;
 }
@@ -3655,7 +3627,7 @@ button:disabled {
   color: var(--app-muted, #888888);
   line-height: 1.35;
   margin-top: 1px;
-  cursor: default !important;
+  cursor: default;
   user-select: text;
 }
 
@@ -3665,7 +3637,7 @@ button:disabled {
   font-weight: 500;
   color: var(--app-fg);
   flex: 1;
-  cursor: default !important;
+  cursor: default;
   user-select: text;
   pointer-events: auto;
 }
@@ -3675,7 +3647,7 @@ button:disabled {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  cursor: default !important;
+  cursor: default;
 }
 
 .setting-control:not(.setting-control-stacked):not(:has(.setting-input-text)):not(:has(.custom-select-container)) {
@@ -3739,7 +3711,7 @@ button:disabled {
   padding: 0 14px;
   border-radius: var(--app-radius-md, 6px);
   background: var(--app-surface-strong, #2a2a2e);
-  border: 1px solid var(--app-border-strong, rgba(255, 255, 255, 0.1)) !important;
+  border: 1px solid var(--app-border-strong, rgba(255, 255, 255, 0.1));
   outline: none;
   color: var(--app-fg);
   font-family: var(--app-font);
@@ -3754,7 +3726,7 @@ button:disabled {
 .setting-action-btn:hover {
   background: var(--app-surface-hover, rgba(255, 255, 255, 0.08));
   color: var(--app-fg);
-  border-color: rgba(255, 255, 255, 0.18) !important;
+  border-color: rgba(255, 255, 255, 0.18);
   box-shadow: var(--app-btn-inset);
 }
 
@@ -3809,7 +3781,7 @@ button:disabled {
 }
 
 .provider-label-link:hover .setting-label {
-  color: var(--main-link-hover, #58a6ff) !important;
+  color: var(--main-link-hover, #58a6ff);
   text-decoration: underline;
 }
 
@@ -3848,7 +3820,7 @@ button:disabled {
   color: var(--app-muted);
   cursor: pointer;
   border-radius: var(--app-radius-sm);
-  border: 0 !important;
+  border: 0;
   font-size: 0.85rem;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
@@ -3870,7 +3842,7 @@ button:disabled {
   align-items: center;
   justify-content: center;
   background: var(--app-surface-strong, #2a2a2e);
-  border: 1px solid var(--app-border-strong, rgba(255, 255, 255, 0.1)) !important;
+  border: 1px solid var(--app-border-strong, rgba(255, 255, 255, 0.1));
   border-radius: var(--app-radius-md, 6px);
   color: var(--app-muted);
   cursor: pointer;
@@ -3881,13 +3853,13 @@ button:disabled {
 .reload-key-btn:hover {
   background: var(--app-surface-hover, rgba(255, 255, 255, 0.08));
   color: var(--app-fg);
-  border-color: rgba(255, 255, 255, 0.18) !important;
+  border-color: rgba(255, 255, 255, 0.18);
   box-shadow: var(--app-btn-inset);
 }
 
 .reload-key-btn:active {
   background: rgba(255, 255, 255, 0.12);
-  box-shadow: none !important;
+  box-shadow: none;
 }
 
 .reload-key-btn.testing svg {
@@ -3896,13 +3868,13 @@ button:disabled {
 }
 
 .reload-key-btn.success {
-  color: var(--main-success-color, #4ec9b0) !important;
-  border-color: var(--main-success-color, #4ec9b0) !important;
+  color: var(--main-success-color, #4ec9b0);
+  border-color: var(--main-success-color, #4ec9b0);
 }
 
 .reload-key-btn.error {
-  color: var(--main-danger-color, #f44747) !important;
-  border-color: var(--main-danger-color, #f44747) !important;
+  color: var(--main-danger-color, #f44747);
+  border-color: var(--main-danger-color, #f44747);
 }
 
 
@@ -3944,20 +3916,20 @@ button:disabled {
   padding: 6px 12px;
   background: var(--app-surface-strong, #2a2a2e);
   color: var(--app-fg);
-  border: 0 !important;
+  border: 0;
   border-radius: var(--app-radius-md, 6px);
   box-shadow: none;
   font-family: var(--app-font);
   font-size: 0.92rem;
   font-weight: 500;
-  cursor: pointer !important;
+  cursor: pointer;
   user-select: none;
   outline: none;
   transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .custom-select-trigger * {
-  cursor: pointer !important;
+  cursor: pointer;
 }
 
 .custom-select-trigger:hover,
@@ -3975,7 +3947,7 @@ button:disabled {
   text-overflow: ellipsis;
   flex: 1 1 auto;
   text-align: left;
-  cursor: pointer !important;
+  cursor: pointer;
 }
 
 /* Chevron icon indicator inside custom select trigger button */
@@ -3983,7 +3955,7 @@ button:disabled {
   color: var(--app-fg);
   flex-shrink: 0;
   margin-left: 6px;
-  cursor: pointer !important;
+  cursor: pointer;
 }
 
 
@@ -3997,7 +3969,7 @@ button:disabled {
   font-size: 0.75rem;
   user-select: none;
   white-space: nowrap;
-  cursor: default !important;
+  cursor: default;
   flex-shrink: 0;
 }
 
@@ -4022,7 +3994,7 @@ button:disabled {
   border-radius: 8px;
   background: var(--app-surface-strong);
   transition: background-color 0.2s ease;
-  cursor: pointer !important;
+  cursor: pointer;
 }
 
 .slider-track::before {
@@ -4087,7 +4059,7 @@ button:disabled {
   display: inline-flex;
   flex-direction: column;
   align-self: flex-start;
-  margin: 2px 0 !important;
+  margin: 2px 0;
   padding: 3px 10px;
   border-radius: 999px;
   background: transparent;
@@ -4105,7 +4077,7 @@ button:disabled {
   background: var(--app-surface-hover);
   border-color: var(--app-border);
   color: var(--app-fg);
-  box-shadow: none !important;
+  box-shadow: none;
 }
 
 .tool-status-row.expanded {
@@ -4401,25 +4373,6 @@ button:disabled {
   font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
   margin-left: 4px;
-}
-
-.history-item-delete-btn {
-  flex: 0 0 auto;
-  margin-left: 4px;
-  padding: 4px;
-  border-radius: var(--app-radius-sm);
-  color: var(--app-muted);
-  opacity: 0.6;
-  transition: opacity 0.15s ease, background-color 0.15s ease, color 0.15s ease;
-}
-
-.history-item:hover .history-item-delete-btn {
-  opacity: 1;
-}
-
-.history-item-delete-btn:hover {
-  background: rgba(231, 76, 60, 0.15);
-  color: #e74c3c;
 }
 
 .settings-content-panel {
@@ -4724,13 +4677,13 @@ details[open]>summary>.custom-chevron {
     gap: 2px;
   }
 
-  .icon-btn-header {
+  .icon-btn--header {
     width: 22px;
     height: 22px;
     padding: 3px;
   }
 
-  .icon-btn-header svg {
+  .icon-btn--header svg {
     width: 13px;
     height: 13px;
   }
@@ -4837,37 +4790,6 @@ details[open]>summary>.custom-chevron {
 
 .help-modal-title svg {
   color: var(--app-muted, #a1a1aa);
-}
-
-.help-close-btn {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  min-width: 26px;
-  min-height: 26px;
-  padding: 0;
-  margin: 0;
-  border: 0 !important;
-  border-radius: 999px;
-  background: var(--app-surface-strong);
-  color: var(--app-muted, #a1a1aa);
-  cursor: pointer;
-  outline: none;
-  flex-shrink: 0;
-  box-sizing: border-box;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.help-close-btn svg {
-  display: block;
-  pointer-events: none;
-}
-
-.help-close-btn:hover {
-  background: var(--app-surface-hover, #2e2e34);
-  color: var(--app-fg, #ffffff);
-  box-shadow: var(--app-btn-inset);
 }
 
 .help-modal-body {
@@ -5095,7 +5017,7 @@ details[open]>summary>.custom-chevron {
   position: relative;
   margin: 0;
   padding: 0;
-  border: none !important;
+  border: none;
   border-radius: 12px;
   background: transparent;
   box-sizing: border-box;
@@ -5154,7 +5076,7 @@ details[open]>summary>.custom-chevron {
   letter-spacing: 0.5px;
   cursor: pointer;
   user-select: none;
-  border: 0 !important;
+  border: 0;
   border-radius: 0;
   outline: none;
   transition: color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
@@ -5182,17 +5104,17 @@ details[open]>summary>.custom-chevron {
 /* Category Header button inside settings category card */
 .settings-category .category-header-btn:hover,
 .settings-category .category-header-btn:focus-visible {
-  background: var(--app-surface-hover) !important;
+  background: var(--app-surface-hover);
   color: var(--app-fg);
-  border: none !important;
+  border: none;
   box-shadow: var(--app-btn-inset);
 }
 
 /* Active pressed state for category header button */
 .settings-category .category-header-btn:active {
-  background: var(--app-surface-active) !important;
+  background: var(--app-surface-active);
   color: var(--app-fg);
-  box-shadow: none !important;
+  box-shadow: none;
 }
 
 /* Category Title - Uppercase, bold, matching unified typography */
@@ -5495,28 +5417,6 @@ details[open]>summary>.custom-chevron {
   word-break: break-word;
 }
 
-/* [Ask User Dock Close Button] - Minimal dismiss icon button */
-.ask-dock-close-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: none;
-  border-radius: var(--app-radius-sm, 4px);
-  background: transparent;
-  color: var(--app-muted);
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: background-color 0.15s ease, color 0.15s ease;
-}
-
-.ask-dock-close-btn:hover {
-  background: var(--app-surface-hover);
-  color: var(--app-fg);
-}
-
 /* [Ask User Options List] - Vertical stack of selectable choices with dividers */
 .ask-options-list {
   display: flex;
@@ -5601,5 +5501,18 @@ details[open]>summary>.custom-chevron {
 .ask-skip-btn:hover {
   background: var(--app-surface-active);
   border-color: var(--app-border-strong);
+}
+
+/* Global hidden utility overrides placed last in cascade */
+.hidden,
+.dropdown-menu.hidden,
+.custom-select-menu.hidden,
+.toolbar-mode-btn.hidden,
+.attached-files-bar.hidden,
+.content-view.hidden,
+.ask-user-dock.hidden,
+.help-container.hidden,
+#context-options-dropdown-container.hidden {
+  display: none;
 }
 

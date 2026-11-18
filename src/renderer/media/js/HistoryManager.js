@@ -45,7 +45,7 @@ class HistoryManager {
     _initDelegatedEvents() {
         if (!this.historyList) return;
         this.historyList.addEventListener('click', (e) => {
-            const deleteBtn = e.target.closest('.history-item-delete-btn');
+            const deleteBtn = e.target.closest('.icon-btn--delete');
             if (deleteBtn) {
                 e.stopPropagation();
                 const item = deleteBtn.closest('.history-item');
@@ -180,7 +180,7 @@ class HistoryManager {
         content.appendChild(time);
         
         const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'history-item-delete-btn';
+        deleteBtn.className = 'icon-btn icon-btn--delete';
         deleteBtn.title = 'Delete Chat';
         deleteBtn.innerHTML = window.KAI_SVGS['delete_item'] || `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
         
