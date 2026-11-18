@@ -12,19 +12,25 @@ pub enum StorageError {
     Json(#[from] serde_json::Error),
 }
 
-/// Persistent chat session record.
+/// Persistent chat session record with tolerant serde defaults for partial UI save payloads.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatSessionRecord {
     pub id: String,
+    #[serde(default)]
     pub title: String,
+    #[serde(default)]
     pub messages: Vec<serde_json::Value>,
     #[serde(rename = "uiEvents", default)]
     pub ui_events: Option<Vec<serde_json::Value>>,
     #[serde(rename = "workspacePath", default)]
     pub workspace_path: Option<String>,
+    #[serde(default)]
     pub mode: String,
+    #[serde(default)]
     pub model: String,
+    #[serde(default)]
     pub thinking: bool,
+    #[serde(default)]
     pub timestamp: i64,
 }
 

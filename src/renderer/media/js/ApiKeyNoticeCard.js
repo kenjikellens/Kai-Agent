@@ -44,9 +44,10 @@ class ApiKeyNoticeCard {
         const openSettingsBtn = document.createElement('button');
         openSettingsBtn.type = 'button';
         openSettingsBtn.className = 'api-key-notice-btn api-key-notice-primary';
-        openSettingsBtn.textContent = '⚙️ Open Settings';
+        openSettingsBtn.textContent = 'Open Settings';
         openSettingsBtn.addEventListener('click', () => {
             window.location.hash = 'settings';
+            window.dispatchEvent(new CustomEvent('kaiSelectSettingsCategory', { detail: { category: 'apikeys' } }));
             setTimeout(() => {
                 const inputId = configKey === 'geminiApiKey' ? 'settings-gemini-key' : `provider-key-${configKey}`;
                 const inputEl = document.getElementById(inputId);

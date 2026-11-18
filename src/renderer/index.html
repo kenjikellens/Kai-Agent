@@ -146,7 +146,7 @@
 
             <!-- View B: Settings View Panel -->
             <div id="settings-container" class="content-view settings-container hidden">
-                <div class="settings-scroll-wrapper">
+                <div class="settings-shell">
                     <div class="settings-panel-header">
                         <div class="settings-header-titles">
                             <h2 class="settings-title" data-i18n="settings">Settings</h2>
@@ -154,109 +154,140 @@
                         <button id="close-settings-btn" class="icon-btn icon-btn--header" title="Close Settings">✕</button>
                     </div>
 
-                    <div class="settings-content-panel">
-                        <!-- Category 1: General Preferences -->
-                        <div class="settings-category" id="category-general">
-                            <button type="button" class="category-header-btn" data-category="general">
-                                <span class="category-title" data-i18n="generalSettings">General Settings</span>
-                                <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    <div class="settings-body">
+                        <!-- Left Category Navigation Sidebar -->
+                        <nav class="settings-sidebar" id="settings-sidebar" role="tablist" aria-orientation="vertical" aria-label="Settings Categories">
+                            <button type="button" class="sidebar-footer-btn active" role="tab" aria-selected="true" aria-controls="category-general" data-settings-tab="general">
+                                <svg class="sidebar-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="4" y1="21" x2="4" y2="14"></line>
+                                    <line x1="4" y1="10" x2="4" y2="3"></line>
+                                    <line x1="12" y1="21" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12" y2="3"></line>
+                                    <line x1="20" y1="21" x2="20" y2="16"></line>
+                                    <line x1="20" y1="12" x2="20" y2="3"></line>
+                                    <line x1="1" y1="14" x2="7" y2="14"></line>
+                                    <line x1="9" y1="8" x2="15" y2="8"></line>
+                                    <line x1="17" y1="16" x2="23" y2="16"></line>
+                                </svg>
+                                <span class="btn-label" data-i18n="generalSettings">General Settings</span>
                             </button>
-                            <div class="category-content">
-                                <div class="setting-row">
-                                    <div class="setting-info">
-                                        <span class="setting-label" data-i18n="language">Language</span>
-                                    </div>
-                                    <div class="setting-control" id="language-select-container"></div>
-                                </div>
-                                <div class="setting-row">
-                                    <div class="setting-info">
-                                        <span class="setting-label" data-i18n="theme">Theme</span>
-                                        <span class="setting-subtitle" data-i18n="themeDesc">Choose between Dark, Light, or System appearance</span>
-                                    </div>
-                                    <div class="setting-control" id="theme-select-container"></div>
-                                </div>
-                                <div class="setting-row">
-                                    <div class="setting-info">
-                                        <span class="setting-label" data-i18n="uiScale">UI Scale</span>
-                                        <span class="setting-subtitle" data-i18n="uiScaleDesc">Adjusts the overall display scale for text, buttons, and panels</span>
-                                    </div>
-                                    <div class="setting-control" id="ui-scale-select-container"></div>
-                                </div>
-                                <div class="setting-row">
-                                    <div class="setting-info">
-                                        <span class="setting-label" data-i18n="streamSettleDelay">Stream Lookahead Delay</span>
-                                        <span class="setting-subtitle" data-i18n="streamSettleDelayDesc">Buffer delay before streaming markdown formatting settles into the DOM</span>
-                                    </div>
-                                    <div class="setting-control" id="stream-settle-delay-select-container"></div>
-                                </div>
-                            </div>
-                        </div>
+                            <button type="button" class="sidebar-footer-btn" role="tab" aria-selected="false" aria-controls="category-thinking" data-settings-tab="thinking">
+                                <svg class="sidebar-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"></path>
+                                    <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"></path>
+                                </svg>
+                                <span class="btn-label" data-i18n="thinkingSettings">Thinking & Reasoning</span>
+                            </button>
+                            <button type="button" class="sidebar-footer-btn" role="tab" aria-selected="false" aria-controls="category-lmstudio" data-settings-tab="lmstudio">
+                                <svg class="sidebar-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                                    <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                                    <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                                    <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                                </svg>
+                                <span class="btn-label" data-i18n="lmStudioHeader">LM Studio</span>
+                            </button>
+                            <button type="button" class="sidebar-footer-btn" role="tab" aria-selected="false" aria-controls="category-apikeys" data-settings-tab="apikeys">
+                                <svg class="sidebar-btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+                                </svg>
+                                <span class="btn-label" data-i18n="apiKeysSettings">API Keys & Providers</span>
+                            </button>
+                        </nav>
 
-                        <!-- Category 2: Reasoning & Thinking -->
-                        <div class="settings-category collapsed" id="category-thinking">
-                            <button type="button" class="category-header-btn" data-category="thinking">
-                                <span class="category-title" data-i18n="thinkingSettings">Thinking & Reasoning</span>
-                                <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                            </button>
-                            <div class="category-content">
-                                <div class="setting-row" id="show-thinking-setting-row"></div>
-                                <div class="setting-row" id="keep-thinking-generating-setting-row"></div>
-                                <div class="setting-row" id="keep-thinking-finished-setting-row"></div>
-                                <div class="setting-row">
-                                    <div class="setting-info">
-                                        <span class="setting-label" data-i18n="thinkingMaxHeight">Thinking Process Max Height</span>
-                                        <span class="setting-subtitle" data-i18n="thinkingMaxHeightDesc">Sets the maximum height limit of the scrollable reasoning block</span>
-                                    </div>
-                                    <div class="setting-control" id="thinking-max-height-select-container"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Category 3: Local AI (LM Studio) -->
-                        <div class="settings-category collapsed" id="category-lmstudio">
-                            <button type="button" class="category-header-btn" data-category="lmstudio">
-                                <span class="category-title" data-i18n="lmStudioHeader">LM Studio</span>
-                                <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                            </button>
-                            <div class="category-content">
-                                <div class="setting-row">
-                                    <div class="setting-info">
-                                        <span class="setting-label" data-i18n="serverUrl">Server URL</span>
-                                        <span class="setting-subtitle" data-i18n="serverUrlDesc">Local endpoint of the LM Studio API server (default http://localhost:1234/v1)</span>
-                                    </div>
-                                    <div class="setting-control">
-                                        <input type="text" id="settings-server-url" class="setting-input-text" placeholder="http://localhost:1234/v1" />
-                                    </div>
-                                </div>
-                                <div class="setting-row">
-                                    <div class="setting-info">
-                                        <span class="setting-label" data-i18n="lmStudioDirectory">LM Studio Directory</span>
-                                        <span class="setting-subtitle" data-i18n="lmStudioDirectoryDesc">Path to the local LM Studio cache directory for model detection</span>
-                                    </div>
-                                    <div class="setting-control setting-control-stacked">
-                                        <div class="input-with-action">
-                                            <input type="text" id="settings-lmstudio-path" class="setting-input-text" placeholder="Auto-detected (~/.cache/lm-studio)" />
-                                            <button type="button" id="browse-lmstudio-path-btn" class="setting-action-btn" data-i18n="browse">Browse...</button>
+                        <!-- Right Active Category Content Panel -->
+                        <div class="settings-content-panel" id="settings-content-panel">
+                            <!-- Category 1: General Preferences -->
+                            <section class="settings-category" id="category-general" role="tabpanel" data-category="general">
+                                <h3 class="settings-section-heading" data-i18n="generalSettings">General Settings</h3>
+                                <div class="category-content">
+                                    <div class="setting-row">
+                                        <div class="setting-info">
+                                            <span class="setting-label" data-i18n="language">Language</span>
                                         </div>
-                                        <div id="lmstudio-cache-status-indicator" class="cache-status-indicator">
-                                            <span id="cache-status-dot" class="status-dot status-disconnected"></span>
-                                            <span id="cache-status-text" class="cache-status-label" data-i18n="checkingCache">Checking cache...</span>
+                                        <div class="setting-control" id="language-select-container"></div>
+                                    </div>
+                                    <div class="setting-row">
+                                        <div class="setting-info">
+                                            <span class="setting-label" data-i18n="theme">Theme</span>
+                                            <span class="setting-subtitle" data-i18n="themeDesc">Choose between Dark, Light, or System appearance</span>
+                                        </div>
+                                        <div class="setting-control" id="theme-select-container"></div>
+                                    </div>
+                                    <div class="setting-row">
+                                        <div class="setting-info">
+                                            <span class="setting-label" data-i18n="uiScale">UI Scale</span>
+                                            <span class="setting-subtitle" data-i18n="uiScaleDesc">Adjusts the overall display scale for text, buttons, and panels</span>
+                                        </div>
+                                        <div class="setting-control" id="ui-scale-select-container"></div>
+                                    </div>
+                                    <div class="setting-row">
+                                        <div class="setting-info">
+                                            <span class="setting-label" data-i18n="streamSettleDelay">Stream Lookahead Delay</span>
+                                            <span class="setting-subtitle" data-i18n="streamSettleDelayDesc">Buffer delay before streaming markdown formatting settles into the DOM</span>
+                                        </div>
+                                        <div class="setting-control" id="stream-settle-delay-select-container"></div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- Category 2: Reasoning & Thinking -->
+                            <section class="settings-category hidden" id="category-thinking" role="tabpanel" data-category="thinking">
+                                <h3 class="settings-section-heading" data-i18n="thinkingSettings">Thinking & Reasoning</h3>
+                                <div class="category-content">
+                                    <div class="setting-row" id="show-thinking-setting-row"></div>
+                                    <div class="setting-row" id="keep-thinking-generating-setting-row"></div>
+                                    <div class="setting-row" id="keep-thinking-finished-setting-row"></div>
+                                    <div class="setting-row">
+                                        <div class="setting-info">
+                                            <span class="setting-label" data-i18n="thinkingMaxHeight">Thinking Process Max Height</span>
+                                            <span class="setting-subtitle" data-i18n="thinkingMaxHeightDesc">Sets the maximum height limit of the scrollable reasoning block</span>
+                                        </div>
+                                        <div class="setting-control" id="thinking-max-height-select-container"></div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <!-- Category 3: Local AI (LM Studio) -->
+                            <section class="settings-category hidden" id="category-lmstudio" role="tabpanel" data-category="lmstudio">
+                                <h3 class="settings-section-heading" data-i18n="lmStudioHeader">LM Studio</h3>
+                                <div class="category-content">
+                                    <div class="setting-row">
+                                        <div class="setting-info">
+                                            <span class="setting-label" data-i18n="serverUrl">Server URL</span>
+                                            <span class="setting-subtitle" data-i18n="serverUrlDesc">Local endpoint of the LM Studio API server (default http://localhost:1234/v1)</span>
+                                        </div>
+                                        <div class="setting-control">
+                                            <input type="text" id="settings-server-url" class="setting-input-text" placeholder="http://localhost:1234/v1" />
+                                        </div>
+                                    </div>
+                                    <div class="setting-row">
+                                        <div class="setting-info">
+                                            <span class="setting-label" data-i18n="lmStudioDirectory">LM Studio Directory</span>
+                                            <span class="setting-subtitle" data-i18n="lmStudioDirectoryDesc">Path to the local LM Studio cache directory for model detection</span>
+                                        </div>
+                                        <div class="setting-control setting-control-stacked">
+                                            <div class="input-with-action">
+                                                <input type="text" id="settings-lmstudio-path" class="setting-input-text" placeholder="Auto-detected (~/.cache/lm-studio)" />
+                                                <button type="button" id="browse-lmstudio-path-btn" class="setting-action-btn" data-i18n="browse">Browse...</button>
+                                            </div>
+                                            <div id="lmstudio-cache-status-indicator" class="cache-status-indicator">
+                                                <span id="cache-status-dot" class="status-dot status-disconnected"></span>
+                                                <span id="cache-status-text" class="cache-status-label" data-i18n="checkingCache">Checking cache...</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
+                            </section>
 
-                        <!-- Category 4: Cloud AI & API Keys -->
-                        <div class="settings-category collapsed" id="category-apikeys">
-                            <button type="button" class="category-header-btn" data-category="apikeys">
-                                <span class="category-title" data-i18n="apiKeysSettings">API Keys & Providers</span>
-                                <svg class="category-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                            </button>
-                            <div class="category-content">
-                                <span class="setting-subtitle category-intro-subtitle" data-i18n="apiKeysSettingsDesc">Manage API keys and test live connections for cloud models</span>
-                                <div id="free-providers-keys-list" class="free-providers-keys-list"></div>
-                            </div>
+                            <!-- Category 4: Cloud AI & API Keys -->
+                            <section class="settings-category hidden" id="category-apikeys" role="tabpanel" data-category="apikeys">
+                                <h3 class="settings-section-heading" data-i18n="apiKeysSettings">API Keys & Providers</h3>
+                                <div class="category-content">
+                                    <span class="setting-subtitle category-intro-subtitle" data-i18n="apiKeysSettingsDesc">Manage API keys and test live connections for cloud models</span>
+                                    <div id="free-providers-keys-list" class="free-providers-keys-list"></div>
+                                </div>
+                            </section>
                         </div>
                     </div>
 

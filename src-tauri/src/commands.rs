@@ -5,7 +5,10 @@ use kai_core::engine::agent_executor::ExecutorEventSink;
 use kai_core::engine::config_manager::KaiConfig;
 use kai_core::providers::factory::ProviderFactory;
 use kai_core::providers::gemini::GeminiProvider;
-use kai_core::providers::lm_studio::{build_cache_status_payload, LMStudioProvider};
+use kai_core::providers::lm_studio::{
+    build_cache_status_payload, merge_cli_model_capabilities, parse_lmstudio_capabilities,
+    LMStudioProvider,
+};
 use kai_core::tools::path_guard::WorkspacePathGuard;
 use kai_core::traits::llm_provider::{ChatMessage, LlmProvider};
 use kai_core::traits::session_storage::ChatSessionRecord;
@@ -134,6 +137,33 @@ pub async fn kai_post_message(
         }
         "checkConnection" => {
             emit_full_connection_status(&state, false).await;
+        }
+        "getSettings" => {
+            let cfg = state.config.read().await.clone();
+            let free_providers = ProviderFactory::build_free_providers_status(&cfg).await;
+            let cache_dir = cfg.lm_studio_cache_dir.clone();
+            let unique_count = tokio::task::spawn_blocking(move || {
+                let caps = parse_lmstudio_capabilities(&cache_dir);
+                caps.values()
+                    .filter(|v| v["domain"].as_str() != Some("embedding"))
+                    .filter_map(|v| v["modelId"].as_str())
+                    .collect::<std::collections::HashSet<_>>()
+                    .len()
+            })
+            .await
+            .unwrap_or(0);
+            let cache_status = build_cache_status_payload(&cfg.lm_studio_cache_dir, unique_count);
+            state.host_services.emit_event(
+                "settings",
+                json!({
+                    "serverUrl": cfg.server_url,
+                    "apiKey": cfg.api_key,
+                    "lmStudioCacheDir": cfg.lm_studio_cache_dir,
+                    "lmStudioCacheStatus": cache_status,
+                    "language": cfg.language,
+                    "freeProviders": free_providers,
+                }),
+            );
         }
         "updateSettings" | "saveSettings" => {
             let cfg_snapshot = {
@@ -287,10 +317,12 @@ pub async fn kai_post_message(
                 .and_then(|v| v.as_str())
                 .unwrap_or("ask")
                 .to_string();
-            let mut history: Vec<ChatMessage> = message
+            let raw_messages = message
                 .get("messages")
                 .or_else(|| message.get("history"))
-                .and_then(|v| serde_json::from_value(v.clone()).ok())
+                .and_then(|v| v.as_array());
+            let mut history: Vec<ChatMessage> = raw_messages
+                .map(|arr| parse_incoming_history(arr))
                 .unwrap_or_default();
 
             if let Some(attached) = message.get("attachedFiles").and_then(|v| v.as_array()) {
@@ -399,16 +431,44 @@ async fn emit_full_connection_status(state: &State<'_, AppRuntimeState>, is_fold
 
     let lm_provider = LMStudioProvider::with_cache_dir(&cfg.server_url, &cfg.lm_studio_cache_dir);
     let gemini_provider = GeminiProvider::new(&cfg.api_key);
-    let (lm_res, gemini_res, free_providers) = tokio::join!(
+    let cache_dir_for_caps = cfg.lm_studio_cache_dir.clone();
+    let caps_task =
+        tokio::task::spawn_blocking(move || parse_lmstudio_capabilities(&cache_dir_for_caps));
+
+    let (lm_res, gemini_res, free_providers, caps_res) = tokio::join!(
         lm_provider.list_models(),
         gemini_provider.list_models(),
-        ProviderFactory::build_free_providers_status(&cfg)
+        ProviderFactory::build_free_providers_status(&cfg),
+        caps_task
     );
 
+    let mut lm_capabilities = caps_res.unwrap_or_default();
     let lm_connected = lm_res.is_ok();
     let lm_models = match lm_res {
-        Ok(models) => models,
-        Err(_) => lm_provider.list_local_cli_models().await,
+        Ok(models) => {
+            let missing_sizes = models.iter().any(|id| {
+                lm_capabilities
+                    .get(id)
+                    .or_else(|| lm_capabilities.get(&id.to_ascii_lowercase()))
+                    .and_then(|v| v["sizeBytes"].as_u64())
+                    .unwrap_or(0)
+                    == 0
+            });
+            if missing_sizes {
+                let (_, cli_bytes) = lm_provider.query_local_cli_models().await;
+                if !cli_bytes.is_empty() {
+                    merge_cli_model_capabilities(&mut lm_capabilities, &cli_bytes);
+                }
+            }
+            models
+        }
+        Err(_) => {
+            let (models, cli_bytes) = lm_provider.query_local_cli_models().await;
+            if !cli_bytes.is_empty() {
+                merge_cli_model_capabilities(&mut lm_capabilities, &cli_bytes);
+            }
+            models
+        }
     };
     let lm_cache_status = build_cache_status_payload(&cfg.lm_studio_cache_dir, lm_models.len());
     let gemini_models = gemini_res.unwrap_or_default();
@@ -419,7 +479,7 @@ async fn emit_full_connection_status(state: &State<'_, AppRuntimeState>, is_fold
         .unwrap_or(false);
 
     let loaded_models = if lm_connected {
-        lm_models.clone()
+        lm_provider.list_loaded_models().await
     } else if gemini_connected {
         gemini_models.clone()
     } else {
@@ -452,6 +512,7 @@ async fn emit_full_connection_status(state: &State<'_, AppRuntimeState>, is_fold
             "apiKey": cfg.api_key,
             "lmStudioCacheDir": cfg.lm_studio_cache_dir,
             "lmStudioCacheStatus": lm_cache_status,
+            "lmStudioCapabilities": Value::Object(lm_capabilities),
             "language": cfg.language,
             "workspacePath": ws_str,
             "workspaceName": ws_name,
@@ -505,20 +566,55 @@ fn set_provider_key(cfg: &mut KaiConfig, config_key: &str, value: &str) {
     }
 }
 
+/// Parses raw frontend history messages into `ChatMessage` entries while preserving inline image attachments.
+/// Extracts `data:image/...` payloads from per-message `attachedFiles` arrays for multi-turn vision context.
+fn parse_incoming_history(raw_messages: &[Value]) -> Vec<ChatMessage> {
+    raw_messages
+        .iter()
+        .filter_map(|item| {
+            let mut msg = serde_json::from_value::<ChatMessage>(item.clone()).ok()?;
+            if let Some(files) = item.get("attachedFiles").and_then(|v| v.as_array()) {
+                for f in files {
+                    if let Some(content) = f.get("content").and_then(|v| v.as_str()) {
+                        let is_img = f.get("isImage").and_then(|v| v.as_bool()) == Some(true)
+                            || content.starts_with("data:image/");
+                        if is_img && content.starts_with("data:image/") && !msg.images.contains(&content.to_string()) {
+                            msg.images.push(content.to_string());
+                        }
+                    }
+                }
+            }
+            Some(msg)
+        })
+        .collect()
+}
+
+/// Appends attached text files and base64 image data URLs to the latest user message without duplicating content.
+/// Ensures both text context and vision image attachments reach `LlmProvider::stream_chat`.
 fn append_attached_files_to_last_user_msg(history: &mut [ChatMessage], attached: &[Value]) {
     let Some(last) = history.iter_mut().rev().find(|m| m.role == "user") else {
         return;
     };
     for file in attached {
-        if file.get("isImage").and_then(|v| v.as_bool()) == Some(true) {
+        let Some(content) = file.get("content").and_then(|v| v.as_str()) else {
+            continue;
+        };
+        let is_img = file.get("isImage").and_then(|v| v.as_bool()) == Some(true)
+            || content.starts_with("data:image/");
+        if is_img {
+            if content.starts_with("data:image/") && !last.images.contains(&content.to_string()) {
+                last.images.push(content.to_string());
+            }
             continue;
         }
         let name = file
             .get("fileName")
             .and_then(|v| v.as_str())
             .unwrap_or("attachment");
-        if let Some(content) = file.get("content").and_then(|v| v.as_str()) {
-            last.content.push_str(&format!("\n\n[Attached File: {name}]\n{content}"));
+        let marker = format!("[Attached File: {name}]");
+        if !last.content.contains(&marker) {
+            last.content
+                .push_str(&format!("\n\n{marker}\n{content}"));
         }
     }
 }

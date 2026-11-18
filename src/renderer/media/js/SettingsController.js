@@ -263,25 +263,70 @@ class SettingsController {
     }
 
     /**
-     * Registers event listeners for settings controls.
+     * Activates a single settings category tab in the 2-column sidebar layout and persists the selection.
+     * Updates active tab ARIA states, toggles `.hidden` across category panels, and resets pane scroll position.
+     * @param {string} categoryKey Target category key (`general`, `thinking`, `lmstudio`, or `apikeys`).
+     */
+    selectCategory(categoryKey) {
+        const navButtons = Array.from(document.querySelectorAll('#settings-sidebar [data-settings-tab]'));
+        const panels = Array.from(document.querySelectorAll('#settings-content-panel .settings-category[data-category]'));
+        if (navButtons.length === 0 || panels.length === 0) return;
+
+        const hasTarget = panels.some(panel => panel.dataset.category === categoryKey);
+        const resolvedKey = hasTarget ? categoryKey : (panels[0].dataset.category || 'general');
+
+        navButtons.forEach(btn => {
+            const isActive = btn.dataset.settingsTab === resolvedKey;
+            btn.classList.toggle('active', isActive);
+            btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+
+        panels.forEach(panel => {
+            const isActive = panel.dataset.category === resolvedKey;
+            panel.classList.toggle('hidden', !isActive);
+            panel.classList.remove('collapsed');
+        });
+
+        const contentPane = document.getElementById('settings-content-panel');
+        if (contentPane) {
+            contentPane.scrollTop = 0;
+        }
+
+        try {
+            localStorage.setItem('kai.settings.activeCategory', resolvedKey);
+        } catch {}
+    }
+
+    /**
+     * Registers event listeners for settings sidebar category tabs, inputs, and host sync actions.
+     * Restores the previously active settings category tab from `localStorage`.
      */
     initEventListeners() {
-        // Collapsible category accordion headers (independent toggle)
-        // Accordion Category Toggles
-        const headers = document.querySelectorAll('.category-header-btn');
-        headers.forEach(btn => {
+        const navButtons = Array.from(document.querySelectorAll('#settings-sidebar [data-settings-tab]'));
+        navButtons.forEach((btn, idx) => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const categoryEl = btn.closest('.settings-category');
-                if (!categoryEl) return;
-                
-                categoryEl.classList.toggle('collapsed');
-                const catId = categoryEl.id;
-                if (catId) {
-                    const isCollapsed = categoryEl.classList.contains('collapsed');
-                    localStorage.setItem(`kai.category.${catId}.collapsed`, isCollapsed);
+                const key = btn.dataset.settingsTab;
+                if (key) this.selectCategory(key);
+            });
+            btn.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const dir = e.key === 'ArrowDown' ? 1 : -1;
+                    const next = navButtons[(idx + dir + navButtons.length) % navButtons.length];
+                    if (next) {
+                        next.focus();
+                        if (next.dataset.settingsTab) this.selectCategory(next.dataset.settingsTab);
+                    }
                 }
             });
+        });
+
+        window.addEventListener('kaiSelectSettingsCategory', (e) => {
+            const targetKey = e && e.detail ? e.detail.category : null;
+            if (targetKey) {
+                this.selectCategory(targetKey);
+            }
         });
 
         if (this.browseLMStudioBtn) {
@@ -317,21 +362,8 @@ class SettingsController {
             });
         }
 
-        // Restore accordion expansion states from localStorage
-        const categories = document.querySelectorAll('.settings-category');
-        categories.forEach(cat => {
-            const catId = cat.id;
-            if (catId) {
-                const stored = localStorage.getItem(`kai.category.${catId}.collapsed`);
-                if (stored !== null) {
-                    if (stored === 'true') {
-                        cat.classList.add('collapsed');
-                    } else {
-                        cat.classList.remove('collapsed');
-                    }
-                }
-            }
-        });
+        const storedTab = localStorage.getItem('kai.settings.activeCategory') || 'general';
+        this.selectCategory(storedTab);
     }
 
     /**

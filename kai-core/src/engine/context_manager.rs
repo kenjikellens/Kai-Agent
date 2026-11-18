@@ -99,6 +99,7 @@ mod tests {
             content: content.to_string(),
             tool_call_id: None,
             name: None,
+            images: Vec::new(),
         }
     }
 

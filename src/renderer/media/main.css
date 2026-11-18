@@ -22,22 +22,22 @@
   --main-surface-input: #252526;
   --main-border-subtle: rgba(255, 255, 255, 0.08);
 
-  --app-bg: var(--vscode-sideBar-background, #1e1e1e);
-  --app-fg: var(--vscode-editor-foreground, var(--vscode-foreground, #cccccc));
-  --app-muted: var(--vscode-descriptionForeground, #888888);
-  --app-border: rgba(255, 255, 255, 0.08);
-  --app-border-strong: rgba(255, 255, 255, 0.14);
-  --app-border-subtle: rgba(255, 255, 255, 0.05);
-  --app-surface: rgba(255, 255, 255, 0.03);
-  --app-surface-strong: rgba(255, 255, 255, 0.06);
-  --app-surface-hover: rgba(255, 255, 255, 0.08);
-  --app-surface-active: rgba(255, 255, 255, 0.12);
+  --app-bg: var(--vscode-sideBar-background, #141416);
+  --app-fg: var(--vscode-editor-foreground, var(--vscode-foreground, #e4e4e7));
+  --app-muted: var(--vscode-descriptionForeground, #9ca3af);
+  --app-border: rgba(255, 255, 255, 0.09);
+  --app-border-strong: rgba(255, 255, 255, 0.16);
+  --app-border-subtle: rgba(255, 255, 255, 0.06);
+  --app-surface: rgba(255, 255, 255, 0.04);
+  --app-surface-strong: rgba(255, 255, 255, 0.07);
+  --app-surface-hover: rgba(255, 255, 255, 0.10);
+  --app-surface-active: rgba(255, 255, 255, 0.14);
   --app-btn-inset: 0 0 0 1.5px var(--app-surface-hover);
-  --app-accent: var(--vscode-button-background, #007acc);
-  --app-accent-hover: var(--vscode-button-hoverBackground, #0062a3);
-  --app-input-bg: var(--vscode-input-background, #252526);
-  --app-input-border: var(--vscode-input-border, rgba(255, 255, 255, 0.08));
-  --app-focus: var(--vscode-focusBorder, #007acc);
+  --app-accent: var(--vscode-button-background, #2563eb);
+  --app-accent-hover: var(--vscode-button-hoverBackground, #1d4ed8);
+  --app-input-bg: var(--vscode-input-background, #1c1c20);
+  --app-input-border: var(--vscode-input-border, rgba(255, 255, 255, 0.12));
+  --app-focus: var(--vscode-focusBorder, #3b82f6);
   --app-radius-sm: 4px;
   --app-radius-md: 6px;
   --app-radius-lg: 8px;
@@ -88,21 +88,21 @@ body.kai-light-theme,
   --main-surface-input: #ffffff;
   --main-border-subtle: transparent;
 
-  --app-bg: var(--vscode-sideBar-background, #f3f4f6);
+  --app-bg: var(--vscode-sideBar-background, #f8fafc);
   --app-fg: var(--vscode-editor-foreground, var(--vscode-foreground, #0f172a));
-  --app-muted: var(--vscode-descriptionForeground, #334155);
-  --app-border: transparent;
-  --app-border-strong: transparent;
-  --app-border-subtle: transparent;
-  --app-surface: rgba(0, 0, 0, 0.04);
-  --app-surface-strong: rgba(0, 0, 0, 0.08);
-  --app-surface-hover: rgba(0, 0, 0, 0.14);
-  --app-surface-active: rgba(0, 0, 0, 0.20);
+  --app-muted: var(--vscode-descriptionForeground, #475569);
+  --app-border: rgba(15, 23, 42, 0.10);
+  --app-border-strong: rgba(15, 23, 42, 0.18);
+  --app-border-subtle: rgba(15, 23, 42, 0.06);
+  --app-surface: rgba(15, 23, 42, 0.04);
+  --app-surface-strong: rgba(15, 23, 42, 0.07);
+  --app-surface-hover: rgba(15, 23, 42, 0.11);
+  --app-surface-active: rgba(15, 23, 42, 0.16);
   --app-btn-inset: 0 0 0 1.5px var(--app-surface-hover);
   --app-input-bg: var(--vscode-input-background, #ffffff);
-  --app-input-border: var(--vscode-input-border, rgba(0, 0, 0, 0.12));
-  --app-card-bg: rgba(0, 0, 0, 0.02);
-  --app-card-border: transparent;
+  --app-input-border: var(--vscode-input-border, rgba(15, 23, 42, 0.14));
+  --app-card-bg: #ffffff;
+  --app-card-border: rgba(15, 23, 42, 0.09);
   --app-code-bg: var(--vscode-editor-background, #f1f5f9);
   --app-inline-code-bg: rgba(0, 0, 0, 0.05);
   --app-tool-dropdown-bg: rgba(0, 0, 0, 0.03);
@@ -4959,77 +4959,45 @@ details[open]>summary>.custom-chevron {
 }
 
 /* ==========================================================================
-   SETTINGS ACCORDION CATEGORIES (.settings-category)
+   SETTINGS TWO-COLUMN SIDEBAR LAYOUT (.settings-shell, .settings-sidebar)
    ========================================================================== */
-.settings-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 100%;
-  background: var(--app-bg);
-  color: var(--app-fg);
-  box-sizing: border-box;
-  overflow: hidden;
-}
+/* Settings outer shell - Full-height centered container for header and two-column body */
+.settings-container { display: flex; flex-direction: column; height: 100%; width: 100%; background: var(--app-bg); color: var(--app-fg); box-sizing: border-box; overflow: hidden; }
+/* Settings inner shell - Uses full available width and stacks top header over split body */
+.settings-shell { display: flex; flex-direction: column; height: 100%; width: 100%; padding: 20px 32px 24px; box-sizing: border-box; overflow: hidden; }
+/* Settings top header - Displays page title and close button above split layout */
+.settings-panel-header { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--app-border); color: var(--app-fg); }
+/* Settings main title - Prominent page heading typography */
+.settings-title { margin: 0; font-size: 1.55rem; font-weight: 600; letter-spacing: -0.02em; color: var(--app-fg); }
+/* Settings split body - Positions category sidebar left and active tab pane right */
+.settings-body { display: flex; flex: 1 1 auto; min-height: 0; gap: 28px; overflow: hidden; }
+/* Settings left category sidebar - Vertical tab rail reusing .sidebar-footer-btn with visible hover rings */
+.settings-sidebar { width: 228px; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; padding: 2px 18px 2px 2px; border-right: 1px solid var(--app-border); box-sizing: border-box; overflow: visible; }
+/* Inactive settings tab modifier - Keeps unselected sidebar tabs flat and muted */
+.settings-sidebar .sidebar-footer-btn:not(.active) { background: transparent; color: var(--app-muted); }
+/* Inactive settings tab hover - Restores standard sidebar hover fill and inset spread */
+.settings-sidebar .sidebar-footer-btn:not(.active):hover { background: var(--app-surface-hover); color: var(--app-fg); }
+/* Active settings tab modifier - Emphasizes selected category label */
+.settings-sidebar .sidebar-footer-btn.active { font-weight: 600; }
+/* Settings right content pane - Independently scrollable container for active tab */
+.settings-content-panel { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; padding: 2px 8px 40px 2px; box-sizing: border-box; scrollbar-width: thin; }
+/* Settings category panel - Flat borderless container directly on page canvas */
+.settings-category { position: relative; margin: 0; padding: 0; border: none; background: transparent; box-sizing: border-box; width: 100%; overflow: visible; }
+/* Settings active category heading - Clean section title inside right content panel */
+.settings-section-heading { margin: 0 0 8px; padding-bottom: 10px; border-bottom: 1px solid var(--app-border); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--app-muted); }
+/* Settings category rows container - Vertical stack with visible overflow for selects */
+.settings-body .category-content { display: flex; flex-direction: column; gap: 0; padding: 0; overflow: visible; }
+/* Settings tab rows - Clean hairline dividers replacing outer card container */
+.settings-body .setting-row { padding: 14px 0; border-bottom: 1px solid var(--app-border-subtle); }
+/* Settings last tab row - Omits trailing bottom divider */
+.settings-body .setting-row:last-child { border-bottom: none; }
 
-.settings-scroll-wrapper {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 100%;
-  max-width: 820px;
-  margin: 0 auto;
-  padding: 16px 20px 40px 20px;
-  box-sizing: border-box;
-  overflow-y: auto;
-}
-
-.settings-panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--app-border);
-  color: var(--app-fg);
-}
-
-.settings-title {
-  margin: 0;
-  font-size: 1.15rem;
-  font-weight: 600;
-  color: var(--app-fg);
-}
-
-.settings-content-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px 14px 16px 14px;
-}
-
-.settings-category {
-  position: relative;
-  margin: 0;
-  padding: 0;
-  border: none;
-  border-radius: 12px;
-  background: transparent;
-  box-sizing: border-box;
-  width: 100%;
-  overflow: visible;
-  transition: border-radius 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s ease;
-}
-
-/* When category is expanded, the wrapper gets the card background */
-.settings-category:not(.collapsed) {
-  background: var(--app-card-bg);
-}
-
-/* Fully rounded pill-shaped container when category is collapsed */
-.settings-category.collapsed {
-  border-radius: 22px;
-  background: transparent;
+/* Compact viewport fallback - Stacks settings tabs horizontally on narrow windows */
+@media (max-width: 680px) {
+  .settings-shell { padding: 14px 16px 18px; }
+  .settings-body { flex-direction: column; gap: 14px; }
+  .settings-sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; padding: 2px 0 12px; border-right: none; border-bottom: 1px solid var(--app-border); }
+  .settings-sidebar .sidebar-footer-btn { width: auto; flex: 1 1 auto; }
 }
 
 /* Action button inside settings input row with smooth transition */
@@ -5077,39 +5045,10 @@ details[open]>summary>.custom-chevron {
   transition: color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Pill-shaped header button when inside category - Exact same base & hover as sidebar buttons */
-.settings-category .category-header-btn {
-  padding: 10px 16px;
-  border-radius: 12px;
-  background: var(--app-surface-strong);
-  transition: border-radius 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.settings-category.collapsed .category-header-btn {
-  border-radius: 22px;
-}
-
-/* Hover & focus states for unified category header with inset effect - EXACTLY same as sidebar buttons */
 /* Category Header button hover and focus states */
 .category-header-btn:hover,
 .category-header-btn:focus-visible {
   color: var(--app-fg);
-}
-
-/* Category Header button inside settings category card */
-.settings-category .category-header-btn:hover,
-.settings-category .category-header-btn:focus-visible {
-  background: var(--app-surface-hover);
-  color: var(--app-fg);
-  border: none;
-  box-shadow: var(--app-btn-inset);
-}
-
-/* Active pressed state for category header button */
-.settings-category .category-header-btn:active {
-  background: var(--app-surface-active);
-  color: var(--app-fg);
-  box-shadow: none;
 }
 
 /* Category Title - Uppercase, bold, matching unified typography */
@@ -5122,11 +5061,6 @@ details[open]>summary>.custom-chevron {
   transition: color 0.15s ease;
 }
 
-/* When category is open/expanded: title inherits primary text color */
-.settings-category:not(.collapsed) .category-title {
-  color: var(--app-fg);
-}
-
 /* Chevron icon for category accordion header */
 .category-chevron {
   color: var(--app-muted, #888888);
@@ -5134,36 +5068,10 @@ details[open]>summary>.custom-chevron {
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease;
 }
 
+/* Category chevron hover state */
 .category-header-btn:hover .category-chevron,
 .category-header-btn:focus-visible .category-chevron {
   color: var(--app-fg, #ffffff);
-}
-
-.settings-category.collapsed .category-chevron {
-  transform: rotate(-90deg);
-}
-
-/* Category Content Container - Smooth top-down unroll & roll-up in 250ms */
-.category-content {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 8px;
-  max-height: 1000px;
-  opacity: 1;
-  padding: 4px 16px 14px 16px;
-  box-sizing: border-box;
-  overflow: hidden;
-  transition: max-height 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, padding 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.settings-category.collapsed .category-content {
-  max-height: 0;
-  opacity: 0;
-  padding-top: 0;
-  padding-bottom: 0;
-  overflow: hidden;
-  pointer-events: none;
 }
 
 /* Card container for missing API key warning notifications in chat */
@@ -5505,6 +5413,7 @@ details[open]>summary>.custom-chevron {
 .toolbar-mode-btn.hidden,
 .attached-files-bar.hidden,
 .content-view.hidden,
+.settings-category.hidden,
 #chat-view.hidden,
 #settings-container.hidden,
 .ask-user-dock.hidden,

@@ -83,6 +83,30 @@ impl AgentExecutor {
         calls
     }
 
+    /// Extracts a concise display label (filename, query, command, URL, or question) from tool arguments.
+    /// Populates `fileName` on `tool_start`/`tool_end` UI progress cards without mutating tool state.
+    fn extract_tool_target_label(arguments: &Value) -> String {
+        for key in [
+            "path",
+            "filePath",
+            "file_path",
+            "target_file",
+            "query",
+            "command",
+            "url",
+            "question",
+            "expression",
+        ] {
+            if let Some(val) = arguments.get(key).and_then(|v| v.as_str()) {
+                let trimmed = val.trim();
+                if !trimmed.is_empty() {
+                    return trimmed.to_string();
+                }
+            }
+        }
+        String::new()
+    }
+
     /// Executes one full user prompt turn, iterating through tool calls up to `MAX_TOOL_ITERATIONS`.
     #[allow(clippy::too_many_arguments)]
     pub async fn run_turn(
@@ -119,6 +143,7 @@ impl AgentExecutor {
             content: system_prompt,
             tool_call_id: None,
             name: None,
+            images: Vec::new(),
         }];
         messages.extend(history);
 
@@ -160,6 +185,7 @@ impl AgentExecutor {
                     content: result.text.clone(),
                     tool_call_id: None,
                     name: None,
+                    images: Vec::new(),
                 });
                 emitter.emit_event(
                     "replyComplete",
@@ -180,15 +206,35 @@ impl AgentExecutor {
                 content: result.text.clone(),
                 tool_call_id: None,
                 name: None,
+                images: Vec::new(),
             });
 
             for call in calls {
+                let target_label = Self::extract_tool_target_label(&call.arguments);
+                let query_arg = call
+                    .arguments
+                    .get("query")
+                    .or_else(|| call.arguments.get("question"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or_default()
+                    .to_string();
+                let command_arg = call
+                    .arguments
+                    .get("command")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or_default()
+                    .to_string();
+
                 emitter.emit_event(
                     "agentProgress",
                     json!({
                         "turnId": turn_id,
                         "progressType": "tool_start",
+                        "toolId": call.id,
                         "tool": call.name,
+                        "fileName": target_label,
+                        "query": query_arg,
+                        "command": command_arg,
                     }),
                 );
 
@@ -216,7 +262,7 @@ impl AgentExecutor {
                         }
                         ok
                     }
-                    Err(err) => format!("Tool error: {err}"),
+                    Err(err) => format!("[Error: {err}]"),
                 };
 
                 emitter.emit_event(
@@ -224,7 +270,11 @@ impl AgentExecutor {
                     json!({
                         "turnId": turn_id,
                         "progressType": "tool_end",
+                        "toolId": call.id,
                         "tool": call.name,
+                        "fileName": target_label,
+                        "query": query_arg,
+                        "command": command_arg,
                         "output": output,
                     }),
                 );
@@ -234,6 +284,7 @@ impl AgentExecutor {
                     content: output,
                     tool_call_id: Some(call.id),
                     name: Some(call.name),
+                    images: Vec::new(),
                 });
             }
         }

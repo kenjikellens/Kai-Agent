@@ -17,7 +17,7 @@ pub enum ProviderError {
     Cancelled,
 }
 
-/// A single chat message in a conversation turn.
+/// A single chat message in a conversation turn, supporting optional inline base64 image data URLs.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatMessage {
     pub role: String,
@@ -26,6 +26,8 @@ pub struct ChatMessage {
     pub tool_call_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub images: Vec<String>,
 }
 
 /// Normalized request payload passed to any `LlmProvider`.

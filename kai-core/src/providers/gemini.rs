@@ -1,11 +1,26 @@
+use std::time::Instant;
+
 use async_trait::async_trait;
 use futures_util::StreamExt;
 use reqwest::Client;
 use serde::Deserialize;
 use serde_json::{json, Value};
 
+use super::openai_compat::format_tokens_per_second;
 use super::shared_streaming_client;
 use crate::traits::{ChatRequest, CompletionResult, LlmProvider, ProviderError, StreamSink};
+
+/// Parses a `data:<mime>;base64,<payload>` URL into `(mime_type, base64_data)` for Gemini `inlineData`.
+/// Ignores malformed or non-base64 URLs without raising errors.
+fn parse_data_url_image(data_url: &str) -> Option<(&str, &str)> {
+    let rest = data_url.strip_prefix("data:")?;
+    let (meta, payload) = rest.split_once(',')?;
+    let mime = meta.strip_suffix(";base64")?;
+    if mime.is_empty() || payload.is_empty() {
+        return None;
+    }
+    Some((mime, payload))
+}
 
 #[derive(Deserialize)]
 struct GeminiSseChunk {
@@ -123,9 +138,23 @@ impl LlmProvider for GeminiProvider {
             .iter()
             .filter(|m| m.role != "system")
             .map(|m| {
+                let mut parts = Vec::with_capacity(m.images.len() + 1);
+                if !m.content.is_empty() || m.images.is_empty() {
+                    parts.push(json!({ "text": m.content }));
+                }
+                for img in &m.images {
+                    if let Some((mime, b64)) = parse_data_url_image(img) {
+                        parts.push(json!({
+                            "inlineData": {
+                                "mimeType": mime,
+                                "data": b64
+                            }
+                        }));
+                    }
+                }
                 json!({
                     "role": if m.role == "assistant" { "model" } else { "user" },
-                    "parts": [{ "text": m.content }]
+                    "parts": parts
                 })
             })
             .collect();
@@ -159,6 +188,8 @@ impl LlmProvider for GeminiProvider {
         let mut buffer = String::new();
         let mut full_text = String::new();
         let mut in_thinking = false;
+        let mut first_token_at: Option<Instant> = None;
+        let mut generated_chars: usize = 0;
 
         while let Some(chunk_res) = stream.next().await {
             let chunk = chunk_res?;
@@ -180,6 +211,10 @@ impl LlmProvider for GeminiProvider {
                     };
                     for part in &candidate.content.parts {
                         if let Some(text) = part.text.as_deref() {
+                            if first_token_at.is_none() {
+                                first_token_at = Some(Instant::now());
+                            }
+                            generated_chars += text.chars().count();
                             if part.thought {
                                 if !in_thinking {
                                     in_thinking = true;
@@ -211,9 +246,11 @@ impl LlmProvider for GeminiProvider {
             sink.on_token("</think>");
         }
 
+        let tokens_per_second = format_tokens_per_second(first_token_at, None, generated_chars);
+
         Ok(CompletionResult {
             text: full_text,
-            tokens_per_second: None,
+            tokens_per_second,
             tool_calls: Vec::new(),
         })
     }
