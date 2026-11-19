@@ -23,6 +23,11 @@ impl LlmProvider for MistralProvider {
         "mistral"
     }
 
+    /// Enables native OpenAI-compatible function calling for Mistral models.
+    fn supports_native_tools(&self) -> bool {
+        true
+    }
+
     async fn list_models(&self) -> Result<Vec<String>, ProviderError> {
         Ok(vec![
             "mistral/magistral-small-latest".into(),

@@ -23,6 +23,11 @@ impl LlmProvider for CerebrasProvider {
         "cerebras"
     }
 
+    /// Enables native OpenAI-compatible tool calling for Cerebras endpoints.
+    fn supports_native_tools(&self) -> bool {
+        true
+    }
+
     async fn list_models(&self) -> Result<Vec<String>, ProviderError> {
         Ok(vec!["cerebras/llama-3.3-70b".into(), "cerebras/llama-3.1-8b".into()])
     }

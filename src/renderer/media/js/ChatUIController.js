@@ -27,6 +27,10 @@ class ChatUIController {
         this.sendBtn = document.getElementById('send-btn');
         this.thinkingToggle = document.getElementById('thinking-toggle');
         this.chatView = document.getElementById('chat-view');
+        this.workspacesContainer = document.getElementById('workspaces-container');
+        this.workspacesNavBtn = document.getElementById('workspaces-nav-btn');
+        this.workspacesController = null;
+        this._lastNonModalView = 'chat';
         this.historyContainer = document.getElementById('history-container');
         this.settingsContainer = document.getElementById('settings-container');
         this.settingsBtn = document.getElementById('settings-btn');
@@ -63,9 +67,21 @@ class ChatUIController {
     }
 
     /**
-     * Registers settings button, close settings button, and container event delegation.
+     * Registers settings, workspaces navigation, close buttons, and delegated chat container listeners.
+     * Mutates `window.location.hash` cleanly when opening or closing the Workspaces view and Settings dialog.
      */
     initEventListeners() {
+        if (this.workspacesNavBtn) {
+            this.workspacesNavBtn.addEventListener('click', () => {
+                if (this.workspacesContainer && !this.workspacesContainer.classList.contains('hidden')) {
+                    const activeId = (window.appState && window.appState.currentChatId) || localStorage.getItem('kai.activeChatId');
+                    window.location.hash = activeId ? `session-${activeId}` : '';
+                } else {
+                    window.location.hash = 'workspaces';
+                }
+            });
+        }
+
         if (this.settingsBtn) {
             this.settingsBtn.addEventListener('click', () => {
                 window.location.hash = 'settings';
@@ -76,6 +92,10 @@ class ChatUIController {
             this.closeSettingsBtn.addEventListener('click', () => {
                 if (this.settingsController) {
                     this.settingsController.hideKeysOverlay();
+                }
+                if (this._lastNonModalView === 'workspaces') {
+                    window.location.hash = 'workspaces';
+                    return;
                 }
                 const activeId = localStorage.getItem('kai.activeChatId');
                 window.location.hash = activeId ? `session-${activeId}` : '';
@@ -1340,25 +1360,86 @@ class ChatUIController {
     }
 
     /**
-     * Swaps active content view in the main area (Chat, History, or Settings).
-     * @param {'chat'|'history'|'settings'} viewName Target view name.
+     * Switches between Chat, Workspaces, History, or the centered Settings modal dialog.
+     * Updates `.hidden` view state, sidebar tab active state, `_lastNonModalView`, and focus restoration.
+     * @param {'chat'|'workspaces'|'history'|'settings'} viewName Target view name.
      */
     showView(viewName) {
         if (this.settingsController && typeof this.settingsController.hideKeysOverlay === 'function') {
             this.settingsController.hideKeysOverlay();
         }
+        const wasSettingsOpen = this.settingsContainer && !this.settingsContainer.classList.contains('hidden');
+
+        if (this.workspacesNavBtn) {
+            const isWs = viewName === 'workspaces';
+            this.workspacesNavBtn.classList.toggle('active', isWs);
+            if (isWs) {
+                this.workspacesNavBtn.setAttribute('aria-current', 'page');
+            } else {
+                this.workspacesNavBtn.removeAttribute('aria-current');
+            }
+        }
+
         if (viewName === 'chat') {
+            this._lastNonModalView = 'chat';
             if (this.chatView) this.chatView.classList.remove('hidden');
+            if (this.workspacesContainer) this.workspacesContainer.classList.add('hidden');
             if (this.historyContainer) this.historyContainer.classList.add('hidden');
             if (this.settingsContainer) this.settingsContainer.classList.add('hidden');
-        } else if (viewName === 'history') {
+            if (wasSettingsOpen) {
+                const target = (this._lastFocusedBeforeSettings && document.contains(this._lastFocusedBeforeSettings))
+                    ? this._lastFocusedBeforeSettings
+                    : document.getElementById('message-input');
+                this._lastFocusedBeforeSettings = null;
+                if (target && typeof target.focus === 'function') {
+                    requestAnimationFrame(() => target.focus());
+                }
+            }
+        } else if (viewName === 'workspaces') {
+            this._lastNonModalView = 'workspaces';
             if (this.chatView) this.chatView.classList.add('hidden');
+            if (this.workspacesContainer) this.workspacesContainer.classList.remove('hidden');
+            if (this.historyContainer) this.historyContainer.classList.add('hidden');
+            if (this.settingsContainer) this.settingsContainer.classList.add('hidden');
+            if (this.workspacesController && typeof this.workspacesController.render === 'function') {
+                this.workspacesController.render();
+            }
+            if (wasSettingsOpen) {
+                const target = (this._lastFocusedBeforeSettings && document.contains(this._lastFocusedBeforeSettings))
+                    ? this._lastFocusedBeforeSettings
+                    : this.workspacesNavBtn;
+                this._lastFocusedBeforeSettings = null;
+                if (target && typeof target.focus === 'function') {
+                    requestAnimationFrame(() => target.focus());
+                }
+            }
+        } else if (viewName === 'history') {
+            this._lastNonModalView = 'history';
+            if (this.chatView) this.chatView.classList.add('hidden');
+            if (this.workspacesContainer) this.workspacesContainer.classList.add('hidden');
             if (this.historyContainer) this.historyContainer.classList.remove('hidden');
             if (this.settingsContainer) this.settingsContainer.classList.add('hidden');
+            this._lastFocusedBeforeSettings = null;
         } else if (viewName === 'settings') {
-            if (this.chatView) this.chatView.classList.add('hidden');
+            if (!wasSettingsOpen) {
+                this._lastFocusedBeforeSettings = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+            }
+            if (this._lastNonModalView === 'workspaces' && this.workspacesContainer) {
+                if (this.chatView) this.chatView.classList.add('hidden');
+                this.workspacesContainer.classList.remove('hidden');
+            } else {
+                if (this.chatView) this.chatView.classList.remove('hidden');
+                if (this.workspacesContainer) this.workspacesContainer.classList.add('hidden');
+            }
             if (this.historyContainer) this.historyContainer.classList.add('hidden');
             if (this.settingsContainer) this.settingsContainer.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                const focusTarget = document.querySelector('#settings-sidebar .sidebar-footer-btn.active')
+                    || document.getElementById('close-settings-btn');
+                if (focusTarget && typeof focusTarget.focus === 'function') {
+                    focusTarget.focus();
+                }
+            });
         }
     }
 

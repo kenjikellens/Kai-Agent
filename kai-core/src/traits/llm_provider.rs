@@ -2,6 +2,8 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+use super::agent_tool::FunctionDeclaration;
+
 /// Errors returned by LLM provider implementations.
 #[derive(Debug, Error)]
 pub enum ProviderError {
@@ -17,20 +19,23 @@ pub enum ProviderError {
     Cancelled,
 }
 
-/// A single chat message in a conversation turn, supporting optional inline base64 image data URLs.
+/// A single chat message in a conversation turn, supporting native tool calls and multimodal images.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatMessage {
     pub role: String,
+    #[serde(default)]
     pub content: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_call_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tool_calls: Vec<ToolCall>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub images: Vec<String>,
 }
 
-/// Normalized request payload passed to any `LlmProvider`.
+/// Normalized request payload passed to any `LlmProvider` including active tool schemas.
 #[derive(Debug, Clone)]
 pub struct ChatRequest {
     pub model: String,
@@ -38,6 +43,7 @@ pub struct ChatRequest {
     pub temperature: f32,
     pub thinking: bool,
     pub thinking_level: String,
+    pub tools: Vec<FunctionDeclaration>,
 }
 
 /// Parsed tool call emitted by an LLM provider or embedded `<|tool_call|>` tag.
@@ -46,6 +52,12 @@ pub struct ToolCall {
     pub id: String,
     pub name: String,
     pub arguments: serde_json::Value,
+    #[serde(
+        rename = "thoughtSignature",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub thought_signature: Option<String>,
 }
 
 /// Completed generation output from an `LlmProvider`.

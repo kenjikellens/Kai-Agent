@@ -120,7 +120,8 @@ class SettingsController {
         // 4. Language Custom Select Dropdown (All 18 languages)
         const langContainer = document.getElementById('language-select-container');
         if (langContainer && typeof CustomSelectComponent !== 'undefined') {
-            const initialLang = localStorage.getItem('kai.language') || window.KAI_LANG || 'auto';
+            const rawLang = localStorage.getItem('kai.language') || window.KAI_LANG || 'auto';
+            const initialLang = rawLang === 'zh-tw' ? 'zh_tw' : rawLang;
             const langOptions = window.KAI_SUPPORTED_LANGUAGES || [
                 { value: 'auto', label: 'Auto (System)' },
                 { value: 'en', label: 'English' },
@@ -132,12 +133,13 @@ class SettingsController {
                 options: langOptions,
                 value: initialLang,
                 onChange: (selectedLang) => {
-                    localStorage.setItem('kai.language', selectedLang);
-                    window.KAI_LANG = selectedLang;
+                    const normalizedLang = selectedLang === 'zh-tw' ? 'zh_tw' : selectedLang;
+                    localStorage.setItem('kai.language', normalizedLang);
+                    window.KAI_LANG = normalizedLang;
 
                     const allLocales = window.KAI_ALL_LOCALES || {};
-                    let targetDict = allLocales[selectedLang];
-                    if (!targetDict && selectedLang === 'auto') {
+                    let targetDict = allLocales[normalizedLang];
+                    if (!targetDict && normalizedLang === 'auto') {
                         const sys = (navigator.language || 'en').slice(0, 2).toLowerCase();
                         targetDict = allLocales[sys] || allLocales.en;
                     }
@@ -150,7 +152,7 @@ class SettingsController {
                     }
 
                     this.ipcBridge.updateSettings({
-                        language: selectedLang
+                        language: normalizedLang
                     });
                 }
             });
@@ -199,6 +201,44 @@ class SettingsController {
                     localStorage.setItem('kai.uiScale', selectedScale);
                     document.documentElement.style.removeProperty('zoom');
                     document.documentElement.style.setProperty('--app-ui-scale', selectedScale);
+                }
+            });
+        }
+
+        // 5a. Font Size Custom Select Dropdown (Base typography size in px)
+        const fontSizeContainer = document.getElementById('font-size-select-container');
+        if (fontSizeContainer && typeof CustomSelectComponent !== 'undefined') {
+            const allowedFontSizes = ['13px', '14px', '15px', '16px', '17px'];
+            const rawFontSize = localStorage.getItem('kai.fontSize') || '15px';
+            const storedFontSize = allowedFontSizes.includes(rawFontSize) ? rawFontSize : '15px';
+            document.documentElement.style.setProperty('--app-base-font-size', storedFontSize);
+            this.fontSizeComponent = new CustomSelectComponent({
+                container: fontSizeContainer,
+                id: 'font-size-select-input',
+                options: allowedFontSizes.map(size => ({ value: size, label: size })),
+                value: storedFontSize,
+                onChange: (selectedSize) => {
+                    localStorage.setItem('kai.fontSize', selectedSize);
+                    document.documentElement.style.setProperty('--app-base-font-size', selectedSize);
+                }
+            });
+        }
+
+        // 5a-2. Chat Width Custom Select Dropdown (Maximum conversation column width)
+        const chatWidthContainer = document.getElementById('chat-width-select-container');
+        if (chatWidthContainer && typeof CustomSelectComponent !== 'undefined') {
+            const allowedWidths = ['720px', '820px', '1040px', '100%'];
+            const rawWidth = localStorage.getItem('kai.chatWidth') || '820px';
+            const storedWidth = allowedWidths.includes(rawWidth) ? rawWidth : '820px';
+            document.documentElement.style.setProperty('--app-chat-max-width', storedWidth);
+            this.chatWidthComponent = new CustomSelectComponent({
+                container: chatWidthContainer,
+                id: 'chat-width-select-input',
+                options: this._buildChatWidthOptions(i18n),
+                value: storedWidth,
+                onChange: (selectedWidth) => {
+                    localStorage.setItem('kai.chatWidth', selectedWidth);
+                    document.documentElement.style.setProperty('--app-chat-max-width', selectedWidth);
                 }
             });
         }
@@ -263,22 +303,60 @@ class SettingsController {
     }
 
     /**
-     * Activates a single settings category tab in the 2-column sidebar layout and persists the selection.
-     * Updates active tab ARIA states, toggles `.hidden` across category panels, and resets pane scroll position.
-     * @param {string} categoryKey Target category key (`general`, `thinking`, `lmstudio`, or `apikeys`).
+     * Builds localized option descriptors for the Appearance chat-width selector.
+     * Reads labels from the supplied dictionary with English fallbacks without mutating state.
+     * @param {object} dict Active translation dictionary.
+     * @returns {Array<{value: string, label: string}>} Select options array.
+     */
+    _buildChatWidthOptions(dict = {}) {
+        return [
+            { value: '720px', label: `${dict.chatWidthCompact || 'Compact'} (720px)` },
+            { value: '820px', label: `${dict.chatWidthDefault || 'Default'} (820px)` },
+            { value: '1040px', label: `${dict.chatWidthWide || 'Wide'} (1040px)` },
+            { value: '100%', label: `${dict.chatWidthFull || 'Full'} (100%)` }
+        ];
+    }
+
+    /**
+     * Synchronizes native `title` tooltips on Settings sidebar tab buttons from their current localized labels.
+     * Ensures truncated translations remain fully legible on hover without altering tab selection state.
+     */
+    _syncSidebarTabTitles() {
+        const navButtons = document.querySelectorAll('#settings-sidebar [data-settings-tab]');
+        navButtons.forEach(btn => {
+            const labelEl = btn.querySelector('.btn-label');
+            const label = (labelEl ? labelEl.textContent : btn.textContent || '').trim();
+            if (label) {
+                btn.title = label;
+            }
+        });
+    }
+
+    /**
+     * Activates a single settings category tab, normalizes legacy keys, and persists the active tab.
+     * Updates `.active`, `aria-selected`, roving `tabindex`, `.hidden` panels, and pane scroll position.
+     * @param {string} categoryKey Target category key (`general`, `appearance`, `reasoning`, or `models`).
      */
     selectCategory(categoryKey) {
+        const legacyMap = {
+            thinking: 'reasoning',
+            lmstudio: 'models',
+            apikeys: 'models',
+            providers: 'models'
+        };
+        const normalizedKey = legacyMap[categoryKey] || categoryKey;
         const navButtons = Array.from(document.querySelectorAll('#settings-sidebar [data-settings-tab]'));
         const panels = Array.from(document.querySelectorAll('#settings-content-panel .settings-category[data-category]'));
         if (navButtons.length === 0 || panels.length === 0) return;
 
-        const hasTarget = panels.some(panel => panel.dataset.category === categoryKey);
-        const resolvedKey = hasTarget ? categoryKey : (panels[0].dataset.category || 'general');
+        const hasTarget = panels.some(panel => panel.dataset.category === normalizedKey);
+        const resolvedKey = hasTarget ? normalizedKey : (panels[0].dataset.category || 'general');
 
         navButtons.forEach(btn => {
             const isActive = btn.dataset.settingsTab === resolvedKey;
             btn.classList.toggle('active', isActive);
             btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            btn.setAttribute('tabindex', isActive ? '0' : '-1');
         });
 
         panels.forEach(panel => {
@@ -298,10 +376,43 @@ class SettingsController {
     }
 
     /**
-     * Registers event listeners for settings sidebar category tabs, inputs, and host sync actions.
-     * Restores the previously active settings category tab from `localStorage`.
+     * Registers WAI-ARIA tab navigation, modal backdrop/Escape dismiss, input listeners, and host sync hooks.
+     * Mutates DOM focus, URL hash via `#close-settings-btn`, and active settings category in `localStorage`.
      */
     initEventListeners() {
+        const settingsContainer = document.getElementById('settings-container');
+        const settingsBackdrop = document.getElementById('settings-backdrop');
+        const closeSettingsBtn = document.getElementById('close-settings-btn');
+
+        /**
+         * Dismisses the Settings modal via `#close-settings-btn` so hash state and focus restore cleanly.
+         */
+        const dismissSettingsModal = () => {
+            if (closeSettingsBtn) {
+                closeSettingsBtn.click();
+            } else if (settingsContainer) {
+                settingsContainer.classList.add('hidden');
+            }
+        };
+
+        if (settingsBackdrop) {
+            settingsBackdrop.addEventListener('click', () => {
+                dismissSettingsModal();
+            });
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape' || !settingsContainer || settingsContainer.classList.contains('hidden')) {
+                return;
+            }
+            const openSelect = settingsContainer.querySelector('.custom-select-container.open');
+            if (openSelect) {
+                return;
+            }
+            e.preventDefault();
+            dismissSettingsModal();
+        });
+
         const navButtons = Array.from(document.querySelectorAll('#settings-sidebar [data-settings-tab]'));
         navButtons.forEach((btn, idx) => {
             btn.addEventListener('click', (e) => {
@@ -310,10 +421,19 @@ class SettingsController {
                 if (key) this.selectCategory(key);
             });
             btn.addEventListener('keydown', (e) => {
-                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                let targetIdx = null;
+                if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                    targetIdx = (idx + 1) % navButtons.length;
+                } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                    targetIdx = (idx - 1 + navButtons.length) % navButtons.length;
+                } else if (e.key === 'Home') {
+                    targetIdx = 0;
+                } else if (e.key === 'End') {
+                    targetIdx = navButtons.length - 1;
+                }
+                if (targetIdx !== null) {
                     e.preventDefault();
-                    const dir = e.key === 'ArrowDown' ? 1 : -1;
-                    const next = navButtons[(idx + dir + navButtons.length) % navButtons.length];
+                    const next = navButtons[targetIdx];
                     if (next) {
                         next.focus();
                         if (next.dataset.settingsTab) this.selectCategory(next.dataset.settingsTab);
@@ -364,10 +484,12 @@ class SettingsController {
 
         const storedTab = localStorage.getItem('kai.settings.activeCategory') || 'general';
         this.selectCategory(storedTab);
+        this._syncSidebarTabTitles();
     }
 
     /**
-     * Dynamically updates localized strings across all data-i18n nodes in Settings.
+     * Updates localized labels across Settings DOM nodes, sidebar tab tooltips, and custom select dropdowns.
+     * Mutates text content inside `#settings-container` and refreshes `themeSelectComponent` and `chatWidthComponent`.
      * @param {object} translations Map of translation keys to translated strings.
      */
     applyTranslations(translations) {
@@ -384,6 +506,8 @@ class SettingsController {
             }
         });
 
+        this._syncSidebarTabTitles();
+
         // Re-localize theme custom select options
         if (this.themeSelectComponent) {
             const themeOptions = [
@@ -392,6 +516,11 @@ class SettingsController {
                 { value: 'system', label: (translations.systemTheme || 'Auto (System)') }
             ];
             this.themeSelectComponent.setOptions(themeOptions);
+        }
+
+        // Re-localize chat width custom select options
+        if (this.chatWidthComponent) {
+            this.chatWidthComponent.setOptions(this._buildChatWidthOptions(translations));
         }
     }
 

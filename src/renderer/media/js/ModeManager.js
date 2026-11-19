@@ -111,7 +111,8 @@ class ModeManager {
     }
 
     /**
-     * Updates UI mode buttons based on whether an active workspace folder is open.
+     * Updates mode selector button visibility, option states, and popup reset when workspace state changes.
+     * Ensures `#context-options-menu` relies on `.hidden` without lingering inline `display: none`.
      * @param {boolean} hasWorkspace Whether a workspace is currently active.
      */
     setWorkspaceState(hasWorkspace) {
@@ -123,6 +124,7 @@ class ModeManager {
         if (this.atMentionTriggerBtn) {
             this.atMentionTriggerBtn.classList.toggle('hidden', !hasWorkspace);
             this.atMentionTriggerBtn.style.display = hasWorkspace ? 'inline-flex' : 'none';
+            this.atMentionTriggerBtn.setAttribute('aria-expanded', 'false');
         }
 
         const modeOptAgent = document.getElementById('mode-opt-agent');
@@ -138,17 +140,19 @@ class ModeManager {
             modeOptPlanning.title = hasWorkspace ? 'Structured plan-first protocol before code edits' : 'Select a workspace folder first to use Plan Mode';
         }
 
+        if (this.contextOptionsMenu) {
+            this.contextOptionsMenu.style.removeProperty('display');
+            this.contextOptionsMenu.classList.add('hidden');
+        }
+
         if (!hasWorkspace) {
             this.setActiveMode('ask');
-            if (this.contextOptionsMenu) {
-                this.contextOptionsMenu.classList.add('hidden');
-                this.contextOptionsMenu.style.display = 'none';
-            }
         }
     }
 
     /**
-     * Registers context mode selector click events.
+     * Registers click listeners for `#at-mention-trigger-btn`, `.context-mode-item` buttons, and outside dismiss.
+     * Mutates `#context-options-menu` `.hidden` state, removes inline display locks, and syncs `aria-expanded`.
      * @private
      */
     initEventListeners() {
@@ -167,22 +171,29 @@ class ModeManager {
                 this.setActiveMode(targetMode);
                 const menu = this.contextOptionsMenu || document.getElementById('context-options-menu');
                 if (menu) menu.classList.add('hidden');
+                if (this.atMentionTriggerBtn) {
+                    this.atMentionTriggerBtn.setAttribute('aria-expanded', 'false');
+                }
             });
         }
 
         if (this.atMentionTriggerBtn && this.contextOptionsMenu) {
             this.atMentionTriggerBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                this.contextOptionsMenu.style.removeProperty('display');
                 if (this.appState && !this.appState.hasActiveWorkspace) {
                     this.contextOptionsMenu.classList.add('hidden');
+                    this.atMentionTriggerBtn.setAttribute('aria-expanded', 'false');
                     return;
                 }
-                this.contextOptionsMenu.classList.toggle('hidden');
+                const isHidden = this.contextOptionsMenu.classList.toggle('hidden');
+                this.atMentionTriggerBtn.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
             });
 
             document.addEventListener('click', (e) => {
                 if (!this.contextOptionsMenu.contains(e.target) && !this.atMentionTriggerBtn.contains(e.target)) {
                     this.contextOptionsMenu.classList.add('hidden');
+                    this.atMentionTriggerBtn.setAttribute('aria-expanded', 'false');
                 }
             });
         }

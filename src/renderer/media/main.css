@@ -24,7 +24,7 @@
 
   --app-bg: var(--vscode-sideBar-background, #1e1e1e);
   --app-fg: var(--vscode-editor-foreground, var(--vscode-foreground, #cccccc));
-  --app-muted: var(--vscode-descriptionForeground, #888888);
+  --app-muted: var(--vscode-descriptionForeground, #9a9a9a);
   --app-border: rgba(255, 255, 255, 0.08);
   --app-border-strong: rgba(255, 255, 255, 0.14);
   --app-border-subtle: rgba(255, 255, 255, 0.05);
@@ -32,23 +32,26 @@
   --app-surface-strong: rgba(255, 255, 255, 0.06);
   --app-surface-hover: rgba(255, 255, 255, 0.08);
   --app-surface-active: rgba(255, 255, 255, 0.12);
-  --app-btn-inset: 0 0 0 1.5px var(--app-surface-hover);
+  /* Borderless Hover Ring Token - Disabled to prevent expanding halo outlines on borderless pills */
+  --app-btn-inset: none;
   --app-accent: var(--vscode-button-background, #007acc);
   --app-accent-hover: var(--vscode-button-hoverBackground, #0062a3);
   --app-input-bg: var(--vscode-input-background, #252526);
   --app-input-border: var(--vscode-input-border, rgba(255, 255, 255, 0.08));
   --app-focus: var(--vscode-focusBorder, #007acc);
-  --app-radius-sm: 4px;
-  --app-radius-md: 6px;
-  --app-radius-lg: 8px;
+  --app-radius-sm: 6px;
+  --app-radius-md: 8px;
+  --app-radius-lg: 12px;
   --app-radius-xl: 12px;
   --app-gap: 8px;
   --app-gap-sm: 4px;
   --app-gap-lg: 12px;
-  --app-font: var(--vscode-font-family, "Inter", "Segoe UI Variable Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
+/* Primary UI Font Stack - Uses native platform sans for crisp desktop legibility */
+  --app-font: var(--vscode-font-family, "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif);
   --app-mono: var(--vscode-editor-font-family, "Cascadia Code", "Fira Code", "JetBrains Mono", "Consolas", "Courier New", monospace);
   --app-ui-scale: 1;
   --app-base-font-size: 15px;
+  --app-chat-max-width: 820px;
 
   /* Component specific theme tokens for dark theme default */
   --app-card-bg: rgba(255, 255, 255, 0.04);
@@ -98,7 +101,8 @@ body.kai-light-theme,
   --app-surface-strong: rgba(15, 23, 42, 0.07);
   --app-surface-hover: rgba(15, 23, 42, 0.11);
   --app-surface-active: rgba(15, 23, 42, 0.16);
-  --app-btn-inset: 0 0 0 1.5px var(--app-surface-hover);
+  /* Light Mode Borderless Hover Token - Uses clean surface elevation without growing outline rings */
+  --app-btn-inset: none;
   --app-input-bg: var(--vscode-input-background, #ffffff);
   --app-input-border: var(--vscode-input-border, rgba(15, 23, 42, 0.14));
   --app-card-bg: #ffffff;
@@ -239,7 +243,7 @@ body {
   background: var(--app-bg);
 }
 
-/* Collapsible Left Sidebar (ChatGPT / Gemini style) */
+/* Collapsible Left Sidebar - Preserves original elevated surface tone */
 .app-sidebar {
   width: 260px;
   min-width: 260px;
@@ -247,7 +251,7 @@ body {
   display: flex;
   flex-direction: column;
   background: var(--app-surface-strong, #18181b);
-  border-right: 1px solid var(--app-border);
+  border-inline-end: 1px solid var(--app-border);
   box-sizing: border-box;
   overflow: hidden;
   flex-shrink: 0;
@@ -280,16 +284,17 @@ body {
 }
 
 /* Sidebar Action Buttons (New Chat, Workspace Selector, Settings) - Matching input field pill buttons */
+/* Sidebar Primary Action & Footer Buttons - Unified borderless pill styling */
 .sidebar-action-btn,
 .sidebar-footer-btn {
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
-  height: 32px;
-  min-height: 32px;
-  max-height: 32px;
-  padding: 0 12px;
+  height: 34px;
+  min-height: 34px;
+  max-height: 34px;
+  padding: 0 14px;
   border-radius: 999px;
   background: var(--app-surface-strong);
   border: 0;
@@ -333,26 +338,46 @@ body {
   text-align: left;
 }
 
-/* Middle Scrollable Chats History Section */
+/* Sidebar Secondary Navigation Tab - Quiet ghost pill matching top nav layout */
+.sidebar-nav-btn:not(.active) {
+  background: transparent;
+  color: var(--app-muted);
+}
+
+/* Sidebar Inactive Navigation Tab Hover - Elevates row surface and foreground smoothly */
+.sidebar-nav-btn:not(.active):hover {
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
+  box-shadow: var(--app-btn-inset);
+}
+
+/* Sidebar Active Navigation Tab - Highlights active Workspaces view in borderless pill */
+.sidebar-nav-btn.active {
+  background: var(--app-surface-strong);
+  color: var(--app-fg);
+  font-weight: 600;
+}
+
+/* Middle Scrollable Chats History Section - Hairline divider separating top actions from chat list */
 .sidebar-history-section {
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
-  padding: 8px;
-  margin-top: 6px;
-  border-top: 1px solid var(--app-border, rgba(255, 255, 255, 0.08));
+  padding: 10px 8px 8px 8px;
+  margin-top: 8px;
+  border-top: 1px solid var(--app-border);
   overflow: hidden;
 }
 
+/* Sidebar Chats Section Heading - Sentence-case label aligned cleanly with navigation rows */
 .sidebar-section-title {
-  font-size: 0.72rem;
+  font-size: max(12px, 0.8rem);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: -0.01em;
   color: var(--app-muted);
-  padding: 8px 8px 4px 8px;
-  margin-bottom: 8px;
+  padding: 4px 12px 6px 12px;
+  margin-bottom: 4px;
   user-select: none;
 }
 
@@ -395,17 +420,17 @@ body {
   animation: kaiWordFadeIn var(--stream-word-fade-duration, 220ms) ease-out forwards;
 }
 
-/* Individual Chat History Row in Left Sidebar - Pill styling matching input field buttons */
+/* Individual Chat History Row - Unified borderless pill navigation row */
 .history-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
   width: 100%;
-  height: 32px;
-  min-height: 32px;
-  max-height: 32px;
-  padding: 0 12px;
+  height: 34px;
+  min-height: 34px;
+  max-height: 34px;
+  padding: 0 14px;
   margin: 1.5px 0;
   border: 0;
   outline: none;
@@ -433,10 +458,11 @@ body {
   box-shadow: var(--app-btn-inset);
 }
 
+/* Active Chat History Row - Borderless elevated pill matching active Settings tab */
 .history-item.active {
   background: var(--app-surface-strong);
   color: var(--app-fg);
-  font-weight: 500;
+  font-weight: 600;
   box-shadow: none;
 }
 
@@ -605,70 +631,69 @@ body {
   z-index: 5;
 }
 
-/* Top workspace path selector button */
+/* Top workspace path selector button - Content-fitted borderless pill with UI sans font */
 .top-workspace-bar {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  max-width: 480px;
+  width: fit-content;
+  max-width: min(760px, calc(100% - 32px));
   padding: 6px 14px;
   background: var(--app-surface-strong);
   border: 0;
   outline: none;
   border-radius: 999px;
   color: var(--app-fg);
-  font-family: var(--app-mono, monospace);
-  font-size: 0.78rem;
+  font-family: var(--app-font);
+  font-size: 0.84rem;
   font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
   user-select: none;
   overflow: hidden;
 }
 
+/* Top workspace selector button hover - Smooth hover elevation and inset ring */
 .top-workspace-bar:hover {
   background: var(--app-surface-hover);
   color: var(--app-fg);
   box-shadow: var(--app-btn-inset);
 }
 
+/* Top workspace folder icon - Fixed aspect icon aligned with path text */
 .top-workspace-icon {
   flex-shrink: 0;
   color: var(--app-fg);
 }
 
+/* Top workspace folder icon hover - Preserves foreground brightness */
 .top-workspace-bar:hover .top-workspace-icon {
   color: var(--app-fg);
 }
 
-/* Left-fade text container so the rightmost folder name is always crystal clear */
+/* Top workspace text label - Fits natural path width with clean trailing ellipsis */
 .top-workspace-text {
-  flex: 1;
+  display: inline-block;
+  flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
-  direction: rtl;
-  /* Align to right so end of path is visible */
-  text-align: left;
-  letter-spacing: -0.01em;
-  mask-image: linear-gradient(to right, transparent, black 28px);
-  -webkit-mask-image: linear-gradient(to right, transparent, black 28px);
-}
-
-.top-workspace-text * {
   direction: ltr;
-  unicode-bidi: bidi-override;
+  text-align: left;
 }
 
 /* -----------------------------
    Icons / buttons
 ------------------------------ */
-/* Base interactive button element reset and transition */
+/* Base interactive button element reset - Unified borderless pill baseline */
 button {
   border: 0;
   outline: none;
   cursor: pointer;
-  border-radius: var(--app-radius-sm);
+  border-radius: 999px;
   transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -688,6 +713,7 @@ button:disabled {
  * - Sidebar history item deletion (.icon-btn, .icon-btn--delete)
  * - Modal & dock dismiss buttons (.icon-btn, .icon-btn--close, .icon-btn--close-pill)
  */
+/* Unified circular icon button base */
 .icon-btn {
   display: inline-flex;
   align-items: center;
@@ -700,14 +726,15 @@ button:disabled {
   box-sizing: border-box;
   flex-shrink: 0;
   padding: 4px;
-  border-radius: var(--app-radius-sm);
+  border-radius: 999px;
   transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
+/* Unified Icon Button Hover - Smooth borderless background elevation without outer ring */
 .icon-btn:hover:not(:disabled) {
   color: var(--app-fg);
   background: var(--app-surface-hover);
-  box-shadow: var(--app-btn-inset);
+  box-shadow: none;
 }
 
 .icon-btn:active:not(:disabled) {
@@ -720,14 +747,14 @@ button:disabled {
   height: 36px;
   padding: 0;
   color: var(--app-fg);
-  border-radius: var(--app-radius-md);
+  border-radius: 999px;
 }
 
 .icon-btn--header {
   padding: 0;
   width: 32px;
   height: 32px;
-  border-radius: var(--app-radius-md);
+  border-radius: 999px;
   font-size: 1rem;
 }
 
@@ -759,29 +786,35 @@ button:disabled {
   background: var(--app-accent);
 }
 
+/* Sidebar history delete icon button - Unified circular icon button */
 .icon-btn--delete {
   width: 24px;
   height: 24px;
   margin-left: 4px;
-  border-radius: 4px;
+  border-radius: 999px;
   opacity: 0;
   flex: 0 0 auto;
 }
 
-.history-item:hover .icon-btn--delete {
+/* Reveal History Delete Icon - Appears on row hover or keyboard focus */
+.history-item:hover .icon-btn--delete,
+.history-item:focus-within .icon-btn--delete {
   opacity: 1;
 }
 
+/* Destructive Delete Icon Hover - Clean red tint pill with zero white halo */
 .icon-btn--delete:hover:not(:disabled) {
   color: #ff6b6b;
-  background: rgba(255, 107, 107, 0.15);
+  background: rgba(255, 107, 107, 0.16);
+  box-shadow: none;
 }
 
+/* Dock close icon button - Unified circular icon button */
 .icon-btn--close {
   width: 24px;
   height: 24px;
   padding: 0;
-  border-radius: var(--app-radius-sm, 4px);
+  border-radius: 999px;
 }
 
 .icon-btn--close:hover:not(:disabled) {
@@ -806,6 +839,7 @@ button:disabled {
   pointer-events: none;
 }
 
+/* Send Prompt Button - Compact circular pill submit trigger matching toolbar controls */
 #send-btn {
   width: 28px;
   height: 28px;
@@ -817,7 +851,7 @@ button:disabled {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border-radius: var(--app-radius-md);
+  border-radius: 999px;
   border: 0;
   outline: none;
   background: var(--app-accent);
@@ -830,9 +864,10 @@ button:disabled {
   height: 14px;
 }
 
+/* Send Prompt Button Hover - Shifts accent tone cleanly without expanding ring */
 #send-btn:hover:not(:disabled) {
   background: var(--app-accent-hover, #0098ff);
-  box-shadow: 0 0 0 1px var(--app-accent-hover, #0098ff);
+  box-shadow: none;
 }
 
 #send-btn:disabled {
@@ -870,40 +905,60 @@ button:disabled {
 }
 
 /* Modifiers on .btn */
+/* Primary accent button - Unified borderless pill */
 .btn--primary {
   width: 100%;
-  padding: 6px 12px;
-  border-radius: var(--app-radius-sm);
+  padding: 6px 14px;
+  border-radius: 999px;
   background: var(--app-accent);
   color: var(--vscode-button-foreground, #ffffff);
   font-size: 0.8rem;
   font-weight: 500;
 }
 
+/* Primary accent button hover - Clean accent tone shift without growing outer halo */
 .btn--primary:hover:not(:disabled) {
   background: var(--app-accent-hover);
+  box-shadow: none;
 }
 
-/* Secondary utility button */
+/* Secondary utility button - Unified borderless pill */
 .btn--secondary {
-  padding: 5px 10px;
-  border-radius: var(--app-radius-sm);
+  padding: 6px 14px;
+  border-radius: 999px;
   background: var(--app-surface-strong);
   color: var(--app-fg);
-  font-size: 0.75rem;
+  font-size: 0.78rem;
 }
 
 .btn--secondary:hover:not(:disabled) {
   background: var(--app-surface-hover);
   color: var(--app-fg);
+  box-shadow: var(--app-btn-inset);
 }
 
+/* Compact Pill Button Modifier - Standardized 32px pill height for page headers and cards */
+.btn--sm {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 14px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  border-radius: 999px;
+}
+
+/* Auto-Width Button Modifier - Allows `.btn--primary` to shrink-wrap inside flex toolbars */
+.btn--auto {
+  width: auto;
+}
+
+/* Sort filter chip button - Unified borderless pill meeting 11px+ text floor */
 .btn--sort {
   gap: 3px;
-  padding: 2px 8px;
-  font-size: 0.68rem;
+  padding: 3px 10px;
+  font-size: 0.75rem;
   font-weight: 500;
-  border: 1px solid transparent;
+  border: 0;
   border-radius: 999px;
   background: var(--app-surface-strong, rgba(255, 255, 255, 0.06));
   color: var(--app-muted);
@@ -912,14 +967,12 @@ button:disabled {
 .btn--sort:hover:not(:disabled) {
   background: var(--app-surface-hover, rgba(255, 255, 255, 0.12));
   color: var(--app-fg);
-  border-color: var(--app-border-subtle);
   box-shadow: var(--app-btn-inset);
 }
 
 .btn--sort.active {
-  background: var(--app-surface-hover, rgba(255, 255, 255, 0.12));
-  color: #ffffff;
-  border-color: var(--app-border-strong, rgba(255, 255, 255, 0.2));
+  background: var(--app-surface-active, rgba(255, 255, 255, 0.14));
+  color: var(--app-fg);
   font-weight: 600;
 }
 
@@ -936,22 +989,13 @@ button:disabled {
   position: relative;
 }
 
-.content-view {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 100%;
-  min-height: 0;
-  overflow: hidden;
-  position: relative;
-}
-
+/* Chat Output Container - Centers message stream using configurable reading width token */
 .chat-container {
   height: 100%;
   width: 100%;
   max-width: 100%;
   margin: 0;
-  padding: 16px max(20px, calc((100% - 820px) / 2)) 160px max(20px, calc((100% - 820px) / 2));
+  padding: 16px max(20px, calc((100% - var(--app-chat-max-width, 820px)) / 2)) 160px max(20px, calc((100% - var(--app-chat-max-width, 820px)) / 2));
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -1056,13 +1100,14 @@ button:disabled {
   margin-bottom: 0;
 }
 
+/* User Message Bubble - Unified 12px card shape across single- and multi-line prompts */
 .user-message {
   align-self: flex-end;
   background: var(--app-surface-hover, #2a2a2e);
   color: var(--app-fg, #e4e4e7);
   border: 1px solid var(--app-border, rgba(255, 255, 255, 0.08));
-  border-radius: 999px;
-  padding: 6px 14px;
+  border-radius: var(--app-radius-lg, 12px);
+  padding: 8px 14px;
   box-sizing: border-box;
   word-break: break-word;
   transition: background-color 0.15s ease, border-color 0.15s ease;
@@ -1240,11 +1285,11 @@ button:disabled {
   word-break: break-all;
 }
 
-/* Modifier for raw reasoning/thinking pre block */
+/* Modifier for raw reasoning/thinking pre block - Uses unified full border */
 .raw-markdown-pre--thinking {
   color: var(--app-muted);
   border: 1px solid var(--app-border-strong);
-  border-left: 3px solid var(--app-accent, #38bdf8);
+  border-radius: var(--app-radius-md);
   font-size: 0.76rem;
   margin: 0;
   max-height: var(--app-thinking-max-height, 220px);
@@ -1446,19 +1491,20 @@ button:disabled {
   color: var(--app-muted);
 }
 
+/* Copy code action button - Unified borderless pill meeting 11px+ floor */
 .copy-code-btn {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   background: transparent;
-  border: none;
+  border: 0;
   color: var(--app-muted);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-family: var(--app-font);
   cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 4px;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  padding: 3px 10px;
+  border-radius: 999px;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .copy-code-btn:hover {
@@ -1499,31 +1545,31 @@ button:disabled {
   align-items: center;
 }
 
-/* Segmented tab group for toggling Diagram and Code views */
+/* Segmented tab group for toggling Diagram and Code views - Borderless pill wrapper */
 .mermaid-tab-group {
   display: inline-flex;
   align-items: center;
   background: var(--app-surface);
   padding: 2px;
-  border-radius: var(--app-radius-md, 6px);
+  border-radius: 999px;
   gap: 2px;
 }
 
-/* Individual tab button inside Mermaid card header */
+/* Individual tab button inside Mermaid card header - Unified borderless pill */
 .mermaid-tab-btn {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 8px;
+  padding: 4px 10px;
   background: transparent;
-  border: none;
-  border-radius: 4px;
+  border: 0;
+  border-radius: 999px;
   color: var(--app-muted);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-family: var(--app-font);
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 /* Hover state for tab button */
@@ -1547,7 +1593,7 @@ button:disabled {
   gap: 4px;
 }
 
-/* Action button for copying code or SVG */
+/* Action button for copying code or SVG - Unified borderless pill */
 .copy-mermaid-code-btn,
 .copy-mermaid-svg-btn,
 .download-mermaid-svg-btn {
@@ -1555,14 +1601,14 @@ button:disabled {
   align-items: center;
   gap: 4px;
   background: transparent;
-  border: none;
+  border: 0;
   color: var(--app-muted);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-family: var(--app-font);
   cursor: pointer;
-  padding: 3px 6px;
-  border-radius: 4px;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  padding: 4px 10px;
+  border-radius: 999px;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 /* Hover state for Mermaid action buttons */
@@ -1664,13 +1710,13 @@ button:disabled {
   font-variant-ligatures: contextual;
 }
 
-/* Blockquote Styling */
+/* Blockquote Styling - Full subtle border matching unified surface vocabulary */
 .message-content blockquote {
   margin: 8px 0;
-  padding: 6px 12px;
-  background: rgba(0, 122, 204, 0.08);
-  border-left: 3px solid var(--app-accent);
-  border-radius: 0 var(--app-radius-sm) var(--app-radius-sm) 0;
+  padding: 8px 14px;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-md);
   color: var(--app-fg);
   font-style: italic;
 }
@@ -1724,12 +1770,13 @@ button:disabled {
   padding: 8px 12px;
 }
 
+/* Live typing dot - Uses calm exponential opacity fade without bounce */
 .typing-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--app-muted);
-  animation: bounceOpacity 1.2s infinite ease-in-out;
+  animation: streamPulseOpacity 1.4s infinite cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .typing-dot:nth-child(2) {
@@ -1740,11 +1787,11 @@ button:disabled {
   animation-delay: 0.4s;
 }
 
-@keyframes bounceOpacity {
+@keyframes streamPulseOpacity {
 
   0%,
   100% {
-    opacity: 0.3;
+    opacity: 0.35;
   }
 
   50% {
@@ -1813,17 +1860,18 @@ button:disabled {
   z-index: 10;
 }
 
+/* Chat Input Card - Aligns composer width and 12px card radius with unified surfaces */
 .input-card {
   pointer-events: auto;
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 820px;
+  max-width: var(--app-chat-max-width, 820px);
   margin: 0 auto;
   padding: 12px 16px;
   background: var(--app-input-bg);
   border: 1px solid var(--app-input-border);
-  border-radius: 18px;
+  border-radius: var(--app-radius-lg, 12px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -1902,15 +1950,14 @@ button:disabled {
   line-height: 1.25;
 }
 
-/* Uppercase light extension subtitle */
+/* Extension badge subtitle - Meets 11px minimum functional UI text floor */
 .chip-extension {
-  font-size: 0.65rem;
-  font-weight: 200;
+  font-size: 0.75rem;
+  font-weight: 500;
   text-transform: uppercase;
   color: var(--app-muted);
-  opacity: 0.75;
-  letter-spacing: 0.08em;
-  line-height: 1.1;
+  letter-spacing: 0.05em;
+  line-height: 1.15;
 }
 
 /* Remove button */
@@ -2022,10 +2069,11 @@ button:disabled {
   height: 15px;
 }
 
+/* Send & Stop Buttons Hover - Clean accent transition without outer glow ring */
 #send-btn:hover:not(:disabled),
 #stop-btn:hover {
   background: var(--app-accent-hover, #0098ff);
-  box-shadow: 0 0 0 1px var(--app-accent-hover, #0098ff);
+  box-shadow: none;
 }
 
 #send-btn:disabled {
@@ -2107,32 +2155,31 @@ button:disabled {
   color: var(--app-muted);
 }
 
-/* Context & capabilities popup menu (@ button menu) */
+/* Context & capabilities popup menu - Uses unified borderless dropdown surface */
 #context-options-menu {
   position: absolute;
   right: 0;
   left: auto;
   bottom: calc(100% + 6px);
   z-index: 1000;
-  width: 170px;
-  min-width: 170px;
+  width: 190px;
+  min-width: 180px;
   padding: 6px;
   box-sizing: border-box;
-  background: var(--app-input-bg, #252526);
-  border: 1px solid var(--app-border-strong, rgba(255, 255, 255, 0.12));
+  background: var(--app-dropdown-bg);
+  border: 0;
   border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--app-dropdown-shadow);
 }
 
+/* Mode selector header - Clean sentence-case label meeting 11px+ legibility floor */
 .context-options-header {
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--app-muted, #888888);
-  margin-bottom: 3px;
-  padding: 2px 6px 4px 6px;
-  border-bottom: 1px solid var(--app-border-subtle, rgba(255, 255, 255, 0.05));
+  color: var(--app-muted);
+  margin-bottom: 4px;
+  padding: 4px 8px 6px 8px;
+  border-bottom: 1px solid var(--app-border-subtle);
 }
 
 .context-mode-selector {
@@ -2141,6 +2188,7 @@ button:disabled {
   gap: 2px;
 }
 
+/* Mode selector option pill - Matches unified dropdown item hover and selected surfaces */
 .context-mode-item {
   display: flex;
   flex-direction: row;
@@ -2151,23 +2199,24 @@ button:disabled {
   padding: 6px 12px;
   border-radius: 999px;
   background: transparent;
-  color: var(--app-muted, #888888);
+  color: var(--app-muted);
   border: 0;
   outline: none;
   cursor: pointer;
   text-align: left;
-  transition: background-color 0.12s ease, color 0.12s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .context-mode-item:hover:not(:disabled):not(.disabled) {
-  background: var(--app-surface-hover, rgba(255, 255, 255, 0.08));
-  color: var(--app-fg, #cccccc);
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
+  box-shadow: var(--app-btn-inset);
 }
 
 .context-mode-item.active {
-  background: var(--app-surface-strong, rgba(255, 255, 255, 0.06));
-  color: var(--app-fg, #ffffff);
-  font-weight: 500;
+  background: var(--app-dropdown-selected-bg);
+  color: var(--app-fg);
+  font-weight: 600;
 }
 
 /* Semi-transparent disabled appearance with not-allowed cursor */
@@ -2287,7 +2336,93 @@ button:disabled {
 .welcome-link-btn:hover {
   background: var(--app-surface-hover);
   color: var(--app-fg);
-  box-shadow: var(--app-btn-inset);
+  box-shadow: none;
+}
+
+/* Welcome Hero Empty State Card - Centers greeting header and starter prompt row in empty chats */
+.welcome-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 20px;
+  margin: auto 0;
+  padding: 36px 20px;
+  user-select: none;
+}
+
+/* Welcome Hero Header - Vertically aligns avatar icon, title, and subtitle cleanly */
+.welcome-hero-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Welcome Hero Avatar Badge - Soft rounded emblem framing Kai icon */
+.welcome-hero-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--app-surface-strong);
+  color: var(--app-accent, #007acc);
+  margin-bottom: 4px;
+}
+
+/* Welcome Hero Title - Crisp centered greeting heading matching desktop typography */
+.welcome-hero-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--app-fg);
+  letter-spacing: -0.02em;
+}
+
+/* Welcome Hero Subtitle - Muted explanatory copy capped for comfortable reading width */
+.welcome-hero-subtitle {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--app-muted);
+}
+
+/* Welcome Hero Starter Prompts Row - Wraps borderless prompt suggestion pills neatly */
+.welcome-hero-starters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Welcome Starter Pill Button - Borderless rounded suggestion chip with clean surface hover */
+.starter-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 0;
+  outline: none;
+  background: var(--app-surface-strong);
+  color: var(--app-fg);
+  font-family: var(--app-font);
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* Welcome Starter Pill Hover - Smooth surface highlight without outer border halo */
+.starter-pill:hover {
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
 }
 
 /* ==========================================================================
@@ -2319,7 +2454,7 @@ button:disabled {
   max-width: max-content;
 }
 
-/* Primary Model Selector Dropdown Trigger Button - Full rounded pill */
+/* Primary Model Selector Dropdown Trigger Button - Unified borderless pill control */
 .dropdown-trigger {
   height: 32px;
   box-sizing: border-box;
@@ -2342,11 +2477,12 @@ button:disabled {
   transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
+/* Primary Model Dropdown Trigger Hover & Keyboard Focus - Avoids sticky mouse click highlight */
 .dropdown-trigger:hover,
-.dropdown-trigger:focus {
+.dropdown-trigger:focus-visible {
   background: var(--app-surface-hover);
   color: var(--app-fg);
-  box-shadow: var(--app-btn-inset);
+  box-shadow: none;
 }
 
 /* Outer container clipping text behind the component */
@@ -2418,17 +2554,18 @@ button:disabled {
   flex-shrink: 0;
 }
 
-/* Shared Base Container for all Dropdown & Flyout Menus (Single Source of Truth) */
+/* Shared Base Container for all Dropdown & Flyout Menus - Borderless elevated card */
 .dropdown-menu,
 .thinking-flyout-menu-inner,
 .custom-select-menu {
   background: var(--app-dropdown-bg);
+  border: 0;
   border-radius: 12px;
-  padding: 2.5px;
+  padding: 6px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 2px;
 }
 
 /* Options menu container for the Model Selector Dropdown - Positioning & scroll rules */
@@ -2536,40 +2673,41 @@ button:disabled {
   gap: 0;
 }
 
-/* Unified button option item for ALL dropdowns (Model Selector & Thinking Dropdown) - Pill rounded buttons with flush edges */
+/* Unified borderless option item for ALL dropdowns (Model Selector, Custom Select, Thinking) */
 .dropdown-item,
 .flyout-option {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 6px;
-  padding: 6px 14px;
+  gap: 8px;
+  padding: 7px 14px;
   margin: 0;
   overflow: visible;
   white-space: nowrap;
   text-overflow: ellipsis;
   color: var(--app-muted);
-  font-size: 0.78rem;
+  font-size: 0.84rem;
   background: transparent;
   position: relative;
   cursor: pointer;
   user-select: none;
-  border: 1px solid transparent;
+  border: 0;
   border-radius: 999px;
   outline: none;
   width: 100%;
   text-align: left;
   box-sizing: border-box;
-  transition: border-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Hover effect: 1px blue border (matching input field focus) */
+/* Unified hover effect - Smooth surface fill and inset spread without borders */
 .dropdown-item:hover,
 .dropdown-item:focus-visible,
 .flyout-option:hover,
 .flyout-option:focus-visible {
+  background: var(--app-surface-hover);
   color: var(--app-fg);
-  border-color: var(--app-focus, #007acc);
+  box-shadow: var(--app-btn-inset);
 }
 
 /* Selected item state for dropdown options */
@@ -2581,13 +2719,13 @@ button:disabled {
   font-weight: 600;
 }
 
-/* Selected item on hover: preserves selected background and gets blue border */
+/* Selected item on hover - Preserves selected surface with smooth inset spread */
 .dropdown-item.selected:hover,
 .dropdown-item.selected:focus-visible,
 .flyout-option.selected:hover,
 .flyout-option.selected:focus-visible {
-  background: var(--app-dropdown-selected-bg);
-  border-color: var(--app-focus, #007acc);
+  background: var(--app-surface-hover);
+  box-shadow: var(--app-btn-inset);
 }
 
 /* Checkmark indicator for selected options */
@@ -2600,7 +2738,7 @@ button:disabled {
   color: var(--app-accent);
 }
 
-/* Interactive toggle switch row inside flyout submenu - Full rounded pill shape with flush edges */
+/* Interactive toggle switch row inside flyout submenu - Unified borderless pill */
 .toggle-switch-row {
   display: flex;
   align-items: center;
@@ -2608,7 +2746,7 @@ button:disabled {
   gap: 12px;
   padding: 6px 14px;
   margin: 0;
-  border: 1px solid transparent;
+  border: 0;
   border-radius: 999px;
   background: transparent;
   cursor: pointer;
@@ -2616,15 +2754,15 @@ button:disabled {
   white-space: nowrap;
   box-sizing: border-box;
   width: 100%;
-  transition: border-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Hover state: 1px blue border */
+/* Unified hover state matching dropdown items */
 .toggle-switch-row:hover,
 .toggle-switch-row:focus-visible {
-  background: transparent;
+  background: var(--app-surface-hover);
   color: var(--app-fg);
-  border-color: var(--app-focus, #007acc);
+  box-shadow: var(--app-btn-inset);
 }
 
 /* Label text container inside toggle switch row */
@@ -2757,7 +2895,7 @@ button:disabled {
   margin: 2px 0 6px 0;
 }
 
-/* Header button - fully rounded pill shape in all states */
+/* Thinking header button - Unified borderless pill control in sentence case */
 .thinking-header {
   display: inline-flex;
   align-items: center;
@@ -2766,18 +2904,16 @@ button:disabled {
   gap: 6px;
   width: auto;
   margin: 0 0 6px 0;
-  padding: 4px 10px;
+  padding: 4px 12px;
   border-radius: 999px;
   background: transparent;
   border: 0;
   outline: none;
   color: var(--app-muted);
   font-family: inherit;
-  font-size: 0.74rem;
+  font-size: 0.78rem;
   font-weight: 600;
   line-height: 1.2;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   user-select: none;
   cursor: pointer;
   box-sizing: border-box;
@@ -3185,21 +3321,21 @@ button:disabled {
   gap: 6px;
 }
 
-/* Copy code and download snippet icon buttons */
+/* Copy code and download snippet icon buttons - Unified borderless circular pills */
 .copy-code-btn,
 .download-code-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   padding: 0;
-  border-radius: 4px;
-  border: 1px solid #383838;
-  background: #2a2a2a;
-  color: #ffffff;
+  border-radius: 999px;
+  border: 0;
+  background: var(--app-surface-strong);
+  color: var(--app-muted);
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
   user-select: none;
 }
 
@@ -3210,19 +3346,17 @@ button:disabled {
   pointer-events: none;
 }
 
-/* Hover state for action buttons */
+/* Hover state for code action pills - Smooth borderless surface lift without borders */
 .copy-code-btn:hover,
 .download-code-btn:hover {
-  background: #383838;
-  border-color: #505050;
-  color: #ffffff;
+  background: var(--app-surface-hover);
+  color: var(--app-fg);
 }
 
 /* Feedback state when code is successfully copied */
 .copy-code-btn.copied {
-  background: #1e3a2f;
+  background: rgba(16, 185, 129, 0.16);
   color: #10b981;
-  border-color: #10b981;
 }
 
 /* Code block pre container */
@@ -3455,65 +3589,15 @@ button:disabled {
 }
 
 /* ==========================================================================
-   SETTINGS PANEL DESIGN SYSTEM (.settings-container, .settings-section)
-   Clean, flat, modern settings sections without bulky nested boxes.
+   SETTINGS PANEL DESIGN SYSTEM (.settings-shell, .settings-section)
+   Clean, flat, modern settings sections rendered inside a centered modal.
    ========================================================================== */
 
-/* Main scrollable settings container shell */
-.settings-container {
-  box-sizing: border-box;
-  width: 100%;
-  height: 100%;
-  max-height: 100%;
-  padding: 0;
-  margin: 0;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  font-family: var(--app-font);
-}
-
-.settings-container:not(.hidden) {
-  display: block;
-}
-
-.settings-scroll-wrapper {
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 780px;
-  margin: 0 auto;
-  padding: 24px 24px 64px 24px;
-}
-
-/* Settings Top Navigation Header */
-.settings-panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  padding-bottom: 14px;
-  margin-bottom: 24px;
-  border-bottom: 1px solid var(--app-border);
-}
-
+/* Settings header title group - Stacks optional subtitle below modal title */
 .settings-header-titles {
   display: flex;
   flex-direction: column;
   gap: 2px;
-}
-
-/* Settings main panel title */
-.settings-title {
-  font-family: var(--app-font);
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: var(--app-fg);
-  margin: 0;
-  letter-spacing: -0.01em;
-  cursor: default;
-  user-select: text;
 }
 
 .settings-close-btn {
@@ -3664,15 +3748,15 @@ button:disabled {
   gap: 6px;
 }
 
-/* General text and URL input field styling in settings rows */
+/* General text and URL input field - Borderless modern pill matching custom select */
 .setting-input-text {
   width: 100%;
   min-height: 2.35rem;
   height: auto;
-  padding: 6px 12px;
+  padding: 6px 14px;
   background: var(--app-surface-strong, #2a2a2e);
-  border: 1px solid var(--app-border-strong, rgba(255, 255, 255, 0.1));
-  border-radius: var(--app-radius-md, 6px);
+  border: 0;
+  border-radius: 999px;
   box-shadow: none;
   color: var(--app-fg);
   font-family: var(--app-font);
@@ -3685,28 +3769,30 @@ button:disabled {
 .setting-input-text:hover {
   background: var(--app-surface-hover);
   color: var(--app-fg);
-  box-shadow: 0 0 0 1px var(--app-surface-hover);
+  box-shadow: var(--app-btn-inset);
 }
 
 .setting-input-text:focus {
   background: var(--app-surface-hover);
   color: var(--app-fg);
-  box-shadow: 0 0 0 1px var(--app-border-strong);
+  box-shadow: 0 0 0 1.5px var(--app-focus);
 }
 
 .input-with-action {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
   width: 100%;
 }
 
-.setting-action-btn {
-  height: 35px;
-  padding: 0 14px;
-  border-radius: var(--app-radius-md, 6px);
+/* Action button in settings rows (e.g. Browse) - Unified borderless pill control */
+.setting-action-btn,
+.settings-browse-btn {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
   background: var(--app-surface-strong, #2a2a2e);
-  border: 1px solid var(--app-border-strong, rgba(255, 255, 255, 0.1));
+  border: 0;
   outline: none;
   color: var(--app-fg);
   font-family: var(--app-font);
@@ -3715,14 +3801,15 @@ button:disabled {
   cursor: pointer;
   flex-shrink: 0;
   box-sizing: border-box;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.setting-action-btn:hover {
-  background: var(--app-surface-hover, rgba(255, 255, 255, 0.08));
+/* Action button hover state matching unified borderless pills */
+.setting-action-btn:hover,
+.settings-browse-btn:hover {
+  background: var(--app-surface-hover);
   color: var(--app-fg);
-  border-color: rgba(255, 255, 255, 0.18);
-  box-shadow: var(--app-btn-inset);
+  box-shadow: none;
 }
 
 .setting-action-btn:active {
@@ -3804,9 +3891,10 @@ button:disabled {
   padding-right: 34px;
 }
 
+/* Password visibility toggle button - Unified borderless circular button */
 .toggle-password-btn {
   position: absolute;
-  right: 5px;
+  right: 6px;
   height: 26px;
   width: 26px;
   aspect-ratio: 1 / 1;
@@ -3816,41 +3904,41 @@ button:disabled {
   background: transparent;
   color: var(--app-muted);
   cursor: pointer;
-  border-radius: var(--app-radius-sm);
+  border-radius: 999px;
   border: 0;
   font-size: 0.85rem;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .toggle-password-btn:hover {
   color: var(--app-fg);
   background: var(--app-surface-hover);
+  box-shadow: var(--app-btn-inset);
 }
 
-/* Reload & Test Connection Button OUTSIDE the input frame (to the right) */
+/* Reload & Test Connection Button - Unified borderless circular icon button */
 .reload-key-btn {
   position: static;
   flex-shrink: 0;
-  height: 35px;
-  width: 35px;
+  height: 36px;
+  width: 36px;
   padding: 0;
   aspect-ratio: 1 / 1;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--app-surface-strong, #2a2a2e);
-  border: 1px solid var(--app-border-strong, rgba(255, 255, 255, 0.1));
-  border-radius: var(--app-radius-md, 6px);
+  border: 0;
+  border-radius: 999px;
   color: var(--app-muted);
   cursor: pointer;
   box-sizing: border-box;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .reload-key-btn:hover {
   background: var(--app-surface-hover, rgba(255, 255, 255, 0.08));
   color: var(--app-fg);
-  border-color: rgba(255, 255, 255, 0.18);
   box-shadow: var(--app-btn-inset);
 }
 
@@ -3866,26 +3954,25 @@ button:disabled {
 
 .reload-key-btn.success {
   color: var(--main-success-color, #4ec9b0);
-  border-color: var(--main-success-color, #4ec9b0);
 }
 
 .reload-key-btn.error {
   color: var(--main-danger-color, #f44747);
-  border-color: var(--main-danger-color, #f44747);
 }
 
 
-/* Borderless Hover-Only Button (Matching Tool Call Card Button Style) */
+/* Borderless Hover-Only Pill Button (Matching Unified Button System) */
 .btn-hover-only {
   background: transparent;
-  border: 1px solid transparent;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  border: 0;
+  border-radius: 999px;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .btn-hover-only:hover,
 .btn-hover-only:focus-visible {
   background: var(--app-surface-hover);
-  border-color: var(--app-border);
+  box-shadow: var(--app-btn-inset);
 }
 
 /* ==========================================================================
@@ -3901,7 +3988,7 @@ button:disabled {
   box-sizing: border-box;
 }
 
-/* Custom Select trigger button styling */
+/* Custom Select trigger button - Unified borderless pill control */
 .custom-select-trigger {
   width: 100%;
   min-height: 2.35rem;
@@ -3910,11 +3997,11 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 12px;
+  padding: 6px 14px;
   background: var(--app-surface-strong, #2a2a2e);
   color: var(--app-fg);
   border: 0;
-  border-radius: var(--app-radius-md, 6px);
+  border-radius: 999px;
   box-shadow: none;
   font-family: var(--app-font);
   font-size: 0.92rem;
@@ -3929,12 +4016,13 @@ button:disabled {
   cursor: pointer;
 }
 
+/* Custom Select Trigger Hover & Active State - Avoids sticky mouse focus highlights */
 .custom-select-trigger:hover,
-.custom-select-trigger:focus,
+.custom-select-trigger:focus-visible,
 .custom-select-trigger.active {
   background: var(--app-surface-hover);
   color: var(--app-fg);
-  box-shadow: var(--app-btn-inset);
+  box-shadow: none;
 }
 
 /* Label text container within custom select trigger button */
@@ -4052,33 +4140,33 @@ button:disabled {
 /* -----------------------------
    Tool cards
 ------------------------------ */
+/* Tool status row - Unified borderless pill control when collapsed */
 .tool-status-row {
   display: inline-flex;
   flex-direction: column;
   align-self: flex-start;
   margin: 2px 0;
-  padding: 3px 10px;
+  padding: 4px 12px;
   border-radius: 999px;
-  background: transparent;
-  border: 1px solid var(--app-border-subtle);
+  background: var(--app-surface);
+  border: 0;
   color: var(--app-muted);
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-weight: 500;
   cursor: pointer;
   box-sizing: border-box;
   user-select: none;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .tool-status-row:hover {
   background: var(--app-surface-hover);
-  border-color: var(--app-border);
   color: var(--app-fg);
-  box-shadow: none;
+  box-shadow: var(--app-btn-inset);
 }
 
 .tool-status-row.expanded {
-  border-radius: var(--app-radius-md, 8px);
+  border-radius: var(--app-radius-lg, 12px);
   display: flex;
   align-self: stretch;
 }
@@ -4253,14 +4341,6 @@ button:disabled {
   flex-direction: column;
 }
 
-.content-view {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
 .history-container {
   display: flex;
   flex-direction: column;
@@ -4270,18 +4350,6 @@ button:disabled {
   box-sizing: border-box;
   background: var(--app-bg);
   overflow-y: auto;
-}
-
-.settings-container {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 100%;
-  padding: 4px 0;
-  box-sizing: border-box;
-  background: var(--app-bg);
-  overflow: hidden;
 }
 
 .keys-container {
@@ -4299,8 +4367,8 @@ button:disabled {
   overflow-y: auto;
 }
 
+/* Shared History & Keys Panel Headers - Bottom border divider separating panel title and close control */
 .history-panel-header,
-.settings-panel-header,
 .keys-panel-header {
   display: flex;
   justify-content: space-between;
@@ -4699,17 +4767,19 @@ details[open]>summary>.custom-chevron {
   color: var(--app-fg, #ffffff);
 }
 
+/* LM Studio Cache Status Indicator - Inline status dot and label above 11px floor */
 .cache-status-indicator {
   display: flex;
   align-items: center;
   gap: 6px;
   margin-top: 6px;
-  font-size: 0.72rem;
+  font-size: 0.78rem;
 }
 
+/* LM Studio Cache Status Text - Accessible muted caption wrapping long file paths */
 .cache-status-text {
-  color: var(--app-muted, #888888);
-  font-size: 0.72rem;
+  color: var(--app-muted, #9a9a9a);
+  font-size: 0.78rem;
   word-break: break-all;
 }
 
@@ -4741,6 +4811,7 @@ details[open]>summary>.custom-chevron {
   backdrop-filter: blur(2px);
 }
 
+/* Help modal dialog card - Unified 12px elevated card surface */
 .help-modal-card {
   position: relative;
   z-index: 2001;
@@ -4751,7 +4822,7 @@ details[open]>summary>.custom-chevron {
   flex-direction: column;
   background: var(--app-bg, #18181b);
   border: 1px solid var(--app-border-strong, #333338);
-  border-radius: var(--app-radius-lg, 10px);
+  border-radius: var(--app-radius-lg, 12px);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
   overflow: hidden;
 }
@@ -4906,36 +4977,39 @@ details[open]>summary>.custom-chevron {
   margin-top: 4px;
 }
 
+/* Command approval allow button - Unified borderless pill CTA */
 .command-approval-actions .btn-allow {
   padding: 6px 16px;
-  border-radius: 6px;
+  border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 600;
   background: #22c55e;
   color: #000000;
-  border: none;
+  border: 0;
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, box-shadow 0.15s ease;
 }
 
 .command-approval-actions .btn-allow:hover {
   opacity: 0.9;
 }
 
+/* Command approval refuse button - Unified borderless pill control */
 .command-approval-actions .btn-refuse {
   padding: 6px 16px;
-  border-radius: 6px;
+  border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 500;
   background: var(--app-surface-strong, #27272a);
   color: #e4e4e7;
-  border: 1px solid var(--app-border, #3f3f46);
+  border: 0;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .command-approval-actions .btn-refuse:hover {
   background: var(--app-surface-hover, #3f3f46);
+  box-shadow: var(--app-btn-inset);
 }
 
 .approval-badge {
@@ -4952,79 +5026,86 @@ details[open]>summary>.custom-chevron {
 }
 
 /* ==========================================================================
-   SETTINGS TWO-COLUMN SIDEBAR LAYOUT (.settings-shell, .settings-sidebar)
+   SETTINGS CENTERED MODAL & TWO-COLUMN LAYOUT (.settings-shell, .settings-sidebar)
    ========================================================================== */
-/* Settings outer shell - Full-height centered container for header and two-column body */
-.settings-container { display: flex; flex-direction: column; height: 100%; width: 100%; background: var(--app-bg); color: var(--app-fg); box-sizing: border-box; overflow: hidden; }
-/* Settings inner shell - Uses full available width and stacks top header over split body */
-.settings-shell { display: flex; flex-direction: column; height: 100%; width: 100%; padding: 28px 44px 32px; box-sizing: border-box; overflow: hidden; }
-/* Settings top header - Displays page title and close button above split layout */
-.settings-panel-header { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; margin-bottom: 24px; padding-bottom: 14px; border-bottom: 1px solid var(--app-border); color: var(--app-fg); }
-/* Settings main title - Prominent page heading typography */
-.settings-title { margin: 0; font-size: 1.65rem; font-weight: 600; letter-spacing: -0.02em; color: var(--app-fg); }
-/* Settings split body - Positions category sidebar left and active tab pane right */
-.settings-body { display: flex; flex: 1 1 auto; min-height: 0; gap: 40px; overflow: hidden; }
-/* Settings left category sidebar - Vertical tab rail reusing .sidebar-footer-btn with visible hover rings */
-.settings-sidebar { width: 250px; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; padding: 2px 24px 2px 2px; border-right: 1px solid var(--app-border); box-sizing: border-box; overflow: visible; }
-/* Settings sidebar tab sizing - Matches larger settings typography and comfortable click target */
-.settings-sidebar .sidebar-footer-btn { height: 38px; min-height: 38px; max-height: 38px; padding: 0 14px; font-size: 0.92rem; }
-/* Inactive settings tab modifier - Keeps unselected sidebar tabs flat and muted */
+/* Settings modal viewport wrapper - Full-viewport flex overlay centering the modal dialog above sidebar and chat */
+.settings-container { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; background: transparent; color: var(--app-fg); font-family: var(--app-font); overflow: hidden; }
+/* Settings modal backdrop - Darkens both sidebar and chat canvas beneath the active dialog */
+.settings-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(2px); animation: settingsBackdropIn 0.18s cubic-bezier(0.22, 1, 0.36, 1); }
+/* Settings modal backdrop entrance - Fades dimmed overlay cleanly without layout shift */
+@keyframes settingsBackdropIn { from { opacity: 0; } to { opacity: 1; } }
+/* Settings modal dialog entrance - Subtle scale and opacity settle using exponential ease-out */
+@keyframes settingsModalIn { from { opacity: 0; transform: scale(0.985); } to { opacity: 1; transform: scale(1); } }
+/* Settings inner modal card - Centered container-query dialog floating over backdrop */
+.settings-shell { container-type: inline-size; position: relative; z-index: 2001; display: flex; flex-direction: column; width: min(920px, 100%); height: min(640px, calc(100vh - 48px)); max-height: calc(100vh - 48px); background: var(--app-bg); color: var(--app-fg); border: 1px solid var(--app-border); border-radius: var(--app-radius-lg, 14px); box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55); padding: 24px 28px; box-sizing: border-box; overflow: hidden; animation: settingsModalIn 0.2s cubic-bezier(0.22, 1, 0.36, 1); }
+/* Settings top header - Displays single modal title and close button above split layout */
+.settings-panel-header { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--app-border); color: var(--app-fg); }
+/* Settings main title - Operate-mode heading scale aligned with sidebar */
+.settings-title { margin: 0; font-size: 1.35rem; font-weight: 600; letter-spacing: -0.02em; color: var(--app-fg); cursor: default; user-select: text; }
+/* Settings split body - Positions category sidebar at inline-start and active tab pane at inline-end */
+.settings-body { display: flex; flex: 1 1 auto; min-height: 0; gap: 28px; overflow: hidden; }
+/* Settings left category sidebar - Logical vertical tab rail with visible overflow for hover rings */
+.settings-sidebar { width: 216px; min-width: 196px; flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; padding-block: 2px; padding-inline: 2px 20px; border-inline-end: 1px solid var(--app-border); box-sizing: border-box; overflow: visible; }
+/* Settings sidebar tab button - Unified borderless pill matching main sidebar navigation */
+.settings-sidebar .sidebar-footer-btn { height: 36px; min-height: 36px; max-height: 36px; padding: 0 14px; border-radius: 999px; border: 0; font-size: 0.9rem; text-align: start; }
+/* Settings sidebar tab keyboard focus - High-visibility focus outline for keyboard navigation */
+.settings-sidebar .sidebar-footer-btn:focus-visible { outline: 2px solid var(--app-focus); outline-offset: 2px; }
+/* Inactive settings tab modifier - Flat borderless surface with accessible muted foreground */
 .settings-sidebar .sidebar-footer-btn:not(.active) { background: transparent; color: var(--app-muted); }
-/* Inactive settings tab hover - Restores standard sidebar hover fill and inset spread */
+/* Inactive settings tab icon - Subtle lower opacity to distinguish unselected tabs */
+.settings-sidebar .sidebar-footer-btn:not(.active) .sidebar-btn-icon { opacity: 0.72; }
+/* Inactive settings tab hover - Elevates surface and foreground smoothly */
 .settings-sidebar .sidebar-footer-btn:not(.active):hover { background: var(--app-surface-hover); color: var(--app-fg); }
-/* Active settings tab modifier - Emphasizes selected category label */
-.settings-sidebar .sidebar-footer-btn.active { font-weight: 600; }
-/* Settings right content pane - Independently scrollable container for active tab */
-.settings-content-panel { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; padding: 2px 8px 40px 2px; box-sizing: border-box; scrollbar-width: thin; }
-/* Settings category panel - Flat borderless container directly on page canvas */
+/* Inactive settings tab icon hover - Restores full icon clarity on hover */
+.settings-sidebar .sidebar-footer-btn:not(.active):hover .sidebar-btn-icon { opacity: 1; }
+/* Active settings tab modifier - Borderless elevated pill matching active chat history items */
+.settings-sidebar .sidebar-footer-btn.active { background: var(--app-surface-strong); color: var(--app-fg); font-weight: 600; box-shadow: none; }
+/* Active settings tab hover - Smooth inset spread preserving borderless pill aesthetics */
+.settings-sidebar .sidebar-footer-btn.active:hover { background: var(--app-surface-hover); box-shadow: var(--app-btn-inset); }
+/* Settings right content pane - Independently scrollable container-query root for active tab */
+.settings-content-panel { container-type: inline-size; flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; padding-block: 0 24px; padding-inline: 0 8px; box-sizing: border-box; scrollbar-width: thin; }
+/* Settings category panel - Flat borderless container inside the modal content pane */
 .settings-category { position: relative; margin: 0; padding: 0; border: none; background: transparent; box-sizing: border-box; width: 100%; overflow: visible; }
-/* Settings active category heading - Clean section title inside right content panel */
-.settings-section-heading { margin: 0 0 6px; padding-bottom: 12px; border-bottom: 1px solid var(--app-border); font-size: 1.05rem; font-weight: 600; color: var(--app-fg); }
+/* Settings inline subsection label - Clean sentence-case grouping inside Models tab */
+.settings-sublabel { margin: 0 0 4px; padding-bottom: 8px; border-bottom: 1px solid var(--app-border); font-size: 0.85rem; font-weight: 600; color: var(--app-fg); text-align: start; }
+/* Settings spaced subsection label - Generous top separation between Local and Cloud groups */
+.settings-sublabel--spaced { margin-top: 24px; }
 /* Settings category rows container - Vertical stack with visible overflow for selects */
 .settings-body .category-content { display: flex; flex-direction: column; gap: 0; padding: 0; overflow: visible; }
-/* Settings tab rows - Generous spacing and hairline dividers replacing outer card container */
-.settings-body .setting-row { gap: 32px; padding: 18px 0; border-bottom: 1px solid var(--app-border-subtle); }
+/* Settings tab rows - 4px-scale rhythm and hairline dividers replacing outer card container */
+.settings-body .setting-row { gap: 24px; padding: 16px 0; border-bottom: 1px solid var(--app-border-subtle); }
 /* Settings last tab row - Omits trailing bottom divider */
 .settings-body .setting-row:last-child { border-bottom: none; }
-/* Settings row title - Slightly larger readable label in full-page layout */
-.settings-body .setting-label { font-size: 1rem; }
-/* Settings row subtitle - Readable description copy aligned under label */
-.settings-body .setting-subtitle { font-size: 0.85rem; line-height: 1.45; margin-top: 3px; }
-/* Settings row controls - Consistent right-aligned width across inputs and selects */
+/* Settings row prose block - Caps line length at 65ch for comfortable scanning inside modal */
+.settings-body .setting-info { max-width: 65ch; text-align: start; }
+/* Settings row title - Clear Operate-mode label weight and size */
+.settings-body .setting-label { font-size: 0.95rem; }
+/* Settings row subtitle - Accessible secondary description above 11px floor */
+.settings-body .setting-subtitle { font-size: 0.85rem; line-height: 1.45; margin-top: 4px; }
+/* Settings row controls - Balanced control width inside centered 920px modal */
 .settings-body .setting-control:has(.setting-input-text),
 .settings-body .setting-control:has(.custom-select-container),
-.settings-body .setting-control-stacked { min-width: 340px; max-width: 440px; }
+.settings-body .setting-control-stacked { min-width: 240px; max-width: 340px; }
 
-/* Compact viewport fallback - Stacks settings tabs horizontally on narrow windows */
-@media (max-width: 680px) {
-  .settings-shell { padding: 14px 16px 18px; }
-  .settings-body { flex-direction: column; gap: 14px; }
-  .settings-sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; padding: 2px 0 12px; border-right: none; border-bottom: 1px solid var(--app-border); }
+/* Container-aware row stacking - Stacks settings rows vertically when modal content pane is narrow */
+@container (max-width: 480px) {
+  .settings-body .setting-row { flex-direction: column; align-items: stretch; gap: 12px; }
+  .settings-body .setting-control,
+  .settings-body .setting-control:has(.setting-input-text),
+  .settings-body .setting-control:has(.custom-select-container),
+  .settings-body .setting-control-stacked,
+  .settings-body .provider-key-control { min-width: 0; max-width: 100%; width: 100%; justify-content: flex-start; }
+}
+
+/* Container-aware shell fallback - Reflows modal sidebar into horizontal wrapping tab rail on compact windows */
+@container (max-width: 680px) {
+  .settings-shell { padding: 18px 20px; }
+  .settings-body { flex-direction: column; gap: 16px; }
+  .settings-sidebar { width: 100%; min-width: 0; flex-direction: row; flex-wrap: wrap; padding-block: 0 12px; padding-inline: 0; border-inline-end: none; border-bottom: 1px solid var(--app-border); }
   .settings-sidebar .sidebar-footer-btn { width: auto; flex: 1 1 auto; }
 }
 
-/* Action button inside settings input row with smooth transition */
-.setting-action-btn,
-.settings-browse-btn {
-  padding: 5px 12px;
-  border-radius: var(--app-radius-sm);
-  background: var(--app-surface-strong, rgba(255, 255, 255, 0.06));
-  border: 1px solid var(--app-input-border, rgba(255, 255, 255, 0.1));
-  color: var(--app-fg);
-  cursor: pointer;
-  font-size: 0.78rem;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-/* Action button hover state with spread inset effect */
-.setting-action-btn:hover,
-.settings-browse-btn:hover {
-  background: var(--app-surface-hover);
-  color: var(--app-fg);
-  box-shadow: var(--app-btn-inset);
-}
-
-/* Unified Category Header Button across Model Dropdown, Settings, and Help */
+/* Unified Category Header Button across Model Dropdown and Help */
 .category-header-btn {
   width: 100%;
   box-sizing: border-box;
@@ -5077,24 +5158,23 @@ details[open]>summary>.custom-chevron {
   color: var(--app-fg, #ffffff);
 }
 
-/* Card container for missing API key warning notifications in chat */
+/* Card container for missing API key warning notifications - Unified full border without side-tab bar */
 .api-key-notice-card {
   display: flex;
   align-items: flex-start;
   gap: 12px;
   margin: 12px 0;
   padding: 14px 16px;
-  background: var(--app-surface-hover, rgba(255, 255, 255, 0.04));
-  border: 1px solid var(--app-border-strong, #333333);
-  border-left: 3px solid var(--app-accent, #e5a50a);
-  border-radius: var(--app-radius-md, 8px);
+  background: var(--app-surface-hover);
+  border: 1px solid var(--app-border-strong);
+  border-radius: var(--app-radius-lg, 12px);
   box-sizing: border-box;
 }
 
 /* Icon container with warning tint for missing key notices */
 .api-key-notice-icon {
   flex-shrink: 0;
-  color: var(--app-accent, #e5a50a);
+  color: var(--main-warning-color, #e5a50a);
   display: flex;
   align-items: center;
   margin-top: 2px;
@@ -5141,25 +5221,24 @@ details[open]>summary>.custom-chevron {
   flex-wrap: wrap;
 }
 
-/* Base button styling for notice action buttons */
+/* Base button styling for notice action buttons - Unified borderless pill */
 .api-key-notice-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 12px;
-  border-radius: var(--app-radius-sm, 6px);
+  padding: 6px 14px;
+  border-radius: 999px;
   font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
-  border: 1px solid transparent;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  border: 0;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 }
 
 /* Primary action button for opening settings */
 .api-key-notice-primary {
   background: var(--app-accent, #007acc);
   color: #ffffff;
-  border-color: var(--app-accent, #007acc);
 }
 
 /* Hover state for primary action button */
@@ -5169,14 +5248,14 @@ details[open]>summary>.custom-chevron {
 
 /* Secondary action button for external link to get API key */
 .api-key-notice-secondary {
-  background: var(--app-surface-hover, rgba(255, 255, 255, 0.08));
+  background: var(--app-surface-strong, rgba(255, 255, 255, 0.08));
   color: var(--app-fg, #ffffff);
-  border-color: var(--app-border, rgba(255, 255, 255, 0.12));
 }
 
 /* Hover state for secondary action button */
 .api-key-notice-secondary:hover {
-  background: var(--app-surface-strong, rgba(255, 255, 255, 0.14));
+  background: var(--app-surface-hover, rgba(255, 255, 255, 0.14));
+  box-shadow: var(--app-btn-inset);
 }
 
 /* Dismiss button styling */
@@ -5280,13 +5359,13 @@ details[open]>summary>.custom-chevron {
   align-self: flex-start;
 }
 
-/* [Ask User Dock] - Interactive prompt and options card modeled after Claude Code */
+/* [Ask User Dock] - Interactive prompt and options card aligned with chat reading width */
 .ask-user-dock {
   pointer-events: auto;
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 820px;
+  max-width: var(--app-chat-max-width, 820px);
   margin: 0 auto 10px auto;
   background: var(--app-input-bg);
   border: 1px solid var(--app-input-border);
@@ -5387,27 +5466,354 @@ details[open]>summary>.custom-chevron {
   border-top: 1px solid var(--app-border-subtle);
 }
 
-/* [Ask Skip Button] - Secondary pill button to dismiss or skip the prompt */
+/* [Ask Skip Button] - Borderless pill button to dismiss or skip the prompt */
 .ask-skip-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 6px 14px;
-  border-radius: var(--app-radius-md, 6px);
-  background: var(--app-surface-hover);
-  border: 1px solid var(--app-border);
+  border-radius: 999px;
+  background: var(--app-surface-strong);
+  border: 0;
   color: var(--app-fg);
   font-size: var(--app-font-xs, 12px);
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .ask-skip-btn:hover {
-  background: var(--app-surface-active);
-  border-color: var(--app-border-strong);
+  background: var(--app-surface-hover);
+  box-shadow: var(--app-btn-inset);
 }
+
+/* ==========================================================================
+   WORKSPACES FULL-PANE VIEW & GROUP CONTAINERS (.workspaces-container)
+   ========================================================================== */
+/* Workspaces outer content view - Full-height right pane while sidebar remains visible */
+.workspaces-container {
+  background: var(--app-bg);
+  color: var(--app-fg);
+  font-family: var(--app-font);
+  overflow: hidden;
+}
+
+/* Workspaces inner container shell - Centered bounded column with container query context */
+.workspaces-shell {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1040px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 24px 32px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Workspaces view top header - Aligns page heading with browse action and close button */
+.workspaces-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--app-border);
+}
+
+/* Workspaces header title group - Stacks view title and explanatory subtitle cleanly */
+.workspaces-header-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* Workspaces main page heading - Operate-mode heading scale aligned with Settings */
+.workspaces-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--app-fg);
+}
+
+/* Workspaces header right actions - Groups primary folder picker CTA and close button */
+.workspaces-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* Workspaces scrollable body - Vertically stacks workspace container cards */
+.workspaces-content-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 32px;
+  scrollbar-width: thin;
+}
+
+/* Individual workspace container card - Groups nested chats visually per workspace directory */
+.workspace-group-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-lg, 14px);
+  padding: 16px 20px;
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+/* Active workspace container modifier - Highlights the active workspace card with subtle focus hairline */
+.workspace-group-card--active {
+  border-color: var(--app-focus);
+}
+
+/* Workspace card header - Displays workspace folder identity and per-workspace action pills */
+.workspace-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+/* Workspace identity block - Aligns folder icon beside workspace folder name and path */
+.workspace-group-identity {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* Workspace folder badge icon - Subtle rounded icon plate distinguishing each workspace group */
+.workspace-group-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--app-surface-strong);
+  color: var(--app-fg);
+}
+
+/* Workspace title and path column - Prevents long filesystem paths from overflowing */
+.workspace-group-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* Workspace title row - Displays folder name alongside active status and chat count pills */
+.workspace-group-title-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Workspace folder display name - Bold readable heading per workspace container */
+.workspace-group-name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--app-fg);
+  letter-spacing: -0.01em;
+}
+
+/* Workspace active pill badge - Marks the currently active workspace folder cleanly */
+.workspace-active-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--app-surface-active);
+  color: var(--app-fg);
+  font-size: max(11px, 0.75rem);
+  font-weight: 600;
+}
+
+/* Workspace session count badge - Readable metadata pill showing chat count per workspace */
+.workspace-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--app-surface-strong);
+  color: var(--app-muted);
+  font-size: max(12px, 0.78rem);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Workspace full path caption - Legible muted path text wrapping cleanly inside header */
+.workspace-group-path {
+  font-size: max(12px, 0.8rem);
+  color: var(--app-muted);
+  word-break: break-all;
+  line-height: 1.35;
+}
+
+/* Workspace header actions - Keeps per-workspace controls aligned cleanly on one row */
+.workspace-group-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Workspace nested chats container - Visually encloses chats belonging to the workspace */
+.workspace-chats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--app-border-subtle);
+  overflow: visible;
+}
+
+/* Workspace chat item row - Full-width borderless pill button for opening a workspace chat */
+.workspace-chat-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--app-fg);
+  font-family: var(--app-font);
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Workspace chat row hover - Elevates nested chat row with smooth inset spread */
+.workspace-chat-row:hover {
+  background: var(--app-surface-hover);
+  box-shadow: var(--app-btn-inset);
+}
+
+/* Current active chat row indicator - Distinct elevated pill when matching active session */
+.workspace-chat-row.is-current {
+  background: var(--app-surface-strong);
+  font-weight: 600;
+}
+
+/* Workspace chat icon - Fixed muted icon aligned with chat title */
+.workspace-chat-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--app-muted);
+}
+
+/* Workspace chat title - Truncates long titles cleanly with ellipsis */
+.workspace-chat-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Workspace chat metadata - Right-aligns optional mode tag and timestamp */
+.workspace-chat-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* Workspace chat mode tag - Subtle pill marking Agent or Plan sessions */
+.workspace-chat-mode {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--app-surface-strong);
+  color: var(--app-muted);
+  font-size: max(11px, 0.75rem);
+  font-weight: 600;
+}
+
+/* Workspace chat timestamp - Accessible muted date string above 11px floor */
+.workspace-chat-time {
+  font-size: max(12px, 0.78rem);
+  color: var(--app-muted);
+  white-space: nowrap;
+}
+
+/* Empty chats message inside a workspace card - Quiet inline notice when workspace has no saved chats */
+.workspace-chats-empty {
+  padding: 6px 4px 2px 4px;
+  font-size: 0.84rem;
+  color: var(--app-muted);
+}
+
+/* Workspaces global empty state - Centered call-to-action when no folders or chats exist */
+.workspaces-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 14px;
+  padding: 48px 24px;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-lg, 14px);
+  background: var(--app-surface);
+}
+
+/* Workspaces global empty text - Readable constrained description line */
+.workspaces-empty-text {
+  margin: 0;
+  max-width: 48ch;
+  font-size: 0.9rem;
+  color: var(--app-muted);
+  line-height: 1.5;
+}
+
+/* Container-aware Workspaces reflow - Stacks card header actions below title on narrow viewports */
+@container (max-width: 600px) {
+  .workspaces-shell { padding: 18px 20px; }
+  .workspaces-panel-header { flex-direction: column; align-items: flex-start; }
+  .workspaces-header-actions { width: 100%; justify-content: space-between; }
+  .workspace-group-header { flex-direction: column; align-items: stretch; }
+  .workspace-group-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+}
+
+/* Unified browser selection highlight - Matches desktop theme tokens */
+::selection { background: var(--app-surface-active); color: var(--app-fg); }
+/* Unified input caret and link underline rhythm - Keeps typography consistent across surfaces */
+input, textarea { caret-color: var(--app-fg); }
+a { text-underline-offset: 3px; }
+/* Global keyboard focus ring - Accessible focus indicator across buttons, inputs, and custom controls */
+:is(button, input, textarea, a, [tabindex="0"], [role="button"], [role="tab"]):focus-visible { outline: 2px solid var(--app-focus); outline-offset: 2px; }
+/* Reduced motion safeguard - Disables non-essential animations when requested by the OS */
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms; animation-iteration-count: 1; transition-duration: 0.01ms; } }
 
 /* Global hidden utility overrides - Ensures views, dropdowns, and panels hide cleanly */
 .hidden,
@@ -5418,6 +5824,7 @@ details[open]>summary>.custom-chevron {
 .content-view.hidden,
 .settings-category.hidden,
 #chat-view.hidden,
+#workspaces-container.hidden,
 #settings-container.hidden,
 .ask-user-dock.hidden,
 .help-container.hidden,

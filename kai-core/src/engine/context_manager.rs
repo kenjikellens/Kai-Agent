@@ -93,12 +93,14 @@ mod tests {
     use super::ContextManager;
     use crate::traits::llm_provider::ChatMessage;
 
+    /// Builds a minimal test `ChatMessage` entry with default empty tool call and image vectors.
     fn msg(role: &str, content: &str) -> ChatMessage {
         ChatMessage {
             role: role.to_string(),
             content: content.to_string(),
             tool_call_id: None,
             name: None,
+            tool_calls: Vec::new(),
             images: Vec::new(),
         }
     }

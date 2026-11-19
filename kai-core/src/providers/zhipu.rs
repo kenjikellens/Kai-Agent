@@ -23,6 +23,11 @@ impl LlmProvider for ZhipuProvider {
         "zhipu"
     }
 
+    /// Enables native OpenAI-compatible function calling for GLM models.
+    fn supports_native_tools(&self) -> bool {
+        true
+    }
+
     async fn list_models(&self) -> Result<Vec<String>, ProviderError> {
         Ok(vec!["zhipu/glm-4-flash".into(), "zhipu/glm-4-plus".into()])
     }

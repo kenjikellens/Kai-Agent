@@ -29,6 +29,11 @@ impl LlmProvider for OpenRouterProvider {
         "openrouter"
     }
 
+    /// Enables native OpenAI-compatible function calling for OpenRouter models.
+    fn supports_native_tools(&self) -> bool {
+        true
+    }
+
     async fn list_models(&self) -> Result<Vec<String>, ProviderError> {
         Ok(vec![
             "openrouter/stealth/ox-alpha".into(),

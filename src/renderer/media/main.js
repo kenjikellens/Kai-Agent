@@ -11,10 +11,26 @@
         console.error('[KAI Desktop Unhandled Rejection]:', event.reason);
     });
 
-    // 0. Apply Saved UI Theme immediately on startup
+    // 0. Apply Saved UI Theme and Hydrate Active Locale Dictionary before instantiating controllers
     if (typeof SettingsController !== 'undefined' && typeof SettingsController.applyTheme === 'function') {
         SettingsController.applyTheme();
     }
+    try {
+        const rawLang = localStorage.getItem('kai.language') || window.KAI_LANG || 'auto';
+        const savedLang = rawLang === 'zh-tw' ? 'zh_tw' : rawLang;
+        const allLocales = window.KAI_ALL_LOCALES || {};
+        let initDict = allLocales[savedLang];
+        if (!initDict && savedLang === 'auto') {
+            const sys = (navigator.language || 'en').slice(0, 2).toLowerCase();
+            initDict = allLocales[sys] || allLocales.en;
+        }
+        if (!initDict && allLocales) {
+            initDict = allLocales.en;
+        }
+        if (initDict) {
+            window.KAI_I18N = initDict;
+        }
+    } catch (e) {}
 
     // 1. Core State & Data Repositories
     const appState = new AppState();
@@ -56,6 +72,27 @@
         },
         (chatId) => { openSessionById(chatId); }
     );
+
+    const workspacesController = new WorkspacesController({
+        ipcBridge: ipcBridge,
+        appState: appState,
+        sessionRepository: sessionRepository,
+        historyManager: historyManager,
+        onOpenChat: (chatId) => { openSessionById(chatId); },
+        onNewChatInWorkspace: (workspacePath) => { createNewChatInWorkspace(workspacePath); },
+        onSelectWorkspace: (workspacePath) => {
+            updateWorkspaceUi(workspacePath);
+            saveCurrentChat();
+            if (workspacesController.isOpen()) {
+                workspacesController.render();
+            }
+        },
+        onClose: () => {
+            const activeId = appState.currentChatId || localStorage.getItem('kai.activeChatId');
+            window.location.hash = activeId ? `session-${activeId}` : '';
+        }
+    });
+    chatUIController.workspacesController = workspacesController;
 
     // 3. Mode Manager (Desktop App: ask, agent, planning)
     const modeManager = new ModeManager({
@@ -139,7 +176,8 @@
     }
 
     /**
-     * Updates all workspace UI elements across sidebar, top bar, and mode selectors.
+     * Updates all workspace UI elements across sidebar, top bar, mode selectors, and known-workspace history.
+     * Mutates `appState.workspacePath`, `localStorage`, and `#workspaces-container` when open.
      * @param {string} workspacePath Absolute path to workspace folder or empty string.
      */
     function updateWorkspaceUi(workspacePath) {
@@ -165,10 +203,15 @@
         }
 
         modeManager.setWorkspaceState(hasWs);
-        if (!hasWs) {
+        if (hasWs && workspacesController) {
+            workspacesController.recordKnownWorkspace(appState.workspacePath);
+        } else if (!hasWs) {
             try {
                 localStorage.removeItem('kai.workspacePath');
             } catch (e) {}
+            if (workspacesController && workspacesController.isOpen()) {
+                workspacesController.render();
+            }
         }
         if (ipcBridge && typeof ipcBridge.setWorkspace === 'function') {
             ipcBridge.setWorkspace(appState.workspacePath);
@@ -176,10 +219,12 @@
     }
 
     /**
-     * Resets active session and UI for a brand new chat.
+     * Resets active session and UI for a brand new chat, optionally binding an initial workspace folder.
+     * Updates URL hash, clears stream state, shows `#chat-view`, and refreshes sidebar history.
      * @param {string} [newSessionId] Optional explicit session ID to initialize.
+     * @param {string} [initialWorkspace] Optional workspace directory path to pre-bind.
      */
-    function createNewChat(newSessionId) {
+    function createNewChat(newSessionId, initialWorkspace = '') {
         if (appState.isWaitingForResponse) {
             ipcBridge.abort();
         }
@@ -189,7 +234,7 @@
         }
         localStorage.setItem('kai.activeChatId', appState.currentChatId);
         window.location.hash = `session-${appState.currentChatId}`;
-        updateWorkspaceUi('');
+        updateWorkspaceUi(initialWorkspace || '');
         historyManager.setActiveChatId(appState.currentChatId);
         chatUIController.clearChatContainer();
         chatUIController.resetAssistantStream();
@@ -202,6 +247,19 @@
         if (messageInput) {
             messageInput.focus();
         }
+    }
+
+    /**
+     * Saves any active conversation and starts a new chat session bound directly to `workspacePath`.
+     * Transitions the main pane to `#chat-view` with the selected workspace folder active.
+     * @param {string} workspacePath Workspace directory path to pre-select for the new session.
+     */
+    function createNewChatInWorkspace(workspacePath) {
+        if ((appState.messages && appState.messages.length > 0) || (appState.uiEvents && appState.uiEvents.length > 0)) {
+            saveCurrentChat();
+        }
+        const newId = appState.generateChatId();
+        createNewChat(newId, workspacePath || '');
     }
 
     // New Chat Click Handlers
@@ -422,32 +480,27 @@
         if (heroSubtitle && translations.welcomeSubtitleApp) {
             heroSubtitle.textContent = translations.welcomeSubtitleApp;
         }
-        const emptyHistory = document.querySelector('#history-list .history-empty');
+        const emptyHistory = document.querySelector('#history-list .history-empty-state');
         if (emptyHistory && translations.noPreviousChats) {
             emptyHistory.textContent = translations.noPreviousChats;
+        }
+
+        if (chatUIController && (!appState.messages || appState.messages.length === 0) && typeof chatUIController.renderWelcomeHero === 'function') {
+            chatUIController.renderWelcomeHero();
         }
 
         if (settingsController && typeof settingsController.applyTranslations === 'function') {
             settingsController.applyTranslations(translations);
         }
+        if (workspacesController && workspacesController.isOpen()) {
+            workspacesController.render();
+        }
     };
 
-    // Apply startup translation immediately
-    try {
-        const savedLang = localStorage.getItem('kai.language') || window.KAI_LANG || 'auto';
-        const allLocales = window.KAI_ALL_LOCALES || {};
-        let startupDict = allLocales[savedLang];
-        if (!startupDict && savedLang === 'auto') {
-            const sys = (navigator.language || 'en').slice(0, 2).toLowerCase();
-            startupDict = allLocales[sys] || allLocales.en;
-        }
-        if (!startupDict && allLocales) {
-            startupDict = allLocales.en;
-        }
-        if (startupDict) {
-            window.applyAllTranslations(startupDict);
-        }
-    } catch (e) {}
+    // Apply startup translation immediately across static DOM nodes
+    if (window.KAI_I18N && Object.keys(window.KAI_I18N).length > 0) {
+        window.applyAllTranslations(window.KAI_I18N);
+    }
 
     // Register Incoming IPC Message Handlers
     ipcBridge.on('initialState', (message) => {
@@ -664,7 +717,10 @@
                 localStorage.setItem('kai.savedChatsSummary', JSON.stringify(message.chats));
             } catch (e) { }
         }
-        historyManager.renderHistoryList((message && message.chats) || [], appState.isWaitingForResponse);
+        historyManager.renderHistoryList((message && message.chats) || [], appState.isWaitingForResponse, true);
+        if (workspacesController && workspacesController.isOpen()) {
+            workspacesController.render();
+        }
     });
 
     // Request initial chat history load after listeners are registered
@@ -678,6 +734,12 @@
     const hashRouter = new HashRouter({
         onSettingsRoute: () => {
             chatUIController.showView('settings');
+            if (helpModalController && typeof helpModalController.close === 'function') {
+                helpModalController.close(false);
+            }
+        },
+        onWorkspacesRoute: () => {
+            chatUIController.showView('workspaces');
             if (helpModalController && typeof helpModalController.close === 'function') {
                 helpModalController.close(false);
             }

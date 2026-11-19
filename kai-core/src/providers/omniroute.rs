@@ -22,6 +22,11 @@ impl LlmProvider for OmniRouteProvider {
         "omniroute"
     }
 
+    /// Enables native OpenAI-compatible tool calling through OmniRoute gateway.
+    fn supports_native_tools(&self) -> bool {
+        true
+    }
+
     async fn list_models(&self) -> Result<Vec<String>, ProviderError> {
         Ok(vec!["omniroute/auto".into()])
     }

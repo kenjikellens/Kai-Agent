@@ -4,12 +4,9 @@
  */
 class HashRouter {
     /**
-     * Initializes route handlers and attaches window hashchange event listener.
+     * Initializes route handlers (`#settings`, `#workspaces`, `#help`, `#session-<id>`) and attaches hash listener.
+     * Populates the internal `routes` map and binds `window` hashchange dispatching.
      * @param {object} [options] Optional configuration options.
-     * @param {Function} [options.onSettingsRoute] Callback for #settings route.
-     * @param {Function} [options.onHelpRoute] Callback for #help route.
-     * @param {Function} [options.onSessionRoute] Callback for #session-<id> route.
-     * @param {Function} [options.onDefaultRoute] Callback for default/empty route.
      */
     constructor(options = {}) {
         this.routes = new Map();
@@ -17,6 +14,9 @@ class HashRouter {
 
         if (options.onSettingsRoute) {
             this.register('settings', () => options.onSettingsRoute());
+        }
+        if (options.onWorkspacesRoute) {
+            this.register('workspaces', () => options.onWorkspacesRoute());
         }
         if (options.onHelpRoute) {
             this.register('help', () => options.onHelpRoute());

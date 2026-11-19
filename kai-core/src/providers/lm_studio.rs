@@ -810,6 +810,11 @@ impl LlmProvider for LMStudioProvider {
         "lmstudio"
     }
 
+    /// Declares native OpenAI-compatible function calling support (with automatic HTTP 400 fallback).
+    fn supports_native_tools(&self) -> bool {
+        true
+    }
+
     /// Probes LM Studio HTTP endpoints and automatically starts `lms server start` once if the local server is off.
     /// Re-probes HTTP after auto-start so locally downloaded models become immediately usable.
     async fn list_models(&self) -> Result<Vec<String>, ProviderError> {

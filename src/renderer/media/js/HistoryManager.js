@@ -4,7 +4,8 @@
  */
 class HistoryManager {
     /**
-     * Initializes history DOM references and listeners.
+     * Initializes history DOM references, hydrates cached chat summaries (including `workspacePath`), and binds listeners.
+     * Mutates `#history-list` DOM on boot and kicks off asynchronous `loadChatHistory` IPC sync.
      * @param {WebviewIPCBridge} ipcBridge IPC bridge instance.
      * @param {Function} onViewSwitch Callback to switch active content view.
      * @param {Function} [onSelectChat] Callback invoked when a chat session is selected.
@@ -18,6 +19,7 @@ class HistoryManager {
 
         this.historyList = document.getElementById('history-list');
         this.cachedChats = [];
+        this.hasLoadedFromHost = false;
 
         this.isWaitingForResponse = false;
 
@@ -28,7 +30,8 @@ class HistoryManager {
                 this.renderHistoryList(localSaved.map(c => ({
                     id: c.id,
                     title: c.title || 'New Chat',
-                    timestamp: c.timestamp || Date.now()
+                    timestamp: c.timestamp || Date.now(),
+                    workspacePath: c.workspacePath || ''
                 })));
             }
         } catch (e) {}
@@ -40,7 +43,8 @@ class HistoryManager {
     }
 
     /**
-     * Initializes centralized event delegation on the history list container.
+     * Initializes centralized event delegation for selecting or deleting sessions in `#history-list`.
+     * Updates `kai.savedChatsSummary` in `localStorage` while preserving each session's `workspacePath`.
      */
     _initDelegatedEvents() {
         if (!this.historyList) return;
@@ -61,7 +65,8 @@ class HistoryManager {
                     this.renderHistoryList(localSaved.map(c => ({
                         id: c.id,
                         title: c.title || 'New Chat',
-                        timestamp: c.timestamp || Date.now()
+                        timestamp: c.timestamp || Date.now(),
+                        workspacePath: c.workspacePath || ''
                     })));
                 } catch (err) {}
 
@@ -191,11 +196,16 @@ class HistoryManager {
 
     /**
      * Renders or updates the list of previous chat sessions in the Left Sidebar without glitching.
+     * Tracks host synchronization via `hasLoadedFromHost` so downstream views respect authoritative deletions.
      * @param {Array<object>} chats List of saved chat session records.
      * @param {boolean} isWaitingForResponse Active generation status.
+     * @param {boolean} [fromHost=false] True when payload originates from authoritative host IPC.
      */
-    renderHistoryList(chats, isWaitingForResponse) {
+    renderHistoryList(chats, isWaitingForResponse, fromHost = false) {
         this.cachedChats = chats || [];
+        if (fromHost) {
+            this.hasLoadedFromHost = true;
+        }
         if (typeof isWaitingForResponse !== 'undefined') {
             this.isWaitingForResponse = !!isWaitingForResponse;
         }

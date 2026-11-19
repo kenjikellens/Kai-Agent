@@ -23,6 +23,11 @@ impl LlmProvider for CohereProvider {
         "cohere"
     }
 
+    /// Enables native OpenAI-compatible function calling for Cohere Command models.
+    fn supports_native_tools(&self) -> bool {
+        true
+    }
+
     async fn list_models(&self) -> Result<Vec<String>, ProviderError> {
         Ok(vec!["cohere/command-r-plus".into(), "cohere/command-r".into()])
     }
